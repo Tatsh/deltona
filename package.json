@@ -9,7 +9,7 @@
     "prettier-plugin-sort-json": "^4.1.1",
     "prettier-plugin-toml": "^2.0.1",
     "pyright": "^1.1.389",
-    "yarn-audit-fix": "^10.1.0"
+    "yarn-audit-fix": "^10.1.1"
   },
   "homepage": "https://github.com/Tatsh/deltona",
   "keywords": ["command line", "library", "media"],
