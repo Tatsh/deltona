@@ -1596,15 +1596,21 @@ files = [
 
 [[package]]
 name = "pyperclip-stubs"
-version = "0.0.2"
-description = "Stubs for pyperclip."
+version = "0.0.3"
+description = "PEP 561 type stubs for pyperclip."
 optional = false
-python-versions = "<4,>=3.9"
+python-versions = "<3.14,>=3.10"
 groups = ["dev"]
 files = [
-    {file = "pyperclip_stubs-0.0.2-py3-none-any.whl", hash = "sha256:b5cf9dc188da7b491bbb31a96d13f11811d8b904b5e271cd65d148b1f13a2f4a"},
-    {file = "pyperclip_stubs-0.0.2.tar.gz", hash = "sha256:b41f49ae91c4df75cc36a4b731ed85212806e626b805e90ece68bbe60a95da13"},
+    {file = "pyperclip_stubs-0.0.3-py3-none-any.whl", hash = "sha256:ea0350a2564da549ae4dd3c410c8ad5d88f53f58127f424f5b7c9394f1fe4b10"},
+    {file = "pyperclip_stubs-0.0.3.tar.gz", hash = "sha256:96bc2c342bf1cbc8b4200ad927d98119748dcb782511a2afbcdbf91578812608"},
 ]
+
+[package.dependencies]
+typing-extensions = ">=4.13.1,<5.0.0"
+
+[package.extras]
+erdantic = ["erdantic (<2.0)"]
 
 [[package]]
 name = "pyrsistent"
@@ -2657,4 +2663,4 @@ unidecode = ["unidecode"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.13"
-content-hash = "e2a47e642849820c7b712a1154db64264950298a9b981d7c798efc60a7931f88"
+content-hash = "d0dc0867f416162b5acf69d0f44165ae83110db243f4a3a7ec9300ff03b87ada"
