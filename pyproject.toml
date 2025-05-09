@@ -120,7 +120,7 @@ types-pyyaml = "^6.0.12.20241230"
 types-requests = "^2.32.0.20250306"
 types-send2trash = "^1.8.2.7"
 yapf = "^0.43.0"
-yt-dlp-types = "^0.0.14"
+yt-dlp-types = "^0.0.16"
 
 [tool.poetry.group.docs]
 optional = true
