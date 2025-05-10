@@ -1,8 +1,14 @@
+*.log
 *~
 .*_cache/
+.coverage
+.cspellcache
 .directory
 .pnp.*
-/.coverage
 /.yarn/install-state.gz
+/dist/
+/docs/_build/
+/man/_static/
 __pycache__/
+htmlcov/
 node_modules/

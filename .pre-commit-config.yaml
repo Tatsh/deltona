@@ -34,12 +34,10 @@ repos:
         stages:
           - 'pre-push'
       - args:
-          - '--all-extras'
           - '--all-groups'
-          - '--sync'
         id: 'poetry-install'
     repo: 'https://github.com/python-poetry/poetry'
-    rev: '2.1.1'
+    rev: '2.1.2'
   - hooks:
       - id: 'yapf'
         name: 'check Python files are formatted'
@@ -56,6 +54,10 @@ repos:
         name: 'validate package.json'
     repo: 'https://github.com/python-jsonschema/check-jsonschema'
     rev: '0.31.3'
+  - hooks:
+      - id: 'validate-cff'
+    repo: 'https://github.com/citation-file-format/cffconvert'
+    rev: 'b6045d7'
   - hooks:
       - entry: 'yarn install --check-cache --immutable'
         files: "^package\\.json$"
@@ -99,4 +101,10 @@ repos:
         name: 'check Markdown files are formatted'
         types_or:
           - 'markdown'
+      - entry: 'yarn check-spelling --no-must-find-files --no-summary'
+        id: 'cspell'
+        language: 'node'
+        name: 'check spelling'
+        types:
+          - 'text'
     repo: 'local'
