@@ -158,6 +158,8 @@ lavfi
 leadout
 lextudio
 libc
+libcairo
+libgirepository
 libjsonnet
 libx
 linters
