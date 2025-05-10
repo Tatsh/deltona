@@ -786,7 +786,8 @@ def connect_g603_main(device_name: str = 'hci0', *, debug: bool = False) -> None
     with contextlib.suppress(KeyError):
         while res := find_bluetooth_device_info_by_name('G603'):
             object_path, info = res
-            log.debug('Removing device with MAC address %s.', info['Address'])
+            log.debug('Removing device with MAC address %s.',
+                      info['Address'])  # type: ignore[typeddict-item]
             adapter.RemoveDevice(object_path)
     click.echo('Put the mouse in pairing mode and be very patient.')
     log.debug('Starting scan.')

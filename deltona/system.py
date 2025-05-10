@@ -22,7 +22,7 @@ from .typing import CDStatus, StrPath
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from pydbus.bus import OrgBluezDevice1Dict
+    from pydbus.bus import OrgBluezDict as OrgBluezDevice1Dict
 
 __all__ = ('CHROME_DEFAULT_CONFIG_PATH', 'CHROME_DEFAULT_LOCAL_STATE_PATH', 'IS_LINUX',
            'find_bluetooth_device_info_by_name', 'inhibit_notifications', 'slug_rename',
@@ -82,7 +82,8 @@ def inhibit_notifications(name: str = __name__, reason: str = 'No reason specifi
     except (ImportError, ModuleNotFoundError):  # pragma: no cover
         log.exception('Cannot import pydbus.', stack_info=False)
         return False
-    notifications = SessionBus().get('org.freedesktop.Notifications')
+    notifications = SessionBus().get('org.freedesktop.Notifications',
+                                     '/org/freedesktop/Notifications')
     if notifications.Inhibited:
         return False
     log.debug('Disabling notifications.')
@@ -111,7 +112,8 @@ def uninhibit_notifications() -> None:
     except (ImportError, ModuleNotFoundError):
         log.exception('Cannot import pydbus.', stack_info=False)
         return
-    notifications = SessionBus().get('org.freedesktop.Notifications')
+    notifications = SessionBus().get('org.freedesktop.Notifications',
+                                     '/org/freedesktop/Notifications')
     if not notifications:
         raise ConnectionError
     if not notifications.Inhibited:
