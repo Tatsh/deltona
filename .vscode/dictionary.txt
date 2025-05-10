@@ -223,6 +223,7 @@ pydantic
 pydbus
 pydocstyle
 pygithub
+pygobject
 pylance
 pyperclip
 pyproject

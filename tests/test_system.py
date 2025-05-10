@@ -75,7 +75,7 @@ def test_uninhibit_notifications_success(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setattr('pydbus.SessionBus', fsb)
     mock_notifications.Inhibited = True
     mock_notifications.UnInhibit.return_value = None
-    monkeypatch.setattr('tatsh_misc_utils.system._key', 1234)
+    monkeypatch.setattr('deltona.system._key', 1234)
     uninhibit_notifications()
     mock_notifications.UnInhibit.assert_called_once_with(1234)
 
@@ -93,7 +93,7 @@ def test_wait_for_disc_success(mocker: MockerFixture, monkeypatch: pytest.Monkey
         return CDStatus.DISC_OK
 
     monkeypatch.setattr('fcntl.ioctl', mock_ioctl)
-    mock_context_os_open = mocker.patch('tatsh_misc_utils.system.context_os_open')
+    mock_context_os_open = mocker.patch('deltona.system.context_os_open')
     result = wait_for_disc()
     assert result is True
     mock_context_os_open.assert_called_once_with('dev/sr0', os.O_RDONLY | os.O_NONBLOCK)
@@ -105,7 +105,7 @@ def test_wait_for_disc_keyboard_interrupt(mocker: MockerFixture,
         raise KeyboardInterrupt
 
     monkeypatch.setattr('fcntl.ioctl', mock_ioctl)
-    mock_context_os_open = mocker.patch('tatsh_misc_utils.system.context_os_open')
+    mock_context_os_open = mocker.patch('deltona.system.context_os_open')
     assert wait_for_disc() is False
     mock_context_os_open.assert_called_once_with('dev/sr0', os.O_RDONLY | os.O_NONBLOCK)
 
@@ -144,14 +144,14 @@ def test_find_bluetooth_device_info_by_name_not_found(monkeypatch: pytest.Monkey
 
 
 def test_find_bluetooth_device_info_by_name_not_linux(mocker: MockerFixture) -> None:
-    mocker.patch('tatsh_misc_utils.system.IS_LINUX', False)  # noqa: FBT003
+    mocker.patch('deltona.system.IS_LINUX', False)  # noqa: FBT003
     with pytest.raises(NotImplementedError):
         find_bluetooth_device_info_by_name('TestDevice')
 
 
 def test_slug_rename_success(mocker: MockerFixture) -> None:
-    mock_path = mocker.patch('tatsh_misc_utils.system.Path')
-    mock_slugify = mocker.patch('tatsh_misc_utils.system.slugify')
+    mock_path = mocker.patch('deltona.system.Path')
+    mock_slugify = mocker.patch('deltona.system.slugify')
     mock_path.return_value.resolve.return_value = mock_path
     mock_path.parent = mock_path
     mock_slugify.return_value = 'slugified_name'
@@ -163,8 +163,8 @@ def test_slug_rename_success(mocker: MockerFixture) -> None:
 
 
 def test_patch_macos_bundle_info_plist_success(mocker: MockerFixture) -> None:
-    mock_path = mocker.patch('tatsh_misc_utils.system.Path')
-    mock_plistlib = mocker.patch('tatsh_misc_utils.system.plistlib')
+    mock_path = mocker.patch('deltona.system.Path')
+    mock_plistlib = mocker.patch('deltona.system.plistlib')
     mock_info_plist = mock_path.return_value.resolve.return_value.__truediv__.return_value.__truediv__.return_value  # noqa: E501
     mock_info_plist.open.return_value.__enter__.return_value = mock.Mock()
     patch_macos_bundle_info_plist('test_bundle', key='value')

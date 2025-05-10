@@ -13,12 +13,12 @@ if TYPE_CHECKING:
 
 @pytest.fixture
 def mock_path(mocker: MockerFixture) -> Mock:
-    return mocker.patch('tatsh_misc_utils.gentoo.Path')
+    return mocker.patch('deltona.gentoo.Path')
 
 
 @pytest.fixture
 def mock_rmtree(mocker: MockerFixture) -> Mock:
-    return mocker.patch('tatsh_misc_utils.gentoo.rmtree')
+    return mocker.patch('deltona.gentoo.rmtree')
 
 
 def test_clean_old_kernels_and_modules_success(mock_path: Mock, mock_rmtree: Mock,

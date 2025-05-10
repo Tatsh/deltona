@@ -24,10 +24,10 @@ def test_context_os_open(mocker: MockerFixture) -> None:
 
 
 def test_unpack_0day(mocker: MockerFixture) -> None:
-    mock_path = mocker.patch('tatsh_misc_utils.io.Path')
-    mocker.patch('tatsh_misc_utils.io.contextlib.chdir')
-    mocker.patch('tatsh_misc_utils.io.ZipFile')
-    mocker.patch('tatsh_misc_utils.io.crc32').return_value = 0
+    mock_path = mocker.patch('deltona.io.Path')
+    mocker.patch('deltona.io.contextlib.chdir')
+    mocker.patch('deltona.io.ZipFile')
+    mocker.patch('deltona.io.crc32').return_value = 0
     mock_zip = mocker.Mock()
     mock_diz = mocker.Mock()
     mock_rar = mocker.Mock()
@@ -37,5 +37,5 @@ def test_unpack_0day(mocker: MockerFixture) -> None:
     mock_diz.unlink.assert_called_once()
     mock_path.return_value.glob.assert_any_call('*.rar')
     mock_path.return_value.glob.assert_any_call('*.[rstuvwxyz][0-9a][0-9r]')
-    mock_path.return_value.open.return_value.__enter__.return_value.write.assert_any_call(
-        'test.rar 00000000\n')
+    mock_path.return_value.open.return_value.__enter__.return_value.writelines.assert_any_call(
+        mocker.ANY)

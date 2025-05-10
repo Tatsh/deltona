@@ -449,7 +449,7 @@ class CDDBQueryResult(NamedTuple):
 def cddb_query(disc_id: str,
                *,
                accept_first_match: bool = False,
-               app: str = 'tatsh_misc_utils cddb_query',
+               app: str = 'deltona cddb_query',
                host: str | None = None,
                timeout: float = 5,
                username: str | None = None,
@@ -586,7 +586,7 @@ def rip_cdda_to_flac(drive: StrPath,
         Username for CDDB. Defaults to current username.
     """
     result = cddb_query(get_cd_disc_id(drive),
-                        app='tatsh_misc_utils rip_cdda',
+                        app='deltona rip_cdda',
                         accept_first_match=accept_first_cddb_match,
                         host=cddb_host,
                         username=username)
