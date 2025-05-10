@@ -160,7 +160,6 @@ keyring = "^25.6.0"
 mutagen = "^1.47.0"
 pexpect = "^4.9.0"
 platformdirs = "^4.3.7"
-pygobject = { version = "^3.52.3", platform = "linux" }
 pyperclip = "^1.9.0"
 python = ">=3.10,<3.14"
 python-xz = "^0.5.0"
@@ -195,6 +194,10 @@ version = "^0.6.0"
 [tool.poetry.dependencies.pygithub]
 optional = true
 version = "^2.6.1"
+
+[tool.poetry.dependencies.pygobject]
+platform = "linux"
+version = "^3.52.3"
 
 [tool.poetry.dependencies.unidecode]
 optional = true
@@ -367,19 +370,11 @@ ignore = [
   "C901",
   "COM812",
   "CPY001",
-  "D100",
-  "D101",
-  "D102",
-  "D103",
-  "D104",
   "D201",
   "D203",
   "D204",
   "D212",
   "DOC201",
-  "DOC402",
-  "DOC501",
-  "DOC502",
   "EM101",
   "N818",
   "PLR0912",
