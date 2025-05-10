@@ -1,8 +1,13 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from deltona.adp import SalaryResponse, calculate_salary
 from requests.exceptions import HTTPError
-from requests_mock import Mocker
 import pytest
 
-from tatsh_misc_utils.adp import SalaryResponse, calculate_salary
+if TYPE_CHECKING:
+    from requests_mock import Mocker
 
 
 def test_salary_response_str() -> None:

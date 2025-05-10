@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 from functools import cache
 from io import BytesIO
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import requests
 
-from .typing import StrPath
+if TYPE_CHECKING:
+    from .typing import StrPath
 
 
 def fix_chromium_pwa_icon(config_path: StrPath,

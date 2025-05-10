@@ -1,9 +1,14 @@
-from unittest.mock import Mock
+from __future__ import annotations
 
-from pytest_mock import MockerFixture
+from typing import TYPE_CHECKING
+
+from deltona.gentoo import InvalidActiveKernelSourcePath, clean_old_kernels_and_modules
 import pytest
 
-from tatsh_misc_utils.gentoo import InvalidActiveKernelSourcePath, clean_old_kernels_and_modules
+if TYPE_CHECKING:
+    from unittest.mock import Mock
+
+    from pytest_mock import MockerFixture
 
 
 @pytest.fixture

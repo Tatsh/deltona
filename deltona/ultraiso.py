@@ -109,73 +109,73 @@ def run_ultraiso(
         File to read command line arguments from. If this argument is present and not ``None``, all
         other arguments are ignored.
     appid : str | None
-        Application ID.    
+        Application ID.
     preparer : str | None
-        Preparer name.    
+        Preparer name.
     publisher : str | None
-        Publisher name.    
+        Publisher name.
     sysid : str | None
-        System ID.    
+        System ID.
     volset : int | None
-        Volume set ID.    
+        Volume set ID.
     volume : str | None
         Volume label.
     ilong : bool
-        Long filename for ISO 9660 volume, up to 31 characters.    
+        Long filename for ISO 9660 volume, up to 31 characters.
     imax : bool
-        Max filename for ISO 9660 volume, up to 207 characters.    
+        Max filename for ISO 9660 volume, up to 207 characters.
     lowercase : bool
-        Allow lowercase letters.    
+        Allow lowercase letters.
     vernum : bool
         Include file version number.
     hfs : bool
-        Create Apple HFS volume.    
+        Create Apple HFS volume.
     jlong : bool
-        Long filenames for joliet volume, up to 103 characters.    
+        Long filenames for joliet volume, up to 103 characters.
     joliet : bool
-        Create a Joliet volume.    
+        Create a Joliet volume.
     rockridge : bool
-        Create RockRidge volume.    
+        Create RockRidge volume.
     udf : bool
-        Create UDF volume.    
+        Create UDF volume.
     udfdvd : bool
         Create UDF DVD image (this option will overwrite all other volume settings).
     bootfile : StrPathMustExist | None
-        Boot file.    
+        Boot file.
     bootinfotable : bool
-        Generate boot information table in boot file.    
+        Generate boot information table in boot file.
     optimize : bool
         Optimize file systems by coding same files only once.
     chdir : str | None
-        Change current directory in ISO image.    
+        Change current directory in ISO image.
     newdir : str | None
-        Create a new directory.    
+        Create a new directory.
     rmdir : str | None
         Remove a file or folder from ISO image (full path should be specified).
     ahide : str | None
-        Set advanced hidden attribute of a file or folder (full path should be specified).    
+        Set advanced hidden attribute of a file or folder (full path should be specified).
     hide : str | None
-        Set hidden attribute of a file or folder (full path should be specified).    
+        Set hidden attribute of a file or folder (full path should be specified).
     pn : Literal[1, 2, 3, 4, 5, 6, 7, 8, 9] | None
         Set priority of a file or folder(full path should be specified).
     bin2iso : StrPathMustExist | None
-        Convert input CD/DVD image to ISO format.    
+        Convert input CD/DVD image to ISO format.
     dmg2iso : StrPathMustExist | None
         Convert input DMG image to ISO format.
     bin2isz : StrPathMustExist | None
-        Convert image to ISZ.    
+        Convert image to ISZ.
     compress : Literal[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] | None
-        Set compression level.    
+        Set compression level.
     encrypt : Literal[1, 2, 3] | None
-        Set encryption method.    
+        Set encryption method.
     password : str | None
-        Set password.    
+        Set password.
     split : int | None
         Set segment size in bytes.
     extract : StrPath | None
-        Extract ISO image to specified directory.    
+        Extract ISO image to specified directory.
     get : str | None
-        Set a file or directory (full path) to be extracted.    
+        Set a file or directory (full path) to be extracted.
     list_ : StrPath | None
         Create a list of files and directores in an ISO image.
     """
@@ -281,7 +281,7 @@ class InvalidExec(Exception):
 def patch_ultraiso_font(exe: Path, font_name: str = 'Noto Sans') -> None:
     """
     Patch hard-coded UI font in UltraISO executable.
-    
+
     Must use the original executable. This will use a backup file if present if it has the suffix
     ``.exebak``.
     """

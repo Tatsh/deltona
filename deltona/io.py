@@ -41,7 +41,7 @@ def context_os_open(path: StrPath,
 def unpack_0day(path: StrPath, *, remove_diz: bool = True) -> None:
     """
     Unpack RAR files from 0day zip file sets.
-    
+
     Parameters
     ----------
     path : str

@@ -1,11 +1,10 @@
-from typing import Any, Never
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Never
 from unittest import mock
 import os
 
-from pytest_mock import MockerFixture
-import pytest
-
-from tatsh_misc_utils.system import (
+from deltona.system import (
     find_bluetooth_device_info_by_name,
     get_inhibitor,
     inhibit_notifications,
@@ -15,7 +14,11 @@ from tatsh_misc_utils.system import (
     uninhibit_notifications,
     wait_for_disc,
 )
-from tatsh_misc_utils.typing import CDStatus
+from deltona.typing import CDStatus
+import pytest
+
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
 
 INHIBIT_SUCCESS_CODE = 1234
 

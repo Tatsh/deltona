@@ -1,11 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 import os
 
-from pytest_mock import MockerFixture
-
-from tatsh_misc_utils.io import (
+from deltona.io import (
     context_os_open,
     unpack_0day,
 )
+
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
 
 FILE_DESCRIPTOR = 3
 

@@ -52,7 +52,7 @@ def supported_audio_input_formats(
     Get supported input formats and sample rates by invoking ``ffmpeg``.
 
     For possible formats, invoke ``ffmpeg``: ``ffmpeg -formats | grep PCM | cut '-d ' -f3``.
-    
+
     Parameters
     ----------
     device : str
@@ -378,7 +378,7 @@ def get_cd_disc_id(drive: StrPath) -> str:
     Calculate a CDDB disc ID.
 
     For Linux only.
-    
+
     Parameters
     ----------
     drive : str
@@ -456,7 +456,7 @@ def cddb_query(disc_id: str,
                version: str = '0.0.1') -> CDDBQueryResult:
     """
     Run a query against a CDDB host.
-    
+
     Defaults to host in Keyring under the ``gnudb`` key and current user name.
 
     It is advised to ``except`` typical
@@ -479,7 +479,7 @@ def cddb_query(disc_id: str,
     -------
     CDDBQueryResult
         Tuple with artist, album, year, genre, and tracks.
-    
+
     Raises
     ------
     ValueError
@@ -563,7 +563,7 @@ def rip_cdda_to_flac(drive: StrPath,
     Rip an audio disc to FLAC files.
 
     Requires ``cdparanoia`` and ``flac`` to be in ``PATH``.
-    
+
     Parameters
     ----------
     album_artist: str | None

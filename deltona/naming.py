@@ -115,7 +115,7 @@ def adjust_title(words: str,
                  ampersands: bool = False) -> str:
     """
     Adjust a string that represents a title.
-    
+
     Primarily for English to lowercase stop words, but also works for other languages. Some name
     rules are built-in but can also be passed in the ``names`` parameter.
 

@@ -1,11 +1,15 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 from datetime import UTC, datetime
-from typing import Final, TypedDict, cast, override
+from typing import TYPE_CHECKING, Final, TypedDict, cast, override
 
 import requests
 
 from .string import strip_ansi_if_no_colors
-from .typing import INCITS38Code
+
+if TYPE_CHECKING:
+    from .typing import INCITS38Code
 
 __all__ = ('SalaryResponse', 'calculate_salary')
 

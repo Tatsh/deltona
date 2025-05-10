@@ -134,7 +134,7 @@ def get_inhibitor(what: str, who: str, why: str, mode: str) -> int:
 def find_bluetooth_device_info_by_name(name: str) -> tuple[str, OrgBluezDevice1Dict]:
     """
     Get Bluetooth device information from D-Bus (bluez) by name.
-    
+
     Note that not all devices present a name.
 
     Parameters
@@ -169,7 +169,7 @@ def find_bluetooth_device_info_by_name(name: str) -> tuple[str, OrgBluezDevice1D
 def pan_connect(device_mac: str, hci: str = 'hci0') -> None:
     """
     Connect a Bluetooth PAN device for internet access.
-    
+
     For Linux with NetworkManager only.
 
     This function must be called and then waited by an event loop.
@@ -193,7 +193,7 @@ def pan_connect(device_mac: str, hci: str = 'hci0') -> None:
 def pan_disconnect(device_mac: str, hci: str = 'hci0') -> None:
     """
     Disconnect a Bluetooth PAN device.
-    
+
     For Linux with NetworkManager only.
 
     This function must be called and then waited by an event loop.
@@ -270,7 +270,7 @@ class MultipleKeySlots(Exception):
 def reset_tpm_enrollment(uuid: str, *, dry_run: bool = True) -> None:
     """
     Reset the systemd-cryptsetup TPM enrolment for a device.
-    
+
     Requires root privileges.
     """
     dev = f'/dev/disk/by-uuid/{uuid}'

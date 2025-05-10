@@ -27,6 +27,7 @@ import unicodedata
 import webbrowser
 
 from binaryornot.helpers import is_binary_string
+from deltona import naming
 from platformdirs import user_state_path
 from requests import HTTPError
 from send2trash import send2trash
@@ -36,8 +37,6 @@ import pexpect
 import pyperclip
 import requests
 import yaml
-
-from tatsh_misc_utils import naming
 
 from .adp import calculate_salary
 from .chromium import fix_chromium_pwa_icon

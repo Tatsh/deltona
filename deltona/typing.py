@@ -43,7 +43,7 @@ def contains_type_path_like_str(type_hints: Any) -> bool:
 def assert_not_none(var: _T | None) -> _T:
     """
     Assert the ``var`` is not None and return it.
-    
+
     This will remove ``| None`` from type ``_T``.
     """
     assert var is not None

@@ -1,15 +1,18 @@
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock
 
-from pytest_mock import MockerFixture
-import github
-import pytest
-
-from tatsh_misc_utils.git import (
+from deltona.git import (
     convert_git_ssh_url_to_https,
     get_github_default_branch,
     merge_dependabot_pull_requests,
 )
+import github
+import pytest
+
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
 
 
 def test_convert_git_ssh_url_to_https() -> None:
@@ -28,7 +31,7 @@ def test_get_github_default_branch(mocker: MockerFixture, monkeypatch: pytest.Mo
     monkeypatch.setattr('github.Github', mock_github)
     mock_repo.remote.return_value.url = 'git@github.com:user/repo.git'
     mock_github.return_value.get_repo.return_value.default_branch = 'main'
-    result = get_github_default_branch(repo=mock_repo, token='fake_token')  # noqa: S106
+    result = get_github_default_branch(repo=mock_repo, token='fake_token')
     assert result == 'main'
     mock_github.return_value.get_repo.assert_called_once_with('user/repo')
 
@@ -43,7 +46,7 @@ def test_merge_dependabot_pull_requests_success(mocker: MockerFixture,
     mock_github_repo.get_pulls.return_value = [Mock(user=Mock(login='dependabot[bot]'), number=1)]
     mock_github_repo.get_pull.return_value.merge.return_value.merged = True
     monkeypatch.setattr('github.Github', mock_github)
-    merge_dependabot_pull_requests(token='fake_token')  # noqa: S106
+    merge_dependabot_pull_requests(token='fake_token')
     mock_github_repo.get_pull.assert_called_once_with(1)
     mock_github_repo.get_pull.return_value.merge.assert_called_once_with(merge_method='rebase')
 
@@ -60,7 +63,7 @@ def test_merge_dependabot_pull_requests_no_dependabot(mocker: MockerFixture,
     mock_github_repo.security_and_analysis.dependabot_security_updates.status = 'disabled'
     mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
     monkeypatch.setattr('github.Github', mock_github)
-    merge_dependabot_pull_requests(token='fake_token')  # noqa: S106
+    merge_dependabot_pull_requests(token='fake_token')
     mock_github_repo.get_pulls.assert_not_called()
 
 
@@ -78,6 +81,6 @@ def test_merge_dependabot_pull_requests_should_raise(mocker: MockerFixture,
     mock_github_repo.get_pull.return_value.merge.side_effect = raise_ghe
     monkeypatch.setattr('github.Github', mock_github)
     with pytest.raises(RuntimeError):
-        merge_dependabot_pull_requests(token='fake_token')  # noqa: S106
+        merge_dependabot_pull_requests(token='fake_token')
     mock_github_repo.get_pull.assert_called_once_with(1)
     mock_github_repo.get_pull.return_value.merge.assert_called_once_with(merge_method='rebase')
