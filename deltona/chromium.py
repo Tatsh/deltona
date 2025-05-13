@@ -1,3 +1,4 @@
+"""Chromium-related functions."""
 from __future__ import annotations
 
 from functools import cache
@@ -24,6 +25,11 @@ def fix_chromium_pwa_icon(config_path: StrPath,
     See Also
     --------
     https://issues.chromium.org/issues/40595456
+
+    Raises
+    ------
+    ValueError
+        If the icon is not square.
     """
     from PIL import Image  # noqa: PLC0415
     config_path = Path(config_path) / profile / 'Web Applications' / app_id

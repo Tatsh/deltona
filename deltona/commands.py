@@ -1,3 +1,4 @@
+"""Commands."""
 from __future__ import annotations
 
 from copy import deepcopy
@@ -102,7 +103,7 @@ from .typing import (
     DecodeErrorsOption,
     INCITS38Code,
     ProbeDict,
-    StreamDispositionDict,
+    _StreamDispositionDict,
 )
 from .ultraiso import (
     InsufficientArguments,
@@ -145,7 +146,7 @@ log = logging.getLogger(__name__)
               help='Wait time in seconds.',
               metavar='TIME')
 def wait_for_disc_main(drive_path: Path, wait_time: float = 1.0) -> None:
-    """Wait for a disc in a drive to be ready."""
+    """Wait for a disc in a drive to be ready."""  # noqa: DOC501
     if not wait_for_disc(str(drive_path), sleep_time=wait_time):
         raise click.Abort
 
@@ -165,7 +166,7 @@ def adp_main(hours: int = 160, pay_rate: float = 70.0, state: INCITS38Code = 'FL
     click.echo(str(calculate_salary(hours=hours, pay_rate=pay_rate, state=state)))
 
 
-class CDDATimeStringParamType(click.ParamType):
+class _CDDATimeStringParamType(click.ParamType):
     name = 'cdda_time_string'
 
     @override
@@ -178,13 +179,13 @@ class CDDATimeStringParamType(click.ParamType):
 
 @click.command(context_settings=CONTEXT_SETTINGS,
                epilog='Example invocation: add-cdda-times 01:02:73 02:05:09')
-@click.argument('times', nargs=-1, type=CDDATimeStringParamType())
+@click.argument('times', nargs=-1, type=_CDDATimeStringParamType())
 def add_cdda_times_main(times: tuple[str, ...]) -> None:
     """Add CDDA timestamps together.
 
     A CDDA timestamp is 3 zero-prefixed integers MM:SS:FF, separated by colons. FF is the number of
     frames out of 75.
-    """
+    """  # noqa: DOC501
     if (result := add_cdda_times(times)) is None:
         raise click.Abort
     click.echo(result)
@@ -208,6 +209,7 @@ def where_from_main(files: Sequence[Path], *, webpage: bool = False) -> None:
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('file', type=click.File('r'), default=sys.stdin)
 def is_ascii_main(file: TextIO) -> None:
+    """Check if a file is ASCII."""  # noqa: DOC501
     if not is_ascii(file.read()):
         raise click.exceptions.Exit(1)
 
@@ -224,6 +226,7 @@ def is_ascii_main(file: TextIO) -> None:
 def urldecode_main(file: TextIO,
                    encoding: str = 'utf-8',
                    errors: DecodeErrorsOption = 'strict') -> None:
+    """Decode a URL-encoded string."""
     is_netloc = Path(sys.argv[0]).stem == 'netloc'
     for line in file:
         val = unquote_plus(line, encoding, errors)
@@ -235,6 +238,7 @@ def urldecode_main(file: TextIO,
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('file', type=click.File('r'), default=sys.stdin)
 def underscorize_main(file: TextIO) -> None:
+    """Convert a string to an underscorised form."""
     for line in file:
         click.echo(underscorize(line.strip()))
 
@@ -441,7 +445,7 @@ def ultraiso_main(ahide: str | None = None,
     CLI interface to UltraISO.
 
     On non-Windows, runs UltraISO via Wine.
-    """
+    """  # noqa: DOC501
     kwargs = {'prefix': prefix} if prefix and not IS_WINDOWS else {}
     logging.basicConfig(level=logging.ERROR if not debug else logging.DEBUG)
     try:
@@ -571,7 +575,7 @@ def pl2json_main(file: BytesIO) -> None:
 
     This command does not do any type conversions. This means files containing <data> objects will
     not work.
-    """
+    """  # noqa: DOC501
     try:
         click.echo(json.dumps(plistlib.load(file), sort_keys=True, allow_nan=False, indent=2))
     except TypeError as e:
@@ -596,7 +600,7 @@ def git_checkout_default_branch_main(username: str,
 
     To set a token, ``keyring set tmu-github-api "${USER}"``. The token must have
     access to the public_repo or repo scope.
-    """
+    """  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
     token = keyring.get_password('tmu-github-api', username)
     if not token:
@@ -633,7 +637,7 @@ def git_rebase_default_branch_main(username: str,
 
     To set a token, ``keyring set tmu-github-api "${USER}"``. The token must have
     access to the public_repo or repo scope.
-    """
+    """  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
     token = keyring.get_password('tmu-github-api', username)
     if not token:
@@ -669,7 +673,7 @@ def is_bin_main(file: BytesIO) -> None:
     For this utility, 0 byte files do not count as binary.
 
     Exit code 0 means the file probably contains binary content.
-    """
+    """  # noqa: DOC501
     if ((file.name and (p := Path(file.name)) and p.exists() and p.stat().st_size == 0)
             and is_binary_string(file.read(1024))):
         return
@@ -681,6 +685,7 @@ def is_bin_main(file: BytesIO) -> None:
 @click.option('--mpv-command', default='mpv', help='mpv command including arguments.')
 @click.argument('files', type=click.Path(path_type=Path), nargs=-1)
 def umpv_main(files: Sequence[Path], mpv_command: str = 'mpv', *, debug: bool = False) -> int:
+    """Run a single instance of mpv."""  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
     fixed_files = ((p if is_url(p) else str(p.resolve(strict=True))) for p in files)
     socket_path = str(user_state_path() / 'umpv-socket')
@@ -731,7 +736,7 @@ def connect_g603_main(device_name: str = 'hci0', *, debug: bool = False) -> None
 
     This is useful for connecting the mouse back when it randomly decides not to re-pair, and you
     have no other mouse but you can get to your terminal.
-    """
+    """  # noqa: DOC501
     if not IS_LINUX:
         click.echo('Only Linux is supported.', err=True)
         raise click.Abort
@@ -802,7 +807,7 @@ def connect_g603_main(device_name: str = 'hci0', *, debug: bool = False) -> None
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.argument('device')
 def supported_audio_input_formats_main(device: str, *, debug: bool = False) -> None:
-    """Get supported input formats and sample rates by invoking ffmpeg."""
+    """Get supported input formats and sample rates by invoking ffmpeg."""  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
     try:
         for format_, rate in supported_audio_input_formats(device):
@@ -816,6 +821,7 @@ def supported_audio_input_formats_main(device: str, *, debug: bool = False) -> N
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.argument('filename', type=click.Path(exists=True, dir_okay=False, path_type=Path), nargs=-1)
 def add_info_json_main(filename: Sequence[Path], *, debug: bool = False) -> None:
+    """Embed info.json in a media file."""
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
     for f in filename:
         add_info_json_to_media_file(f, debug=debug)
@@ -825,6 +831,7 @@ def add_info_json_main(filename: Sequence[Path], *, debug: bool = False) -> None
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.argument('filename', type=click.Path(exists=True, dir_okay=False, path_type=Path))
 def display_info_json_main(filename: Path, *, debug: bool = False) -> None:
+    """Display embedded info.json in a media file."""  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
     try:
         click.echo(get_info_json(filename, raw=True))
@@ -850,6 +857,7 @@ def audio2vid_main(audio_filename: Path,
                    debug: bool = False,
                    nvenc: bool = False,
                    videotoolbox: bool = False) -> None:
+    """Create a video with static text and audio."""
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
     create_static_text_video(audio_filename,
                              text,
@@ -862,6 +870,7 @@ def audio2vid_main(audio_filename: Path,
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('file', type=click.File('r'), default=sys.stdin)
 def fullwidth2ascii_main(file: TextIO) -> None:
+    """Convert fullwidth characters to ASCII."""
     click.echo(fullwidth_to_narrow(file.read()), nl=False)
 
 
@@ -869,6 +878,7 @@ def fullwidth2ascii_main(file: TextIO) -> None:
 @click.argument('file', type=click.File('r'), default=sys.stdin)
 @click.option('--no-lower', is_flag=True, help='Disable lowercase.')
 def slugify_main(file: TextIO, *, no_lower: bool = False) -> None:
+    """Slugify a string."""
     click.echo(slugify(file.read(), no_lower=no_lower))
 
 
@@ -880,6 +890,7 @@ def slug_rename_main(filenames: tuple[str, ...],
                      *,
                      no_lower: bool = False,
                      verbose: bool = False) -> None:
+    """Rename a file to a slugified version."""
     for name in filenames:
         target = slug_rename(name, no_lower=no_lower)
         if verbose:
@@ -953,7 +964,7 @@ def mkwineprefix_main(prefix_name: str,
     Create a Wine prefix with custom settings.
 
     This should be used with eval: eval $(mkwineprefix ...)
-    """
+    """  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
     try:
         target = create_wine_prefix(prefix_name,
@@ -1012,7 +1023,7 @@ def wineshell_main(prefix_name: str, *, debug: bool = False) -> None:
     Start a new shell with WINEPREFIX set up.
 
     For Bash and similar shells only.
-    """
+    """  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
     target = (Path(prefix_name) if Path(prefix_name).exists() else
               Path('~/.local/share/wineprefixes').expanduser() / prefix_name)
@@ -1036,6 +1047,7 @@ def wineshell_main(prefix_name: str, *, debug: bool = False) -> None:
 @click.argument('filenames', nargs=-1)
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 def mvid_rename_main(filenames: tuple[str, ...], *, debug: bool = False) -> None:
+    """Rename music video files."""
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
     for filename in filenames:
         path = Path(filename).resolve(strict=True)
@@ -1067,7 +1079,7 @@ def merge_dependabot_prs_main(username: str,
                               delay: int = 120,
                               *,
                               debug: bool = False) -> None:
-    """Merge pull requests made by Dependabot on GitHub."""
+    """Merge pull requests made by Dependabot on GitHub."""  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
     if not (token := keyring.get_password('tmu-github-api', username)):
         click.echo('No token.', err=True)
@@ -1169,7 +1181,7 @@ def upload_to_imgbb_main(filenames: Sequence[Path],
     Upload image to ImgBB.
 
     Get an API key at https://api.imgbb.com/ and set it with `keyring set imgbb "${USER}"`.
-    """
+    """  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
     if xdg_install:
         prefix = str(Path('~/.local').expanduser()) if xdg_install == '-' else xdg_install
@@ -1278,7 +1290,7 @@ def ripcd_main(drive: Path = DEFAULT_DRIVE_SR0,
     Requires cdparanoia and flac to be in PATH.
 
     For Linux only.
-    """
+    """  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
     try:
         rip_cdda_to_flac(drive,
@@ -1319,7 +1331,7 @@ def flacted_main(files: tuple[str, ...],
                  *,
                  debug: bool = False,
                  delete_all_before: bool = False) -> None:
-    """Front-end to metaflac to set common tags."""
+    """Front-end to metaflac to set common tags."""  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
 
     def metaflac(*args: Any, **kwargs: Any) -> sp.CompletedProcess[str]:
@@ -1473,7 +1485,7 @@ def winegoginstall_main(args: Sequence[str],
     This calls the installer with the following arguments:
 
     /CLOSEAPPLICATIONS /FORCECLOSEAPPLICATIONS /NOCANCEL /NORESTART /SILENT
-    """
+    """  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
     if 'DISPLAY' not in environ or 'XAUTHORITY' not in environ:
         log.warning('Wine will likely fail to run since DISPLAY or XAUTHORITY are not in the '
@@ -1602,7 +1614,7 @@ def encode_dashcam_main(front_dir: Path,
     Example use:
 
         encode-dashcam Movie_F/ Movie_R/ ~/output_dir
-    """
+    """  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
     if Path(front_dir).resolve(strict=True) == Path(rear_dir).resolve(strict=True):
         click.echo('Front and rear directories are the same.', err=True)
@@ -1654,7 +1666,7 @@ def burnrariso_main(rar_filename: Path,
                     debug: bool = False,
                     no_crc_check: bool = False,
                     test_extraction: bool = False) -> None:
-    """Burns an ISO found in a RAR file via piping."""
+    """Burns an ISO found in a RAR file via piping."""  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
     rar_path = Path(rar_filename)
     unrar = UnRAR(unrar_path)
@@ -1710,6 +1722,7 @@ def title_fixer_main(titles: tuple[str, ...],
                      arabic: bool = False,
                      no_names: bool = False,
                      ampersands: bool = False) -> None:
+    """Fix titles."""  # noqa: DOC501
     modes = (
         *((naming.Mode.Arabic,) if arabic else ()),
         *((naming.Mode.Chinese,) if chinese else ()),
@@ -1743,7 +1756,7 @@ def chrome_bisect_flags_main(local_state_path: Path,
     Determine which flag is causing an issue in Chrome or any Chromium-based browser.
 
     Only supports removing flags (setting back to default) and not setting them to 'safe' values.
-    """
+    """  # noqa: DOC501
     flags_min_len = 2
 
     def start_test(flags: Sequence[str], local_state: ChromeLocalState) -> tuple[bool, str | None]:
@@ -1819,12 +1832,13 @@ def mpv_sbs_main(filenames: tuple[Path, Path],
                  min_width: int = 31,
                  *,
                  debug: bool = False) -> None:
+    """Display two videos side by side in mpv."""
     @overload
     def get_prop(prop: Literal['codec_type'], info: ProbeDict) -> Literal['audio', 'video']:
         ...
 
     @overload
-    def get_prop(prop: Literal['disposition'], info: ProbeDict) -> StreamDispositionDict:
+    def get_prop(prop: Literal['disposition'], info: ProbeDict) -> _StreamDispositionDict:
         ...
 
     @overload
@@ -1832,7 +1846,7 @@ def mpv_sbs_main(filenames: tuple[Path, Path],
         ...
 
     def get_prop(prop: Literal['codec_type', 'disposition', 'height', 'width'],
-                 info: ProbeDict) -> Literal['audio', 'video'] | StreamDispositionDict | int:
+                 info: ProbeDict) -> Literal['audio', 'video'] | _StreamDispositionDict | int:
         return max((x for x in info['streams'] if x['codec_type'] == 'video'),
                    key=lambda x: x['disposition'].get('default', 0))[prop]
 
@@ -1896,6 +1910,7 @@ def hlg2sdr_main(filename: Path,
                  debug: bool = False,
                  delete_after: bool = False,
                  fast: bool = False) -> None:
+    """Convert a HLG video to SDR."""
     logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
     hlg_to_sdr(filename, crf, codec, output, fast=fast, delete_after=delete_after)
 
@@ -1938,6 +1953,7 @@ def tbc2srt_main(filename: Path, input_json: Path | None = None, *, debug: bool 
 @click.argument('directory', type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 def flac_dir_finalize_main(directory: Path, *, debug: bool = False) -> None:
+    """Finalise a FLAC album directory."""
     def get_flac_tags(flac_path: Path) -> Iterator[tuple[str, str]]:
         def _split_eq(x: str) -> tuple[str, str] | None:
             y = x.split('=', 1)

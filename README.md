@@ -22,8 +22,6 @@
 
 A lot of uncategorised utilities.
 
-Beware that this project's license is GPL if you use the unidecode extra.
-
 ## Installation
 
 ### Poetry
@@ -36,4 +34,12 @@ poetry add deltona
 
 ```shell
 pip install deltona
+```
+
+## Usage
+
+Add `-d` to show debug logs.
+
+```shell
+deltona
 ```

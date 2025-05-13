@@ -1,3 +1,4 @@
+"""General I/O functions."""
 from __future__ import annotations
 
 from binascii import crc32
@@ -32,7 +33,14 @@ def context_os_open(path: StrPath,
                     mode: int = 511,
                     *,
                     dir_fd: int | None = None) -> Iterator[int]:
-    """Context-managed file descriptor opener."""
+    """
+    Context-managed file descriptor opener.
+
+    Yields
+    ------
+    int
+        File descriptor.
+    """
     f = os.open(path, flags, mode, dir_fd=dir_fd)
     yield f
     os.close(f)
@@ -75,6 +83,15 @@ def extract_rar_from_zip(zip_file: ZipFile) -> Iterator[str]:
 
 
 def unpack_ebook(path: StrPath) -> None:
+    """
+    Unpack a specially packed eBook file.
+
+    Raises
+    ------
+    ValueError
+    NotADirectoryError
+    FileExistsError
+    """
     def unrar_x(rar: StrPath) -> None:
         sp.run(('unrar', 'x', '-y', str(rar)), capture_output=True, check=True)
 
@@ -123,7 +140,14 @@ GOG_OFFSET_RE = re.compile(r'offset=`head -n (\d+?) "\$0"')
 
 
 def extract_gog(filename: StrPath, output_dir: StrPath) -> None:
-    """Extract a Linux gog.com archive."""
+    """
+    Extract a Linux gog.com archive.
+
+    Raises
+    ------
+    ValueError
+        If the file is not a valid GOG archive.
+    """
     output_dir = Path(output_dir)
     input_path = Path(filename).resolve(strict=True)
     with input_path.open('rb') as game_bin:
@@ -197,12 +221,28 @@ class UnRAR:
 
     @contextlib.contextmanager
     def pipe(self, rar: StrPath, inner_filename: str) -> Iterator[sp.Popen[bytes]]:
+        """
+        Start of the pipe of the RAR's content.
+
+        Yields
+        ------
+        sp.Popen[bytes]
+            Handle to the ``unrar`` process.
+        """
         with sp.Popen((self.unrar_path, 'p', '-y', '-inul', str(rar), inner_filename),
                       stdout=sp.PIPE,
                       close_fds=True) as p:
             yield p
 
     def test_extraction(self, rar: StrPath, inner_filename: str | None = None) -> None:
+        """
+        Test extraction.
+
+        Raises
+        ------
+        UnRARExtractionTestFailed
+            If the extraction test fails.
+        """
         try:
             sp.run((self.unrar_path, 't', '-y', '-inul', rar,
                     *((inner_filename,) if inner_filename else ())),
@@ -211,6 +251,14 @@ class UnRAR:
             raise UnRARExtractionTestFailed from e
 
     def list_files(self, rar: StrPath) -> Iterator[RARInfo]:
+        """
+        List files.
+
+        Yields
+        ------
+        RARInfo
+            Information about a file in the RAR archive.
+        """
         for mm in (m for line in sp.run(
             (self.unrar_path, 'l', '-y',
              rar), text=True, check=True, capture_output=True).stdout.splitlines()
@@ -229,7 +277,14 @@ class SFVVerificationError(Exception):
 
 
 def verify_sfv(sfv_file: StrPath) -> None:
-    """Verify an SFV file."""
+    """
+    Verify an SFV file.
+
+    Raises
+    ------
+    SFVVerificationError
+        If the CRC32 checksum does not match.
+    """
     sfv_file = Path(sfv_file)
     with sfv_file.open(encoding='utf-8') as f:
         for line in (lj for lj in (li.split(';', 1)[0].split('#', 1)[0].strip() for li in f

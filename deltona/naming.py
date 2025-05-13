@@ -1,3 +1,4 @@
+"""Name utilities."""
 from __future__ import annotations
 
 from enum import IntEnum
@@ -85,6 +86,7 @@ NAMES_TO_FIX = {
 
 
 class Mode(IntEnum):
+    """Mode to operate in."""
     English = 1
     Japanese = 1 << 1
     Chinese = 1 << 2
@@ -99,7 +101,7 @@ MODE_MAP = {
 }
 
 
-def get_name(word: str, names: dict[str, str] = NAMES_TO_FIX) -> str | None:
+def _get_name(word: str, names: dict[str, str] = NAMES_TO_FIX) -> str | None:
     word = word.lower()
     for name, output in names.items():
         if name.lower() == word:
@@ -123,7 +125,7 @@ def adjust_title(words: str,
     """
     original_words = words.strip().split()
     word_list = words.strip().title().split()
-    name = get_name(word_list[0], names=names)
+    name = _get_name(word_list[0], names=names)
     if name is not None:
         title = [name]
     elif word_list[0].upper() == original_words[0]:
@@ -142,7 +144,7 @@ def adjust_title(words: str,
         for word in word_list[1:]:
             new_word = word
             if disable_names is False:
-                name = get_name(new_word, names=names)
+                name = _get_name(new_word, names=names)
                 if name is not None:
                     try:
                         title[index] = name

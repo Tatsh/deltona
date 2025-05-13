@@ -14,6 +14,7 @@ arkit
 asio
 assocs
 autodoc
+automodule
 beautifulsoup
 biha
 bihi
@@ -22,6 +23,7 @@ binaryornot
 bluez
 bootfile
 bootinfotable
+bsky
 burnfree
 burnrariso
 cabac
@@ -244,6 +246,7 @@ rssi
 rstcheck
 rstuvwxyz
 schemafile
+sdist
 segoe
 sendline
 setpts
@@ -264,7 +267,6 @@ taskmgr
 tatsh
 testpaths
 tmpfs
-toctree
 tonemap
 topdown
 totalallowances
@@ -280,6 +282,7 @@ uiso
 ultrabold
 ultraiso
 umpv
+underscorised
 underscorize
 unidecode
 uninhibit

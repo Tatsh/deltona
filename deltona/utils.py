@@ -58,6 +58,11 @@ log = logging.getLogger(__name__)
 
 
 def add_cdda_times(times: Iterable[str] | None) -> str | None:
+    """
+    Add CDDA time strings and get a total runtime in CDDA format.
+
+    CDDA format is ``MM:SS:FF`` where ``MM`` is minutes, ``SS`` is seconds, and ``FF`` is frames.
+    """
     if not times:
         return None
     total_ms = 0.0
@@ -170,6 +175,10 @@ def create_wine_prefix(prefix_name: str,
     Create a Wine prefix with custom settings.
 
     If winetricks is not installed, the ``tricks`` argument will be ignored.
+
+    Raises
+    ------
+    FileExistsError
     """
     tricks = list((t for t in tricks
                    if t not in WINETRICKS_VERSION_MAPPING.values() and not t.startswith('vd=')
@@ -426,6 +435,7 @@ def secure_move_path(client: SSHClient,
                      dry_run: bool = False,
                      preserve_stats: bool = False,
                      write_into: bool = False) -> None:
+    """Like ``scp`` but moves the file."""
     log.debug('Source: "%s", remote target: "%s"', filename, remote_target)
 
     def mkdir_ignore_existing(sftp: SFTPClient, td: str, times: tuple[float, float]) -> None:

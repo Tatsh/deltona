@@ -68,6 +68,11 @@ def supported_audio_input_formats(
     -------
     tuple[tuple[str, int], ...]
         A tuple of ``(format, rate)`` tuples.
+
+    Raises
+    ------
+    OSError
+        If the device is not found or busy.
     """
     ret = []
     for format_ in formats:
@@ -292,6 +297,11 @@ def create_static_text_video(audio_file: StrPath,
 
     virtualbox : bool
         Use VideoToolbox.
+
+    Raises
+    ------
+    ValueError
+    CalledProcessError
     """
     if nvenc and videotoolbox:
         msg = 'nvenc and videotoolbox parameters are exclusive. Only one can be set to True.'
@@ -388,6 +398,7 @@ def get_cd_disc_id(drive: StrPath) -> str:
     ------
     NotImplementedError
         If not on Linux.
+    OSError
 
     Returns
     -------
@@ -438,6 +449,7 @@ def get_cd_disc_id(drive: StrPath) -> str:
 
 
 class CDDBQueryResult(NamedTuple):
+    """CDDB query result."""
     artist: str
     album: str
     year: int
@@ -584,6 +596,11 @@ def rip_cdda_to_flac(drive: StrPath,
         will be stripped and only non-empty lines will trigger the callback.
     username: str | None
         Username for CDDB. Defaults to current username.
+
+    Raises
+    ------
+    CalledProcessError
+        If ``cdparanoia`` fails.
     """
     result = cddb_query(get_cd_disc_id(drive),
                         app='deltona rip_cdda',
@@ -747,8 +764,6 @@ def archive_dashcam_footage(front_dir: StrPath,
 
     Raises
     ------
-    FileExistsError
-        If an output file exists and ``overwrite`` is not ``True``.
     ValueError
         ``zip()`` is used to group pairs of file groups and the front and rear videos. Strict mode
         is used and as such length counts must always match, unless a workaround is known. If a
@@ -757,7 +772,7 @@ def archive_dashcam_footage(front_dir: StrPath,
     .. ffmpeg crop filter: https://ffmpeg.org/ffmpeg-filters.html#crop
     .. ffmpeg setpts filter: https://ffmpeg.org/ffmpeg-filters.html#setpts_002c-asetpts
     .. strptime() Format Codes: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
-    """
+    """  # noqa: DOC501, DOC502
     front_dir = Path(front_dir)
     rear_dir = Path(rear_dir)
     output_dir = Path(output_dir)

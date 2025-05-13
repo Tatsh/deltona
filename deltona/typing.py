@@ -1,3 +1,4 @@
+"""Typing helpers."""
 from __future__ import annotations
 
 from enum import IntEnum
@@ -9,9 +10,20 @@ import typing
 if typing.TYPE_CHECKING:
     from collections.abc import Sequence
 
-__all__ = ('CDStatus', 'DecodeErrorsOption', 'FileDescriptorOrPath', 'INCITS38Code', 'ProbeDict',
-           'StrOrBytesPath', 'StrPath', 'StreamDispositionDict', 'StreamsDict', 'UNIXStrPath',
-           'assert_not_none', 'contains_type_path_like_str')
+__all__ = (
+    'CDStatus',
+    'DecodeErrorsOption',
+    'FileDescriptorOrPath',
+    'INCITS38Code',
+    'ProbeDict',
+    'StrOrBytesPath',
+    'StrPath',
+    'UNIXStrPath',
+    '_StreamDispositionDict',
+    '_StreamsDict',
+    'assert_not_none',
+    'contains_type_path_like_str',
+)
 
 DecodeErrorsOption = Literal['ignore', 'replace', 'strict']
 INCITS38Code = Literal['AK', 'AL', 'AR', 'AS', 'AZ', 'CA', 'CO', 'CT', 'DC', 'DE', 'FL', 'FM', 'GA',
@@ -29,6 +41,7 @@ _T = TypeVar('_T')
 
 
 class CDStatus(IntEnum):
+    """CD status codes."""
     DISC_OK = 4
     DRIVE_NOT_READY = 3
     NO_DISC = 1
@@ -37,6 +50,7 @@ class CDStatus(IntEnum):
 
 
 def contains_type_path_like_str(type_hints: Any) -> bool:
+    """Check if a type hint contains ``os.PathLike[str]``."""
     return os.PathLike[str] in typing.get_args(type_hints)
 
 
@@ -59,27 +73,28 @@ class ChromeLocalState(TypedDict):
     browser: ChromeLocalStateBrowser
 
 
-class StreamDispositionDict(TypedDict):
+class _StreamDispositionDict(TypedDict):
     default: Literal[0, 1]
 
 
-class TagsDict(TypedDict):
+class _TagsDict(TypedDict):
     info_json: NotRequired[str]
     TXXX: NotRequired[str]
 
 
-class StreamsDict(TypedDict):
+class _StreamsDict(TypedDict):
     codec_type: Literal['audio', 'video']
-    disposition: StreamDispositionDict
+    disposition: _StreamDispositionDict
     height: int
-    tags: TagsDict
+    tags: _TagsDict
     width: int
 
 
-class FormatDict(TypedDict):
-    tags: TagsDict
+class _FormatDict(TypedDict):
+    tags: _TagsDict
 
 
 class ProbeDict(TypedDict):
-    format: FormatDict
-    streams: Sequence[StreamsDict]
+    """FFmpeg probe result returned by :py:func:`deltona.media.ffprobe`."""
+    format: _FormatDict
+    streams: Sequence[_StreamsDict]

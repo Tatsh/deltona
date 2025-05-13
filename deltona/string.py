@@ -1,3 +1,4 @@
+"""String utilities."""
 # ruff: noqa: RUF001
 from __future__ import annotations
 
@@ -59,7 +60,19 @@ def is_ascii(s: Sequence[str]) -> bool:
 
 
 def hexstr2bytes_generator(s: str) -> Iterator[int]:
-    """Convert a hex string such as ``"01020a"`` to integers."""
+    """
+    Convert a hex string such as ``"01020a"`` to integers.
+
+    Yields
+    ------
+    int
+        The integers in the hex string.
+
+    Raises
+    ------
+    ValueError
+        If the string is not a valid hex string.
+    """
     for hex_num in batched(s, 2):
         if len(hex_num) != 2:  # noqa: PLR2004
             raise ValueError(hex_num)
@@ -321,6 +334,13 @@ def rev_sentence(w: str) -> str:
 
 
 def rev_sentences(sentences: Sequence[str]) -> Iterator[str]:
-    """Reverse sentences by word."""
+    """
+    Reverse sentences by word.
+
+    Yields
+    ------
+    str
+        The reversed sentences.
+    """
     for line in (x.strip() for x in sentences if x.strip()):
         yield rev_sentence(line)

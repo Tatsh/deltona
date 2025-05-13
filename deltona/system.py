@@ -1,3 +1,4 @@
+"""System utilities."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -70,11 +71,6 @@ def inhibit_notifications(name: str = __name__, reason: str = 'No reason specifi
     -------
     bool
         ``True`` if inhibited, ``False`` otherwise.
-
-    Raises
-    ------
-    ConnectionError
-        If D-Bus connection is not available (which can be caused by not having pydbus installed).
     """
     global _key  # noqa: PLW0603
     try:
@@ -216,6 +212,7 @@ def pan_disconnect(device_mac: str, hci: str = 'hci0') -> None:
 
 
 def slug_rename(path: StrPath, *, no_lower: bool = False) -> StrPath:
+    """Perform a slug rename on a file or directory."""
     path = Path(path).resolve(strict=True)
     parent = path.parent
     return path.rename(parent / slugify(path.name, no_lower=no_lower))
@@ -274,6 +271,11 @@ def reset_tpm_enrollment(uuid: str, *, dry_run: bool = True) -> None:
     Reset the systemd-cryptsetup TPM enrolment for a device.
 
     Requires root privileges.
+
+    Raises
+    ------
+    MultipleKeySlots
+        If the device has more than one keyslot.
     """
     dev = f'/dev/disk/by-uuid/{uuid}'
     cmd = ('cryptsetup', 'luksDump', '--dump-json-metadata', dev)

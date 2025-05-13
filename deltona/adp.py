@@ -1,8 +1,8 @@
-#!/usr/bin/env python
+"""Salary calculator."""
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Final, TypedDict, cast, override
+from typing import TYPE_CHECKING, TypedDict, cast, override
 
 import requests
 
@@ -15,10 +15,10 @@ __all__ = ('SalaryResponse', 'calculate_salary')
 
 # Find the API key by looking at requests on this page
 # http://www.symmetry.com/try-it-for-free/calculators
-API_KEY: Final[str] = 'RnFqNFA0NVlRTExEenRwWjNiRnJrTXY4WkZHZEpkcENEeFFzQ3F0Nnh5VT0='
-POST_URI: Final[str] = ('https://calculators.symmetry.com/api/calculators/'
-                        'hourly?report=none')
-REFERER: Final[str] = 'https://www.symmetry.com/'
+API_KEY = 'RnFqNFA0NVlRTExEenRwWjNiRnJrTXY4WkZHZEpkcENEeFFzQ3F0Nnh5VT0='
+POST_URI = ('https://calculators.symmetry.com/api/calculators/'
+            'hourly?report=none')
+REFERER = 'https://www.symmetry.com/'
 
 
 class ContentDict(TypedDict):
@@ -34,6 +34,7 @@ class ResponseDict(TypedDict):
 
 
 class SalaryResponse:
+    """Response from the Symmetry API."""
     def __init__(self, *, federal: float, fica: float, gross: float, medicare: float,
                  net_pay: float, state: float) -> None:
         self.federal = federal
@@ -62,6 +63,7 @@ def calculate_salary(*,
                      hours: int = 70,
                      pay_rate: float = 70.0,
                      state: INCITS38Code = 'FL') -> SalaryResponse:
+    """Calculate a US salary using the Symmetry API."""
     check_date = int(datetime.now(tz=UTC).timestamp() * 1000)
     gross_pay = hours * pay_rate
     req = requests.post(POST_URI,

@@ -1,3 +1,4 @@
+"""Git and Github-related utilities."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -32,6 +33,7 @@ def get_github_default_branch(*,
                               token: str,
                               base_url: str | None = None,
                               origin_name: str = 'origin') -> str:
+    """Get the default branch of a GitHub repository."""
     import github  # noqa: PLC0415
     return github.Github(token, base_url=base_url or github.Consts.DEFAULT_BASE_URL).get_repo(
         urlparse(convert_git_ssh_url_to_https(
@@ -44,7 +46,13 @@ def merge_dependabot_pull_requests(
     affiliation: str = 'owner',
     base_url: str | None = None,
 ) -> None:
-    """Merge pull requests made by Dependabot on GitHub."""
+    """
+    Merge pull requests made by Dependabot on GitHub.
+
+    Raises
+    ------
+    RuntimeError
+    """
     import github  # noqa: PLC0415
 
     def uses_dependabot(repo: Repository) -> bool:

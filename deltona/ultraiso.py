@@ -1,3 +1,4 @@
+"""UltraISO wrapper."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -178,7 +179,14 @@ def run_ultraiso(
         Set a file or directory (full path) to be extracted.
     list_ : StrPath | None
         Create a list of files and directores in an ISO image.
-    """
+
+    Raises
+    ------
+    InsufficientArguments
+        If not enough arguments are passed.
+    FileNotFoundError
+        If the UltraISO executable cannot be found.
+    """  # noqa: DOC501
     if (actual_exe_path := get_ultraiso_path(prefix)) is None:
         raise FileNotFoundError
     env = {}
@@ -284,6 +292,17 @@ def patch_ultraiso_font(exe: Path, font_name: str = 'Noto Sans') -> None:
 
     Must use the original executable. This will use a backup file if present if it has the suffix
     ``.exebak``.
+
+    Raises
+    ------
+    ValueError
+        If the font name is too long.
+    FileNotFoundError
+        If the executable does not exist.
+    IsADirectoryError
+        If the executable is a directory.
+    InvalidExec
+        If the executable is not the original UltraISO executable.
     """
     if len(font_name) > ULTRAISO_FONT_REPLACEMENT_MAX_LENGTH:
         msg = f'Font name too long. Max length is {ULTRAISO_FONT_REPLACEMENT_MAX_LENGTH}.'

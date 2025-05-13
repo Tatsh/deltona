@@ -1,3 +1,4 @@
+"""Windows utilities."""
 from __future__ import annotations
 
 from struct import pack
@@ -254,6 +255,7 @@ MAX_LINE_LENGTH = 78
 
 
 class NameTooLong(Exception):
+    """Raised when a font name is longer than 64 characters."""
     def __init__(self, name: str) -> None:
         super().__init__(self, f'{name} length exceeds 64 characters.')
 
@@ -329,6 +331,11 @@ def make_font_entry(field: Field,
     Returns
     -------
     str : A string composed of multiple lines for use in a ``.reg`` file.
+
+    Raises
+    ------
+    NameTooLong
+        If the font name is longer than 64 characters.
     """  # noqa: E501
     if len(name) > LF_FULLFACESIZE:
         raise NameTooLong(name)

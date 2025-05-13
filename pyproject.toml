@@ -14,7 +14,7 @@ classifiers = [
 ]
 description = "A lot of uncategorised utilities."
 dynamic = ["dependencies", "requires-python"]
-keywords = ["command line", "file management", "git", "multimedia"]
+keywords = ["bluetooth", "command line", "file management", "git", "multimedia"]
 license = "MIT"
 name = "deltona"
 readme = "README.md"
@@ -102,20 +102,18 @@ documentation = "https://deltona.readthedocs.org"
 homepage = "https://tatsh.github.io/deltona/"
 repository = "https://github.com/Tatsh/deltona"
 
-[tool]
-
 [tool.commitizen]
 tag_format = "v$version"
 version_files = [
   ".wiswa.jsonnet",
   "CITATION.cff",
   "README.md",
-  "package.json",
   "deltona/__init__.py",
+  "docs/index.rst",
+  "man/deltona.1",
+  "package.json",
 ]
 version_provider = "pep621"
-
-[tool.coverage]
 
 [tool.coverage.report]
 exclude_also = ["if TYPE_CHECKING:"]
@@ -148,46 +146,60 @@ strict_optional = true
 warn_unreachable = true
 
 [tool.poetry]
-include = ["man"]
+include = ["man", { format = "sdist", path = "tests" }]
 
 [tool.poetry.dependencies]
-beautifulsoup4 = "^4.13.3"
-binaryornot = "^0.4.4"
-click = "^8.2.0"
+click = "^8.1.8"
 colorlog = "^6.9.0"
-html5lib = "^1.1"
-keyring = "^25.6.0"
-mutagen = "^1.47.0"
-pexpect = "^4.9.0"
-platformdirs = "^4.3.7"
-pyperclip = "^1.9.0"
 python = ">=3.10,<3.14"
-python-xz = "^0.5.0"
-pyyaml = "^6.0.2"
-requests = "^2.32.3"
-send2trash = "^1.8.3"
-types-binaryornot = "^0.4.0.20250507"
 typing-extensions = "^4.13.1"
-yt-dlp = "^2025.3.25"
-yt-dlp-utils = "^0"
+
+[tool.poetry.dependencies.beautifulsoup4]
+optional = true
+version = "^4.13.3"
+
+[tool.poetry.dependencies.binaryornot]
+optional = true
+version = "^0.4.4"
 
 [tool.poetry.dependencies.gitpython]
 optional = true
 version = "^3.1.44"
 
+[tool.poetry.dependencies.html5lib]
+optional = true
+version = "^1.1"
+
+[tool.poetry.dependencies.keyring]
+optional = true
+version = "^25.6.0"
+
+[tool.poetry.dependencies.mutagen]
+optional = true
+version = "^1.47.0"
+
 [tool.poetry.dependencies.paramiko]
 optional = true
 version = "^3.5.1"
 
+[tool.poetry.dependencies.pexpect]
+optional = true
+version = "^4.9.0"
+
 [tool.poetry.dependencies.pillow]
 optional = true
 version = "^11.1.0"
+
+[tool.poetry.dependencies.platformdirs]
+optional = true
+version = "^4.3.7"
 
 [tool.poetry.dependencies.psutil]
 optional = true
 version = "^7.0.0"
 
 [tool.poetry.dependencies.pydbus]
+optional = true
 platform = "linux"
 version = "^0.6.0"
 
@@ -196,20 +208,49 @@ optional = true
 version = "^2.6.1"
 
 [tool.poetry.dependencies.pygobject]
+optional = true
 platform = "linux"
 version = "^3.52.3"
+
+[tool.poetry.dependencies.pyperclip]
+optional = true
+version = "^1.9.0"
+
+[tool.poetry.dependencies.python-xz]
+optional = true
+version = "^0.5.0"
+
+[tool.poetry.dependencies.pyyaml]
+optional = true
+version = "^6.0.2"
+
+[tool.poetry.dependencies.requests]
+optional = true
+version = "^2.32.3"
+
+[tool.poetry.dependencies.send2trash]
+optional = true
+version = "^1.8.3"
 
 [tool.poetry.dependencies.unidecode]
 optional = true
 version = "^1.3.8"
 
-[tool.poetry.group]
+[tool.poetry.extras]
+chrome = ["beautifulsoup4", "html5lib", "pillow"]
+git = ["gitpython", "pygithub", "keyring"]
+imgbb = ["keyring", "pyperclip", "requests"]
+media = ["mutagen", "platformdirs", "requests", "send2trash"]
+misc = ["send2trash"]
+string = ["binaryornot", "unidecode", "pyyaml"]
+system = ["psutil", "pydbus", "pygobject", "paramiko"]
+wine = ["python-xz", "pexpect", "platformdirs", "psutil"]
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-commitizen = "^4.7.0"
+commitizen = "^4.6.2"
 djlint = "^1.36.4"
 mypy = ">=1.12,<1.16"
 pydbus-stubs = "^0"
@@ -281,8 +322,6 @@ reportShadowedImports = "error"
 reportUnnecessaryTypeIgnoreComment = "none"
 typeCheckingMode = "off"
 useLibraryCodeForTypes = false
-
-[tool.pytest]
 
 [tool.pytest.ini_options]
 mock_use_standalone_module = true
