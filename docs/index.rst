@@ -80,8 +80,8 @@ A lot of uncategorised utilities.
 Commands
 --------
 
-.. click:: deltona.main:main
-   :prog: deltona
+.. click:: deltona.commands:ultraiso_main
+   :prog: ultraiso
    :nested: full
 
 .. only:: html

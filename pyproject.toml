@@ -153,6 +153,7 @@ click = "^8.1.8"
 colorlog = "^6.9.0"
 python = ">=3.10,<3.14"
 typing-extensions = "^4.13.1"
+yt-dlp = { optional = true, version = "^2025.4.30" }
 
 [tool.poetry.dependencies.beautifulsoup4]
 optional = true
@@ -242,7 +243,7 @@ git = ["gitpython", "pygithub", "keyring"]
 imgbb = ["keyring", "pyperclip", "requests"]
 media = ["mutagen", "platformdirs", "requests", "send2trash"]
 misc = ["send2trash"]
-string = ["binaryornot", "unidecode", "pyyaml"]
+string = ["binaryornot", "unidecode", "pyyaml", "yt-dlp"]
 system = ["psutil", "pydbus", "pygobject", "paramiko"]
 wine = ["python-xz", "pexpect", "platformdirs", "psutil"]
 
@@ -256,6 +257,7 @@ mypy = ">=1.12,<1.16"
 pydbus-stubs = "^0"
 ruff = "^0.11.8"
 types-beautifulsoup4 = "^4.12.0.20250204"
+types-binaryornot = "^0.4.0.20250507"
 types-paramiko = "^3.5.0.20240928"
 types-pexpect = "^4.9.0.20241208"
 types-pillow = "^10.2.0.20240822"
@@ -299,6 +301,7 @@ mock = "^5.2.0"
 pytest = "^8.3.5"
 pytest-cov = "^6.1.1"
 pytest-mock = "^3.14.0"
+requests-mock = "^1.12.1"
 
 [tool.poetry.group.tests.dependencies.coveralls]
 python = "<3.13"

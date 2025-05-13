@@ -97,6 +97,7 @@
       poetry+: {
         dependencies+: {
           'python-xz': { optional: true, version: '^0.5.0' },
+          'yt-dlp': { optional: true, version: '^2025.4.30' },
           beautifulsoup4: { optional: true, version: '^4.13.3' },
           binaryornot: { optional: true, version: '^0.4.4' },
           gitpython: { optional: true, version: '^3.1.44' },
@@ -124,7 +125,7 @@
           imgbb: ['keyring', 'pyperclip', 'requests'],
           media: ['mutagen', 'platformdirs', 'requests', 'send2trash'],
           misc: ['send2trash'],
-          string: ['binaryornot', 'unidecode', 'pyyaml'],
+          string: ['binaryornot', 'unidecode', 'pyyaml', 'yt-dlp'],
           system: ['psutil', 'pydbus', 'pygobject', 'paramiko'],
           wine: ['python-xz', 'pexpect', 'platformdirs', 'psutil'],
         },
@@ -133,6 +134,7 @@
             dependencies+: {
               'pydbus-stubs': '^0',
               'types-beautifulsoup4': '^4.12.0.20250204',
+              'types-binaryornot': '^0.4.0.20250507',
               'types-paramiko': '^3.5.0.20240928',
               'types-pexpect': '^4.9.0.20241208',
               'types-pillow': '^10.2.0.20240822',
@@ -142,6 +144,11 @@
               'types-requests': '^2.32.0.20250306',
               'types-send2trash': '^1.8.2.7',
               'yt-dlp-types': '^0',
+            },
+          },
+          tests+: {
+            dependencies+: {
+              'requests-mock': '^1.12.1',
             },
           },
         },
