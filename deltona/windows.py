@@ -42,8 +42,8 @@ class ClipPrecision(enum.IntEnum):
     """Specifies default clipping behaviour."""
     CLIP_DFA_DISABLE = 0x40
     """
-    Windows XP SP1: Turns off font association for the font. Note that this flag is not guaranteed
-    to have any effect on any platform after Windows Server 2003.
+    Turns off font association for the font. Note that this flag is not guaranteed to have any
+    effect on any platform after Windows Server 2003.
     """
     CLIP_EMBEDDED = 0x80
     """You must specify this flag to use an embedded read-only font."""

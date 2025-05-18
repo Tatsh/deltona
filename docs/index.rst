@@ -346,6 +346,12 @@ Commands
 
 .. only:: html
 
+   .. automodule:: deltona.adp
+      :members:
+
+   .. automodule:: deltona.chromium
+      :members:
+
    .. automodule:: deltona.constants
       :members:
 
