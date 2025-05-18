@@ -1,5 +1,7 @@
 build:
-  apt_packages: []
+  apt_packages:
+    - 'libcairo2-dev'
+    - 'libgirepository-2.0-dev'
   jobs:
     post_install:
       - 'pip install poetry'
