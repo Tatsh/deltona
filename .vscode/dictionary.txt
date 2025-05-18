@@ -78,7 +78,6 @@ eeyore
 enoent
 enrollment
 enrollments
-erdantic
 esbenp
 esbonio
 esync
@@ -258,6 +257,7 @@ sirikit
 slugified
 sphinxcontrib
 spouseblindness
+strptime
 suppressmsgboxes
 syswow
 tahoma

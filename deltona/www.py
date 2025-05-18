@@ -25,15 +25,16 @@ from .string import hexstr2bytes
 from .system import IS_LINUX
 
 if TYPE_CHECKING:
+
     from .typing import FileDescriptorOrPath, StrPath
 
 __all__ = (
     'BookmarksDataset',
+    'BookmarksHTMLAnchorAttributes',
+    'BookmarksHTMLFolder',
+    'BookmarksHTMLFolderAttributes',
+    'BookmarksHTMLLink',
     'RecurseBookmarksHTMLCallback',
-    '_BookmarksHTMLAnchorAttributes',
-    '_BookmarksHTMLFolder',
-    '_BookmarksHTMLFolderAttributes',
-    '_BookmarksHTMLLink',
     'check_bookmarks_html_urls',
     'generate_html_dir_tree',
     'parse_bookmarks_html',
@@ -140,35 +141,40 @@ def stripped_strings_fixed(child: Tag) -> str:
     return re.sub(r'\s+', ' ', ' '.join(child.stripped_strings))
 
 
-class _BookmarksHTMLAnchorAttributes(TypedDict):
+class BookmarksHTMLAnchorAttributes(TypedDict):
+    """Attributes of a bookmark link."""
     add_date: str
     href: str
     icon: NotRequired[str]
 
 
-class _BookmarksHTMLFolderAttributes(TypedDict):
+class BookmarksHTMLFolderAttributes(TypedDict):
+    """Attributes of a bookmark folder."""
     add_date: str
     last_modified: str
     personal_toolbar_folder: NotRequired[Literal['true']]
 
 
-class _BookmarksHTMLLink(TypedDict):
-    attrs: _BookmarksHTMLAnchorAttributes
+class BookmarksHTMLLink(TypedDict):
+    """A bookmark link."""
+    attrs: BookmarksHTMLAnchorAttributes
     title: str
     type: Literal['link']
 
 
-class _BookmarksHTMLFolder(TypedDict):
-    attrs: _BookmarksHTMLFolderAttributes
-    children: list[_BookmarksHTMLLink | _BookmarksHTMLFolder]
+class BookmarksHTMLFolder(TypedDict):
+    """A bookmark folder."""
+    attrs: BookmarksHTMLFolderAttributes
+    children: list[BookmarksHTMLLink | BookmarksHTMLFolder]
     name: str
     type: Literal['folder']
 
 
-BookmarksDataset = list[_BookmarksHTMLFolder | _BookmarksHTMLLink]
+BookmarksDataset = list[BookmarksHTMLFolder | BookmarksHTMLLink]
+"""Bookmark top structure."""
 
 RecurseBookmarksHTMLCallback = Callable[
-    [_BookmarksHTMLAnchorAttributes, str, list[tuple[str, _BookmarksHTMLFolderAttributes]]], None]
+    [BookmarksHTMLAnchorAttributes, str, Sequence[tuple[str, BookmarksHTMLFolderAttributes]]], None]
 """Callback for :py:func:`recurse_bookmarks_html` to call for each link."""
 
 
@@ -181,26 +187,26 @@ def recurse_bookmarks_html(soup: Tag, callback: RecurseBookmarksHTMLCallback) ->
             case 'dl' | 'dt' | 'html' | 'body':
                 recurse_bookmarks_html(child, callback)
             case 'a':
-                folder_path: list[tuple[str, _BookmarksHTMLFolderAttributes]] = []
+                folder_path: list[tuple[str, BookmarksHTMLFolderAttributes]] = []
                 for parent in child.parents:
                     if parent.name == 'dl' and (h3 := parent.find_previous_sibling('h3')):
                         assert isinstance(h3, Tag)
                         folder_path.append((stripped_strings_fixed(h3),
-                                            cast('_BookmarksHTMLFolderAttributes', h3.attrs)))
+                                            cast('BookmarksHTMLFolderAttributes', h3.attrs)))
                         for par in h3.parents:
                             if par.name == 'dl' and (par_h3 := par.find_previous_sibling('h3')):
                                 assert isinstance(par_h3, Tag)
                                 folder_path.insert(
                                     0, (stripped_strings_fixed(par_h3),
-                                        cast('_BookmarksHTMLFolderAttributes', par_h3.attrs)))
+                                        cast('BookmarksHTMLFolderAttributes', par_h3.attrs)))
                         break
-                callback(cast('_BookmarksHTMLAnchorAttributes', child.attrs),
+                callback(cast('BookmarksHTMLAnchorAttributes', child.attrs),
                          stripped_strings_fixed(child), folder_path)
 
 
 def create_parsed_tree_structure(
-        folder_path: list[tuple[str, _BookmarksHTMLFolderAttributes]],
-        data: BookmarksDataset) -> list[_BookmarksHTMLFolder | _BookmarksHTMLLink]:
+        folder_path: Sequence[tuple[str, BookmarksHTMLFolderAttributes]],
+        data: BookmarksDataset) -> list[BookmarksHTMLFolder | BookmarksHTMLLink]:
     keys = [f[0] for f in folder_path]
     ref = data
     # This breaks for folders that are named the same at the same depth
@@ -208,7 +214,7 @@ def create_parsed_tree_structure(
         try:
             next(x for x in ref if x['type'] == 'folder' and x['name'] == key)
         except StopIteration:
-            new_level: _BookmarksHTMLFolder = {
+            new_level: BookmarksHTMLFolder = {
                 'attrs': folder_path[i][1],
                 'children': [],
                 'name': key,
@@ -221,10 +227,11 @@ def create_parsed_tree_structure(
 
 def parse_bookmarks_html(html_content: str) -> BookmarksDataset:
     """Parse a browser's exported ``bookmarks.html``."""
+    from bs4 import BeautifulSoup as Soup  # noqa: PLC0415
     data: BookmarksDataset = []
 
-    def callback(attrs: _BookmarksHTMLAnchorAttributes, title: str,
-                 folder_path: list[tuple[str, _BookmarksHTMLFolderAttributes]]) -> None:
+    def callback(attrs: BookmarksHTMLAnchorAttributes, title: str,
+                 folder_path: Sequence[tuple[str, BookmarksHTMLFolderAttributes]]) -> None:
         ref = create_parsed_tree_structure(folder_path, data)
         ref.append({'type': 'link', 'title': title, 'attrs': attrs})
 
@@ -256,10 +263,10 @@ def check_bookmarks_html_urls(
         'user_agent': generate_chrome_user_agent()
     })
 
-    def callback(attrs: _BookmarksHTMLAnchorAttributes, title: str,
-                 folder_path: list[tuple[str, _BookmarksHTMLFolderAttributes]]) -> None:
+    def callback(attrs: BookmarksHTMLAnchorAttributes, title: str,
+                 folder_path: Sequence[tuple[str, BookmarksHTMLFolderAttributes]]) -> None:
         ref = create_parsed_tree_structure(folder_path, data)
-        new_data: _BookmarksHTMLLink = {'type': 'link', 'title': title, 'attrs': attrs}
+        new_data: BookmarksHTMLLink = {'type': 'link', 'title': title, 'attrs': attrs}
         if 'href' in attrs and re.match(r'^https?://', attrs['href']):
             log.debug('HEAD %s', attrs['href'])
             r = session.head(attrs['href'])

@@ -87,7 +87,7 @@ def run_ultraiso(
         get: str | None = None,
         list_: StrPath | None = None,
         prefix: StrPathMustExist = DEFAULT_WINE_PREFIX) -> None:
-    """
+    r"""
     Run UltraISO in a convenient way.
 
     Despite always passing ``-silent`` to the application, windows including ones requiring
@@ -177,7 +177,7 @@ def run_ultraiso(
         Extract ISO image to specified directory.
     get : str | None
         Set a file or directory (full path) to be extracted.
-    list_ : StrPath | None
+    list\_ : StrPath | None
         Create a list of files and directores in an ISO image.
 
     Raises

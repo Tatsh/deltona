@@ -10,8 +10,6 @@ import os
 import re
 import string
 
-from yt_dlp.utils import sanitize_filename
-
 from .typing import StrPath, assert_not_none
 
 if TYPE_CHECKING:
@@ -127,6 +125,7 @@ def sanitize(s: str, *, restricted: bool = True) -> str:
     str
         Returns a transformed string, which will be at minimum ``'_'``.
     """
+    from yt_dlp.utils import sanitize_filename  # noqa: PLC0415
     return re.sub(
         r'([a-z0-9])\-s\-', r'\1s-',
         re.sub(r'\.-', '-',

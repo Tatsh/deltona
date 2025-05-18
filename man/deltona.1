@@ -27,13 +27,2372 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "DELTONA" "1" "May 15, 2025" "0.0.0" "deltona"
+.TH "DELTONA" "1" "May 18, 2025" "0.0.0" "deltona"
 .SH NAME
 deltona \- deltona v0.0.0
 .sp
 A lot of uncategorised utilities.
 .SH COMMANDS
-.SS ultraiso
+.SS add\-cdda\-times
+.sp
+Add CDDA timestamps together.
+.sp
+A CDDA timestamp is 3 zero\-prefixed integers MM:SS:FF, separated by colons. FF is the number of
+frames out of 75.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+add\-cdda\-times [OPTIONS] [TIMES]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B TIMES
+Optional argument(s)
+.UNINDENT
+.sp
+Example invocation: add\-cdda\-times 01:02:73 02:05:09
+.SS add\-info\-json
+.sp
+Embed info.json in a media file.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+add\-info\-json [OPTIONS] [FILENAME]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILENAME
+Optional argument(s)
+.UNINDENT
+.SS adp
+.sp
+Calculate US salary.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+adp [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-H, \-\-hours <HOURS>
+Hours worked in a month.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-r, \-\-pay\-rate <DOLLARS>
+Dollars per hour.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-s, \-\-state <STATE>
+US state abbreviation.
+.INDENT 7.0
+.TP
+.B Options
+AK | AL | AR | AS | AZ | CA | CO | CT | DC | DE | FL | FM | GA | GU | HI | IA | ID | IL | IN | KS | KY | LA | MA | MD | ME | MH | MI | MN | MO | MP | MS | MT | NC | ND | NE | NH | NJ | NM | NV | NY | OH | OK | OR | PA | PR | PW | RI | SC | SD | TN | TX | UM | UT | VA | VI | VT | WA | WI | WV | WY
+.UNINDENT
+.UNINDENT
+.SS audio2vid
+.sp
+Create a video with static text and audio.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+audio2vid [OPTIONS] AUDIO_FILENAME TEXT
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-f, \-\-font <font>
+Font to use.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-n, \-\-nvenc
+Use NVENC.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-V, \-\-videotoolbox
+Use VideoToolbox.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B AUDIO_FILENAME
+Required argument
+.UNINDENT
+.INDENT 0.0
+.TP
+.B TEXT
+Required argument
+.UNINDENT
+.SS burnrariso
+.sp
+Burns an ISO found in a RAR file via piping.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+burnrariso [OPTIONS] RAR_FILENAME
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-no\-crc\-check
+Disable CRC check.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-test\-extraction
+Enable extraction test.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-D, \-\-device\-name <device_name>
+Device name.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-s, \-\-speed <speed>
+Disc write speed.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-sfv <sfv>
+SFV file.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-cdrecord\-path <cdrecord_path>
+Path to cdrecord.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-unrar\-path <unrar_path>
+Path to unrar.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B RAR_FILENAME
+Required argument
+.UNINDENT
+.SS cddb\-query
+.sp
+Display a CDDB result in a simple JSON format.
+.sp
+Does not handle if result is not an exact match.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+cddb\-query [OPTIONS] [ARGS]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-H, \-\-host <HOST>
+CDDB hostname.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B ARGS
+Optional argument(s)
+.UNINDENT
+.SS check\-bookmarks\-html
+.sp
+Check for URLs that are not valid any more (status 404) and redirections.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+check\-bookmarks\-html [OPTIONS] FILENAME
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILENAME
+Required argument
+.UNINDENT
+.SS chrome\-bisect\-flags
+.sp
+Determine which flag is causing an issue in Chrome or any Chromium\-based browser.
+.sp
+Only supports removing flags (setting back to default) and not setting them to \(aqsafe\(aq values.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-bisect\-flags [OPTIONS] LOCAL_STATE_PATH
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-s, \-\-subprocess\-name <subprocess_name>
+Chromium\-based browser subprocess name such as \(dqchrome\(dq
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-sleep\-time <sleep_time>
+Time to sleep after attempting to kill the browser processes in seconds.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B LOCAL_STATE_PATH
+Optional argument
+.UNINDENT
+.SS clean\-old\-kernels\-modules
+.sp
+Remove inactive kernels and modules.
+.sp
+By default, removes old Linux sources from /usr/src.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+clean\-old\-kernels\-modules [OPTIONS] [PATH]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-active\-kernel\-name <active_kernel_name>
+Kernel name like \(dqlinux\(dq.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-m, \-\-modules\-path <modules_path>
+Location where modules get installed, such as \(dq/lib/modules\(dq.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug logging.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B PATH
+Optional argument
+.UNINDENT
+.SS connect\-g603
+.sp
+Connect a G603 Bluetooth mouse, disconnecting/removing first if necessary.
+.sp
+For Linux only.
+.sp
+This is useful for connecting the mouse back when it randomly decides not to re\-pair, and you
+have no other mouse but you can get to your terminal.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+connect\-g603 [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-device <device_name>
+Bluetooth device (defaults to hci0).
+.UNINDENT
+.SS display\-info\-json
+.sp
+Display embedded info.json in a media file.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+display\-info\-json [OPTIONS] FILENAME
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILENAME
+Required argument
+.UNINDENT
+.SS encode\-dashcam
+.sp
+Batch encode dashcam footage, merging rear and front camera footage.
+.sp
+This command\(aqs defaults are intended for use with Red Tiger dashcam output and file structure.
+.sp
+The rear camera view will be placed in the bottom right of the video scaled by dividing the
+width and height by the \-\-rear\-view\-scale\-divisor value specified. It will also be cropped using
+the \-\-rear\-crop value unless \-\-no\-rear\-crop is passed.
+.sp
+Files are automatically grouped using the regular expression passed with \-M/\-\-match\-regexp. This
+RE must contain at least one group and only the first group will be considered. Make dubious use
+of non\-capturing groups if necessary. The captured group string is expected to be usable with
+the time format specified with \-\-time\-format (see strptime documentation at
+\X'tty: link https://docs.python.org/3/library/datetime.html#datetime.datetime.strptime'\fI\%https://docs.python.org/3/library/datetime.html#datetime.datetime.strptime\fP\X'tty: link').
+.sp
+In many cases, the camera leaves behind stray rear camera files (usually no more than one per
+group and always a video without a matching front video file the end). These are automatically
+ignored if possible. This behaviour can be disabled by passing \-\-no\-fix\-groups.
+.sp
+Original files\(aq whose content is successfully converted are sent to the wastebin.
+.sp
+Example use:
+.INDENT 0.0
+.INDENT 3.5
+encode\-dashcam Movie_F/ Movie_R/ ~/output_dir
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+encode\-dashcam [OPTIONS] FRONT_DIR REAR_DIR [OUTPUT_DIR]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-clip\-length <clip_length>
+Clip length in minutes.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-hwaccel <hwaccel>
+\-hwaccel string for ffmpeg.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-level <level>
+Level (HEVC).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-fix\-groups
+Disable group discrepancy resolution.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-hwaccel
+Disable hardware decoding.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-rear\-crop
+Disable rear video cropping.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-setpts
+Disable use of setpts.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-preset <preset>
+Output preset (various codecs).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-rear\-crop <rear_crop>
+Crop string for the rear camera view.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-rear\-view\-scale\-divisor <rear_view_scale_divisor>
+Scaling divisor for rear view.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-setpts <setpts>
+setpts= string. Defaults to speeding video by 4x.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-tier <tier>
+Tier (HEVC).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-time\-format <FORMAT>
+Time format to parse from video files.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-video\-bitrate <BITRATE>
+Video bitrate.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-video\-decoder <DECODER>
+Video decoder (for hardware decoding only).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-video\-encoder <ENCODER>
+Video encoder.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-video\-max\-bitrate <BITRATE>
+Maximum video bitrate.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-M, \-\-match\-regexp <RE>
+Regular expression to find the date string.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-O, \-\-overwrite
+Overwrite existing files.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-T, \-\-temp\-dir <temp_dir>
+Temporary directory for processing.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FRONT_DIR
+Required argument
+.UNINDENT
+.INDENT 0.0
+.TP
+.B REAR_DIR
+Required argument
+.UNINDENT
+.INDENT 0.0
+.TP
+.B OUTPUT_DIR
+Optional argument
+.UNINDENT
+.SS fix\-pwa\-icon
+.sp
+Fix a Chromium PWA icon that failed to sync.
+.sp
+For more information see \X'tty: link https://issues.chromium.org/issues/40595456'\fI\%https://issues.chromium.org/issues/40595456\fP\X'tty: link'\&.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+fix\-pwa\-icon [OPTIONS] APP_ID ICON_SRC_URI
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-M, \-\-monochrome
+Copy icons to monochrome directory.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-c, \-\-config\-path <config_path>
+Chromium browser configuration path. Defaults to Google Chrome.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-m, \-\-masked
+Copy icons to masked directory.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-p, \-\-profile <profile>
+Profile name.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B APP_ID
+Required argument
+.UNINDENT
+.INDENT 0.0
+.TP
+.B ICON_SRC_URI
+Required argument
+.UNINDENT
+.SS flac\-album
+.sp
+Front\-end to metaflac to set common tags.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+flac\-album [OPTIONS] [FILES]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-A, \-\-album <album>
+Album.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-D, \-\-delete\-all\-before
+Delete all existing tags before processing.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-T, \-\-track <track>
+Track number.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-a, \-\-artist <artist>
+Track artist.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-g, \-\-genre <genre>
+Genre.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-p, \-\-picture <picture>
+Cover artwork to attach.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-t, \-\-title <title>
+Track title.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-y, \-\-year <year>
+Year.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILES
+Optional argument(s)
+.UNINDENT
+.SS flac\-artist
+.sp
+Front\-end to metaflac to set common tags.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+flac\-artist [OPTIONS] [FILES]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-A, \-\-album <album>
+Album.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-D, \-\-delete\-all\-before
+Delete all existing tags before processing.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-T, \-\-track <track>
+Track number.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-a, \-\-artist <artist>
+Track artist.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-g, \-\-genre <genre>
+Genre.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-p, \-\-picture <picture>
+Cover artwork to attach.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-t, \-\-title <title>
+Track title.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-y, \-\-year <year>
+Year.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILES
+Optional argument(s)
+.UNINDENT
+.SS flac\-dir\-finalize
+.sp
+Finalise a FLAC album directory.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+flac\-dir\-finalize [OPTIONS] DIRECTORY
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B DIRECTORY
+Required argument
+.UNINDENT
+.SS flac\-genre
+.sp
+Front\-end to metaflac to set common tags.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+flac\-genre [OPTIONS] [FILES]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-A, \-\-album <album>
+Album.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-D, \-\-delete\-all\-before
+Delete all existing tags before processing.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-T, \-\-track <track>
+Track number.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-a, \-\-artist <artist>
+Track artist.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-g, \-\-genre <genre>
+Genre.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-p, \-\-picture <picture>
+Cover artwork to attach.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-t, \-\-title <title>
+Track title.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-y, \-\-year <year>
+Year.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILES
+Optional argument(s)
+.UNINDENT
+.SS flac\-title
+.sp
+Front\-end to metaflac to set common tags.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+flac\-title [OPTIONS] [FILES]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-A, \-\-album <album>
+Album.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-D, \-\-delete\-all\-before
+Delete all existing tags before processing.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-T, \-\-track <track>
+Track number.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-a, \-\-artist <artist>
+Track artist.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-g, \-\-genre <genre>
+Genre.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-p, \-\-picture <picture>
+Cover artwork to attach.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-t, \-\-title <title>
+Track title.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-y, \-\-year <year>
+Year.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILES
+Optional argument(s)
+.UNINDENT
+.SS flac\-track
+.sp
+Front\-end to metaflac to set common tags.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+flac\-track [OPTIONS] [FILES]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-A, \-\-album <album>
+Album.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-D, \-\-delete\-all\-before
+Delete all existing tags before processing.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-T, \-\-track <track>
+Track number.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-a, \-\-artist <artist>
+Track artist.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-g, \-\-genre <genre>
+Genre.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-p, \-\-picture <picture>
+Cover artwork to attach.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-t, \-\-title <title>
+Track title.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-y, \-\-year <year>
+Year.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILES
+Optional argument(s)
+.UNINDENT
+.SS flac\-year
+.sp
+Front\-end to metaflac to set common tags.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+flac\-year [OPTIONS] [FILES]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-A, \-\-album <album>
+Album.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-D, \-\-delete\-all\-before
+Delete all existing tags before processing.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-T, \-\-track <track>
+Track number.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-a, \-\-artist <artist>
+Track artist.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-g, \-\-genre <genre>
+Genre.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-p, \-\-picture <picture>
+Cover artwork to attach.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-t, \-\-title <title>
+Track title.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-y, \-\-year <year>
+Year.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILES
+Optional argument(s)
+.UNINDENT
+.SS flacted
+.sp
+Front\-end to metaflac to set common tags.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+flacted [OPTIONS] [FILES]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-A, \-\-album <album>
+Album.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-D, \-\-delete\-all\-before
+Delete all existing tags before processing.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-T, \-\-track <track>
+Track number.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-a, \-\-artist <artist>
+Track artist.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-g, \-\-genre <genre>
+Genre.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-p, \-\-picture <picture>
+Cover artwork to attach.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-t, \-\-title <title>
+Track title.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-y, \-\-year <year>
+Year.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILES
+Optional argument(s)
+.UNINDENT
+.SS fullwidth2ascii
+.sp
+Convert fullwidth characters to ASCII.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+fullwidth2ascii [OPTIONS] [FILE]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILE
+Optional argument
+.UNINDENT
+.SS git\-checkout\-default\-branch
+.sp
+Checkout to the default branch.
+.sp
+For repositories whose origin is on GitHub only.
+.sp
+To set a token, \fBkeyring set tmu\-github\-api \(dq${USER}\(dq\fP\&. The token must have
+access to the public_repo or repo scope.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+git\-checkout\-default\-branch [OPTIONS] ORIGIN_NAME
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-b, \-\-base\-url <base_url>
+Base URL for enterprise.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-u, \-\-username <username>
+Username (passed to keyring).
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B ORIGIN_NAME
+Optional argument
+.UNINDENT
+.SS git\-co\-default\-branch
+.sp
+Checkout to the default branch.
+.sp
+For repositories whose origin is on GitHub only.
+.sp
+To set a token, \fBkeyring set tmu\-github\-api \(dq${USER}\(dq\fP\&. The token must have
+access to the public_repo or repo scope.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+git\-co\-default\-branch [OPTIONS] ORIGIN_NAME
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-b, \-\-base\-url <base_url>
+Base URL for enterprise.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-u, \-\-username <username>
+Username (passed to keyring).
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B ORIGIN_NAME
+Optional argument
+.UNINDENT
+.SS git\-open
+.sp
+Open assumed repository web representation (GitHub, GitLab, etc) based on the origin.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+git\-open [OPTIONS] [NAME]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B NAME
+Optional argument
+.UNINDENT
+.SS git\-rebase\-default\-branch
+.sp
+Rebase the current head with the default branch.
+.sp
+For repositories whose origin is on GitHub only.
+.sp
+To set a token, \fBkeyring set tmu\-github\-api \(dq${USER}\(dq\fP\&. The token must have
+access to the public_repo or repo scope.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+git\-rebase\-default\-branch [OPTIONS] ORIGIN_NAME
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-b, \-\-base\-url <base_url>
+Base URL for enterprise.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-u, \-\-username <username>
+Username (passed to keyring).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-r, \-\-remote
+Rebase with the origin copy of the default branch.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B ORIGIN_NAME
+Optional argument
+.UNINDENT
+.SS gogextract
+.sp
+Extract a Linux gog.com archive.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+gogextract [OPTIONS] FILENAME
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-o, \-\-output\-dir <output_dir>
+Output directory.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILENAME
+Required argument
+.UNINDENT
+.SS hlg2sdr
+.sp
+Convert a HLG video to SDR.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+hlg2sdr [OPTIONS] FILENAME [OUTPUT]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-codec <codec>
+Video codec.
+.INDENT 7.0
+.TP
+.B Options
+libx264 | libx265
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-crf <crf>
+CRF value.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-delete\-after
+Send processed file to wastebin.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-f, \-\-fast
+Use less filters (lower quality).
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILENAME
+Required argument
+.UNINDENT
+.INDENT 0.0
+.TP
+.B OUTPUT
+Optional argument
+.UNINDENT
+.SS htmltree
+.sp
+Generate a HTML directory listing.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+htmltree [OPTIONS] [PATH]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-depth <DEPTH>
+Maximum depth.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-f, \-\-follow\-symlinks
+Follow symbolic links.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-o, \-\-output\-file <output_file>
+Output file.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B PATH
+Optional argument
+.UNINDENT
+.SS inhibit\-notifications
+.sp
+Disable notifications state for a time.
+.sp
+On exit, notifications will be enabled. This command does nothing if notifications are already
+disabled.
+.sp
+This is an alternative to \fBkde\-inhibit\fP\&. Unlike \fBkde\-inhibit\fP, this tool may only sleep.
+A sleep time of \fB0\fP effectively does nothing.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+inhibit\-notifications [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug logging.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-t, \-\-sleep\-time <sleep_time>
+Sleep time in seconds to inhibit notifications for.
+.UNINDENT
+.SS is\-ascii
+.sp
+Check if a file is ASCII.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+is\-ascii [OPTIONS] [FILE]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILE
+Optional argument
+.UNINDENT
+.SS is\-bin
+.sp
+Check if a file has binary contents.
+.sp
+For this utility, 0 byte files do not count as binary.
+.sp
+Exit code 0 means the file probably contains binary content.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+is\-bin [OPTIONS] [FILE]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILE
+Optional argument
+.UNINDENT
+.SS json2yaml
+.sp
+Convert JSON to YAML.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+json2yaml [OPTIONS] [FILE]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-default\-flow\-style
+Enable compact flow style.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-i, \-\-indent <indent>
+Indent width (spaces).
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILE
+Optional argument
+.UNINDENT
+.SS kconfig\-to\-commands
+.sp
+Generate kwriteconfig6 commands to set (Plasma) settings from your current settings.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+kconfig\-to\-commands [OPTIONS] [FILES]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-a, \-\-all
+Find compatible files and process them.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILES
+Optional argument(s)
+.UNINDENT
+.SS ke\-ebook\-ex
+.sp
+Extract ebooks from RARs within Zip files.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+ke\-ebook\-ex [OPTIONS] [PATHS]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-D, \-\-delete\-paths
+Delete paths after extraction.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B PATHS
+Optional argument(s)
+.UNINDENT
+.SS kill\-gamescope
+.sp
+Terminate gamescope and gamescopereaper.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+kill\-gamescope [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.SS kill\-wine
+.sp
+Terminate all Wine processes.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+kill\-wine [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.SS merge\-dependabot\-prs
+.sp
+Merge pull requests made by Dependabot on GitHub.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+merge\-dependabot\-prs [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-a, \-\-affiliation <affiliation>
+Affiliation. See REST API documentation for more information.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-b, \-\-base\-url <base_url>
+Base URL for enterprise.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-delay <delay>
+Delay in seconds between attempts.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-u, \-\-username <username>
+Username.
+.UNINDENT
+.SS mkwineprefix
+.sp
+Create a Wine prefix with custom settings.
+.sp
+This should be used with eval: eval $(mkwineprefix ...)
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+mkwineprefix [OPTIONS] PREFIX_NAME
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-D, \-\-dpi <dpi>
+DPI.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-disable\-explorer
+Disable starting explorer.exe automatically.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-disable\-services
+Disable starting services.exe automatically (only useful for simple CLI programs with \-\-disable\-explorer).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-E, \-\-eax
+Enable EAX.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-g, \-\-gtk
+Enable Gtk+ theming.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-r, \-\-prefix\-root <prefix_root>
+Prefix root.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-S, \-\-sandbox
+Sandbox the prefix.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-gecko
+Disable downloading Gecko automatically.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-mono
+Disable downloading Mono automatically.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-xdg
+Disable winemenubuilder.exe.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-assocs
+Disable creating file associations, but still allow menu entries to be made (unless \-\-no\-xdg is also passed).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-N, \-\-nvapi
+Add dxvk\-nvapi.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-o, \-\-noto
+Use Noto Sans in place of most fonts.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-T, \-\-trick <tricks>
+Add an argument for winetricks.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-t, \-\-tmpfs
+Make Wine use tmpfs.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-V, \-\-windows\-version <windows_version>
+Windows version.
+.INDENT 7.0
+.TP
+.B Options
+11 | 10 | vista | 2k3 | 7 | 8 | xp | 81 | 2k | 98 | 95
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-vd <SIZE>
+Virtual desktop size, e.g. 1024x768.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-W, \-\-winrt\-dark
+Enable dark mode for WinRT apps.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-x, \-\-dxva\-vaapi
+Enable DXVA2 support with VA\-API.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-32
+Use 32\-bit prefix.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B PREFIX_NAME
+Required argument
+.UNINDENT
+.SS mp4json
+.sp
+Embed info.json in a media file.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+mp4json [OPTIONS] [FILENAME]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILENAME
+Optional argument(s)
+.UNINDENT
+.SS mp4json\-display
+.sp
+Display embedded info.json in a media file.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+mp4json\-display [OPTIONS] FILENAME
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILENAME
+Required argument
+.UNINDENT
+.SS mpv\-sbs
+.sp
+Display two videos side by side in mpv.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+mpv\-sbs [OPTIONS] FILENAMES...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILENAMES
+Required argument(s)
+.UNINDENT
+.SS mvid\-rename
+.sp
+Rename music video files.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+mvid\-rename [OPTIONS] [FILENAMES]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILENAMES
+Optional argument(s)
+.UNINDENT
+.SS netloc
+.sp
+Decode a URL\-encoded string.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+netloc [OPTIONS] [FILE]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-e, \-\-encoding <encoding>
+Text encoding.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-r, \-\-errors <errors>
+Error handling mode.
+.INDENT 7.0
+.TP
+.B Options
+ignore | replace | strict
+.UNINDENT
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILE
+Optional argument
+.UNINDENT
+.SS patch\-bundle
+.sp
+Patch a macOS/iOS/etc bundle\(aqs Info.plist file.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+patch\-bundle [OPTIONS] BUNDLE
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-E, \-\-env\-var <env_vars>
+Environment variable to set.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-r, \-\-retina <retina>
+For macOS apps, force Retina support.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B BUNDLE
+Required argument
+.UNINDENT
+.SS patch\-uiso\-font
+.sp
+Patch UltraISO\(aqs hard\-coded font.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+patch\-uiso\-font [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-e, \-\-exe <exe>
+EXE to patch.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-f, \-\-font <font>
+Font to use.
+.UNINDENT
+.SS pl2json
+.sp
+Convert a Property List file to JSON.
+.sp
+This command does not do any type conversions. This means files containing <data> objects will
+not work.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+pl2json [OPTIONS] [FILE]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILE
+Optional argument
+.UNINDENT
+.SS ripcd
+.sp
+Rip an audio disc to FLAC files.
+.sp
+Requires cdparanoia and flac to be in PATH.
+.sp
+For Linux only.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+ripcd [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-D, \-\-drive <drive>
+Optical drive path.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-M, \-\-accept\-first\-cddb\-match
+Accept the first CDDB match in case of multiple matches.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-album\-artist <album_artist>
+Album artist override.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-album\-dir <album_dir>
+Album directory name. Defaults to artist\-album\-year format.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-cddb\-host <cddb_host>
+CDDB host.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-never\-skip <never_skip>
+Passed to cdparanoia\(aqs \-\-never\-skip=... option.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-o, \-\-output\-dir <output_dir>
+Parent directory for album_dir. Defaults to current directory.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-u, \-\-username <username>
+Username for CDDB.
+.UNINDENT
+.SS sanitize
+.sp
+Transform a string to a \(aqsanitised\(aq form.
+.sp
+By default, a restricted character set safe for Windows filenames is used. Disable with \-R.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+sanitize [OPTIONS] [FILE]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-R, \-\-no\-restricted
+Do not use restricted character set.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILE
+Optional argument
+.UNINDENT
+.SS set\-wine\-fonts
+.sp
+Set all Wine fonts to be the one passed in.
+.sp
+This will run on Windows but it is not recommended to try on newer than Windows 7.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+set\-wine\-fonts [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-dpi <dpi>
+DPI. This should generally be left as 96.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-f, \-\-font <font>
+Font to use.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-s, \-\-font\-size <font_size>
+Font size in points.
+.UNINDENT
+.SS show\-info\-json
+.sp
+Display embedded info.json in a media file.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+show\-info\-json [OPTIONS] FILENAME
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILENAME
+Required argument
+.UNINDENT
+.SS slug\-rename
+.sp
+Rename a file to a slugified version.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+slug\-rename [OPTIONS] [FILENAMES]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-no\-lower
+Disable lowercase.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-v, \-\-verbose
+Enable verbose output.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILENAMES
+Optional argument(s)
+.UNINDENT
+.SS slugify
+.sp
+Slugify a string.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+slugify [OPTIONS] [FILE]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-no\-lower
+Disable lowercase.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILE
+Optional argument
+.UNINDENT
+.SS smv
+.sp
+Secure move.
+.sp
+This is similar to scp but deletes the file or directory after successful copy.
+.sp
+Always test with the \-\-dry\-run/\-y option.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+smv [OPTIONS] [FILENAMES]... TARGET
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-C
+Enable compression.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-port <port>
+Port.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-i, \-\-key <key_filename>
+Private key.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-t, \-\-timeout <timeout>
+Timeout in seconds.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-p
+Preserves modification times, access times, and file mode bits from the source file.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-y, \-\-dry\-run
+Do not copy anything. Use with \-d for testing.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILENAMES
+Optional argument(s)
+.UNINDENT
+.INDENT 0.0
+.TP
+.B TARGET
+Required argument
+.UNINDENT
+.SS supported\-audio\-input\-formats
+.sp
+Get supported input formats and sample rates by invoking ffmpeg.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+supported\-audio\-input\-formats [OPTIONS] DEVICE
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B DEVICE
+Required argument
+.UNINDENT
+.SS systemd\-reset\-tpm\-cryptenroll
+.sp
+Reset TPM enrolments that were created by systemd\-cryptenroll \-tpm2\-device=auto.
+.sp
+Requires root privileges to work.
+.sp
+Only crypttab files with UUID= entries are supported.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+systemd\-reset\-tpm\-cryptenroll [OPTIONS] [UUIDS]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-a, \-\-all
+Reset all enrolments.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-f, \-\-force
+Apply the changes.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-crypttab <crypttab>
+File to read from when passing \-\-all.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B UUIDS
+Optional argument(s)
+.UNINDENT
+.SS tbc2srt
+.sp
+Convert VBI data in a ld\-decode/vhs\-decode TBC file to SubRip format.
+.sp
+Requires the following: ld\-process\-vbi, ld\-export\-metadata, scc2raw.pl, ccextractor.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+tbc2srt [OPTIONS] FILENAME
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-input\-json <input_json>
+Input JSON file.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILENAME
+Required argument
+.UNINDENT
+.SS title\-fixer
+.sp
+Fix titles.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+title\-fixer [OPTIONS] [TITLES]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-no\-names
+Disable name checking.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-E, \-\-no\-english
+Disable English mode.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-a, \-\-arabic
+Enable Arabic mode.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-c, \-\-chinese
+Enable Chinese mode.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-japanese
+Enable Japanese mode.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-s, \-\-ampersands
+Replace \(dq and \(dq with \(dq & \(dq.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B TITLES
+Optional argument
+.UNINDENT
+.SS trim
+.sp
+Trim lines in file.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+trim [OPTIONS] [FILE]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILE
+Optional argument
+.UNINDENT
+.SS ucwords
+.sp
+Run Python \fBstr.title()\fP for lines in file.
+.sp
+Named after PHP\(aqs function.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+ucwords [OPTIONS] [FILE]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILE
+Optional argument
+.UNINDENT
+.SS uiso
 .sp
 CLI interface to UltraISO.
 .sp
@@ -42,7 +2401,7 @@ On non\-Windows, runs UltraISO via Wine.
 .INDENT 3.5
 .sp
 .EX
-ultraiso [OPTIONS]
+uiso [OPTIONS]
 .EE
 .UNINDENT
 .UNINDENT
@@ -247,6 +2606,325 @@ Create UDF DVD image (this option will overwrite all other volume settings)
 .TP
 .B \-d, \-\-debug
 Enable debug logging.
+.UNINDENT
+.SS umpv
+.sp
+Run a single instance of mpv.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+umpv [OPTIONS] [FILES]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-mpv\-command <mpv_command>
+mpv command including arguments.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILES
+Optional argument(s)
+.UNINDENT
+.SS underscorize
+.sp
+Convert a string to an underscorised form.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+underscorize [OPTIONS] [FILE]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILE
+Optional argument
+.UNINDENT
+.SS unix2wine
+.sp
+Convert a UNIX path to an absolute Wine path.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+unix2wine [OPTIONS] FILEPATH
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILEPATH
+Required argument
+.UNINDENT
+.SS unpack\-0day
+.sp
+Unpack RAR files from 0day zip file sets.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+unpack\-0day [OPTIONS] DIR
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B DIR
+Optional argument(s)
+.UNINDENT
+.SS unregister\-wine\-assocs
+.sp
+Unregister Wine file associations. Terminates all Wine processes before starting.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+unregister\-wine\-assocs [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.SS upload\-to\-imgbb
+.sp
+Upload image to ImgBB.
+.sp
+Get an API key at \X'tty: link https://api.imgbb.com/'\fI\%https://api.imgbb.com/\fP\X'tty: link' and set it with \fIkeyring set imgbb \(dq${USER}\(dq\fP\&.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+upload\-to\-imgbb [OPTIONS] [FILENAMES]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-api\-key <KEY>
+API key.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-keyring\-username <USERNAME>
+Keyring username override.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-browser
+Do not copy URL to clipboard.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-clipboard
+Do not copy URL to clipboard.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-gui
+Disable GUI interactions.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-t, \-\-timeout <TIMEOUT>
+Timeout in seconds.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-xdg\-install <PATH>
+Install .desktop file. Argument is the installation prefix such as /usr. Use \- to install to user XDG directory.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILENAMES
+Optional argument(s)
+.UNINDENT
+.SS urldecode
+.sp
+Decode a URL\-encoded string.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+urldecode [OPTIONS] [FILE]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-e, \-\-encoding <encoding>
+Text encoding.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-r, \-\-errors <errors>
+Error handling mode.
+.INDENT 7.0
+.TP
+.B Options
+ignore | replace | strict
+.UNINDENT
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILE
+Optional argument
+.UNINDENT
+.SS wait\-for\-disc
+.sp
+Wait for a disc in a drive to be ready.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+wait\-for\-disc [OPTIONS] DRIVE_PATH
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-w, \-\-wait\-time <TIME>
+Wait time in seconds.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B DRIVE_PATH
+Required argument
+.UNINDENT
+.SS where\-from
+.sp
+Display URL where a file was downloaded from.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+where\-from [OPTIONS] FILE
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-w, \-\-webpage
+Print the webpage URL (macOS only).
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILE
+Optional argument(s)
+.UNINDENT
+.SS winegoginstall
+.sp
+Silent installer for GOG InnoSetup\-based releases.
+.sp
+This calls the installer with the following arguments:
+.sp
+/CLOSEAPPLICATIONS /FORCECLOSEAPPLICATIONS /NOCANCEL /NORESTART /SILENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+winegoginstall [OPTIONS] [ARGS]... FILENAME
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-S, \-\-very\-silent
+Pass /VERYSILENT (no windows will be displayed).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-p, \-\-prefix <prefix>
+Wine prefix path or name.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B ARGS
+Optional argument(s)
+.UNINDENT
+.INDENT 0.0
+.TP
+.B FILENAME
+Required argument
+.UNINDENT
+.SS wineshell
+.sp
+Start a new shell with WINEPREFIX set up.
+.sp
+For Bash and similar shells only.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+wineshell [OPTIONS] PREFIX_NAME
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B PREFIX_NAME
+Required argument
 .UNINDENT
 .SH AUTHOR
 Andrew Udvare <audvare@gmail.com>

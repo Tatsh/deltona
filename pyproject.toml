@@ -4,12 +4,27 @@ requires = ["poetry-core"]
 
 [project]
 classifiers = [
-  "Development Status :: 2 - Pre-Alpha",
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
-  "Programming Language :: Python",
+  "Intended Audience :: End Users/Desktop",
+  "Intended Audience :: Information Technology",
+  "Intended Audience :: System Administrators",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python",
+  "Topic :: Desktop Environment :: K Desktop Environment (KDE)",
+  "Topic :: Desktop Environment",
+  "Topic :: File Formats",
+  "Topic :: Games/Entertainment",
+  "Topic :: Internet :: WWW/HTTP :: Browsers",
+  "Topic :: Multimedia",
+  "Topic :: System :: Hardware",
+  "Topic :: System :: Systems Administration",
+  "Topic :: Utilities",
   "Typing :: Typed",
 ]
 description = "A lot of uncategorised utilities."
@@ -25,76 +40,78 @@ email = "audvare@gmail.com"
 name = "Andrew Udvare"
 
 [project.scripts]
-add-cdda-times = "deltona.commands:add_cdda_times_main"
-add-info-json = "deltona.commands:add_info_json_main"
-adp = "deltona.commands:adp_main"
-audio2vid = "deltona.commands:audio2vid_main"
-burnrariso = "deltona.commands:burnrariso_main"
-cddb-query = "deltona.commands:cddb_query_main"
-check-bookmarks-html = "deltona.commands:check_bookmarks_html_main"
-chrome-bisect-flags = "deltona.commands:chrome_bisect_flags_main"
-clean-old-kernels-modules = "deltona.commands:clean_old_kernels_and_modules_main"
-connect-g603 = "deltona.commands:connect_g603_main"
-encode-dashcam = "deltona.commands:encode_dashcam_main"
-fix-pwa-icon = "deltona.commands:fix_chromium_pwa_icon_main"
-flac-album = "deltona.commands:flacted_main"
-flac-artist = "deltona.commands:flacted_main"
-flac-dir-finalize = "deltona.commands:flac_dir_finalize_main"
-flac-genre = "deltona.commands:flacted_main"
-flac-title = "deltona.commands:flacted_main"
-flac-track = "deltona.commands:flacted_main"
-flac-year = "deltona.commands:flacted_main"
-flacted = "deltona.commands:flacted_main"
-fullwidth2ascii = "deltona.commands:fullwidth2ascii_main"
-git-checkout-default-branch = "deltona.commands:git_checkout_default_branch_main"
-git-co-default-branch = "deltona.commands:git_checkout_default_branch_main"
-git-open = "deltona.commands:git_open_main"
-git-rebase-default-branch = "deltona.commands:git_rebase_default_branch_main"
-gogextract = "deltona.commands:gogextract_main"
-hlg2sdr = "deltona.commands:hlg2sdr_main"
-htmltree = "deltona.commands:generate_html_dir_tree_main"
-inhibit-notifications = "deltona.commands:inhibit_notifications_main"
-is-ascii = "deltona.commands:is_ascii_main"
-is-bin = "deltona.commands:is_bin_main"
-json2yaml = "deltona.commands:json2yaml_main"
-kconfig-to-commands = "deltona.commands:kconfig_to_commands_main"
-ke-ebook-ex = "deltona.commands:ke_ebook_ex_main"
-kill-gamescope = "deltona.commands:kill_gamescope_main"
-kill-wine = "deltona.commands:kill_wine_main"
-merge-dependabot-prs = "deltona.commands:merge_dependabot_prs_main"
-mkwineprefix = "deltona.commands:mkwineprefix_main"
-mp4json = "deltona.commands:add_info_json_main"
-mp4json-display = "deltona.commands:display_info_json_main"
-mpv-sbs = "deltona.commands:mpv_sbs_main"
-mvid-rename = "deltona.commands:mvid_rename_main"
-netloc = "deltona.commands:urldecode_main"
-patch-bundle = "deltona.commands:patch_bundle_main"
-pl2json = "deltona.commands:pl2json_main"
-ripcd = "deltona.commands:ripcd_main"
-sanitize = "deltona.commands:sanitize_main"
-set-wine-fonts = "deltona.commands:set_wine_fonts_main"
-show-info-json = "deltona.commands:display_info_json_main"
-slug-rename = "deltona.commands:slug_rename_main"
-slugify = "deltona.commands:slugify_main"
-smv = "deltona.commands:smv_main"
-supported-audio-input-formats = "deltona.commands:supported_audio_input_formats_main"
-systemd-reset-tpm-cryptenroll = "deltona.commands:reset_tpm_enrollments_main"
-tbc2srt = "deltona.commands:tbc2srt_main"
-title-fixer = "deltona.commands:title_fixer_main"
-trim = "deltona.commands:trim_main"
-ucwords = "deltona.commands:ucwords_main"
-uiso = "deltona.commands:ultraiso_main"
-umpv = "deltona.commands:umpv_main"
-underscorize = "deltona.commands:underscorize_main"
-unix2wine = "deltona.commands:unix2wine_main"
-unpack-0day = "deltona.commands:unpack_0day_main"
-unregister-wine-assocs = "deltona.commands:unregister_wine_file_associations_main"
-upload-to-imgbb = "deltona.commands:upload_to_imgbb_main"
-urldecode = "deltona.commands:urldecode_main"
-wait-for-disc = "deltona.commands:wait_for_disc_main"
-where-from = "deltona.commands:where_from_main"
-winegoginstall = "deltona.commands:winegoginstall_main"
-wineshell = "deltona.commands:wineshell_main"
+add-cdda-times = "deltona.commands.media:add_cdda_times_main"
+add-info-json = "deltona.commands.media:add_info_json_main"
+adp = "deltona.commands.misc:adp_main"
+audio2vid = "deltona.commands.media:audio2vid_main"
+burnrariso = "deltona.commands.misc:burnrariso_main"
+cddb-query = "deltona.commands.media:cddb_query_main"
+check-bookmarks-html = "deltona.commands.www:check_bookmarks_html_main"
+chrome-bisect-flags = "deltona.commands.www:chrome_bisect_flags_main"
+clean-old-kernels-modules = "deltona.commands.admin:clean_old_kernels_and_modules_main"
+connect-g603 = "deltona.commands.desktop:connect_g603_main"
+display-info-json = "deltona.commands.media:display_info_json_main"
+encode-dashcam = "deltona.commands.media:encode_dashcam_main"
+fix-pwa-icon = "deltona.commands.www:fix_chromium_pwa_icon_main"
+flac-album = "deltona.commands.media:flacted_main"
+flac-artist = "deltona.commands.media:flacted_main"
+flac-dir-finalize = "deltona.commands.media:flac_dir_finalize_main"
+flac-genre = "deltona.commands.media:flacted_main"
+flac-title = "deltona.commands.media:flacted_main"
+flac-track = "deltona.commands.media:flacted_main"
+flac-year = "deltona.commands.media:flacted_main"
+flacted = "deltona.commands.media:flacted_main"
+fullwidth2ascii = "deltona.commands.string:fullwidth2ascii_main"
+git-checkout-default-branch = "deltona.commands.git:git_checkout_default_branch_main"
+git-co-default-branch = "deltona.commands.git:git_checkout_default_branch_main"
+git-open = "deltona.commands.git:git_open_main"
+git-rebase-default-branch = "deltona.commands.git:git_rebase_default_branch_main"
+gogextract = "deltona.commands.misc:gogextract_main"
+hlg2sdr = "deltona.commands.media:hlg2sdr_main"
+htmltree = "deltona.commands.admin:generate_html_dir_tree_main"
+inhibit-notifications = "deltona.commands.desktop:inhibit_notifications_main"
+is-ascii = "deltona.commands.string:is_ascii_main"
+is-bin = "deltona.commands.string:is_bin_main"
+json2yaml = "deltona.commands.string:json2yaml_main"
+kconfig-to-commands = "deltona.commands.admin:kconfig_to_commands_main"
+ke-ebook-ex = "deltona.commands.media:ke_ebook_ex_main"
+kill-gamescope = "deltona.commands.desktop:kill_gamescope_main"
+kill-wine = "deltona.commands.wine:kill_wine_main"
+merge-dependabot-prs = "deltona.commands.git:merge_dependabot_prs_main"
+mkwineprefix = "deltona.commands.wine:mkwineprefix_main"
+mp4json = "deltona.commands.media:add_info_json_main"
+mp4json-display = "deltona.commands.media:display_info_json_main"
+mpv-sbs = "deltona.commands.desktop:mpv_sbs_main"
+mvid-rename = "deltona.commands.media:mvid_rename_main"
+netloc = "deltona.commands.string:urldecode_main"
+patch-bundle = "deltona.commands.admin:patch_bundle_main"
+patch-uiso-font = "deltona.commands.wine:patch_ultraiso_font_main"
+pl2json = "deltona.commands.string:pl2json_main"
+ripcd = "deltona.commands.media:ripcd_main"
+sanitize = "deltona.commands.string:sanitize_main"
+set-wine-fonts = "deltona.commands.wine:set_wine_fonts_main"
+show-info-json = "deltona.commands.media:display_info_json_main"
+slug-rename = "deltona.commands.admin:slug_rename_main"
+slugify = "deltona.commands.string:slugify_main"
+smv = "deltona.commands.admin:smv_main"
+supported-audio-input-formats = "deltona.commands.media:supported_audio_input_formats_main"
+systemd-reset-tpm-cryptenroll = "deltona.commands.admin:reset_tpm_enrollments_main"
+tbc2srt = "deltona.commands.media:tbc2srt_main"
+title-fixer = "deltona.commands.string:title_fixer_main"
+trim = "deltona.commands.string:trim_main"
+ucwords = "deltona.commands.string:ucwords_main"
+uiso = "deltona.commands.media:ultraiso_main"
+umpv = "deltona.commands.desktop:umpv_main"
+underscorize = "deltona.commands.string:underscorize_main"
+unix2wine = "deltona.commands.wine:unix2wine_main"
+unpack-0day = "deltona.commands.misc:unpack_0day_main"
+unregister-wine-assocs = "deltona.commands.wine:unregister_wine_file_associations_main"
+upload-to-imgbb = "deltona.commands.desktop:upload_to_imgbb_main"
+urldecode = "deltona.commands.string:urldecode_main"
+wait-for-disc = "deltona.commands.media:wait_for_disc_main"
+where-from = "deltona.commands.www:where_from_main"
+winegoginstall = "deltona.commands.wine:winegoginstall_main"
+wineshell = "deltona.commands.wine:wineshell_main"
 
 [project.urls]
 Issues = "https://github.com/Tatsh/deltona/issues"
@@ -149,19 +166,18 @@ warn_unreachable = true
 include = ["man", { format = "sdist", path = "tests" }]
 
 [tool.poetry.dependencies]
-click = "^8.1.8"
+binaryornot = "^0.4.4"
+click = "^8.2.0"
 colorlog = "^6.9.0"
+keyring = "^25.6.0"
 python = ">=3.10,<3.14"
-typing-extensions = "^4.13.1"
-yt-dlp = { optional = true, version = "^2025.4.30" }
+requests = "^2.32.3"
+send2trash = "^1.8.3"
+typing-extensions = "^4.13.2"
 
 [tool.poetry.dependencies.beautifulsoup4]
 optional = true
 version = "^4.13.3"
-
-[tool.poetry.dependencies.binaryornot]
-optional = true
-version = "^0.4.4"
 
 [tool.poetry.dependencies.gitpython]
 optional = true
@@ -170,10 +186,6 @@ version = "^3.1.44"
 [tool.poetry.dependencies.html5lib]
 optional = true
 version = "^1.1"
-
-[tool.poetry.dependencies.keyring]
-optional = true
-version = "^25.6.0"
 
 [tool.poetry.dependencies.mutagen]
 optional = true
@@ -225,37 +237,32 @@ version = "^0.5.0"
 optional = true
 version = "^6.0.2"
 
-[tool.poetry.dependencies.requests]
-optional = true
-version = "^2.32.3"
-
-[tool.poetry.dependencies.send2trash]
-optional = true
-version = "^1.8.3"
-
 [tool.poetry.dependencies.unidecode]
 optional = true
 version = "^1.3.8"
 
+[tool.poetry.dependencies.yt-dlp]
+optional = true
+version = "^2025.4.30"
+
 [tool.poetry.extras]
-chrome = ["beautifulsoup4", "html5lib", "pillow"]
-git = ["gitpython", "pygithub", "keyring"]
-imgbb = ["keyring", "pyperclip", "requests"]
-media = ["mutagen", "platformdirs", "requests", "send2trash"]
-misc = ["send2trash"]
-string = ["binaryornot", "unidecode", "pyyaml", "yt-dlp"]
-system = ["psutil", "pydbus", "pygobject", "paramiko"]
-wine = ["python-xz", "pexpect", "platformdirs", "psutil"]
+admin = ["paramiko"]
+desktop = ["pydbus", "pygobject", "pyperclip"]
+git = ["gitpython", "pygithub"]
+media = ["mutagen", "platformdirs"]
+string = ["unidecode", "pyyaml", "yt-dlp"]
+wine = ["pexpect", "platformdirs", "psutil", "python-xz"]
+www = ["beautifulsoup4", "html5lib", "pillow"]
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-commitizen = "^4.6.2"
+commitizen = "^4.7.0"
 djlint = "^1.36.4"
 mypy = ">=1.12,<1.16"
 pydbus-stubs = "^0"
-ruff = "^0.11.8"
+ruff = "^0.11.9"
 types-beautifulsoup4 = "^4.12.0.20250204"
 types-binaryornot = "^0.4.0.20250507"
 types-paramiko = "^3.5.0.20240928"
@@ -279,19 +286,22 @@ docutils = "^0.21.2"
 esbonio = "^0.16.5"
 numpydoc = "^1.8.0"
 restructuredtext-lint = "^1.4.0"
-sphinx = "<8.2.0"
 sphinx-click = "^6.0.0"
 sphinx-datatables = "^0.2.1"
 sphinx-hoverxref = "^1.4.2"
-sphinx-immaterial = "^0.13.4"
+sphinx-immaterial = "^0.13.5"
 
 [tool.poetry.group.docs.dependencies.enum-tools]
 extras = ["sphinx"]
 version = "^0.12.0"
 
-[tool.poetry.group.docs.dependencies.erdantic]
-optional = true
-version = "<2.0"
+[[tool.poetry.group.docs.dependencies.sphinx]]
+python = ">=3.11"
+version = "^8.2.0"
+
+[[tool.poetry.group.docs.dependencies.sphinx]]
+python = "<3.11"
+version = "^7.2.5"
 
 [tool.poetry.group.tests]
 optional = true

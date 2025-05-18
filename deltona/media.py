@@ -38,16 +38,17 @@ __all__ = ('CDDBQueryResult', 'add_info_json_to_media_file', 'archive_dashcam_fo
 
 log = logging.getLogger(__name__)
 
+_DEFAULT_FORMATS = ('f32be', 'f32le', 'f64be', 'f64le', 's8', 's16be', 's16le', 's24be', 's24le',
+                    's32be', 's32le', 'u8', 'u16be', 'u16le', 'u24be', 'u24le', 'u32be', 'u32le')
+_DEFAULT_RATES = (8000, 12000, 16000, 22050, 24000, 32000, 44100, 48000, 64000, 88200, 96000,
+                  128000, 176400, 192000, 352800, 384000)
+
 
 def supported_audio_input_formats(
-    input_device: str,
-    *,
-    formats: Sequence[str] = ('f32be', 'f32le', 'f64be', 'f64le', 's8', 's16be', 's16le', 's24be',
-                              's24le', 's32be', 's32le', 'u8', 'u16be', 'u16le', 'u24be', 'u24le',
-                              'u32be', 'u32le'),
-    rates: Sequence[int] = (8000, 12000, 16000, 22050, 24000, 32000, 44100, 48000, 64000, 88200,
-                            96000, 128000, 176400, 192000, 352800, 384000)
-) -> tuple[tuple[str, int], ...]:
+        input_device: str,
+        *,
+        formats: Sequence[str] = _DEFAULT_FORMATS,
+        rates: Sequence[int] = _DEFAULT_RATES) -> tuple[tuple[str, int], ...]:
     """
     Get supported input formats and sample rates by invoking ``ffmpeg``.
 
@@ -55,8 +56,8 @@ def supported_audio_input_formats(
 
     Parameters
     ----------
-    device : str
-        Device name. Platform specific. Examples: `'hw:Audio'`, 'hw:NVidia'`.
+    input_device : str
+        Device name. Platform specific. Examples: ``'hw:Audio'``, ``'hw:NVidia'``.
 
     formats : Sequence[str]
         Formats to check.
@@ -472,7 +473,7 @@ def cddb_query(disc_id: str,
     Defaults to host in Keyring under the ``gnudb`` key and current user name.
 
     It is advised to ``except`` typical
-    `Requests exceptions https://requests.readthedocs.io/en/latest/`_ when calling this.
+    `Requests exceptions <https://requests.readthedocs.io/en/latest/>`_ when calling this.
 
     Parameters
     ----------
@@ -769,10 +770,8 @@ def archive_dashcam_footage(front_dir: StrPath,
         is used and as such length counts must always match, unless a workaround is known. If a
         workaround cannot be used, this exception will be raised from ``zip()``.
 
-    .. ffmpeg crop filter: https://ffmpeg.org/ffmpeg-filters.html#crop
-    .. ffmpeg setpts filter: https://ffmpeg.org/ffmpeg-filters.html#setpts_002c-asetpts
-    .. strptime() Format Codes: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
-    """  # noqa: DOC501, DOC502
+
+    """  # noqa: DOC501
     front_dir = Path(front_dir)
     rear_dir = Path(rear_dir)
     output_dir = Path(output_dir)
