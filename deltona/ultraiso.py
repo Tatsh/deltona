@@ -286,7 +286,7 @@ class InvalidExec(Exception):
         super().__init__('Font not found in file. This is not the original UltraISO executable.')
 
 
-def patch_ultraiso_font(exe: Path, font_name: str = 'Noto Sans') -> None:
+def patch_ultraiso_font(exe: os.PathLike[str], font_name: str = 'Noto Sans') -> None:
     """
     Patch hard-coded UI font in UltraISO executable.
 
@@ -304,6 +304,7 @@ def patch_ultraiso_font(exe: Path, font_name: str = 'Noto Sans') -> None:
     InvalidExec
         If the executable is not the original UltraISO executable.
     """
+    exe = Path(exe)
     if len(font_name) > ULTRAISO_FONT_REPLACEMENT_MAX_LENGTH:
         msg = f'Font name too long. Max length is {ULTRAISO_FONT_REPLACEMENT_MAX_LENGTH}.'
         raise ValueError(msg)
