@@ -132,32 +132,8 @@ Commands
    :prog: fix-pwa-icon
    :nested: full
 
-.. click:: deltona.commands.media:flacted_main
-   :prog: flac-album
-   :nested: full
-
-.. click:: deltona.commands.media:flacted_main
-   :prog: flac-artist
-   :nested: full
-
 .. click:: deltona.commands.media:flac_dir_finalize_main
    :prog: flac-dir-finalize
-   :nested: full
-
-.. click:: deltona.commands.media:flacted_main
-   :prog: flac-genre
-   :nested: full
-
-.. click:: deltona.commands.media:flacted_main
-   :prog: flac-title
-   :nested: full
-
-.. click:: deltona.commands.media:flacted_main
-   :prog: flac-track
-   :nested: full
-
-.. click:: deltona.commands.media:flacted_main
-   :prog: flac-year
    :nested: full
 
 .. click:: deltona.commands.media:flacted_main
