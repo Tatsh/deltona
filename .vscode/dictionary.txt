@@ -49,6 +49,7 @@ codepoint
 colorlog
 commitizen
 conftest
+consolas
 coveragerc
 cryptenroll
 cryptsetup
