@@ -33,7 +33,25 @@ def get_github_default_branch(*,
                               token: str,
                               base_url: str | None = None,
                               origin_name: str = 'origin') -> str:
-    """Get the default branch of a GitHub repository."""
+    """
+    Get the default branch of a GitHub repository.
+
+    Parameters
+    ----------
+    repo : Repo
+        The Git repository.
+    token : str
+        The GitHub token.
+    base_url : str | None
+        The base URL of the GitHub API (for enterprise).
+    origin_name : str
+        The name of the remote to use. Default is 'origin'.
+
+    Returns
+    -------
+    str
+        The default branch of the repository.
+    """
     import github  # noqa: PLC0415
     return github.Github(token, base_url=base_url or github.Consts.DEFAULT_BASE_URL).get_repo(
         urlparse(convert_git_ssh_url_to_https(
@@ -48,6 +66,15 @@ def merge_dependabot_pull_requests(
 ) -> None:
     """
     Merge pull requests made by Dependabot on GitHub.
+
+    Parameters
+    ----------
+    token : str
+        The GitHub token.
+    affiliation : str
+        The affiliation to use. Default is 'owner'.
+    base_url : str | None
+        The base URL of the GitHub API (for enterprise).
 
     Raises
     ------

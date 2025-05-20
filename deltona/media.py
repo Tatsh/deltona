@@ -123,7 +123,6 @@ def add_info_json_to_media_file(path: StrPath,
     ----------
     path : StrPath
         Path to FLAC, MP3, MP4, or Opus media file.
-
     info_json : StrPath | None
         Path to ``info.json`` file. If not passed, ``path`` with suffix changed to ``info.json``
         is used.
@@ -276,6 +275,8 @@ def get_info_json(path: StrPath, *, raw: bool = False) -> Any:
 def create_static_text_video(audio_file: StrPath,
                              text: str,
                              font: str = 'Roboto',
+                             font_size: int = 150,
+                             output_file: StrPath | None = None,
                              *,
                              debug: bool = False,
                              nvenc: bool = False,
@@ -289,13 +290,16 @@ def create_static_text_video(audio_file: StrPath,
     ----------
     audio_file : StrPath
         Path to audio file.
-
     text : str
         Text to show.
-
+    font : str
+        Font to use. Defaults to Roboto.
+    font_size : int
+        Font size in pt. Defaults to 150.
+    output_file : StrPath | None
+        Output file. If not passed, a generic name will be used.
     nvenc : bool
         Use NVENC.
-
     virtualbox : bool
         Use VideoToolbox.
 
@@ -308,13 +312,15 @@ def create_static_text_video(audio_file: StrPath,
         msg = 'nvenc and videotoolbox parameters are exclusive. Only one can be set to True.'
         raise ValueError(msg)
     audio_file = Path(audio_file)
-    out = f'{audio_file.parent}/{audio_file.stem}-audio.mkv'
+    out = (Path(output_file) if output_file else
+           (Path(audio_file.parent) / f'{audio_file.stem}-video.mkv'))
     with tempfile.NamedTemporaryFile(suffix='.png', delete=False, dir=Path.cwd()) as tf:
         try:
-            sp.run(('magick', '-font', font, '-size', '1920x1080', 'xc:black', '-fill', 'white',
-                    '-pointsize', '50', '-draw', f"gravity Center text 0,0 '{text}'", tf.name),
-                   check=True,
-                   capture_output=not debug)
+            sp.run(('magick', '-font',
+                    font, '-size', '1920x1080', 'xc:black', '-fill', 'white', '-pointsize',
+                    str(font_size), '-draw', f"gravity Center text 0,0 '{text}'", tf.name),
+                   capture_output=not debug,
+                   check=True)
         except sp.CalledProcessError:
             Path(tf.name).unlink()
             raise
@@ -330,9 +336,9 @@ def create_static_text_video(audio_file: StrPath,
     else:
         args_start += ('-vcodec', 'libx265', '-crf', '20', '-level', '1', '-profile:v', 'main')
     log.debug('Output: %s', out)
-    sp.run((*args_start, '-pix_fmt', 'yuv420p', '-b:v', '1M', '-maxrate:v', '1M', out),
-           check=True,
-           capture_output=not debug)
+    sp.run((*args_start, '-pix_fmt', 'yuv420p', '-b:v', '1M', '-maxrate:v', '1M', str(out)),
+           capture_output=not debug,
+           check=True)
     Path(tf.name).unlink()
 
 

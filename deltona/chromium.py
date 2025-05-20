@@ -22,6 +22,22 @@ def fix_chromium_pwa_icon(config_path: StrPath,
     """
     Fix a Chromium PWA icon that failed to sync.
 
+    Parameters
+    ----------
+    config_path : StrPath
+        Path to the Chromium configuration directory.
+    app_id : str
+        App ID of the PWA.
+    icon_src_uri : str
+        URI of the icon source.
+    profile : str
+        Profile name. Default is ``'Default'``.
+    masked : bool
+        If ``True``, save the icon as a maskable icon. Default is ``False``.
+    monochrome : bool
+        If ``True``, save the icon as a monochrome icon. Default is ``False``.
+
+
     See Also
     --------
     https://issues.chromium.org/issues/40595456
@@ -97,7 +113,14 @@ def get_latest_chrome_major_version() -> str:
 
 @cache
 def generate_chrome_user_agent(os: str = 'Windows NT 10.0; Win64; x64') -> str:
-    """Get a Chrome user agent."""
+    """
+    Get a Chrome user agent.
+
+    Parameters
+    ----------
+    os : str
+        The operating system. Default is ``'Windows NT 10.0; Win64; x64'``.
+    """
     last_major = get_last_chrome_major_version() or get_latest_chrome_major_version()
     return (f'Mozilla/5.0 ({os}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{last_major}.0.0.0'
             ' Safari/537.36')

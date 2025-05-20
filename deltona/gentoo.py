@@ -38,10 +38,8 @@ def clean_old_kernels_and_modules(
     ----------
     path : StrPath
         Location where kernel sources are installed. Defaults to ``/usr/src``.
-
     modules_path : StrPath
         Location where modules get installed, such as ``/lib/modules``.
-
     active_kernel_name : str
         Kernel name like ``'linux'``.
 

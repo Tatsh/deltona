@@ -1,6 +1,7 @@
 """Salary calculator."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, TypedDict, cast, override
 
@@ -33,18 +34,23 @@ class ResponseDict(TypedDict):
     content: ContentDict
 
 
+@dataclass
 class SalaryResponse:
     """Response from the Symmetry API."""
-    def __init__(self, *, federal: float, fica: float, gross: float, medicare: float,
-                 net_pay: float, state: float) -> None:
-        self.federal = federal
-        self.fica = fica
-        self.fuckery = gross - net_pay
-        self.gross = gross
-        self.medicare = medicare
-        self.net_pay = net_pay
-        self.state = state
-
+    federal: float
+    """Federal tax amount."""
+    fica: float
+    """FICA tax amount."""
+    fuckery: float
+    """Difference between gross and net pay."""
+    gross: float
+    """Gross pay amount."""
+    medicare: float
+    """Medicare tax amount."""
+    net_pay: float
+    """Net pay amount."""
+    state: float
+    """State tax amount."""
     @override
     def __str__(self) -> str:
         return strip_ansi_if_no_colors(f"""Gross     \033[1;32m{self.gross:8.2f}\033[0m
@@ -63,7 +69,23 @@ def calculate_salary(*,
                      hours: int = 70,
                      pay_rate: float = 70.0,
                      state: INCITS38Code = 'FL') -> SalaryResponse:
-    """Calculate a US salary using the Symmetry API."""
+    """
+    Calculate a US salary using the Symmetry API.
+
+    Parameters
+    ----------
+    hours : int
+        The number of hours worked. Default is 70.
+    pay_rate : float
+        The pay rate per hour. Default is 70.0.
+    state : INCITS38Code
+        The state code. Default is 'FL'.
+
+    Returns
+    -------
+    SalaryResponse
+        The response from the Symmetry API.
+    """
     check_date = int(datetime.now(tz=UTC).timestamp() * 1000)
     gross_pay = hours * pay_rate
     req = requests.post(POST_URI,
@@ -144,6 +166,7 @@ def calculate_salary(*,
     data = cast('ResponseDict', req.json())['content']
     return SalaryResponse(federal=data['federal'],
                           fica=data['fica'],
+                          fuckery=gross_pay - data['netPay'],
                           gross=gross_pay,
                           medicare=data['medicare'],
                           net_pay=data['netPay'],

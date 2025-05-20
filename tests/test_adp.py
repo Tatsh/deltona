@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 def test_salary_response_str() -> None:
     response = SalaryResponse(federal=100.0,
                               fica=50.0,
+                              fuckery=175.0,
                               gross=1000.0,
                               medicare=25.0,
                               net_pay=825.0,

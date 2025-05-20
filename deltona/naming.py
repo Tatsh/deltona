@@ -51,7 +51,9 @@ STOP_WORDS = (
     'with',
     'within',
     'without')
+"""Common stop words for English."""
 ENGLISH_ORDINAL_RE = r'(\d+)(st|nd|rd|th)'
+"""Regular expression for English ordinals."""
 ENGLISH_ABBREV = ('feat', 'mr', 'mrs', 'ms', 'vs')
 """English abbreviations for period removal."""
 JAPANESE_PARTICLES = ('de', 'e', 'ga', 'ha', 'ka', 'kana', 'ne', 'ni', 'no', 'to', 'wa', 'wo')
@@ -83,14 +85,19 @@ NAMES_TO_FIX = {
     'mcdonald': 'McDonald',
     'mcdonalds': "McDonald's",
 }
+"""Common names to fix. The key is the name to fix, and the value is the fixed name."""
 
 
 class Mode(IntEnum):
     """Mode to operate in."""
     English = 1
+    """English mode."""
     Japanese = 1 << 1
+    """Japanese mode."""
     Chinese = 1 << 2
+    """Chinese mode."""
     Arabic = 1 << 3
+    """Arabic mode."""
 
 
 MODE_MAP = {
@@ -99,6 +106,7 @@ MODE_MAP = {
     Mode.English: STOP_WORDS,
     Mode.Japanese: JAPANESE_PARTICLES,
 }
+"""Map of modes to stop words or particles."""
 
 
 def _get_name(word: str, names: dict[str, str] = NAMES_TO_FIX) -> str | None:
@@ -122,6 +130,25 @@ def adjust_title(words: str,
     rules are built-in but can also be passed in the ``names`` parameter.
 
     It is far from perfect.
+
+    Parameters
+    ----------
+    words : str
+        The string to adjust.
+    modes : Iterable[Mode]
+        The modes to operate in. Default is English.
+    names : dict[str, str]
+        A dictionary of names to fix. The key is the name to fix, and the value is the fixed name.
+        Default is a set of common names.
+    disable_names : bool
+        If True, do not fix names. Default is ``False``.
+    ampersands : bool
+        If True, replace ``' and '`` with ``' & '``. Default is ``False``.
+
+    Returns
+    -------
+    str
+        The adjusted string.
     """
     original_words = words.strip().split()
     word_list = words.strip().title().split()

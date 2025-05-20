@@ -36,6 +36,17 @@ def context_os_open(path: StrPath,
     """
     Context-managed file descriptor opener.
 
+    Parameters
+    ----------
+    path : str
+        Path to open.
+    flags : int
+        Flags to use when opening the file.
+    mode : int
+        Mode to use when opening the file.
+    dir_fd : int | None
+        Directory file descriptor to use when opening the file. Defaults to ``None``.
+
     Yields
     ------
     int
@@ -77,6 +88,19 @@ def unpack_0day(path: StrPath, *, remove_diz: bool = True) -> None:
 
 
 def extract_rar_from_zip(zip_file: ZipFile) -> Iterator[str]:
+    """
+    Extract RAR files from a zip file.
+
+    Parameters
+    ----------
+    zip_file : ZipFile
+        The zip file to extract RAR files from.
+
+    Yields
+    ------
+    str
+        The name of the extracted RAR file.
+    """
     for x in (x for x in zip_file.namelist() if re.search(r'\.r(?:ar|\d{2})$', x)):
         zip_file.extract(x)
         yield x
@@ -85,6 +109,11 @@ def extract_rar_from_zip(zip_file: ZipFile) -> Iterator[str]:
 def unpack_ebook(path: StrPath) -> None:
     """
     Unpack a specially packed eBook file.
+
+    Parameters
+    ----------
+    path : str
+        Path where the zip files are located.
 
     Raises
     ------
@@ -143,6 +172,13 @@ def extract_gog(filename: StrPath, output_dir: StrPath) -> None:
     """
     Extract a Linux gog.com archive.
 
+    Parameters
+    ----------
+    filename : str
+        Path to the GOG archive.
+    output_dir : str
+        Directory to extract the files to.
+
     Raises
     ------
     ValueError
@@ -199,9 +235,13 @@ class UnRARExtractionTestFailed(UnRARError):
 class RARInfo:
     """File within a RAR information."""
     attributes_str: str
+    """File attributes string."""
     date: datetime
+    """File date."""
     name: str
+    """File name."""
     size: int
+    """File size."""
 
 
 class UnRAR:
@@ -298,7 +338,18 @@ def verify_sfv(sfv_file: StrPath) -> None:
 
 
 def make_sfv(sfv_file: StrPath, files: Iterable[StrPath], *, header: bool = True) -> None:
-    """Create an SFV file."""
+    """
+    Create an SFV file.
+
+    Parameters
+    ----------
+    sfv_file : str
+        Path to the SFV file.
+    files : Iterable[str]
+        List of files to include in the SFV file.
+    header : bool
+        If True, include a header with the file size and date. Defaults to ``True``.
+    """
     file_paths = sorted([Path(file) for file in files])
     with Path(sfv_file).open('w+', encoding='utf-8') as f:
         if header:

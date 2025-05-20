@@ -15,27 +15,38 @@ __all__ = ('CDStatus', 'DecodeErrorsOption', 'FileDescriptorOrPath', 'INCITS38Co
            'assert_not_none', 'contains_type_path_like_str')
 
 DecodeErrorsOption = Literal['ignore', 'replace', 'strict']
+"""Decode errors option for :py:func:`deltona.utils.decode`."""
 INCITS38Code = Literal['AK', 'AL', 'AR', 'AS', 'AZ', 'CA', 'CO', 'CT', 'DC', 'DE', 'FL', 'FM', 'GA',
                        'GU', 'HI', 'IA', 'ID', 'IL', 'IN', 'KS', 'KY', 'LA', 'MA', 'MD', 'ME', 'MH',
                        'MI', 'MN', 'MO', 'MP', 'MS', 'MT', 'NC', 'ND', 'NE', 'NH', 'NJ', 'NM', 'NV',
                        'NY', 'OH', 'OK', 'OR', 'PA', 'PR', 'PW', 'RI', 'SC', 'SD', 'TN', 'TX', 'UM',
                        'UT', 'VA', 'VI', 'VT', 'WA', 'WI', 'WV', 'WY']
+"""Two-letter state code according to INCITS 38-2009."""
 StrOrBytesPath = str | bytes | PathLike[str] | PathLike[bytes]
+"""String, bytes, ``PathLike[str]`` or ``PathLike[bytes]``."""
 StrPath = str | PathLike[str]
 """String or ``PathLike[str]``."""
 FileDescriptorOrPath = int | StrOrBytesPath
+"""File descriptor or path."""
 UNIXStrPath = Annotated[StrPath, 'unix']
+"""String or ``PathLike[str]`` that is a UNIX path."""
 StrPathMustExist = Annotated[StrPath, 'must_exist']
+"""String or ``PathLike[str]`` that must exist."""
 _T = TypeVar('_T')
 
 
 class CDStatus(IntEnum):
     """CD status codes."""
     DISC_OK = 4
+    """Disc is OK."""
     DRIVE_NOT_READY = 3
+    """Drive is not ready."""
     NO_DISC = 1
+    """No disc in drive."""
     NO_INFO = 0
+    """No information available."""
     TRAY_OPEN = 2
+    """Tray is open."""
 
 
 def contains_type_path_like_str(type_hints: Any) -> bool:

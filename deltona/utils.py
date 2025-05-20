@@ -96,7 +96,9 @@ WINETRICKS_VERSION_MAPPING = {
     '98': 'win98',
     '95': 'win95'
 }
+"""Mapping of Windows versions to winetricks versions."""
 DEFAULT_DPI = 96
+"""Default DPI for Wine prefixes."""
 _CREATE_WINE_PREFIX_NOTO_FONT_REPLACEMENTS = {
     'Arial Baltic,186', 'Arial CE,238', 'Arial CYR,204', 'Arial Greek,161', 'Arial TUR,162',
     'Courier New Baltic,186', 'Courier New CE,238', 'Courier New CYR,204', 'Courier New Greek,161',
@@ -109,9 +111,11 @@ _CREATE_WINE_PREFIX_NOTO_REGISTRY_ENTRIES = {
     'Caption', 'Icon', 'Menu', 'Message', 'SmCaption', 'Status'
 }
 WineWindowsVersion = Literal['11', '10', 'vista', '2k3', '7', '8', 'xp', '81', '2k', '98', '95']
+"""Windows versions supported by Wine."""
 
 
 class LOGFONTW(NamedTuple):
+    """Windows LOGFONTW structure as a named tuple."""
     lfHeight: int
     lfWidth: int
     lfEscapement: int
@@ -146,6 +150,7 @@ Q4WINE_DEFAULT_ICONS: tuple[tuple[str, str, str, str, str, str], ...] = (
     ('', 'winemine.exe', 'winemine', 'Wine sweeper game', 'system', 'Winemine'),
     ('', 'wordpad.exe', 'wordpad', 'Wine wordpad text editor', 'system', 'WordPad'),
 )
+"""Shortcuts to add to Q4Wine for the prefix."""
 
 
 def create_wine_prefix(prefix_name: str,
@@ -170,11 +175,63 @@ def create_wine_prefix(prefix_name: str,
                        tricks: Iterable[str] | None = None,
                        vd: str = 'off',
                        windows_version: WineWindowsVersion = '10',
-                       winrt_dark: bool = False) -> StrPath:
+                       winrt_dark: bool = False) -> Path:
     """
     Create a Wine prefix with custom settings.
 
     If winetricks is not installed, the ``tricks`` argument will be ignored.
+
+    Parameters
+    ----------
+    prefix_name : str
+        Name of the prefix to create.
+    _32bit : bool
+        Create a 32-bit Wine prefix.
+    asio : bool
+        Enable ASIO support.
+    disable_explorer : bool
+        Disable ``explorer.exe`` from automatically starting.
+    disable_services : bool
+        Disable ``services.exe`` from automatically starting.
+    dpi : int
+        Screen DPI.
+    dxva_vaapi : bool
+        Enable VAAPI support for DXVA.
+    dxvk_nvapi : bool
+        Enable DXVK NVAPI support.
+    eax : bool
+        Enable EAX support.
+    gtk : bool
+        Enable GTK theme support.
+    no_associations : bool
+        Disable file associations.
+    no_gecko : bool
+        Disable Gecko support.
+    no_mono : bool
+        Disable Mono support.
+    no_xdg : bool
+        Disable XDG support.
+    noto_sans : bool
+        Use Noto Sans font.
+    prefix_root : StrPath | None
+        Root directory for the prefix. If ``None``, defaults to ``~/.local/share/wineprefixes``.
+    sandbox : bool
+        Enable sandbox mode.
+    tmpfs : bool
+        Use ``/tmp`` as a temporary filesystem.
+    tricks : Iterable[str] | None
+        List of winetricks to run. If ``None``, defaults to an empty list.
+    vd : str
+        Virtual desktop mode. If ``'off'``, disables virtual desktop mode.
+    windows_version : WineWindowsVersion
+        Windows version to set for the prefix.
+    winrt_dark : bool
+        Enable Windows 10 dark mode.
+
+    Returns
+    -------
+    Path
+        Path to the created prefix.
 
     Raises
     ------

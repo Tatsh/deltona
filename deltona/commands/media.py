@@ -320,15 +320,22 @@ def display_info_json_main(filename: Path, *, debug: bool = False) -> None:
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
+@click.option('-V', '--videotoolbox', is_flag=True, help='Use VideoToolbox.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('-f', '--font', default='Roboto', help='Font to use.')
 @click.option('-n', '--nvenc', is_flag=True, help='Use NVENC.')
-@click.option('-V', '--videotoolbox', is_flag=True, help='Use VideoToolbox.')
+@click.option('-o',
+              '--output',
+              type=click.Path(dir_okay=False, path_type=Path),
+              help='Output file.')
+@click.option('-s', '--font-size', type=int, default=150, help='Font size in pt.')
 @click.argument('audio_filename', type=click.Path(exists=True, dir_okay=False, path_type=Path))
-@click.argument('text')
+@click.argument('text', nargs=-1)
 def audio2vid_main(audio_filename: Path,
                    text: str,
                    font: str = 'Roboto',
+                   font_size: int = 150,
+                   output_file: Path | None = None,
                    *,
                    debug: bool = False,
                    nvenc: bool = False,
@@ -336,11 +343,13 @@ def audio2vid_main(audio_filename: Path,
     """Create a video with static text and audio."""
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
     create_static_text_video(audio_filename,
-                             text,
+                             ' '.join(text),
                              font,
+                             font_size,
+                             output_file,
+                             debug=debug,
                              nvenc=nvenc,
-                             videotoolbox=videotoolbox,
-                             debug=debug)
+                             videotoolbox=videotoolbox)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

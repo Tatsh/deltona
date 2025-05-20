@@ -28,20 +28,10 @@ if TYPE_CHECKING:
 
     from .typing import FileDescriptorOrPath, StrPath
 
-__all__ = (
-    'BookmarksDataset',
-    'BookmarksHTMLAnchorAttributes',
-    'BookmarksHTMLFolder',
-    'BookmarksHTMLFolderAttributes',
-    'BookmarksHTMLLink',
-    'RecurseBookmarksHTMLCallback',
-    'check_bookmarks_html_urls',
-    'generate_html_dir_tree',
-    'parse_bookmarks_html',
-    'recurse_bookmarks_html',
-    'upload_to_imgbb',
-    'where_from',
-)
+__all__ = ('BookmarksDataset', 'BookmarksHTMLAnchorAttributes', 'BookmarksHTMLFolder',
+           'BookmarksHTMLFolderAttributes', 'BookmarksHTMLLink', 'RecurseBookmarksHTMLCallback',
+           'check_bookmarks_html_urls', 'generate_html_dir_tree', 'parse_bookmarks_html',
+           'recurse_bookmarks_html', 'upload_to_imgbb', 'where_from')
 
 log = logging.getLogger(__name__)
 KEY_ORIGIN_URL = 'user.xdg.origin.url'
@@ -194,7 +184,7 @@ def recurse_bookmarks_html(soup: Tag, callback: RecurseBookmarksHTMLCallback) ->
                         folder_path.append((stripped_strings_fixed(h3),
                                             cast('BookmarksHTMLFolderAttributes', h3.attrs)))
                         for par in h3.parents:
-                            if par.name == 'dl' and (par_h3 := par.find_previous_sibling('h3')):
+                            if par.name == 'dt' and (par_h3 := par.find_previous_sibling('h3')):
                                 assert isinstance(par_h3, Tag)
                                 folder_path.insert(
                                     0, (stripped_strings_fixed(par_h3),
