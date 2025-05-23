@@ -28,6 +28,8 @@ import click
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from paramiko import SSHClient
+
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('uuids', nargs=-1)
@@ -110,6 +112,12 @@ def slug_rename_main(filenames: tuple[str, ...],
             click.echo(f'{name} -> {target}')
 
 
+def get_ssh_client_cls() -> type[SSHClient]:  # pragma: no cover
+    """Return the SSH client class."""
+    from paramiko import SSHClient  # noqa: PLC0415
+    return SSHClient
+
+
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('filenames', type=click.Path(exists=True, path_type=Path), nargs=-1)
 @click.argument('target')
@@ -127,7 +135,7 @@ def slug_rename_main(filenames: tuple[str, ...],
               '--dry-run',
               is_flag=True,
               help='Do not copy anything. Use with -d for testing.')
-def smv_main(filenames: Sequence[str],
+def smv_main(filenames: Sequence[Path],
              target: str,
              key_filename: str,
              port: int = 22,
@@ -148,8 +156,8 @@ def smv_main(filenames: Sequence[str],
     username = target.split('@')[0] if '@' in target else None
     hostname = target.split(':')[0]
     target_dir_or_filename = target.split(':')[1]
-    from paramiko import SSHClient  # noqa: PLC0415
-    with SSHClient() as client:
+    ssh_client_cls = get_ssh_client_cls()
+    with ssh_client_cls() as client:
         client.load_system_host_keys()
         client.connect(hostname,
                        port,
@@ -173,7 +181,7 @@ def smv_main(filenames: Sequence[str],
               help='Environment variable to set.',
               multiple=True,
               type=(str, str))
-@click.option('-r', '--retina', type=int, help='For macOS apps, force Retina support.')
+@click.option('-r', '--retina', is_flag=True, help='For macOS apps, force Retina support.')
 def patch_bundle_main(bundle: Path,
                       env_vars: tuple[tuple[str, str], ...],
                       *,
@@ -188,7 +196,7 @@ def patch_bundle_main(bundle: Path,
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('files', type=click.Path(exists=True, file_okay=False, path_type=Path), nargs=-1)
+@click.argument('files', type=click.Path(exists=True, dir_okay=False, path_type=Path), nargs=-1)
 @click.option('-a', '--all', 'all_', is_flag=True, help='Find compatible files and process them.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 def kconfig_to_commands_main(files: Sequence[Path],
