@@ -50,6 +50,7 @@ colorlog
 commitizen
 conftest
 consolas
+corefonts
 coveragerc
 cryptenroll
 cryptsetup

@@ -49,9 +49,10 @@ if TYPE_CHECKING:
 
 __all__ = ('WineWindowsVersion', 'add_cdda_times', 'create_wine_prefix', 'secure_move_path')
 
+ZERO_TO_99 = '|'.join(f'{x:02d}' for x in range(100))
 ZERO_TO_59 = '|'.join(f'{x:02d}' for x in range(60))
 ZERO_TO_74 = '|'.join(f'{x:02d}' for x in range(75))
-TIMES_RE = re.compile(f'^({ZERO_TO_59}):({ZERO_TO_59}):({ZERO_TO_74})$')
+TIMES_RE = re.compile(f'^({ZERO_TO_99}):({ZERO_TO_59}):({ZERO_TO_74})$')
 MAX_MINUTES = 99
 MAX_SECONDS = 60
 log = logging.getLogger(__name__)
@@ -65,19 +66,19 @@ def add_cdda_times(times: Iterable[str] | None) -> str | None:
     """
     if not times:
         return None
-    total_ms = 0.0
+    total_ms = 0
     for time_ in times:
         if not (res := re.match(TIMES_RE, time_)):
             return None
-        minutes, seconds, frames = [float(x) for x in res.groups()]
-        total_ms += (minutes *
-                     (MAX_SECONDS - 1) * 1000) + (seconds * 1000) + (frames * 1000) / CD_FRAMES
-    minutes = total_ms / (MAX_SECONDS * 1000)
+        minutes, seconds, frames = [int(x) for x in res.groups()]
+        total_ms += (minutes * MAX_SECONDS * 1000) + (seconds * 1000) + (
+            (frames * 1000) // CD_FRAMES)
+    minutes = total_ms // (MAX_SECONDS * 1000)
     remainder_ms = total_ms % (MAX_SECONDS * 1000)
-    seconds = remainder_ms / 1000
+    seconds = remainder_ms // 1000
     remainder_ms %= 1000
-    frames = (remainder_ms * 1000 * CD_FRAMES) / 1e6
-    if minutes > MAX_MINUTES or seconds > (MAX_SECONDS - 1) or frames > CD_FRAMES:
+    frames = round((remainder_ms * 1000 * CD_FRAMES) / 1000000)
+    if minutes > MAX_MINUTES or seconds > (MAX_SECONDS - 1) or frames > (CD_FRAMES - 1):
         return None
     return f'{trunc(minutes):02d}:{trunc(seconds):02d}:{trunc(frames):02d}'
 
@@ -579,7 +580,7 @@ def secure_move_path(client: SSHClient,
 
 
 @overload
-def kill_processes_by_name(name: str) -> None:
+def kill_processes_by_name(name: str) -> None:  # pragma: no cover
     pass
 
 
@@ -588,7 +589,7 @@ def kill_processes_by_name(name: str,
                            wait_timeout: float,
                            signal: int = SIGTERM,
                            *,
-                           force: bool = False) -> list[int]:
+                           force: bool = False) -> list[int]:  # pragma: no cover
     pass
 
 
