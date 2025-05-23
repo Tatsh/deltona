@@ -21,8 +21,8 @@ if TYPE_CHECKING:
     from .typing import StrPath
 
 __all__ = ('RARInfo', 'SFVVerificationError', 'UnRAR', 'UnRARError', 'UnRARExtractionTestFailed',
-           'context_os_open', 'extract_gog', 'make_sfv', 'unpack_0day', 'unpack_ebook',
-           'verify_sfv')
+           'context_os_open', 'extract_gog', 'extract_rar_from_zip', 'make_sfv', 'unpack_0day',
+           'unpack_ebook', 'verify_sfv')
 
 log = logging.getLogger(__name__)
 
@@ -127,7 +127,7 @@ def unpack_ebook(path: StrPath) -> None:
     if not (path := Path(path)).is_dir():
         raise NotADirectoryError
     with contextlib.chdir(path):
-        zip_listing = frozenset(ZipFile(x) for x in Path().iterdir() if x.name.endswith('.zip'))
+        zip_listing = frozenset(ZipFile(x) for x in path.iterdir() if x.name.endswith('.zip'))
         if len(zip_listing) == 0:
             raise FileExistsError
         extracted = [Path(x) for y in (extract_rar_from_zip(z) for z in zip_listing) for x in y]
@@ -136,8 +136,8 @@ def unpack_ebook(path: StrPath) -> None:
             raise ValueError(0)
         # Only need the .rar
         unrar_x(rar)
-        epub_list = [Path(x) for x in Path().iterdir() if x.name.lower().endswith('.epub')]
-        pdf_list = [Path(x) for x in Path().iterdir() if x.name.lower().endswith('.pdf')]
+        epub_list = [Path(x) for x in path.iterdir() if x.name.lower().endswith('.epub')]
+        pdf_list = [Path(x) for x in path.iterdir() if x.name.lower().endswith('.pdf')]
         if not pdf_list and not epub_list:
             raise ValueError(0)
         if pdf_list:
