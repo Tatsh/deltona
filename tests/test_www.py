@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+import plistlib
 
 from deltona import www
 from requests import HTTPError
@@ -111,3 +112,44 @@ def test_check_bookmarks_html_urls_redirect(mocker: MockerFixture, requests_mock
     assert changed[0]['title'] == 'Redirected'  # type: ignore[typeddict-item]
     # No not found
     assert not_found == []
+
+
+def test_where_from_linux(mocker: MockerFixture) -> None:
+    # Simulate IS_LINUX = True
+    mocker.patch('deltona.www.IS_LINUX', True)  # noqa: FBT003
+    # Mock getxattr to return bytes
+    mock_getxattr = mocker.patch('deltona.www._getxattr', return_value=b'https://example.com')
+    # Should return the decoded string
+    result = www.where_from('dummy-file')
+    assert result == 'https://example.com'
+    mock_getxattr.assert_called_once_with('dummy-file', www.KEY_ORIGIN_URL)
+
+
+def test_where_from_macos_webpage_false(mocker: MockerFixture) -> None:
+    # Simulate IS_LINUX = False
+    mocker.patch('deltona.www.IS_LINUX', False)  # noqa: FBT003
+    # Prepare fake plist data
+    fake_plist = plistlib.dumps(['https://file.com', 'https://webpage.com'])
+    # Patch hexstr2bytes to just return the bytes
+    mocker.patch('deltona.www.hexstr2bytes', return_value=fake_plist)
+    # Mock getxattr to return a dummy value (will be passed to hexstr2bytes)
+    mock_getxattr = mocker.patch('deltona.www._getxattr', return_value=b'dummy')
+    # Should return the first item (index 0)
+    result = www.where_from('dummy-file', webpage=False)
+    assert result == 'https://file.com'
+    mock_getxattr.assert_called_once_with('dummy-file', www.KEY_WHERE_FROMS)
+
+
+def test_where_from_macos_webpage_true(mocker: MockerFixture) -> None:
+    # Simulate IS_LINUX = False
+    mocker.patch('deltona.www.IS_LINUX', False)  # noqa: FBT003
+    # Prepare fake plist data
+    fake_plist = plistlib.dumps(['https://file.com', 'https://webpage.com'])
+    # Patch hexstr2bytes to just return the bytes
+    mocker.patch('deltona.www.hexstr2bytes', return_value=fake_plist)
+    # Mock getxattr to return a dummy value (will be passed to hexstr2bytes)
+    mock_getxattr = mocker.patch('deltona.www._getxattr', return_value=b'dummy')
+    # Should return the second item (index 1)
+    result = www.where_from('dummy-file', webpage=True)
+    assert result == 'https://webpage.com'
+    mock_getxattr.assert_called_once_with('dummy-file', www.KEY_WHERE_FROMS)

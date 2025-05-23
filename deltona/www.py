@@ -25,7 +25,6 @@ from .string import hexstr2bytes
 from .system import IS_LINUX
 
 if TYPE_CHECKING:
-
     from .typing import FileDescriptorOrPath, StrPath
 
 __all__ = ('BookmarksDataset', 'BookmarksHTMLAnchorAttributes', 'BookmarksHTMLFolder',
@@ -38,11 +37,18 @@ KEY_ORIGIN_URL = 'user.xdg.origin.url'
 KEY_WHERE_FROMS = 'com.apple.metadata:kMDItemWhereFroms'
 
 
+def _getxattr(file: FileDescriptorOrPath,
+              name: str,
+              *,
+              follow_symlinks: bool = False) -> bytes:  # pragma: no cover
+    from os import getxattr  # noqa: PLC0415
+    return getxattr(file, name, follow_symlinks=follow_symlinks)
+
+
 def where_from(file: FileDescriptorOrPath, *, webpage: bool = False) -> str | None:
     """Determine where a file came from based on metadata in extended attributes."""
-    from os import getxattr  # noqa: PLC0415
     index = 1 if webpage else 0
-    attr_value = getxattr(file, KEY_ORIGIN_URL if IS_LINUX else KEY_WHERE_FROMS).decode()
+    attr_value = _getxattr(file, KEY_ORIGIN_URL if IS_LINUX else KEY_WHERE_FROMS).decode()
     if not IS_LINUX:
         return cast('Sequence[str]', plistlib.loads(hexstr2bytes(attr_value)))[index]
     return attr_value
