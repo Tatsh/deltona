@@ -24,6 +24,7 @@ from deltona.system import (
     kill_gamescope,
 )
 from deltona.www import upload_to_imgbb
+from gi.repository import Gio
 from platformdirs import user_state_path
 from requests import HTTPError
 import click
@@ -31,9 +32,12 @@ import pyperclip
 import requests
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
+    from types import ModuleType
 
     from deltona.typing import ProbeDict, StreamDispositionDict
+    from gi.repository import GLib
+    from pydbus.bus import Bus
 
 log = logging.getLogger(__name__)
 
@@ -64,7 +68,7 @@ def inhibit_notifications_main(sleep_time: int = 60, *, debug: bool = False) -> 
 @click.option('-d', '--debug', is_flag=True)
 @click.option('--mpv-command', default='mpv', help='mpv command including arguments.')
 @click.argument('files', type=click.Path(path_type=Path), nargs=-1)
-def umpv_main(files: Sequence[Path], mpv_command: str = 'mpv', *, debug: bool = False) -> int:
+def umpv_main(files: Sequence[Path], mpv_command: str = 'mpv', *, debug: bool = False) -> None:
     """Run a single instance of mpv."""  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
     fixed_files = ((p if is_url(p) else str(p.resolve(strict=True))) for p in files)
@@ -84,7 +88,7 @@ def umpv_main(files: Sequence[Path], mpv_command: str = 'mpv', *, debug: bool = 
             sock = None  # does not exist
         else:
             log.exception('Socket errno: %d', e.errno)
-            raise
+            raise click.Abort from e
     if sock and socket_connected:
         # Unhandled race condition: what if mpv is terminating right now?
         for f in fixed_files:
@@ -99,7 +103,16 @@ def umpv_main(files: Sequence[Path], mpv_command: str = 'mpv', *, debug: bool = 
                 f'--input-ipc-server={socket_path}', '--', *fixed_files)
         log.debug('Command: %s', ' '.join(quote(x) for x in args))
         sp.run(args, check=True)
-    return 0
+
+
+def _get_pydbus_system_bus_callable() -> Callable[[], Bus]:  # pragma: no cover
+    from pydbus import SystemBus  # noqa: PLC0415
+    return SystemBus
+
+
+def _get_gi_repository_glib() -> ModuleType:  # pragma: no cover
+    from gi.repository import GLib  # type: ignore[unused-ignore] # noqa: PLC0415
+    return GLib
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -121,14 +134,14 @@ def connect_g603_main(device_name: str = 'hci0', *, debug: bool = False) -> None
         click.echo('Only Linux is supported.', err=True)
         raise click.Abort
     try:
-        from gi.repository import GLib, Gio  # type: ignore[unused-ignore] # noqa: PLC0415
-        from pydbus import SystemBus  # noqa: PLC0415
+        g_lib = _get_gi_repository_glib()
+        system_bus = _get_pydbus_system_bus_callable()
     except (ImportError, ModuleNotFoundError) as e:
         click.echo('Imports are missing.', err=True)
         raise click.Abort from e
-    loop = GLib.MainLoop()
+    loop = g_lib.MainLoop()
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
-    bus = SystemBus()
+    bus = system_bus()
     adapter = bus.get('org.bluez', f'/org/bluez/{device_name}')
 
     def on_properties_changed(_: Any, __: Any, object_path: str, ___: Any, ____: Any,
@@ -178,7 +191,7 @@ def connect_g603_main(device_name: str = 'hci0', *, debug: bool = False) -> None
     log.debug('Starting scan.')
     adapter.StartDiscovery()
     try:
-        loop.run()  # type: ignore[no-untyped-call]
+        loop.run()
     except KeyboardInterrupt:
         loop.quit()
 
@@ -193,7 +206,7 @@ def kill_gamescope_main() -> None:
 @click.argument('filenames', type=click.Path(exists=True, dir_okay=False, path_type=Path), nargs=-1)
 @click.option('--api-key', help='API key.', metavar='KEY')
 @click.option('--keyring-username', help='Keyring username override.', metavar='USERNAME')
-@click.option('--no-browser', is_flag=True, help='Do not copy URL to clipboard.')
+@click.option('--no-browser', is_flag=True, help='Do not open browser.')
 @click.option('--no-clipboard', is_flag=True, help='Do not copy URL to clipboard.')
 @click.option('--no-gui', is_flag=True, help='Disable GUI interactions.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
@@ -224,6 +237,7 @@ def upload_to_imgbb_main(filenames: Sequence[Path],
     Get an API key at https://api.imgbb.com/ and set it with `keyring set imgbb "${USER}"`.
     """  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    r: requests.Response | None = None
     if xdg_install:
         prefix = str(Path('~/.local').expanduser()) if xdg_install == '-' else xdg_install
         apps = Path(f'{prefix}/share/applications')
@@ -242,7 +256,7 @@ Type=Application
 Version=1.0
     """)
         r = requests.get('https://simgbb.com/images/favicon.png', timeout=5)
-        icons_dir = Path(f'{prefix}/share/icons/hicolor/300x300')
+        icons_dir = Path(f'{prefix}/share/icons/hicolor/300x300/apps')
         icons_dir.mkdir(parents=True, exist_ok=True)
         (icons_dir / 'imgbb.png').write_bytes(r.content)
         sp.run(('update-desktop-database', '-v', str(apps)), check=True, capture_output=not debug)
@@ -286,15 +300,17 @@ def mpv_sbs_main(filenames: tuple[Path, Path],
                  debug: bool = False) -> None:
     """Display two videos side by side in mpv."""
     @overload
-    def get_prop(prop: Literal['codec_type'], info: ProbeDict) -> Literal['audio', 'video']:
+    def get_prop(prop: Literal['codec_type'],
+                 info: ProbeDict) -> Literal['audio', 'video']:  # pragma: no cover
         ...
 
     @overload
-    def get_prop(prop: Literal['disposition'], info: ProbeDict) -> StreamDispositionDict:
+    def get_prop(prop: Literal['disposition'],
+                 info: ProbeDict) -> StreamDispositionDict:  # pragma: no cover
         ...
 
     @overload
-    def get_prop(prop: Literal['height', 'width'], info: ProbeDict) -> int:
+    def get_prop(prop: Literal['height', 'width'], info: ProbeDict) -> int:  # pragma: no cover
         ...
 
     def get_prop(prop: Literal['codec_type', 'disposition', 'height', 'width'],
@@ -303,13 +319,10 @@ def mpv_sbs_main(filenames: tuple[Path, Path],
                    key=lambda x: x['disposition'].get('default', 0))[prop]
 
     def get_default_video_index(info: ProbeDict) -> int:
-        for i, x in enumerate(info['streams']):
-            try:
-                if x['disposition']['default']:
-                    return i
-            except (KeyError, IndexError):
-                continue
-        return next((i for i, x in enumerate(info['streams']) if x['codec_type'] == 'video'), 0)
+        return next(
+            (i
+             for i, x in enumerate(info['streams']) if x.get('disposition', {}).get('default', 0)),
+            next((i for i, x in enumerate(info['streams']) if x['codec_type'] == 'video'), 0))
 
     logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
     filename1, filename2 = filenames
@@ -326,8 +339,7 @@ def mpv_sbs_main(filenames: tuple[Path, Path],
     scale_h = int(get_prop('height', info1)) if scale_w == width1 else int(get_prop(
         'height', info2))
     scale = '' if width1 == width2 and height1 == height2 else f'scale={scale_w}x{scale_h}'
-    scale1, scale2 = (scale if scale_h != height1 == 1 else '',
-                      scale if scale_h == height1 == 2 else '')  # noqa: PLR2004
+    scale1, scale2 = scale if scale_h != height1 else '', scale if scale_h == height1 else ''
     second_stream_index = (len([x for x in info1['streams'] if x['codec_type'] == 'video']) +
                            get_default_video_index(info2)) + 1
     if not scale1 and not scale2:
@@ -337,7 +349,7 @@ def mpv_sbs_main(filenames: tuple[Path, Path],
             (f'[vid1] {scale} [vid1_scale]',
              f'[vid{second_stream_index}] {scale} [vid{second_stream_index}_crop]',
              f'[vid1_scale][vid{second_stream_index}_crop] hstack [vo]'))
-    cmd = ('mpv', '--hwdec=no', '--config=no', filename1, f'--external-file={filename2}',
+    cmd = ('mpv', '--hwdec=no', '--config=no', str(filename1), f'--external-file={filename2}',
            f'--lavfi-complex={filter_chain}')
     log.debug('Running: %s', ' '.join(quote(str(x)) for x in cmd))
     sp.run(cmd, check=True)

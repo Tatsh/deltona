@@ -96,6 +96,7 @@ class StreamsDict(TypedDict):
     codec_type: Literal['audio', 'video']
     """Codec type."""
     disposition: StreamDispositionDict
+    """Stream disposition dictionary."""
     height: int
     """Height of the video stream."""
     tags: TagsDict

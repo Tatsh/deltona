@@ -78,6 +78,7 @@ dyear
 econnrefused
 eeyore
 enoent
+enotblk
 enrollment
 enrollments
 esbenp
