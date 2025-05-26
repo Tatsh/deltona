@@ -214,6 +214,7 @@ nvencodeapi
 nvngx
 nvofapi
 nvoptix
+nwinemenubuilder
 oleview
 paramiko
 parms

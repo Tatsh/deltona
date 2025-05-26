@@ -33,7 +33,7 @@
         // admin
         'clean-old-kernels-modules': 'deltona.commands.admin:clean_old_kernels_and_modules_main',
         htmltree: 'deltona.commands.admin:generate_html_dir_tree_main',
-        'kconfig-to-commands.admin': 'deltona.commands.admin:kconfig_to_commands_main',
+        'kconfig-to-commands': 'deltona.commands.admin:kconfig_to_commands_main',
         'patch-bundle': 'deltona.commands.admin:patch_bundle_main',
         'slug-rename': 'deltona.commands.admin:slug_rename_main',
         smv: 'deltona.commands.admin:smv_main',
