@@ -49,7 +49,7 @@ class _CDDATimeStringParamType(click.ParamType):
         if TIMES_RE.match(value):
             return value
         self.fail(f'{value!r} is not a valid CDDA time string.', param, ctx)
-        return None  # type: ignore[unreachable]
+        return None  # type: ignore[unreachable] # pragma: no cover
 
 
 @click.command(context_settings=CONTEXT_SETTINGS,
@@ -326,6 +326,7 @@ def display_info_json_main(filename: Path, *, debug: bool = False) -> None:
 @click.option('-n', '--nvenc', is_flag=True, help='Use NVENC.')
 @click.option('-o',
               '--output',
+              'output_file',
               type=click.Path(dir_okay=False, path_type=Path),
               help='Output file.')
 @click.option('-s', '--font-size', type=int, default=150, help='Font size in pt.')
