@@ -116,7 +116,7 @@
     tool+: {
       poetry+: {
         dependencies+: {
-          beautifulsoup4: { optional: true, version: '^4.13.3' },
+          beautifulsoup4: { optional: true, version: '^4.13.4' },
           binaryornot: '^0.4.4',
           gitpython: { optional: true, version: '^3.1.44' },
           html5lib: { optional: true, version: '^1.1' },
@@ -124,8 +124,8 @@
           mutagen: { optional: true, version: '^1.47.0' },
           paramiko: { optional: true, version: '^3.5.1' },
           pexpect: { optional: true, version: '^4.9.0' },
-          pillow: { optional: true, version: '^11.1.0' },
-          platformdirs: { optional: true, version: '^4.3.7' },
+          pillow: { optional: true, version: '^11.2.1' },
+          platformdirs: { optional: true, version: '^4.3.8' },
           psutil: { optional: true, version: '^7.0.0' },
           pydbus: { optional: true, platform: 'linux', version: '^0.6.0' },
           pygithub: { optional: true, version: '^2.6.1' },
@@ -136,8 +136,8 @@
           pyyaml: { optional: true, version: '^6.0.2' },
           requests: '^2.32.3',
           send2trash: '^1.8.3',
-          unidecode: { optional: true, version: '^1.3.8' },
-          'yt-dlp': { optional: true, version: '^2025.4.30' },
+          unidecode: { optional: true, version: '^1.4.0' },
+          'yt-dlp': { optional: true, version: '^2025.5.22' },
         },
         extras: {
           admin: ['paramiko'],
@@ -152,15 +152,15 @@
           dev+: {
             dependencies+: {
               'pydbus-stubs': '^0',
-              'types-beautifulsoup4': '^4.12.0.20250204',
+              'types-beautifulsoup4': '^4.12.0.20250516',
               'types-binaryornot': '^0.4.0.20250507',
-              'types-paramiko': '^3.5.0.20240928',
-              'types-pexpect': '^4.9.0.20241208',
+              'types-paramiko': '^3.5.0.20250516',
+              'types-pexpect': '^4.9.0.20250516',
               'types-pillow': '^10.2.0.20240822',
-              'types-psutil': '^7.0.0.20250218',
+              'types-psutil': '^7.0.0.20250516',
               'types-pyperclip': '^1.9.0.20250218',
-              'types-pyyaml': '^6.0.12.20241230',
-              'types-requests': '^2.32.0.20250306',
+              'types-pyyaml': '^6.0.12.20250516',
+              'types-requests': '^2.32.0.20250515',
               'types-send2trash': '^1.8.2.7',
               'yt-dlp-types': '^0',
             },
