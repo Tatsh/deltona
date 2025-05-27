@@ -22,6 +22,8 @@
 
 A lot of uncategorised utilities.
 
+This project will eventually be split into different projects by category.
+
 ## Installation
 
 ### Poetry
