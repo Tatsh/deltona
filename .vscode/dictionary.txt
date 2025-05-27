@@ -100,6 +100,7 @@ followlinks
 fontawesome
 forcecloseapplications
 froms
+fspath
 fullfacesize
 fulltimestudent
 fullwidth
