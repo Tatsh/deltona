@@ -303,11 +303,10 @@ class UnRAR:
             (self.unrar_path, 'l', '-y',
              rar), text=True, check=True, capture_output=True).stdout.splitlines()
                    if (m := re.match(self.LIST_RE, line))):
-            yield RARInfo(
-                attributes_str=mm['attributes'],
-                date=datetime.strptime(mm['date'], '%Y-%m-%d %H:%M'),  # noqa: DTZ007
-                name=mm['filename'],
-                size=int(mm['size']))
+            yield RARInfo(attributes_str=mm['attributes'],
+                          date=datetime.strptime(mm['date'], '%Y-%m-%d %H:%M').replace(tzinfo=UTC),
+                          name=mm['filename'],
+                          size=int(mm['size']))
 
 
 class SFVVerificationError(Exception):
