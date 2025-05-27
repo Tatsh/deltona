@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from time import sleep
+from typing import TYPE_CHECKING
 import getpass
 import logging
 import re
@@ -15,6 +16,14 @@ from deltona.git import (
 )
 import click
 import keyring
+
+if TYPE_CHECKING:
+    from git import Repo
+
+
+def _get_git_repo() -> Repo:  # pragma: no cover
+    from git import Repo  # noqa: PLC0415
+    return Repo(search_parent_directories=True)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -40,8 +49,7 @@ def git_checkout_default_branch_main(username: str,
     if not token:
         click.echo('No token.', err=True)
         raise click.Abort
-    from git import Repo  # noqa: PLC0415
-    repo = Repo(search_parent_directories=True)
+    repo = _get_git_repo()
     default_branch = get_github_default_branch(repo=repo,
                                                base_url=base_url,
                                                token=token,
@@ -77,8 +85,7 @@ def git_rebase_default_branch_main(username: str,
     if not token:
         click.echo('No token.', err=True)
         raise click.Abort
-    from git import Repo  # noqa: PLC0415
-    repo = Repo(search_parent_directories=True)
+    repo = _get_git_repo()
     default_branch = get_github_default_branch(repo=repo,
                                                base_url=base_url,
                                                token=token,
@@ -90,8 +97,7 @@ def git_rebase_default_branch_main(username: str,
 @click.argument('name', default='origin')
 def git_open_main(name: str = 'origin') -> None:
     """Open assumed repository web representation (GitHub, GitLab, etc) based on the origin."""
-    from git import Repo  # noqa: PLC0415
-    url = Repo(search_parent_directories=True).remote(name).url
+    url = _get_git_repo().remote(name).url
     if re.search(r'^https?://', url):
         webbrowser.open(url)
         return
