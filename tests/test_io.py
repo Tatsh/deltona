@@ -501,8 +501,7 @@ def test_make_sfv_empty_files_list(mocker: MockerFixture, tmp_path: Path) -> Non
 
 def test_unrar_list_files_parses_output(mocker: MockerFixture) -> None:
     mock_sp_run = mocker.patch('deltona.io.sp.run')
-    mock_sp_run.return_value.stdout = """
-UNRAR 7.11 freeware
+    mock_sp_run.return_value.stdout = """UNRAR 7.11 freeware
 
 Archive: the-archive.rar
 Details: RAR 1.5

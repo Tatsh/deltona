@@ -9,7 +9,14 @@ from typing import TYPE_CHECKING, cast
 import requests
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from .typing import StrPath
+
+
+def _get_pil_image_module() -> ModuleType:  # pragma: no cover
+    from PIL import Image  # noqa: PLC0415
+    return Image
 
 
 def fix_chromium_pwa_icon(config_path: StrPath,
@@ -47,26 +54,26 @@ def fix_chromium_pwa_icon(config_path: StrPath,
     ValueError
         If the icon is not square.
     """
-    from PIL import Image  # noqa: PLC0415
+    image_mod = _get_pil_image_module()
     config_path = Path(config_path) / profile / 'Web Applications' / app_id
     r = requests.get(icon_src_uri, timeout=15)
     r.raise_for_status()
-    img = Image.open(BytesIO(r.content))
+    img = image_mod.open(BytesIO(r.content))
     width, height = img.size
     if width != height:
         msg = 'Icon is not square.'
         raise ValueError(msg)
-    sizes = reversed([1 << x for x in range(4, min(10, width.bit_length()))])
+    sizes = list(reversed([1 << x for x in range(4, min(10, width.bit_length()))]))
     for size in sizes:
-        img.resize((size, size), Image.LANCZOS).save(config_path / 'Icons' / f'{size}.png')
+        img.resize((size, size), image_mod.LANCZOS).save(config_path / 'Icons' / f'{size}.png')
     if masked:
         for size in sizes:
             img.resize((size, size),
-                       Image.LANCZOS).save(config_path / 'Icons Maskable' / f'{size}.png')
+                       image_mod.LANCZOS).save(config_path / 'Icons Maskable' / f'{size}.png')
     if monochrome:
         for size in sizes:
             img.resize((size, size),
-                       Image.LANCZOS).save(config_path / 'Icons Monochrome' / f'{size}.png')
+                       image_mod.LANCZOS).save(config_path / 'Icons Monochrome' / f'{size}.png')
 
 
 @cache
