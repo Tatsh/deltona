@@ -3,11 +3,11 @@ from __future__ import annotations
 
 from enum import IntEnum
 from os import PathLike
-from typing import Annotated, Any, Literal, NotRequired, TypeVar, TypedDict
+from typing import TYPE_CHECKING, Annotated, Any, Literal, NotRequired, TypeVar, TypedDict
 import os
 import typing
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Sequence
 
 __all__ = ('CDStatus', 'DecodeErrorsOption', 'FileDescriptorOrPath', 'INCITS38Code', 'ProbeDict',
@@ -49,12 +49,12 @@ class CDStatus(IntEnum):
     """Tray is open."""
 
 
-def contains_type_path_like_str(type_hints: Any) -> bool:
+def contains_type_path_like_str(type_hints: Any) -> bool:  # pragma: no cover
     """Check if a type hint contains ``os.PathLike[str]``."""
     return os.PathLike[str] in typing.get_args(type_hints)
 
 
-def assert_not_none(var: _T | None) -> _T:
+def assert_not_none(var: _T | None) -> _T:  # pragma: no cover
     """
     Assert the ``var`` is not None and return it.
 

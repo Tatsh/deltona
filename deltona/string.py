@@ -13,7 +13,7 @@ import string
 from .typing import StrPath, assert_not_none
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Callable, Iterator, Sequence
 
 __all__ = ('fullwidth_to_narrow', 'hexstr2bytes', 'hexstr2bytes_generator', 'is_ascii', 'is_url',
            'sanitize', 'slugify', 'strip_ansi', 'strip_ansi_if_no_colors', 'underscorize',
@@ -108,6 +108,11 @@ def unix_path_to_wine(path: StrPath) -> str:
     return f'Z:{path}'.replace('/', '\\')
 
 
+def _get_yt_dlp_sanitize_filename() -> Callable[..., str]:  # pragma: no cover
+    from yt_dlp.utils import sanitize_filename  # noqa: PLC0415
+    return sanitize_filename
+
+
 @cache
 def sanitize(s: str, *, restricted: bool = True) -> str:
     """
@@ -125,7 +130,7 @@ def sanitize(s: str, *, restricted: bool = True) -> str:
     str
         Returns a transformed string, which will be at minimum ``'_'``.
     """
-    from yt_dlp.utils import sanitize_filename  # noqa: PLC0415
+    sanitize_filename = _get_yt_dlp_sanitize_filename()
     return re.sub(
         r'([a-z0-9])\-s\-', r'\1s-',
         re.sub(r'\.-', '-',
@@ -147,6 +152,12 @@ def is_url(filename: StrPath) -> bool:
     return all(x in f'{string.ascii_letters}{string.digits}_' for x in parts[0])
 
 
+def _get_unidecode_cache_and_unidecode(
+) -> tuple[dict[int, Sequence[str | None] | None], Callable[..., str]]:  # pragma: no cover
+    from unidecode import Cache, unidecode  # noqa: PLC0415
+    return Cache, unidecode
+
+
 def add_unidecode_custom_replacement(find: str, replace: str) -> None:
     """
     Add a custom replacement to the Unidecode library.
@@ -159,18 +170,18 @@ def add_unidecode_custom_replacement(find: str, replace: str) -> None:
     not intend to release GPL code, then you must use a different library such as
     `text-unidecode <https://github.com/kmike/text-unidecode>`_.
     """
-    from unidecode import Cache, unidecode  # noqa: PLC0415
+    cache, unidecode = _get_unidecode_cache_and_unidecode()
     unidecode(find)  # Force it to load the module
     codepoint = ord(find)
     section = codepoint >> 8
     position = codepoint % 256
     new_section = cast('list[str | None]',
-                       (Cache[section] if isinstance(Cache[section], list) else
-                        (list(assert_not_none(Cache[section])) if Cache[section] is not None else
+                       (cache[section] if isinstance(cache[section], list) else
+                        (list(assert_not_none(cache[section])) if cache[section] is not None else
                          [None for _ in range(position + 1)])))  # convert to mutable type
     assert len(new_section) > position
     new_section[position] = replace
-    Cache[section] = new_section
+    cache[section] = new_section
 
 
 FULLWIDTH_MAP = (
