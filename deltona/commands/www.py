@@ -68,9 +68,6 @@ def chrome_bisect_flags_main(local_state_path: Path,
         - if the problematic flag exists within the passed in flags
         """
         len_flags = len(flags)
-        if len_flags == 0:
-            click.echo('Could not find the problem flag.')
-            return True, None
         click.echo('Testing flags:')
         for flag in flags:
             click.echo(f'- {flag}')
@@ -107,7 +104,7 @@ def chrome_bisect_flags_main(local_state_path: Path,
     try:
         click.confirm('Exit the browser and press enter', show_default=False)
         bad_flag = do_test(flags, local_state_data)
-    except KeyboardInterrupt as e:
+    except KeyboardInterrupt as e:  # pragma: no cover
         raise click.Abort from e
     finally:
         if bad_flag:
@@ -163,5 +160,5 @@ def check_bookmarks_html_main(filename: Path, *, debug: bool = False) -> None:
     """Check for URLs that are not valid any more (status 404) and redirections."""
     logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
     _, changed, not_found = check_bookmarks_html_urls(Path(filename).read_text(encoding='utf-8'))
-    click.echo(f'{len(changed)} URLS changed.')
-    click.echo(f'{len(not_found)} URLS resulted in 404 response.')
+    click.echo(f'{len(changed)} URLs changed.')
+    click.echo(f'{len(not_found)} URLs resulted in 404 response.')
