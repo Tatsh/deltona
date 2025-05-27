@@ -3,10 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import os
 
-from deltona.io import context_os_open, extract_rar_from_zip, unpack_0day, unpack_ebook
+from deltona.io import context_os_open, extract_gog, extract_rar_from_zip, unpack_0day, unpack_ebook
 import pytest
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from pytest_mock import MockerFixture
 
 FILE_DESCRIPTOR = 3
@@ -188,3 +190,81 @@ def test_unpack_ebook_no_pdf_or_epub(mocker: MockerFixture) -> None:
     ]
     with pytest.raises(ValueError):  # noqa: PT011
         unpack_ebook('some_path')
+
+
+def test_extract_gog_success(mocker: MockerFixture) -> None:
+    mock_path = mocker.patch('deltona.io.Path')
+    mock_copyfileobj = mocker.patch('deltona.io.shutil.copyfileobj')
+    mock_input_path = mocker.MagicMock()
+    mock_output_dir = mocker.MagicMock()
+    mock_path.side_effect = [mock_output_dir, mock_input_path]
+    mock_game_bin = mocker.Mock()
+    mock_input_path.resolve.return_value.open.return_value.__enter__.return_value = mock_game_bin
+    script = (b'#!/bin/sh\n'
+              b'offset=`head -n 5 "$0"`\n'
+              b'filesizes="1234"\n')
+    mock_game_bin.read.side_effect = [
+        script,
+        script,
+        b'mojosetup data',
+        b'data zip data',
+    ]
+    mock_game_bin.seek = mocker.MagicMock()
+    mock_game_bin.tell.side_effect = [42]
+
+    def readline_side_effect() -> Iterator[bytes]:
+        for _ in range(5):
+            yield b'line\n'
+
+    mock_game_bin.readline.side_effect = readline_side_effect()
+    mock_unpacker_sh_f = mocker.MagicMock()
+    mock_mojosetup_tar_f = mocker.MagicMock()
+    mock_datafile_f = mocker.MagicMock()
+    mock_output_dir.__truediv__.return_value.open.return_value.__enter__.side_effect = [
+        mock_unpacker_sh_f, mock_mojosetup_tar_f, mock_datafile_f
+    ]
+    extract_gog('input.gog', 'output_dir')
+    mock_output_dir.mkdir.assert_called_once_with(parents=True)
+    assert mock_game_bin.seek.call_count >= 3
+    mock_copyfileobj.assert_called_once_with(mock_game_bin, mock_datafile_f)
+
+
+def test_extract_gog_invalid_offset(mocker: MockerFixture) -> None:
+    mock_path = mocker.patch('deltona.io.Path')
+    mocker.patch('deltona.io.shutil.copyfileobj')
+    mock_input_path = mocker.MagicMock()
+    mock_output_dir = mocker.MagicMock()
+    mock_path.side_effect = [mock_output_dir, mock_input_path]
+    mock_game_bin = mocker.Mock()
+    mock_input_path.resolve.return_value.open.return_value.__enter__.return_value = mock_game_bin
+    script = b'#!/bin/sh\nfilesizes="1234"\n'
+    mock_game_bin.read.return_value = script
+    with pytest.raises(ValueError):  # noqa: PT011
+        extract_gog('input.gog', 'output_dir')
+    mock_output_dir.mkdir.assert_called_once_with(parents=True)
+
+
+def test_extract_gog_invalid_filesize(mocker: MockerFixture) -> None:
+    mock_path = mocker.patch('deltona.io.Path')
+    mock_input_path = mocker.MagicMock()
+    mock_output_dir = mocker.MagicMock()
+    mock_path.side_effect = [mock_output_dir, mock_input_path]
+    mock_game_bin = mocker.Mock()
+    mock_input_path.resolve.return_value.open.return_value.__enter__.return_value = mock_game_bin
+    script = (b'#!/bin/sh\n'
+              b'offset=`head -n 5 "$0"`\n')
+    mock_game_bin.read.side_effect = [script, script]
+    mock_game_bin.seek = mocker.MagicMock()
+    mock_game_bin.tell.side_effect = [42]
+
+    def readline_side_effect() -> Iterator[bytes]:
+        for _ in range(5):
+            yield b'line\n'
+
+    mock_game_bin.readline.side_effect = readline_side_effect()
+    mock_unpacker_sh_f = mocker.MagicMock()
+    open_f = mock_output_dir.__truediv__.return_value.open.return_value
+    open_f.__enter__.return_value = mock_unpacker_sh_f
+    with pytest.raises(ValueError):  # noqa: PT011
+        extract_gog('input.gog', 'output_dir')
+    mock_output_dir.mkdir.assert_called_once_with(parents=True)
