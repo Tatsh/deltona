@@ -1,7 +1,6 @@
 """Windows/Wine-related commands."""
 from __future__ import annotations
 
-from os import environ
 from pathlib import Path
 from shlex import quote
 from tempfile import NamedTemporaryFile
@@ -159,11 +158,11 @@ def wineshell_main(prefix_name: str, *, debug: bool = False) -> None:
     target = (Path(prefix_name) if Path(prefix_name).exists() else
               Path('~/.local/share/wineprefixes').expanduser() / prefix_name)
     terminal = shutil.get_terminal_size()
-    c = pexpect.spawn(environ.get('SHELL', '/bin/bash'), ['-i'],
+    c = pexpect.spawn(os.environ.get('SHELL', '/bin/bash'), ['-i'],
                       dimensions=(terminal.lines, terminal.columns))
     c.sendline(f'export WINEPREFIX={quote(str(target))}; export PS1="{target.name}🍷$PS1"')
 
-    def resize(sig: Any, data: Any) -> None:
+    def resize(sig: Any, data: Any) -> None:  # pragma: no cover
         terminal = shutil.get_terminal_size()
         c.setwinsize(terminal.lines, terminal.columns)
 
@@ -201,22 +200,24 @@ def winegoginstall_main(args: Sequence[str],
 
     This calls the installer with the following arguments:
 
-    /CLOSEAPPLICATIONS /FORCECLOSEAPPLICATIONS /NOCANCEL /NORESTART /SILENT
+    .. code-block:: text
+
+       /CLOSEAPPLICATIONS /FORCECLOSEAPPLICATIONS /NOCANCEL /NORESTART /SILENT
     """  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
-    if 'DISPLAY' not in environ or 'XAUTHORITY' not in environ:
+    if 'DISPLAY' not in os.environ or 'XAUTHORITY' not in os.environ:
         log.warning('Wine will likely fail to run since DISPLAY or XAUTHORITY are not in the '
                     'environment.')
     env = {
-        'DISPLAY': environ.get('DISPLAY', ''),
-        'XAUTHORITY': environ.get('XAUTHORITY', ''),
+        'DISPLAY': os.environ.get('DISPLAY', ''),
+        'XAUTHORITY': os.environ.get('XAUTHORITY', ''),
         'WINEDEBUG': 'fixme-all'
     }
     very_silent_args = ('/SP-', '/SUPPRESSMSGBOXES', '/VERYSILENT') if very_silent else ('/SILENT',)
     if prefix:
         env['WINEPREFIX'] = (prefix if Path(prefix).exists() else str(
             (Path('~/.local/share/wineprefixes') / prefix).expanduser()))
-    cmd = ('wine', filename, '/CLOSEAPPLICATIONS', '/FORCECLOSEAPPLICATIONS', '/NOCANCEL',
+    cmd = ('wine', str(filename), '/CLOSEAPPLICATIONS', '/FORCECLOSEAPPLICATIONS', '/NOCANCEL',
            '/NORESTART', *very_silent_args, *args)
     log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
     click.echo('Be very patient especially if this release is large.', err=True)
