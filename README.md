@@ -40,8 +40,5 @@ pip install deltona
 
 ## Usage
 
-Add `-d` to show debug logs.
-
-```shell
-deltona
-```
+See [the documentation](https://deltona.readthedocs.org/?badge=latest) for commands
+and the library.
