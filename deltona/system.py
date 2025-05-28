@@ -110,7 +110,7 @@ def uninhibit_notifications() -> None:
     global _key  # noqa: PLW0603
     try:
         from pydbus import SessionBus  # noqa: PLC0415
-    except (ImportError, ModuleNotFoundError):
+    except (ImportError, ModuleNotFoundError):  # pragma: no cover
         log.exception('Cannot import pydbus.', stack_info=False)
         return
     notifications = SessionBus().get('org.freedesktop.Notifications',
