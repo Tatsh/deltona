@@ -225,12 +225,15 @@ def add_info_json_to_media_file(path: StrPath,
 
 def ffprobe(path: StrPath) -> ProbeDict:
     """Run ``ffprobe`` and decode its JSON output."""
-    p = sp.run(('ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams',
-                str(path)),
-               check=True,
-               capture_output=True,
-               text=True)
-    return cast('ProbeDict', json.loads(p.stdout.strip()))
+    return cast(
+        'ProbeDict',
+        json.loads(
+            sp.run(
+                ('ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams',
+                 str(path)),
+                check=True,
+                capture_output=True,
+                text=True).stdout.strip()))
 
 
 def get_info_json(path: StrPath, *, raw: bool = False) -> Any:
@@ -617,7 +620,7 @@ def rip_cdda_to_flac(drive: StrPath,
     log.debug('Result: %s', result)
     output_dir = Path(output_dir or '.')
     album_dir = ((output_dir / album_dir) if album_dir else output_dir /
-                 f'{result.artist}-{result.album}-{result.year}')
+                 f'{album_artist or result.artist}-{result.album}-{result.year}')
     album_dir.mkdir(parents=True, exist_ok=True)
     for i, track in enumerate(result.tracks, 1):
         wav = album_dir / f'{i:02d}-{result.artist}-{track}.wav'
