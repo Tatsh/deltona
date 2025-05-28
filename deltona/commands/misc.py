@@ -113,8 +113,9 @@ def burnrariso_main(rar_filename: Path,
         click.echo('Testing extraction.')
         try:
             unrar.test_extraction(rar_path, iso.name)
-        except UnRARExtractionTestFailed:
+        except UnRARExtractionTestFailed as e:
             click.echo('RAR extraction test failed.', err=True)
+            raise click.Abort from e
     with (unrar.pipe(rar_filename, iso.name) as u,
           sp.Popen(
               (cdrecord_path, *((f'dev={device_name}',) if device_name else
