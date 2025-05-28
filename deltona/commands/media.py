@@ -5,7 +5,6 @@ from operator import itemgetter
 from pathlib import Path
 from shlex import quote
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, override
-import contextlib
 import getpass
 import json
 import logging
@@ -447,7 +446,7 @@ def ripcd_main(drive: Path = DEFAULT_DRIVE_SR0,
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('files', nargs=-1)
+@click.argument('files', nargs=-1, type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option('-A', '--album', help='Album.')
 @click.option('-D',
               '--delete-all-before',
@@ -460,7 +459,7 @@ def ripcd_main(drive: Path = DEFAULT_DRIVE_SR0,
 @click.option('-p', '--picture', help='Cover artwork to attach.')
 @click.option('-t', '--title', help='Track title.')
 @click.option('-y', '--year', type=int, help='Year.')
-def flacted_main(files: tuple[str, ...],
+def flacted_main(files: tuple[Path, ...],
                  album: str | None = None,
                  artist: str | None = None,
                  genre: str | None = None,
@@ -485,13 +484,8 @@ def flacted_main(files: tuple[str, ...],
     if invoked_as != 'flacted' and len(files) > 0:
         tag_requested = invoked_as.split('-')[1].lower()
         possible: tuple[str, ...] = (tag_requested.title(), tag_requested.upper(), tag_requested)
-        if tag_requested.lower() == 'year':
+        if tag_requested == 'year':
             possible += ('Date', 'DATE', 'date')
-        unfiltered_files = files
-        filtered_files = []
-        for file in unfiltered_files:
-            with contextlib.suppress(FileNotFoundError):
-                filtered_files.append(str(Path(file).resolve(strict=True)))
         show_filename = len(files) > 1
         for filename in files:
             for tag in possible:
@@ -504,7 +498,7 @@ def flacted_main(files: tuple[str, ...],
                     if tag_requested == 'track':
                         try:
                             val_int: int | None = int(val)
-                        except TypeError:
+                        except (TypeError, ValueError):
                             val = ''
                             val_int = None
                         if val_int:
@@ -520,7 +514,7 @@ def flacted_main(files: tuple[str, ...],
     clean_up_args = metaflac_args.copy()
     destroy = delete_all_before
     clean_up_args.append('--remove-all-tags')
-    clean_up_args.extend(files)
+    clean_up_args += (str(x) for x in files)
     for key, value in {
             'album': album,
             'artist': artist,

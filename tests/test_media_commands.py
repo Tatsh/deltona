@@ -215,13 +215,64 @@ def test_flacted_main_show_tag_year(mocker: MockerFixture, runner: CliRunner, tm
     assert result.exit_code == 0
 
 
+def test_flacted_main_show_tag_track(mocker: MockerFixture, runner: CliRunner, tmp_path: Path,
+                                     monkeypatch: pytest.MonkeyPatch) -> None:
+    f = tmp_path / 'file.flac'
+    f.write_text('dummy')
+    f2 = tmp_path / 'file2.flac'
+    f2.write_text('dummy')
+    monkeypatch.setattr('sys.argv', ['flac-track', str(f), str(f2)])
+    mocker.patch('deltona.commands.media.sp.run', return_value=mocker.MagicMock(stdout='TRACK=1\n'))
+    result = runner.invoke(flacted_main, [str(f), str(f2)])
+    assert f'{f}: 01' in result.output
+    assert f'{f2}: 01' in result.output
+    assert result.exit_code == 0
+
+
+def test_flacted_main_show_tag_track_invalid_value_for_int(mocker: MockerFixture, runner: CliRunner,
+                                                           tmp_path: Path,
+                                                           monkeypatch: pytest.MonkeyPatch) -> None:
+    f = tmp_path / 'file.flac'
+    f.write_text('dummy')
+    monkeypatch.setattr('sys.argv', ['flac-track', str(f)])
+    mocker.patch('deltona.commands.media.sp.run', return_value=mocker.MagicMock(stdout='TRACK=a\n'))
+    result = runner.invoke(flacted_main, [str(f)])
+    assert result.exit_code == 0
+    assert not result.output.strip()
+
+
+def test_flacted_main_show_tag_track_invalid_metaflac_output(
+        mocker: MockerFixture, runner: CliRunner, tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    f = tmp_path / 'file.flac'
+    f.write_text('dummy')
+    monkeypatch.setattr('sys.argv', ['flac-track', str(f)])
+    mocker.patch('deltona.commands.media.sp.run', return_value=mocker.MagicMock(stdout='\n'))
+    result = runner.invoke(flacted_main, [str(f)])
+    assert result.exit_code == 0
+    assert not result.output.strip()
+
+
 def test_flacted_main_set_tags(mocker: MockerFixture, runner: CliRunner, tmp_path: Path,
                                monkeypatch: pytest.MonkeyPatch) -> None:
     f = tmp_path / 'file.flac'
     f.write_text('dummy')
     mocker.patch('deltona.commands.media.sp.run', return_value=mocker.MagicMock(stdout=''))
-    monkeypatch.setattr('sys.argv', ['flacted', str(f), '--album', 'A', '--artist', 'B', '-D'])
-    result = runner.invoke(flacted_main, [str(f), '--album', 'A', '--artist', 'B', '-D'])
+    args = (str(f), '--album', 'A', '--artist', 'B', '-D', '-y', '2023', '-T', '1', '-p',
+            'image.jpg')
+    monkeypatch.setattr('sys.argv', ['flacted', *args])
+    result = runner.invoke(flacted_main, args)
+    assert result.exit_code == 0
+
+
+def test_flacted_main_set_tags_no_destroy(mocker: MockerFixture, runner: CliRunner, tmp_path: Path,
+                                          monkeypatch: pytest.MonkeyPatch) -> None:
+    f = tmp_path / 'file.flac'
+    f.write_text('dummy')
+    mocker.patch('deltona.commands.media.sp.run', return_value=mocker.MagicMock(stdout=''))
+    args = (str(f), '--album', 'A', '--artist', 'B', '-y', '2023', '-T', '1', '-p', 'image.jpg')
+    monkeypatch.setattr('sys.argv', ['flacted', *args])
+    result = runner.invoke(flacted_main, args)
     assert result.exit_code == 0
 
 
@@ -294,8 +345,8 @@ def test_flac_dir_finalize_main(mocker: MockerFixture, runner: CliRunner, tmp_pa
     img.write_text('dummy')
     mocker.patch('deltona.commands.media.underscorize', side_effect=lambda x: x)
     mocker.patch('deltona.commands.media.make_sfv')
-    mocker.patch(
-        'deltona.commands.media.sp.run',
-        return_value=mocker.MagicMock(stdout='tracknumber=1\nartist=Artist\ntitle=Title\n'))
+    mocker.patch('deltona.commands.media.sp.run',
+                 return_value=mocker.MagicMock(
+                     stdout='tracknumber=1\nartist=Artist\ntitle=Title\nunknown\n'))
     result = runner.invoke(flac_dir_finalize_main, [str(d)])
     assert result.exit_code == 0
