@@ -51,6 +51,21 @@ def test_merge_dependabot_pull_requests_success(mocker: MockerFixture,
     mock_github_repo.get_pull.return_value.merge.assert_called_once_with(merge_method='rebase')
 
 
+def test_merge_dependabot_pull_requests_success_alt(mocker: MockerFixture,
+                                                    monkeypatch: pytest.MonkeyPatch) -> None:
+    mock_github = mocker.Mock()
+    mock_github_repo = mocker.Mock()
+    mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
+    mock_github_repo.archived = False
+    mock_github_repo.security_and_analysis.dependabot_security_updates.status = 'not enabled'
+    mock_github_repo.get_pulls.return_value = [Mock(user=Mock(login='dependabot[bot]'), number=1)]
+    mock_github_repo.get_pull.return_value.merge.return_value.merged = True
+    monkeypatch.setattr('github.Github', mock_github)
+    merge_dependabot_pull_requests(token='fake_token')
+    mock_github_repo.get_pull.assert_called_once_with(1)
+    mock_github_repo.get_pull.return_value.merge.assert_called_once_with(merge_method='rebase')
+
+
 def test_merge_dependabot_pull_requests_no_dependabot(mocker: MockerFixture,
                                                       monkeypatch: pytest.MonkeyPatch) -> None:
     def raise_ghe(*args: Any) -> None:
@@ -84,3 +99,28 @@ def test_merge_dependabot_pull_requests_should_raise(mocker: MockerFixture,
         merge_dependabot_pull_requests(token='fake_token')
     mock_github_repo.get_pull.assert_called_once_with(1)
     mock_github_repo.get_pull.return_value.merge.assert_called_once_with(merge_method='rebase')
+
+
+def test_merge_dependabot_pull_requests_adds_rebase_comment(
+        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
+    mock_github = mocker.Mock()
+    mock_github_repo = mocker.Mock()
+    mock_pull = mocker.Mock()
+    mock_issue = mocker.Mock()
+    mock_github_repo.archived = False
+    mock_github_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
+    mock_pull.user.login = 'dependabot[bot]'
+    mock_pull.number = 42
+    merge_result = mocker.Mock()
+    merge_result.merged = False
+    mock_pull.merge.return_value = merge_result
+    mock_pull.as_issue.return_value = mock_issue
+    mock_github_repo.get_pulls.return_value = [mock_pull]
+    mock_github_repo.get_pull.return_value = mock_pull
+    mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
+    monkeypatch.setattr('github.Github', mock_github)
+    merge_dependabot_pull_requests(token='fake_token')
+    mock_github_repo.get_pull.assert_called_once_with(42)
+    mock_pull.merge.assert_called_once_with(merge_method='rebase')
+    mock_pull.as_issue.assert_called_once()
+    mock_issue.create_comment.assert_called_once_with('@dependabot rebase')

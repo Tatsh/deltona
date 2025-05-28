@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
+import contextlib
 import logging
 import re
 
@@ -83,11 +84,9 @@ def merge_dependabot_pull_requests(
     import github  # noqa: PLC0415
 
     def uses_dependabot(repo: Repository) -> bool:
-        try:
+        with contextlib.suppress(AttributeError, github.GithubException):
             if repo.security_and_analysis.dependabot_security_updates.status == 'enabled':
                 return True
-        except (AttributeError, github.GithubException):
-            pass
         try:
             repo.get_contents('.github/workflows/dependabot.yml')
         except github.GithubException:
