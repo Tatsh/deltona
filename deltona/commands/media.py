@@ -541,7 +541,7 @@ def flacted_main(files: tuple[Path, ...],
         raise click.Abort
     if destroy:
         metaflac(*clean_up_args)
-    metaflac_args.extend(files)
+    metaflac_args += (str(x) for x in files)
     metaflac(*metaflac_args)
 
 
