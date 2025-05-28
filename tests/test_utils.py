@@ -194,6 +194,107 @@ def test_create_wine_prefix_handles_winetricks_failure(mocker: MockerFixture) ->
     create_wine_prefix('prefix4', tricks=['corefonts'])
 
 
+def test_create_wine_prefix_dxvk_nvapi_true_no_q4wine_db(mocker: MockerFixture) -> None:
+    sp_run = mocker.patch('deltona.utils.sp.run')
+    mocker.patch('deltona.utils.which',
+                 side_effect=lambda x: '/usr/bin/winetricks' if x == 'winetricks' else None)
+    mock_get = mocker.patch('deltona.utils.requests.get')
+    mocker.patch('deltona.utils.xz.open')
+    mocker.patch('deltona.utils.tarfile.TarFile')
+    mocker.patch('deltona.utils.copyfile')
+    mocker.patch('deltona.utils.struct.pack', return_value=b'\x00' * 92)
+    mocker.patch('deltona.utils.IS_WINDOWS', False)
+    mocker.patch.dict('deltona.utils.environ', {
+        'PATH': '/bin',
+        'XAUTHORITY': '/tmp/.Xauthority'
+    },
+                      clear=True)
+    mock_user_config_path = mocker.patch('deltona.utils.platformdirs.user_config_path')
+    mock_db_path = mocker.Mock()
+    mock_db_path.exists.return_value = False
+    mock_user_config_path.return_value.__truediv__.return_value = mock_db_path
+    mock_path = mocker.patch('deltona.utils.Path')
+    prefix_root = mock_path.home.return_value.__truediv__.return_value.__truediv__.return_value
+    prefix_root.exists.return_value = False
+    mocker.patch('deltona.utils.rmtree')
+    mocker.patch('deltona.utils.tempfile.gettempdir', return_value='/tmp')
+    mock_get.return_value.content = b''
+    mocker.patch('deltona.utils.xz.open')
+    result = create_wine_prefix('dxvk-prefix', dxvk_nvapi=True)
+    assert result is not None
+    assert any('setup_vkd3d_proton.sh' in str(args[0]) for args in sp_run.call_args_list)
+
+
+def test_create_wine_prefix_dxvk_nvapi_true_32bit(mocker: MockerFixture) -> None:
+    sp_run = mocker.patch('deltona.utils.sp.run')
+    mocker.patch('deltona.utils.which',
+                 side_effect=lambda x: '/usr/bin/winetricks' if x == 'winetricks' else None)
+    mock_get = mocker.patch('deltona.utils.requests.get')
+    mocker.patch('deltona.utils.xz.open')
+    mocker.patch('deltona.utils.tarfile.TarFile')
+    mocker.patch('deltona.utils.copyfile')
+    mocker.patch('deltona.utils.struct.pack', return_value=b'\x00' * 92)
+    mocker.patch('deltona.utils.IS_WINDOWS', False)
+    mocker.patch.dict('deltona.utils.environ', {
+        'PATH': '/bin',
+        'DISPLAY': ':0',
+        'XAUTHORITY': '/tmp/.Xauthority'
+    },
+                      clear=True)
+    mock_user_config_path = mocker.patch('deltona.utils.platformdirs.user_config_path')
+    mock_db_path = mocker.Mock()
+    mock_db_path.exists.return_value = False
+    mock_user_config_path.return_value.__truediv__.return_value = mock_db_path
+    mock_path = mocker.patch('deltona.utils.Path')
+    prefix_root = mock_path.home.return_value.__truediv__.return_value.__truediv__.return_value
+    prefix_root.exists.return_value = False
+    mocker.patch('deltona.utils.rmtree')
+    mocker.patch('deltona.utils.tempfile.gettempdir', return_value='/tmp')
+    mock_get.return_value.content = b''
+    mocker.patch('deltona.utils.xz.open')
+    result = create_wine_prefix('dxvk-prefix-32', dxvk_nvapi=True, _32bit=True)
+    assert result is not None
+    # Should call setup_vkd3d_proton.sh
+    assert any('setup_vkd3d_proton.sh' in str(args[0]) for args in sp_run.call_args_list)
+    # Should NOT call wine64 reg add for NGXCore (since _32bit=True)
+    assert not any(
+        isinstance(args[0], tuple) and args[0][0] == 'wine64' and 'NGXCore' in args[0]
+        for args in sp_run.call_args_list)
+
+
+def test_create_wine_prefix_asio_true_register_found(mocker: MockerFixture) -> None:
+    sp_run = mocker.patch('deltona.utils.sp.run')
+    # which returns a path for wineasio-register
+    mocker.patch('deltona.utils.which',
+                 side_effect=lambda x: '/usr/bin/wineasio-register'
+                 if x == 'wineasio-register' else None)
+    mock_path = mocker.patch('deltona.utils.Path')
+    # Simulate prefix does not exist
+    prefix = mock_path.home.return_value.__truediv__.return_value.__truediv__.return_value
+    prefix.exists.return_value = False
+    mocker.patch.dict('deltona.utils.environ', {
+        'PATH': '/bin',
+        'DISPLAY': ':0',
+        'XAUTHORITY': '/tmp/.Xauthority'
+    },
+                      clear=True)
+    mocker.patch('deltona.utils.requests.get')
+    mocker.patch('deltona.utils.xz.open')
+    mocker.patch('deltona.utils.tarfile.TarFile')
+    mocker.patch('deltona.utils.copyfile')
+    mocker.patch('deltona.utils.platformdirs.user_config_path')
+    mocker.patch('deltona.utils.sqlite3.connect')
+    mocker.patch('deltona.utils.rmtree')
+    mocker.patch('deltona.utils.tempfile.gettempdir', return_value='/tmp')
+    mocker.patch('deltona.utils.struct.pack', return_value=b'\x00' * 92)
+    result = create_wine_prefix('asio-prefix', asio=True)
+    assert result is not None
+    # Should call wineasio-register
+    assert any(
+        isinstance(args.args[0], tuple) and args.args[0][0] == '/usr/bin/wineasio-register'
+        for args in sp_run.call_args_list)
+
+
 def test_unregister_wine_file_associations_basic(mocker: MockerFixture) -> None:
     # Patch kill_wine
     kill_wine_mock = mocker.patch('deltona.utils.kill_wine')
@@ -368,6 +469,53 @@ def test_secure_move_path_handles_file_not_found_on_stat(mocker: MockerFixture) 
     sftp.mkdir = mocker.Mock()
     secure_move_path(client, '/src', '~/target')
     assert sftp.mkdir.called
+
+
+def test_secure_move_path_file_dry_run_preserve_stats(mocker: MockerFixture) -> None:
+    client = mocker.MagicMock()
+    sftp = mocker.MagicMock()
+    client.open_sftp.return_value.__enter__.return_value = sftp
+    path_mock = mocker.patch('deltona.utils.Path')
+    path_instance = path_mock.return_value
+    path_instance.is_file.return_value = True
+    path_instance.name = 'file.txt'
+    path_instance.stat.return_value = mocker.Mock(st_atime=1.0, st_mtime=2.0)
+    client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/remote'), None)
+    path_instance.unlink = mocker.Mock()
+    sftp.utime = mocker.Mock()
+    secure_move_path(client, 'file.txt', '~/target', dry_run=True, preserve_stats=True)
+    assert not sftp.put.called
+    assert not path_instance.unlink.called
+    assert not sftp.utime.called
+
+
+def test_secure_move_path_dir_dry_run_preserve_stats(mocker: MockerFixture) -> None:
+    client = mocker.MagicMock()
+    sftp = mocker.MagicMock()
+    client.open_sftp.return_value.__enter__.return_value = sftp
+    path_mock = mocker.patch('deltona.utils.Path')
+    path_instance = path_mock.return_value
+    path_instance.is_file.return_value = False
+    path_instance.name = 'dir'
+    path_instance.stat.return_value = mocker.Mock(st_atime=1.0, st_mtime=2.0)
+    client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/remote'), None)
+    # Simulate os.walk for directory
+    mocker.patch('deltona.utils.os.walk',
+                 side_effect=[[('/src', ['subdir'], ['file1', 'file2'])],
+                              [('/src', ['subdir'], [])]])
+    # Patch sftp.stat to raise FileNotFoundError for mkdir
+    sftp.stat.side_effect = FileNotFoundError
+    sftp.mkdir = mocker.Mock()
+    sftp.put = mocker.Mock()
+    sftp.utime = mocker.Mock()
+    sftp.remove = mocker.Mock()
+    sftp.rmdir = mocker.Mock()
+    mocker.patch('deltona.utils.Path', return_value=path_instance)
+    secure_move_path(client, '/src', '~/target', dry_run=True, preserve_stats=True)
+    assert not sftp.put.called
+    assert not sftp.utime.called
+    assert not sftp.remove.called
+    assert not sftp.rmdir.called
 
 
 def test_kill_processes_by_name_windows_basic(mocker: MockerFixture) -> None:

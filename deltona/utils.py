@@ -343,7 +343,7 @@ def create_wine_prefix(prefix_name: str,
                    *sorted(set(tricks)))
             log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
             sp.run(cmd, check=True)
-    except sp.CalledProcessError as e:
+    except sp.CalledProcessError as e:  # pragma: no cover
         log.warning('Winetricks exit code was %d but it may have succeeded.', e.returncode)
     if dxvk_nvapi:
         cmd = ('setup_vkd3d_proton.sh', 'install')
