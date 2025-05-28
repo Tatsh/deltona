@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, TextIO
 from urllib.parse import unquote_plus, urlparse
+import io
 import json
 import plistlib
 import sys
@@ -124,8 +125,12 @@ def is_bin_main(file: BytesIO) -> None:
 
     Exit code 0 means the file probably contains binary content.
     """  # noqa: DOC501
-    if ((file.name and (p := Path(file.name)) and p.exists() and p.stat().st_size == 0)
-            and is_binary_string(file.read(1024))):
+    file.seek(0, io.SEEK_END)
+    if file.tell() == 0:
+        click.echo('File is empty. Not counting as binary.', err=True)
+        raise click.Abort
+    file.seek(0)
+    if is_binary_string(file.read(1024)):
         return
     raise click.exceptions.Exit(1)
 
