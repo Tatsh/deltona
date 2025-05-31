@@ -98,6 +98,22 @@ def test_uninhibit_notifications_not_inhibited(monkeypatch: pytest.MonkeyPatch) 
     mock_notifications.UnInhibit.assert_not_called()
 
 
+def test_uninhibit_notifications_session_bus_get_returns_none(mocker: MockerFixture) -> None:
+    mock_session_bus = mocker.patch('pydbus.SessionBus')
+    mock_session_bus.return_value.get.return_value = None
+    with pytest.raises(ConnectionError):
+        uninhibit_notifications()
+
+
+def test_uninhibit_notifications_key_is_none(mocker: MockerFixture) -> None:
+    fsb, mock_notifications = make_fake_session_bus()
+    mocker.patch('pydbus.SessionBus', fsb)
+    mock_notifications.Inhibited = True
+    mocker.patch('deltona.system._key', None)
+    uninhibit_notifications()
+    mock_notifications.UnInhibit.assert_not_called()
+
+
 def test_wait_for_disc_success(mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
     def mock_ioctl(*args: Any) -> CDStatus:
         return CDStatus.DISC_OK
@@ -179,6 +195,22 @@ def test_find_bluetooth_device_info_by_name_not_linux(mocker: MockerFixture) -> 
     mocker.patch('deltona.system.IS_LINUX', False)  # noqa: FBT003
     with pytest.raises(NotImplementedError):
         find_bluetooth_device_info_by_name('TestDevice')
+
+
+def test_find_bluetooth_device_info_by_name_no_device1(mocker: MockerFixture) -> None:
+    mocker.patch('deltona.system.IS_LINUX', True)  # noqa: FBT003
+    fsb, mock_bluez = make_fake_bluez_system_bus()
+    mock_bluez.GetManagedObjects.return_value = {
+        '/org/bluez/hci0/dev_00_11_22_33_44_55': {
+            'org.bluez.NotDevice1': {
+                'Name': 'TestDevice'
+            }
+        }
+    }
+    mocker.patch('pydbus.SystemBus', fsb)
+    with pytest.raises(KeyError):
+        find_bluetooth_device_info_by_name('TestDevice')
+    mock_bluez.GetManagedObjects.assert_called_once()
 
 
 def test_slug_rename_success(mocker: MockerFixture) -> None:
@@ -372,13 +404,38 @@ def test_reset_tpm_enrollment_real_run(mocker: MockerFixture) -> None:
 
 
 def test_get_kwriteconfig_commands_basic(mocker: MockerFixture) -> None:
-    # Mock Path.home and Path.resolve
+    mock_default_file = mocker.MagicMock()
     mock_path = mocker.patch('deltona.system.Path')
-    mock_home = mocker.patch('deltona.system.Path.home')
+    mock_path.return_value.resolve.return_value = mock_default_file
+    mocker.patch('deltona.system.DEFAULT_FILE', mock_default_file)
+    mock_home = mock_path.home.return_value
+    mock_home.__str__.return_value = '/home/user'
+    mock_path.return_value.exists.return_value = False
+    mock_path.return_value.__str__.return_value = '/home/user/.config/kdeglobals'
+    mock_config = mocker.patch('deltona.system.configparser.ConfigParser')
+    config_instance = mock_config.return_value
+    config_instance.sections.return_value = ['General']
+    config_instance.__getitem__.return_value.items.return_value = [('Key', 'Value')]
+    mocker.patch('deltona.system.is_binary_string', return_value=False)
+    mocker.patch('deltona.system.re.match', side_effect=lambda _, __: None)
+    mocker.patch('deltona.system.re.search', side_effect=lambda _, __: None)
+    commands = list(get_kwriteconfig_commands())
+    assert commands
+    assert commands[0].startswith('kwriteconfig6')
+    assert '--group' in commands[0]
+    assert '--key' in commands[0]
+    assert 'General' in commands[0]
+    assert 'Key' in commands[0]
+    assert 'Value' in commands[0]
+
+
+def test_get_kwriteconfig_commands_not_default_file(mocker: MockerFixture) -> None:
+    mock_path = mocker.patch('deltona.system.Path')
+    mock_home = mock_path.home
     mock_home.return_value = mock_path
     mock_path.__truediv__.return_value = mock_path
     mock_path.resolve.return_value = mock_path
-    mock_path.__str__.return_value = '/home/user/.config/kdeglobals'  # type: ignore[attr-defined]
+    mock_path.__str__.return_value = '/home/user/.config/otherfilerc'  # type: ignore[attr-defined]
     mock_config = mocker.patch('deltona.system.configparser.ConfigParser')
     config_instance = mock_config.return_value
     config_instance.sections.return_value = ['General']
@@ -387,7 +444,7 @@ def test_get_kwriteconfig_commands_basic(mocker: MockerFixture) -> None:
     mocker.patch('deltona.system.Path.exists', return_value=False)
     mocker.patch('deltona.system.re.match', side_effect=lambda _, __: None)
     mocker.patch('deltona.system.re.search', side_effect=lambda _, __: None)
-    commands = list(get_kwriteconfig_commands('/home/user/.config/kdeglobals'))
+    commands = list(get_kwriteconfig_commands('/home/user/.config/otherfilerc'))
     assert commands
     assert commands[0].startswith('kwriteconfig6')
     assert '--group' in commands[0]
@@ -510,6 +567,39 @@ def test_get_kwriteconfig_commands_type_detection(mocker: MockerFixture) -> None
     assert any('--type' not in cmd for cmd in commands)  # StringKey has no type
 
 
+def test_get_kwriteconfig_commands_type_detection_path_not_file(mocker: MockerFixture) -> None:
+    mock_path = mocker.patch('deltona.system.Path')
+    mock_path.return_value.exists.side_effect = OSError
+    mock_home = mock_path.home
+    mock_home.return_value = mock_path
+    mock_path.__truediv__.return_value = mock_path
+    mock_path.resolve.return_value = mock_path
+    mock_path.__str__.return_value = '/home/user/.config/kdeglobals'  # type: ignore[attr-defined]
+    mock_config = mocker.patch('deltona.system.configparser.ConfigParser')
+    config_instance = mock_config.return_value
+    config_instance.sections.return_value = ['General']
+    config_instance.__getitem__.return_value.items.return_value = [('BoolKey', 'true'),
+                                                                   ('IntKey', '42'),
+                                                                   ('PathKey', '/some/file'),
+                                                                   ('StringKey', 'hello')]
+    mocker.patch('deltona.system.is_binary_string', return_value=False)
+
+    def fake_match(pattern: str, value: str) -> bool | None:
+        if pattern == r'^(?:1|true|false|on|yes)$' and value == 'true':
+            return True
+        if pattern == r'^-?[0-9]+$' and value == '42':
+            return True
+        return None
+
+    mocker.patch('deltona.system.re.match', side_effect=fake_match)
+    mocker.patch('deltona.system.re.search', return_value=None)
+    commands = list(get_kwriteconfig_commands('/home/user/.config/kdeglobals'))
+    assert any('--type' in cmd and 'bool' in cmd for cmd in commands)
+    assert any('--type' in cmd and 'int' in cmd for cmd in commands)
+    assert any('--type' in cmd and 'path' not in cmd for cmd in commands)
+    assert any('--type' not in cmd for cmd in commands)  # StringKey has no type
+
+
 def test_get_kwriteconfig_commands_returns_from_unicode_decode_error(mocker: MockerFixture) -> None:
     mock_path = mocker.patch('deltona.system.Path')
     mock_path.home.return_value = mock_path
@@ -524,3 +614,23 @@ def test_get_kwriteconfig_commands_returns_from_unicode_decode_error(mocker: Moc
         list(get_kwriteconfig_commands('/home/user/.config/kdeglobals'))
     except UnicodeDecodeError:
         pytest.fail('Unexpected UnicodeDecodeError raised.')
+
+
+def test_get_kwriteconfig_commands_skips_sections_with_brackets(mocker: MockerFixture) -> None:
+    mock_path = mocker.patch('deltona.system.Path')
+    mock_home = mocker.patch('deltona.system.Path.home')
+    mock_home.return_value = mock_path
+    mock_path.__truediv__.return_value = mock_path
+    mock_path.resolve.return_value = mock_path
+    mock_path.__str__.return_value = '/home/user/.config/kdeglobals'  # type: ignore[attr-defined]
+    mock_config = mocker.patch('deltona.system.configparser.ConfigParser')
+    config_instance = mock_config.return_value
+    # Section with '][' in the name should be skipped
+    config_instance.sections.return_value = ['General][Extra']
+    config_instance.__getitem__.return_value.items.return_value = [('Key', 'Value')]
+    mocker.patch('deltona.system.is_binary_string', return_value=False)
+    mocker.patch('deltona.system.Path.exists', return_value=False)
+    mocker.patch('deltona.system.re.match', side_effect=lambda _, __: None)
+    mocker.patch('deltona.system.re.search', side_effect=lambda _, __: None)
+    commands = list(get_kwriteconfig_commands('/home/user/.config/kdeglobals'))
+    assert commands == []

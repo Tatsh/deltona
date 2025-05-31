@@ -382,6 +382,7 @@ def get_kwriteconfig_commands(file: StrPath = DEFAULT_FILE) -> Iterator[str]:
     config = configparser.ConfigParser(delimiters=('=',), interpolation=None)
     config.optionxform = str  # type: ignore[assignment]
     file = Path(file).resolve(strict=True)
+    is_default_file = file == DEFAULT_FILE
     displayed_file = re.sub(rf'^{home}/', '~/', str(file))
     try:
         config.read(file)
@@ -421,7 +422,7 @@ def get_kwriteconfig_commands(file: StrPath = DEFAULT_FILE) -> Iterator[str]:
             elif is_int:
                 type_ = 'int'
             cmd: tuple[str, ...] = ('kwriteconfig6',)
-            if file != DEFAULT_FILE:
+            if is_default_file:
                 cmd += ('--file', displayed_file)
             if type_:
                 cmd += ('--type', quote(type_))
