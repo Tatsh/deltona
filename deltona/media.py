@@ -778,8 +778,6 @@ def archive_dashcam_footage(front_dir: StrPath,
         ``zip()`` is used to group pairs of file groups and the front and rear videos. Strict mode
         is used and as such length counts must always match, unless a workaround is known. If a
         workaround cannot be used, this exception will be raised from ``zip()``.
-
-
     """  # noqa: DOC501
     front_dir = Path(front_dir)
     rear_dir = Path(rear_dir)
@@ -863,7 +861,7 @@ def archive_dashcam_footage(front_dir: StrPath,
             to_be_merged: list[Path] = []
             send_to_waste: list[Path] = []
             for i, (back_file, front_file) in enumerate(
-                    list(zip(back_group, front_group, strict=True))):
+                    list(zip(back_group, front_group, strict=False))):
                 log.debug('Back file: %s, front file: %s', back_file, front_file)
                 assert back_file != front_file
                 cmd = ('ffmpeg', '-hide_banner', *input_options, '-i', str(back_file), '-i',

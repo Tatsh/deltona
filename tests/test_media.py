@@ -671,7 +671,6 @@ def test_archive_dashcam_footage_basic_merge(mocker: MockerFixture, tmp_path: Pa
 
 def test_archive_dashcam_footage_group_discrepancy_resolution(mocker: MockerFixture,
                                                               tmp_path: Path) -> None:
-    # Setup fake front and rear files, rear has one extra
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     output_dir = tmp_path / 'output'
@@ -692,9 +691,7 @@ def test_archive_dashcam_footage_group_discrepancy_resolution(mocker: MockerFixt
     assert mock_send2trash.call_count == 4
 
 
-def test_archive_dashcam_footage_group_discrepancy_raises(mocker: MockerFixture,
-                                                          tmp_path: Path) -> None:
-    # Setup fake front and rear files, mismatch
+def test_archive_dashcam_footage_group_discrepancy_raises(tmp_path: Path) -> None:
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     output_dir = tmp_path / 'output'
@@ -709,6 +706,114 @@ def test_archive_dashcam_footage_group_discrepancy_raises(mocker: MockerFixture,
                                 rear_dir,
                                 output_dir,
                                 allow_group_discrepancy_resolution=False)
+
+
+def test_archive_dashcam_footage_group_discrepancy_raises_2(tmp_path: Path) -> None:
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    (front_dir / '20240512164400_front.mp4').write_bytes(b'front')
+    (rear_dir / '20240512164400_rear.mp4').write_bytes(b'rear')
+    (rear_dir / '20240515164401_rear.mp4').write_bytes(b'rear')
+    with pytest.raises(ValueError, match=r'\d+'):
+        archive_dashcam_footage(front_dir,
+                                rear_dir,
+                                output_dir,
+                                allow_group_discrepancy_resolution=False)
+
+
+def test_archive_dashcam_footage_group_discrepancy_unresolved(tmp_path: Path) -> None:
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    (front_dir / '20240512164400_front.mp4').write_bytes(b'front')
+    (rear_dir / '20240512164400_rear.mp4').write_bytes(b'rear')
+    (rear_dir / '20240515164401_rear.mp4').write_bytes(b'rear')
+    with pytest.raises(ValueError, match=r'\d+'):
+        archive_dashcam_footage(front_dir, rear_dir, output_dir)
+
+
+def test_archive_dashcam_footage_group_discrepancy_solving_bg_len_gt(tmp_path: Path,
+                                                                     mocker: MockerFixture) -> None:
+    mocker.patch('deltona.media.sp.run')
+    mock_trash = mocker.patch('deltona.media.send2trash')
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    last = (rear_dir / '20240512164400_rear.mp4')
+    (front_dir / '20240512164400_front.mp4').write_bytes(b'front')
+    (rear_dir / '20240512164401_rear.mp4').write_bytes(b'rear')
+    last.write_bytes(b'rear')
+    archive_dashcam_footage(front_dir, rear_dir, output_dir)
+    mock_trash.assert_has_calls([mocker.call(last)])
+
+
+def test_archive_dashcam_footage_group_discrepancy_solving_fg_len_gt(tmp_path: Path,
+                                                                     mocker: MockerFixture) -> None:
+    mocker.patch('deltona.media.sp.run')
+    mock_trash = mocker.patch('deltona.media.send2trash')
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    last = (front_dir / '20240512164400_rear.mp4')
+    (rear_dir / '20240512164400_front.mp4').write_bytes(b'front')
+    (front_dir / '20240512164401_rear.mp4').write_bytes(b'rear')
+    (output_dir / '20240512164400_rear.mkv').touch()
+    last.write_bytes(b'rear')
+    archive_dashcam_footage(front_dir, rear_dir, output_dir)
+    mock_trash.assert_has_calls([mocker.call(last)])
+
+
+def test_archive_dashcam_footage_group_discrepancy_solving_ignores_extra(
+        tmp_path: Path, mocker: MockerFixture) -> None:
+    mocker.patch('deltona.media.sp.run')
+    mock_trash = mocker.patch('deltona.media.send2trash')
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    last = (front_dir / '20240512164400_rear.mp4')
+    (rear_dir / '20240512164400_front.mp4').write_bytes(b'front')
+    (front_dir / '20240512164401_rear.mp4').write_bytes(b'rear')
+    (front_dir / '20240512164402_rear.mp4').write_bytes(b'rear')
+    last.write_bytes(b'rear')
+    archive_dashcam_footage(front_dir, rear_dir, output_dir, overwrite=True)
+    assert mock_trash.call_count == 2
+
+
+def test_archive_dashcam_footage_crash_deletes_unfinished_files(tmp_path: Path,
+                                                                mocker: MockerFixture) -> None:
+    mocker.patch('deltona.media.sp.run',
+                 side_effect=[None, sp.CalledProcessError(1, 'ffmpeg', stderr=b'')])
+    mocker.patch('deltona.media.send2trash')
+    mock_unlink = mocker.patch('deltona.media.Path.unlink')
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    (rear_dir / '20240512164400_rear.mp4').write_bytes(b'rear')
+    (rear_dir / '20240512164401_rear.mp4').write_bytes(b'rear')
+    (front_dir / '20240512164400_front.mp4').write_bytes(b'front')
+    (front_dir / '20240512164401_front.mp4').write_bytes(b'front')
+    with pytest.raises(sp.CalledProcessError):
+        archive_dashcam_footage(front_dir, rear_dir, output_dir)
+    assert mock_unlink.call_count == 1
 
 
 def test_archive_dashcam_footage_calls_with_correct_args(mocker: MockerFixture,
