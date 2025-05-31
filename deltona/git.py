@@ -59,12 +59,10 @@ def get_github_default_branch(*,
             repo.remote(origin_name).url)).path[1:]).default_branch
 
 
-def merge_dependabot_pull_requests(
-    *,
-    token: str,
-    affiliation: str = 'owner',
-    base_url: str | None = None,
-) -> None:
+def merge_dependabot_pull_requests(*,
+                                   token: str,
+                                   affiliation: str = 'owner',
+                                   base_url: str | None = None) -> None:
     """
     Merge pull requests made by Dependabot on GitHub.
 

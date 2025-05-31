@@ -789,7 +789,8 @@ def test_add_info_json_to_media_file_mp4(mocker: MockerFixture, tmp_path: Path) 
     assert mock_run.called
 
 
-def test_add_info_json_to_media_file_mkv(mocker: MockerFixture, tmp_path: Path) -> None:
+def test_add_info_json_to_media_file_mkv_ignores_existing(mocker: MockerFixture,
+                                                          tmp_path: Path) -> None:
     media_file = tmp_path / 'test.mkv'
     media_file.write_bytes(b'dummy')
     info_json = tmp_path / 'test.info.json'
@@ -804,6 +805,23 @@ def test_add_info_json_to_media_file_mkv(mocker: MockerFixture, tmp_path: Path) 
                  mocker.mock_open(read_data='{"upload_date": "20220101"}'))
     add_info_json_to_media_file(media_file, info_json)
     assert mock_run.called
+
+
+def test_add_info_json_to_media_file_mkv(mocker: MockerFixture, tmp_path: Path) -> None:
+    media_file = tmp_path / 'test.mkv'
+    media_file.write_bytes(b'dummy')
+    info_json = tmp_path / 'test.info.json'
+    info_json.write_text('{"upload_date": "20220101"}')
+    mock_run = mocker.patch('deltona.media.sp.run')
+    mock_run.return_value.stdout = ''
+    mock_utime = mocker.patch('deltona.media.utime')
+    mocker.patch('deltona.media.Path.unlink')
+    mocker.patch('deltona.media.Path.exists', return_value=True)
+    mocker.patch('deltona.media.Path.open',
+                 mocker.mock_open(read_data='{"upload_date": "20220101"}'))
+    add_info_json_to_media_file(media_file, info_json)
+    assert mock_run.call_count == 2
+    mock_utime.assert_called_once()
 
 
 def test_add_info_json_to_media_file_json_path_not_exists(mocker: MockerFixture,
@@ -839,5 +857,20 @@ def test_add_info_json_to_media_file_set_date_handles_missing_upload_date(
     mocker.patch('deltona.media.Path.unlink')
     mocker.patch('deltona.media.Path.exists', return_value=True)
     mocker.patch('deltona.media.Path.open', mocker.mock_open(read_data='{}'))
+    add_info_json_to_media_file(media_file, info_json)
+    assert not mock_utime.called
+
+
+def test_add_info_json_to_media_file_set_date_handles_empty_upload_date(
+        mocker: MockerFixture, tmp_path: Path) -> None:
+    media_file = tmp_path / 'test.flac'
+    info_json = tmp_path / 'test.info.json'
+    info_json.write_text('{}')
+    mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.copyfile')
+    mock_utime = mocker.patch('deltona.media.utime')
+    mocker.patch('deltona.media.Path.unlink')
+    mocker.patch('deltona.media.Path.exists', return_value=True)
+    mocker.patch('deltona.media.Path.open', mocker.mock_open(read_data='{"upload_date": ""}'))
     add_info_json_to_media_file(media_file, info_json)
     assert not mock_utime.called
