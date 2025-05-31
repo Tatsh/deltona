@@ -508,3 +508,19 @@ def test_get_kwriteconfig_commands_type_detection(mocker: MockerFixture) -> None
     assert any('--type' in cmd and 'int' in cmd for cmd in commands)
     assert any('--type' in cmd and 'path' in cmd for cmd in commands)
     assert any('--type' not in cmd for cmd in commands)  # StringKey has no type
+
+
+def test_get_kwriteconfig_commands_returns_from_unicode_decode_error(mocker: MockerFixture) -> None:
+    mock_path = mocker.patch('deltona.system.Path')
+    mock_path.home.return_value = mock_path
+    mock_path.__truediv__.return_value = mock_path
+    mock_path.resolve.return_value = mock_path
+    mock_path.__str__.return_value = '/home/user/.config/kdeglobals'  # type: ignore[attr-defined]
+    mock_config = mocker.patch('deltona.system.configparser.ConfigParser')
+    config_instance = mock_config.return_value
+    config_instance.read.side_effect = UnicodeDecodeError('utf-8', b'\x80', 0, 1,
+                                                          'invalid start byte')
+    try:
+        list(get_kwriteconfig_commands('/home/user/.config/kdeglobals'))
+    except UnicodeDecodeError:
+        pytest.fail('Unexpected UnicodeDecodeError raised.')
