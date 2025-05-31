@@ -33,7 +33,7 @@ keywords = ["bluetooth", "command line", "file management", "git", "multimedia"]
 license = "MIT"
 name = "deltona"
 readme = "README.md"
-version = "0.0.0"
+version = "0.0.1"
 
 [[project.authors]]
 email = "audvare@gmail.com"
