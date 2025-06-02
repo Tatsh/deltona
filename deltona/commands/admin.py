@@ -153,8 +153,8 @@ def smv_main(filenames: Sequence[Path],
     Always test with the --dry-run/-y option.
     """
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
-    username = target.split('@')[0] if '@' in target else None
-    hostname = target.split(':')[0]
+    username = target.split('@', maxsplit=1)[0] if '@' in target else None
+    hostname = target.split(':', maxsplit=1)[0]
     target_dir_or_filename = target.split(':')[1]
     ssh_client_cls = get_ssh_client_cls()
     with ssh_client_cls() as client:
