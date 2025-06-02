@@ -173,7 +173,7 @@ keyring = "^25.6.0"
 python = ">=3.10,<3.14"
 requests = "^2.32.3"
 send2trash = "^1.8.3"
-typing-extensions = "^4.13.2"
+typing-extensions = "^4.14.0"
 
 [tool.poetry.dependencies.beautifulsoup4]
 optional = true
@@ -260,21 +260,21 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 commitizen = "^4.8.2"
 djlint = "^1.36.4"
-mypy = ">=1.12,<1.16"
-pydbus-stubs = "^0"
-ruff = "^0.11.11"
+mypy = "^1.16.0"
+pydbus-stubs = "^0.0.3"
+ruff = "^0.11.12"
 types-beautifulsoup4 = "^4.12.0.20250516"
 types-binaryornot = "^0.4.0.20250507"
 types-paramiko = "^3.5.0.20250516"
 types-pexpect = "^4.9.0.20250516"
 types-pillow = "^10.2.0.20240822"
-types-psutil = "^7.0.0.20250516"
+types-psutil = "^7.0.0.20250601"
 types-pyperclip = "^1.9.0.20250218"
 types-pyyaml = "^6.0.12.20250516"
-types-requests = "^2.32.0.20250515"
+types-requests = "^2.32.0.20250602"
 types-send2trash = "^1.8.2.7"
 yapf = "^0.43.0"
-yt-dlp-types = "^0"
+yt-dlp-types = "^0.0.16"
 
 [tool.poetry.group.docs]
 optional = true
@@ -308,7 +308,7 @@ optional = true
 
 [tool.poetry.group.tests.dependencies]
 mock = "^5.2.0"
-pytest = "^8.3.5"
+pytest = "^8.4.0"
 pytest-cov = "^6.1.1"
 pytest-mock = "^3.14.1"
 requests-mock = "^1.12.1"
