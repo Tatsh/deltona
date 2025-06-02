@@ -189,12 +189,6 @@ def recurse_bookmarks_html(soup: Tag, callback: RecurseBookmarksHTMLCallback) ->
                         assert isinstance(h3, Tag)
                         folder_path.append((stripped_strings_fixed(h3),
                                             cast('BookmarksHTMLFolderAttributes', h3.attrs)))
-                        for par in h3.parents:
-                            if par.name == 'dt' and (par_h3 := par.find_previous_sibling('h3')):
-                                assert isinstance(par_h3, Tag)
-                                folder_path.insert(
-                                    0, (stripped_strings_fixed(par_h3),
-                                        cast('BookmarksHTMLFolderAttributes', par_h3.attrs)))
                         break
                 callback(cast('BookmarksHTMLAnchorAttributes', child.attrs),
                          stripped_strings_fixed(child), folder_path)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 import plistlib
 
@@ -137,19 +138,179 @@ def test_check_bookmarks_html_urls_full_redirect(mocker: MockerFixture,
     requests_mock.head('https://redirect.com',
                        status_code=301,
                        headers={'location': 'https://new-host/new-loc'})
-    # Patch user agent generator
     mocker.patch('deltona.www.generate_chrome_user_agent', return_value='UA')
-
     data, changed, not_found = check_bookmarks_html_urls(html)
-    # Should have one link in data
     assert len(data) == 1
-    # Should have one changed link
     assert len(changed) == 1
-    # The href should be rewritten to absolute
     assert changed[0]['attrs']['href'].endswith('/new-loc')  # type: ignore[typeddict-item]
     assert changed[0]['title'] == 'Redirected'  # type: ignore[typeddict-item]
-    # No not found
     assert not_found == []
+
+
+def test_check_bookmarks_html_urls_exhaustive_check(mocker: MockerFixture) -> None:
+    html = """
+<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<!-- This is an automatically generated file.
+     It will be read and overwritten.
+     DO NOT EDIT! -->
+    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+    <TITLE>Bookmarks</TITLE>
+    <H1>Bookmarks</H1>
+    <DL><p>
+        <DT><H3 ADD_DATE="1649305257" LAST_MODIFIED="1741660172" PERSONAL_TOOLBAR_FOLDER="true">
+            Bookmarks bar</H3>
+        <DT><A HREF="https://mail.google.com/"></A>
+        <DT><A HREF="https://github.com/issues"></A>
+    <DL><p>
+        <DT><A HREF="https://forums.mydigitallife.net">
+        <DT><A HREF="https://deltona.dev">Deltona</A>
+    <DL><p>
+        <DT><A HREF="https://deltona.zzz">Deltona</A>
+        <DT><A HREF="https://deltona.yyy/docs">Documentation</A>
+        <DT><H3 ADD_DATE="1620763254" LAST_MODIFIED="1697216205">Other folder</H3>
+        <DL><p>
+            <DT><A HREF="https://deltona.fff/docs/installation">Installation</A>
+            <DT><A HREF="https://deltona.ggg/docs/usage">Usage</A>
+        </DL><p>
+    </DL><p>
+    <DT><A HREF="https://deltona.dev/blog">Blog</A>
+    <DT><A HREF="https://deltona.dev/contact">Contact</A>
+</DL><p>
+<DT><H3 ADD_DATE="1620763254" LAST_MODIFIED="1697216205">Downloads</H3>
+<DL><p>
+    <DT><A HREF="https://deltona.dev/downloads">Deltona Downloads</A>
+    <DT><A HREF="https://deltona.dev/downloads/deltona-0.1.0.tar.gz">Deltona 0.1.0</A>
+    <DT><A HREF="https://deltona.dev/downloads/deltona-0.2.0.tar.gz">Deltona 0.2.0</A>
+</DL><p>
+    """
+    mocker.patch('deltona.www.generate_chrome_user_agent', return_value='UA')
+    mock_session = mocker.patch('deltona.www.requests.Session')
+    n = 0
+
+    def mock_head(url: str, **kwargs: Any) -> Any:
+        nonlocal n
+        if url.startswith('https://deltona.dev'):
+            return mocker.MagicMock(status_code=HTTPStatus.OK)
+        n += 1
+        return mocker.MagicMock(
+            status_code=HTTPStatus.FOUND if n % 3 == 0 else HTTPStatus.NOT_FOUND if n %
+            2 == 0 else HTTPStatus.OK,
+            headers={'location': 'https://deltona.dev' if n % 2 == 0 else '/index.html'})
+
+    mock_session.return_value.head.side_effect = mock_head
+    data, changed, not_found = check_bookmarks_html_urls(html)
+    mock_session.return_value.head.assert_has_calls([
+        mocker.call('https://mail.google.com/'),
+        mocker.call('https://github.com/issues'),
+        mocker.call('https://forums.mydigitallife.net'),
+        mocker.call('https://deltona.dev'),
+        mocker.call('https://deltona.zzz'),
+        mocker.call('https://deltona.yyy/docs'),
+        mocker.call('https://deltona.fff/docs/installation'),
+        mocker.call('https://deltona.ggg/docs/usage'),
+        mocker.call('https://deltona.dev/blog'),
+        mocker.call('https://deltona.dev/contact'),
+        mocker.call('https://deltona.dev/downloads'),
+        mocker.call('https://deltona.dev/downloads/deltona-0.1.0.tar.gz'),
+        mocker.call('https://deltona.dev/downloads/deltona-0.2.0.tar.gz')
+    ])
+    assert data == [{
+        'type': 'link',
+        'title': '',
+        'attrs': {
+            'href': 'https://mail.google.com/'
+        }
+    }, {
+        'type': 'link',
+        'title': '',
+        'attrs': {
+            'href': 'https://github.com/issues'
+        }
+    }, {
+        'type': 'link',
+        'title': '',
+        'attrs': {
+            'href': 'https://forums.mydigitallife.net/index.html'
+        }
+    }, {
+        'type': 'link',
+        'title': 'Deltona',
+        'attrs': {
+            'href': 'https://deltona.dev'
+        }
+    }, {
+        'type': 'link',
+        'title': 'Deltona',
+        'attrs': {
+            'href': 'https://deltona.zzz'
+        }
+    }, {
+        'type': 'link',
+        'title': 'Documentation',
+        'attrs': {
+            'href': 'https://deltona.yyy/docs'
+        }
+    }, {
+        'attrs': {
+            'add_date': '1620763254',
+            'last_modified': '1697216205'
+        },
+        'children': [{
+            'type': 'link',
+            'title': 'Installation',
+            'attrs': {
+                'href': 'https://deltona.dev'
+            }
+        }],
+        'name': 'Other folder',
+        'type': 'folder'
+    }, {
+        'type': 'link',
+        'title': 'Usage',
+        'attrs': {
+            'href': 'https://deltona.ggg/docs/usage'
+        }
+    }, {
+        'type': 'link',
+        'title': 'Blog',
+        'attrs': {
+            'href': 'https://deltona.dev/blog'
+        }
+    }, {
+        'type': 'link',
+        'title': 'Contact',
+        'attrs': {
+            'href': 'https://deltona.dev/contact'
+        }
+    }, {
+        'attrs': {
+            'add_date': '1620763254',
+            'last_modified': '1697216205'
+        },
+        'children': [{
+            'type': 'link',
+            'title': 'Deltona Downloads',
+            'attrs': {
+                'href': 'https://deltona.dev/downloads'
+            }
+        }],
+        'name': 'Downloads',
+        'type': 'folder'
+    }, {
+        'type': 'link',
+        'title': 'Deltona 0.1.0',
+        'attrs': {
+            'href': 'https://deltona.dev/downloads/deltona-0.1.0.tar.gz'
+        }
+    }, {
+        'type': 'link',
+        'title': 'Deltona 0.2.0',
+        'attrs': {
+            'href': 'https://deltona.dev/downloads/deltona-0.2.0.tar.gz'
+        }
+    }]
+    assert len(changed) == 2
+    assert len(not_found) == 2
 
 
 def test_where_from_linux(mocker: MockerFixture) -> None:
