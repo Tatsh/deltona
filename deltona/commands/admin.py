@@ -206,7 +206,7 @@ def kconfig_to_commands_main(files: Sequence[Path],
     """Generate kwriteconfig6 commands to set (Plasma) settings from your current settings."""
     logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
     if all_:
-        files = [*list((Path.home() / '.config').glob('*rc')), Path.home() / '.config/kdeglobals']
+        files = [*(Path.home() / '.config').glob('*rc'), Path.home() / '.config/kdeglobals']
     for file in sorted(files):
         for cmd in get_kwriteconfig_commands(file):
             click.echo(cmd)
