@@ -757,6 +757,24 @@ def test_archive_dashcam_footage_group_discrepancy_solving_bg_len_gt(tmp_path: P
     mock_trash.assert_has_calls([mocker.call(last)])
 
 
+def test_archive_dashcam_footage_group_discrepancy_solving_bg_len_gt_no_delete(
+        tmp_path: Path, mocker: MockerFixture) -> None:
+    mocker.patch('deltona.media.sp.run')
+    mock_trash = mocker.patch('deltona.media.send2trash')
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    last = (rear_dir / '20240512164400_rear.mp4')
+    (front_dir / '20240512164400_front.mp4').write_bytes(b'front')
+    (rear_dir / '20240512164401_rear.mp4').write_bytes(b'rear')
+    last.write_bytes(b'rear')
+    archive_dashcam_footage(front_dir, rear_dir, output_dir, no_delete=True)
+    mock_trash.assert_not_called()
+
+
 def test_archive_dashcam_footage_group_discrepancy_solving_fg_len_gt(tmp_path: Path,
                                                                      mocker: MockerFixture) -> None:
     mocker.patch('deltona.media.sp.run')
@@ -776,6 +794,25 @@ def test_archive_dashcam_footage_group_discrepancy_solving_fg_len_gt(tmp_path: P
     mock_trash.assert_has_calls([mocker.call(last)])
 
 
+def test_archive_dashcam_footage_group_discrepancy_solving_fg_len_gt_no_delete(
+        tmp_path: Path, mocker: MockerFixture) -> None:
+    mocker.patch('deltona.media.sp.run')
+    mock_trash = mocker.patch('deltona.media.send2trash')
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    last = (front_dir / '20240512164400_rear.mp4')
+    (rear_dir / '20240512164400_front.mp4').write_bytes(b'front')
+    (front_dir / '20240512164401_rear.mp4').write_bytes(b'rear')
+    (output_dir / '20240512164400_rear.mkv').touch()
+    last.write_bytes(b'rear')
+    archive_dashcam_footage(front_dir, rear_dir, output_dir, no_delete=True)
+    mock_trash.assert_not_called()
+
+
 def test_archive_dashcam_footage_group_discrepancy_solving_ignores_extra(
         tmp_path: Path, mocker: MockerFixture) -> None:
     mocker.patch('deltona.media.sp.run')
@@ -793,6 +830,25 @@ def test_archive_dashcam_footage_group_discrepancy_solving_ignores_extra(
     last.write_bytes(b'rear')
     archive_dashcam_footage(front_dir, rear_dir, output_dir, overwrite=True)
     assert mock_trash.call_count == 2
+
+
+def test_archive_dashcam_footage_group_discrepancy_solving_ignores_extra_no_delete(
+        tmp_path: Path, mocker: MockerFixture) -> None:
+    mocker.patch('deltona.media.sp.run')
+    mock_trash = mocker.patch('deltona.media.send2trash')
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    last = (front_dir / '20240512164400_rear.mp4')
+    (rear_dir / '20240512164400_front.mp4').write_bytes(b'front')
+    (front_dir / '20240512164401_rear.mp4').write_bytes(b'rear')
+    (front_dir / '20240512164402_rear.mp4').write_bytes(b'rear')
+    last.write_bytes(b'rear')
+    archive_dashcam_footage(front_dir, rear_dir, output_dir, overwrite=True, no_delete=True)
+    assert mock_trash.call_count == 0
 
 
 def test_archive_dashcam_footage_crash_deletes_unfinished_files(tmp_path: Path,
@@ -838,6 +894,31 @@ def test_archive_dashcam_footage_calls_with_correct_args(mocker: MockerFixture,
     assert '-b:v' in args
     assert '2M' in args
     assert mock_send2trash.called
+
+
+def test_archive_dashcam_footage_calls_with_correct_args_no_delete(mocker: MockerFixture,
+                                                                   tmp_path: Path) -> None:
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    (front_dir / '0_front.mp4').write_bytes(b'front')
+    (rear_dir / '0_rear.mp4').write_bytes(b'rear')
+    mock_run = mocker.patch('deltona.media.sp.run')
+    mock_send2trash = mocker.patch('deltona.media.send2trash')
+    archive_dashcam_footage(front_dir,
+                            rear_dir,
+                            output_dir,
+                            no_delete=True,
+                            video_encoder='hevc_nvenc',
+                            video_bitrate='2M')
+    args = mock_run.call_args_list[0].args[0]
+    assert 'hevc_nvenc' in args
+    assert '-b:v' in args
+    assert '2M' in args
+    assert not mock_send2trash.called
 
 
 def test_archive_dashcam_footage_skips_hidden_files(mocker: MockerFixture, tmp_path: Path) -> None:

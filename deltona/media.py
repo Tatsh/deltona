@@ -653,7 +653,7 @@ def rip_cdda_to_flac(drive: StrPath,
 
 def group_files(items: Iterable[str],
                 clip_length: int = 3,
-                match_re: str = r'^(\d+)_.*',
+                match_re: re.Pattern[str] | str = r'^(\d+)_.*',
                 time_format: str = '%Y%m%d%H%M%S') -> list[list[Path]]:
     items_sorted = sorted(items)
     groups: list[list[Path]] = []
@@ -684,11 +684,13 @@ def archive_dashcam_footage(front_dir: StrPath,
                             *,
                             allow_group_discrepancy_resolution: bool = True,
                             clip_length: int = 3,
+                            crf: int = 28,
                             hwaccel: str | None = 'auto',
-                            level: int | None = 5,
+                            level: int | str | None = 'auto',
+                            no_delete: bool = False,
                             overwrite: bool = False,
-                            match_re: str = r'^(\d+)_.*',
-                            preset: str | None = 'p5',
+                            match_re: re.Pattern[str] | str = r'^(\d+)_.*',
+                            preset: str | None = 'slow',
                             rear_crop: str | None = '1920:1020:0:0',
                             rear_view_scale_divisor: float | None = 2.5,
                             setpts: str | None = '0.25*PTS',
@@ -738,15 +740,19 @@ def archive_dashcam_footage(front_dir: StrPath,
         Attempt to solve grouping discrepancies (count of files) automatically.
     clip_length : int
         Clip length in minutes.
+    crf : int
+        Constant rate factor.
     hwaccel : str | None
         String passed to ffmpeg's ``-hwaccel`` option.
-    level : int | None
+    level : int | str | None
         Level (HEVC).
-    overwrite : bool
-        Overwrite existing files.
-    match_re : str
+    match_re : re.Pattern[str] | str
         Regular expression used for finding the timestamp in a filename. Must contain at least one
         group and only the first group is considered.
+    no_delete : bool
+        Do not delete original files after successful conversion.
+    overwrite : bool
+        Overwrite existing files.
     preset : str | None
         Preset (various codecs).
     rear_crop : str | None
@@ -785,36 +791,45 @@ def archive_dashcam_footage(front_dir: StrPath,
     output_dir.mkdir(parents=True, exist_ok=True)
     # Do not sort the dicts
     input_options: list[str] = list(
-        chain(*((k, *((str(v),) if not isinstance(v, bool) and v is not None else ())) for k, v in {
-            '-y': overwrite,
-            '-hwaccel': hwaccel,
-            **({
-                '-c:v': video_decoder
-            } if hwaccel else {})
-        }.items() if v)))
+        chain(*((k, *((str(v),) if not isinstance(v, bool) and v is not None else ()))
+                for k, v in ({
+                    '-y': overwrite,
+                    '-hwaccel': hwaccel,
+                } | ({
+                    '-c:v': video_decoder
+                } if hwaccel else {})).items() if v)))
     crop_str = f'crop={rear_crop},' if rear_crop else ''
     setpts_str = f',setpts={setpts}' if setpts else ''
+    hevc_nvenc_options = {
+        '-level': level,
+        '-cq': '29',
+        '-rc-lookahead': '32',
+        '-spatial_aq': '1',
+        '-tier': tier,
+        '-tune': 'uhq',
+    } if video_encoder == 'hevc_nvenc' else {}
+    libx265_options = {'-crf': str(crf)} if video_encoder == 'libx265' else {}
+    libx264_options = {'-crf': str(crf)} if video_encoder == 'libx264' else {}
     output_options = list(
-        chain(*((k, *((str(v),) if not isinstance(v, bool) and v is not None else ())) for k, v in {
-            '-an': True,
-            '-filter_complex': (
-                f'[0]{crop_str}'
-                f'scale=iw/{rear_view_scale_divisor}:ih/{rear_view_scale_divisor} [pip]; '
-                f'[1][pip]overlay=main_w-overlay_w:main_h-overlay_h{setpts_str}'),
-            '-b:v': video_bitrate,
-            '-maxrate:v': video_max_bitrate,
-            '-vcodec': video_encoder,
-            '-preset': preset,
-            '-level': level,
-            '-tier': tier,
-            '-f': 'matroska'
-        }.items() if v)))
+        chain(*((k, *((str(v),) if not isinstance(v, bool) and v is not None else ()))
+                for k, v in ({
+                    '-an': True,
+                    '-filter_complex':
+                        (f'[0]{crop_str}'
+                         f'scale=iw/{rear_view_scale_divisor}:ih/{rear_view_scale_divisor} [pip]; '
+                         f'[1][pip]overlay=main_w-overlay_w:main_h-overlay_h{setpts_str}'),
+                    '-b:v': video_bitrate,
+                    '-maxrate:v': video_max_bitrate,
+                    '-vcodec': video_encoder,
+                    '-preset': preset,
+                    '-f': 'matroska'
+                } | hevc_nvenc_options | libx265_options | libx264_options).items() if v)))
     back_groups = group_files(
-        (str(rear_dir / x) for x in Path(rear_dir).iterdir() if not x.name.startswith('.')),
-        clip_length, match_re, time_format)
+        (str(x) for x in Path(rear_dir).iterdir() if not x.name.startswith('.')), clip_length,
+        match_re, time_format)
     front_groups = group_files(
-        (str(front_dir / x) for x in Path(front_dir).iterdir() if not x.name.startswith('.')),
-        clip_length, match_re, time_format)
+        (str(x) for x in Path(front_dir).iterdir() if not x.name.startswith('.')), clip_length,
+        match_re, time_format)
     back_groups_len = len(back_groups)
     front_groups_len = len(front_groups)
     log.debug('Back group count: %d', back_groups_len)
@@ -848,13 +863,15 @@ def archive_dashcam_footage(front_dir: StrPath,
                 log.warning('List lengths of front and back videos do not match.')
                 if bg_len - fg_len == 1:
                     last = back_group.pop()
-                    log.debug('Sent to wastebin: %s', last)
-                    send2trash(last)
+                    if not no_delete:
+                        send2trash(last)
+                        log.debug('Sent to wastebin: %s', last)
                     log.info('Possibly resolved length issue by ignoring last rear video in set.')
                 elif fg_len - bg_len == 1:
                     last = front_group.pop()
-                    log.debug('Sent to wastebin: %s', last)
-                    send2trash(last)
+                    if not no_delete:
+                        send2trash(last)
+                        log.debug('Sent to wastebin: %s', last)
                     log.info('Possibly resolved length issue by ignoring last front video in set.')
                 else:
                     log.error('Cannot resolve automatically.')
@@ -898,9 +915,10 @@ def archive_dashcam_footage(front_dir: StrPath,
             sp.run(cmd, check=True, capture_output=True)
             for path in to_be_merged:
                 path.unlink()
-            for path in send_to_waste:
-                send2trash(path)
-                log.debug('Sent to wastebin: %s', path)
+            if not no_delete:
+                for path in send_to_waste:
+                    send2trash(path)
+                    log.debug('Sent to wastebin: %s', path)
 
 
 def hlg_to_sdr(input_file: StrPath,

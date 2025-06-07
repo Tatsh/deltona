@@ -567,13 +567,14 @@ def ke_ebook_ex_main(paths: Sequence[Path],
 @click.argument('rear_dir', type=click.Path(exists=True, dir_okay=True, path_type=Path))
 @click.argument('output_dir', type=click.Path(dir_okay=True, path_type=Path), default=Path())
 @click.option('--clip-length', help='Clip length in minutes.', type=int, default=3)
+@click.option('--crf', type=int, default=26, help='Constant rate factor.')
 @click.option('--hwaccel', help='-hwaccel string for ffmpeg.', default='auto')
-@click.option('--level', help='Level (HEVC).', type=int, default=5)
+@click.option('--level', help='Level (HEVC).', default='auto')
 @click.option('--no-fix-groups', help='Disable group discrepancy resolution.', is_flag=True)
 @click.option('--no-hwaccel', help='Disable hardware decoding.', is_flag=True)
 @click.option('--no-rear-crop', is_flag=True, help='Disable rear video cropping.')
 @click.option('--no-setpts', is_flag=True, help='Disable use of setpts.')
-@click.option('--preset', help='Output preset (various codecs).', default='p5')
+@click.option('--preset', help='Output preset (various codecs).', default='slow')
 @click.option('--rear-crop', default='1920:1020:0:0', help='Crop string for the rear camera view.')
 @click.option('--rear-view-scale-divisor',
               default=2.5,
@@ -597,6 +598,7 @@ def ke_ebook_ex_main(paths: Sequence[Path],
               default='15M',
               help='Maximum video bitrate.',
               metavar='BITRATE')
+@click.option('-D', '--no-delete', is_flag=True, help='Do not delete original files.')
 @click.option('-M',
               '--match-regexp',
               help='Regular expression to find the date string.',
@@ -609,10 +611,11 @@ def encode_dashcam_main(front_dir: Path,
                         rear_dir: Path,
                         output_dir: Path,
                         clip_length: int = 3,
+                        crf: int = 26,
                         hwaccel: str = 'auto',
-                        level: int = 5,
+                        level: str = 'auto',
                         match_regexp: str = r'^(\d+)_.*',
-                        preset: str = 'p5',
+                        preset: str = 'p7',
                         rear_crop: str = '1920:1020:0:0',
                         rear_view_scale_divisor: float = 2.5,
                         setpts: str = '0.25*PTS',
@@ -625,6 +628,7 @@ def encode_dashcam_main(front_dir: Path,
                         video_max_bitrate: str = '15M',
                         *,
                         debug: bool = False,
+                        no_delete: bool = False,
                         no_fix_groups: bool = False,
                         no_hwaccel: bool = False,
                         no_rear_crop: bool = False,
@@ -664,9 +668,11 @@ def encode_dashcam_main(front_dir: Path,
                             output_dir,
                             allow_group_discrepancy_resolution=not no_fix_groups,
                             clip_length=clip_length,
+                            crf=crf,
                             hwaccel=None if no_hwaccel else hwaccel,
                             level=level,
                             match_re=match_regexp,
+                            no_delete=no_delete,
                             overwrite=overwrite,
                             preset=preset,
                             rear_crop=None if no_rear_crop else rear_crop,

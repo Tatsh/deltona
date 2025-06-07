@@ -9,8 +9,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+## [0.0.2] - 2025-06-07
+
+### Fixed
+
+- `media.archive_dashcam_footage`: was completely broken due to path issue.
+
+### Changed
+
+- `encode-dashcam`
+  - Set default level to `'auto'` (NVENC HEVC).
+  - Added `-crf` option.
+  - Added `--no-delete` option.
+- `media.archive_dashcam_footage`
+  - Added `crf` parameter for software encoders.
+  - Set default level to `'auto'` (NVENC HEVC)
+  - Now accepts `Pattern[str]` for the `match_re` parameter.
+  - Improved handling of encoder-specific arguments.
+  - Added `no_delete` parameter.
+
 ## [0.0.1] - 2025-05-31
 
 First version. `check_bookmarks_html_urls` may have unresolved issues.
 
-[unreleased]: https://github.com/Tatsh/deltona/compare/v0.0.1...HEAD
+[unreleased]: https://github.com/Tatsh/deltona/compare/v0.0.2...HEAD
