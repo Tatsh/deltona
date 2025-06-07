@@ -3,7 +3,7 @@
   description: 'A lot of uncategorised utilities.',
   keywords: ['bluetooth', 'command line', 'file management', 'git', 'multimedia'],
   project_name: 'deltona',
-  version: '0.0.1',
+  version: '0.0.2',
   want_main: true,
   citation+: {
     'date-released': '2025-05-09',
