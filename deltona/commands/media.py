@@ -593,9 +593,9 @@ def ke_ebook_ex_main(paths: Sequence[Path],
               default='hevc_cuvid',
               help='Video decoder (for hardware decoding only).',
               metavar='DECODER')
-@click.option('--video-encoder', default='hevc_nvenc', help='Video encoder.', metavar='ENCODER')
+@click.option('--video-encoder', default='libx265', help='Video encoder.', metavar='ENCODER')
 @click.option('--video-max-bitrate',
-              default='15M',
+              default='30M',
               help='Maximum video bitrate.',
               metavar='BITRATE')
 @click.option('-D', '--no-delete', is_flag=True, help='Do not delete original files.')

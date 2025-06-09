@@ -684,8 +684,11 @@ def archive_dashcam_footage(front_dir: StrPath,
                             *,
                             allow_group_discrepancy_resolution: bool = True,
                             clip_length: int = 3,
-                            crf: int = 28,
+                            container: str = 'matroska',
+                            crf: int | None = 28,
+                            extension: str = 'mkv',
                             hwaccel: str | None = 'auto',
+                            keep_audio: bool = False,
                             level: int | str | None = 'auto',
                             no_delete: bool = False,
                             overwrite: bool = False,
@@ -699,8 +702,8 @@ def archive_dashcam_footage(front_dir: StrPath,
                             time_format: str = '%Y%m%d%H%M%S',
                             video_bitrate: str | None = '0k',
                             video_decoder: str | None = 'hevc_cuvid',
-                            video_encoder: str = 'hevc_nvenc',
-                            video_max_bitrate: str | None = '15M') -> None:
+                            video_encoder: str = 'libx265',
+                            video_max_bitrate: str | None = '30M') -> None:
     """
     Batch encode dashcam footage, merging rear and front camera footage.
 
@@ -722,6 +725,8 @@ def archive_dashcam_footage(front_dir: StrPath,
 
     Original files' whose content is successfully converted are sent to the wastebin.
 
+    Default parameters are set to use libx265 software encoding with CUVID hardware decoding.
+
     Example:
 
     .. code::python
@@ -740,10 +745,17 @@ def archive_dashcam_footage(front_dir: StrPath,
         Attempt to solve grouping discrepancies (count of files) automatically.
     clip_length : int
         Clip length in minutes.
-    crf : int
+    container : str
+        Container to use. Must match the extension. Passed to ffmpeg's ``-f`` option.
+    crf : int | None
         Constant rate factor.
+    extension : str
+        Output file extension. Defaults to ``mkv``.
     hwaccel : str | None
-        String passed to ffmpeg's ``-hwaccel`` option.
+        String passed to ffmpeg's ``-hwaccel`` option. If ``None``, do not use hardware acceleration
+        for decoding.
+    keep_audio : bool
+        Keep audio in the output video. Defaults to ``False``.
     level : int | str | None
         Level (HEVC).
     match_re : re.Pattern[str] | str
@@ -799,31 +811,35 @@ def archive_dashcam_footage(front_dir: StrPath,
                     '-c:v': video_decoder
                 } if hwaccel else {})).items() if v)))
     crop_str = f'crop={rear_crop},' if rear_crop else ''
-    setpts_str = f',setpts={setpts}' if setpts else ''
+    setpts_str = f'setpts={setpts}' if setpts else ''
     hevc_nvenc_options = {
-        '-level': level,
         '-cq': '29',
+        '-level': level,
         '-rc-lookahead': '32',
         '-spatial_aq': '1',
         '-tier': tier,
         '-tune': 'uhq',
     } if video_encoder == 'hevc_nvenc' else {}
-    libx265_options = {'-crf': str(crf)} if video_encoder == 'libx265' else {}
-    libx264_options = {'-crf': str(crf)} if video_encoder == 'libx264' else {}
+    main_options = {'-an': not keep_audio, '-vcodec': video_encoder, '-f': container}
+    libx264_options = {'-crf': str(crf)} if crf and video_encoder == 'libx264' else {}
+    libx265_options = {'-crf': str(crf)} if crf and video_encoder == 'libx265' else {}
+    video_bitrate_option = {'-b:v': video_bitrate} if video_bitrate else {}
+    video_max_bitrate_option = {'-maxrate:v': video_max_bitrate} if video_max_bitrate else {}
+    scale_filter = ((f'[0]{crop_str}'
+                     f'scale=iw/{rear_view_scale_divisor}:ih/{rear_view_scale_divisor} [pip]; '
+                     f'[1][pip]overlay=main_w-overlay_w:main_h-overlay_h')
+                    if crop_str and rear_view_scale_divisor else '')
+    filter_complex_option = {
+        '-filter_complex': f'{scale_filter},{setpts_str}'  # Trailing comma is acceptable.
+    } if scale_filter or setpts_str else {}
+    preset_option = {'-preset': preset} if preset else {}
     output_options = list(
         chain(*((k, *((str(v),) if not isinstance(v, bool) and v is not None else ()))
-                for k, v in ({
-                    '-an': True,
-                    '-filter_complex':
-                        (f'[0]{crop_str}'
-                         f'scale=iw/{rear_view_scale_divisor}:ih/{rear_view_scale_divisor} [pip]; '
-                         f'[1][pip]overlay=main_w-overlay_w:main_h-overlay_h{setpts_str}'),
-                    '-b:v': video_bitrate,
-                    '-maxrate:v': video_max_bitrate,
-                    '-vcodec': video_encoder,
-                    '-preset': preset,
-                    '-f': 'matroska'
-                } | hevc_nvenc_options | libx265_options | libx264_options).items() if v)))
+                for k, v in (main_options | preset_option | filter_complex_option
+                             | video_bitrate_option
+                             | video_max_bitrate_option
+                             | hevc_nvenc_options | libx265_options | libx264_options).items()
+                if v)))
     back_groups = group_files(
         (str(x) for x in Path(rear_dir).iterdir() if not x.name.startswith('.')), clip_length,
         match_re, time_format)
@@ -843,7 +859,7 @@ def archive_dashcam_footage(front_dir: StrPath,
         if back_groups_len != front_groups_len:
             raise ValueError(back_groups_len)
         log.info('Possibly resolved length issue by ignoring single item rear videos.')
-    # Call list(zip(...)) so strictness can be checked before looping
+    # Call list(zip(...)) so strictness can be checked before looping.
     for back_group, front_group in list(zip(back_groups, front_groups, strict=True)):
         with tempfile.NamedTemporaryFile('w',
                                          dir=temp_dir,
@@ -888,7 +904,7 @@ def archive_dashcam_footage(front_dir: StrPath,
                 with tempfile.NamedTemporaryFile(delete=False,
                                                  dir=temp_dir,
                                                  prefix=f'{i:04d}-',
-                                                 suffix='.mkv') as tf:
+                                                 suffix=f'.{extension}') as tf:
                     try:
                         sp.run(cmd, stdout=tf, check=True, stderr=sp.PIPE)
                     except sp.CalledProcessError as e:
@@ -900,7 +916,7 @@ def archive_dashcam_footage(front_dir: StrPath,
                     to_be_merged.append(tf_fixed)
                     temp_concat.write(f"file '{tf_fixed}'\n")
             temp_concat.flush()
-            full_output_path = output_dir / front_group[0].with_suffix('.mkv').name
+            full_output_path = output_dir / front_group[0].with_suffix(f'.{extension}').name
             if not overwrite:
                 suffix = 1
                 while full_output_path.exists():
