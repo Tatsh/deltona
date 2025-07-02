@@ -171,7 +171,7 @@ click = "^8.2.1"
 colorlog = "^6.9.0"
 keyring = "^25.6.0"
 python = ">=3.10,<3.14"
-requests = "^2.32.3"
+requests = "^2.32.4"
 send2trash = "^1.8.3"
 typing-extensions = "^4.14.0"
 
@@ -201,7 +201,7 @@ version = "^4.9.0"
 
 [tool.poetry.dependencies.pillow]
 optional = true
-version = "^11.2.1"
+version = "^11.3.0"
 
 [tool.poetry.dependencies.platformdirs]
 optional = true
@@ -243,7 +243,7 @@ version = "^1.4.0"
 
 [tool.poetry.dependencies.yt-dlp]
 optional = true
-version = "^2025.5.22"
+version = "^2025.6.30"
 
 [tool.poetry.extras]
 admin = ["paramiko"]
@@ -258,11 +258,11 @@ www = ["beautifulsoup4", "html5lib", "pillow"]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-commitizen = "^4.8.2"
+commitizen = "^4.8.3"
 djlint = "^1.36.4"
-mypy = "^1.16.0"
+mypy = "^1.16.1"
 pydbus-stubs = "^0.0.3"
-ruff = "^0.11.13"
+ruff = "^0.12.1"
 types-beautifulsoup4 = "^4.12.0.20250516"
 types-binaryornot = "^0.4.0.20250507"
 types-paramiko = "^3.5.0.20250516"
@@ -271,7 +271,7 @@ types-pillow = "^10.2.0.20240822"
 types-psutil = "^7.0.0.20250601"
 types-pyperclip = "^1.9.0.20250218"
 types-pyyaml = "^6.0.12.20250516"
-types-requests = "^2.32.0.20250602"
+types-requests = "^2.32.4.20250611"
 types-send2trash = "^1.8.2.7"
 yapf = "^0.43.0"
 yt-dlp-types = "^0.0.17"
@@ -281,13 +281,13 @@ optional = true
 
 [tool.poetry.group.docs.dependencies]
 autodoc-pydantic = "^2.2.0"
-doc8 = "^1.1.2"
+doc8 = "^2.0.0"
 docutils = "^0.21.2"
 esbonio = "^0.16.5"
-numpydoc = "^1.8.0"
+numpydoc = "^1.9.0"
 restructuredtext-lint = "^1.4.0"
 sphinx-click = "^6.0.0"
-sphinx-datatables = "^0.2.1"
+sphinx-datatables = "^0.3.0"
 sphinx-hoverxref = "^1.4.2"
 sphinx-immaterial = "^0.13.5"
 
@@ -308,8 +308,8 @@ optional = true
 
 [tool.poetry.group.tests.dependencies]
 mock = "^5.2.0"
-pytest = "^8.4.0"
-pytest-cov = "^6.1.1"
+pytest = "^8.4.1"
+pytest-cov = "^6.2.1"
 pytest-mock = "^3.14.1"
 requests-mock = "^1.12.1"
 
