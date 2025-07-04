@@ -417,7 +417,7 @@ def test_get_kwriteconfig_commands_basic(mocker: MockerFixture) -> None:
     config_instance.sections.return_value = ['General']
     config_instance.__getitem__.return_value.items.return_value = [('Key', 'Value')]
     mocker.patch('deltona.system.is_binary_string', return_value=False)
-    mocker.patch('deltona.system.re.match', side_effect=lambda _, __: None)
+    mocker.patch('deltona.system.re.match', side_effect=lambda _, __, **_kw: None)
     mocker.patch('deltona.system.re.search', side_effect=lambda _, __: None)
     commands = list(get_kwriteconfig_commands())
     assert commands
@@ -442,7 +442,7 @@ def test_get_kwriteconfig_commands_not_default_file(mocker: MockerFixture) -> No
     config_instance.__getitem__.return_value.items.return_value = [('Key', 'Value')]
     mocker.patch('deltona.system.is_binary_string', return_value=False)
     mocker.patch('deltona.system.Path.exists', return_value=False)
-    mocker.patch('deltona.system.re.match', side_effect=lambda _, __: None)
+    mocker.patch('deltona.system.re.match', side_effect=lambda _, __, **_kw: None)
     mocker.patch('deltona.system.re.search', side_effect=lambda _, __: None)
     commands = list(get_kwriteconfig_commands('/home/user/.config/otherfilerc'))
     assert commands
@@ -467,7 +467,7 @@ def test_get_kwriteconfig_commands_ignores_binary(mocker: MockerFixture) -> None
     config_instance.__getitem__.return_value.items.return_value = [('Key', 'Value')]
     mocker.patch('deltona.system.is_binary_string', return_value=True)
     mocker.patch('deltona.system.Path.exists', return_value=False)
-    mocker.patch('deltona.system.re.match', side_effect=lambda _, __: None)
+    mocker.patch('deltona.system.re.match', side_effect=lambda _, __, **_kw: None)
     mocker.patch('deltona.system.re.search', side_effect=lambda _, __: None)
     commands = list(get_kwriteconfig_commands('/home/user/.config/kdeglobals'))
     assert commands == []
@@ -521,7 +521,7 @@ def test_get_kwriteconfig_commands_skips_metrics_and_state(mocker: MockerFixture
             return True
         return None
 
-    mocker.patch('deltona.system.re.match', side_effect=lambda _, __: None)
+    mocker.patch('deltona.system.re.match', side_effect=lambda _, __, **_kw: None)
     mocker.patch('deltona.system.re.search', side_effect=fake_search)
 
     commands = list(get_kwriteconfig_commands('/home/user/.config/kdeglobals'))
@@ -551,7 +551,7 @@ def test_get_kwriteconfig_commands_type_detection(mocker: MockerFixture) -> None
 
     mocker.patch('deltona.system.Path.exists', side_effect=fake_exists)
 
-    def fake_match(pattern: str, value: str) -> bool | None:
+    def fake_match(pattern: str, value: str, *, flags: int = 0) -> bool | None:
         if pattern == r'^(?:1|true|false|on|yes)$' and value == 'true':
             return True
         if pattern == r'^-?[0-9]+$' and value == '42':
@@ -584,7 +584,7 @@ def test_get_kwriteconfig_commands_type_detection_path_not_file(mocker: MockerFi
                                                                    ('StringKey', 'hello')]
     mocker.patch('deltona.system.is_binary_string', return_value=False)
 
-    def fake_match(pattern: str, value: str) -> bool | None:
+    def fake_match(pattern: str, value: str, *, flags: int = 0) -> bool | None:
         if pattern == r'^(?:1|true|false|on|yes)$' and value == 'true':
             return True
         if pattern == r'^-?[0-9]+$' and value == '42':

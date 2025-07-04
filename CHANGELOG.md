@@ -9,6 +9,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+### Added
+
+- Added `kconfig-to-json` and `deltona.system.kconfig_to_dict`.
+
+### Changed
+
+- `kconfig_to_commands` boolean check is no longer case-sensitive.
+
+### Fixed
+
+- Fixed `kconfig-to-commands` not outputting the `--file` argument for non-default files.
+
 ## [0.0.3] - 2025-06-08
 
 ### Added

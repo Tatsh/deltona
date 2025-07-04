@@ -364,26 +364,9 @@ STATE_RE = r'^AAAA/'
 """KDE Plasma config state keys to ignore."""
 
 
-def get_kwriteconfig_commands(file: StrPath = DEFAULT_FILE) -> Iterator[str]:
-    """
-    Get ``kwriteconfig`` commands from KDE Plasma configuration files.
-
-    Parameters
-    ----------
-    file : StrPath
-        Override the path to the ``kdeglobals`` file.
-
-    Yields
-    ------
-    str
-        ``kwriteconfig`` commands.
-    """
-    home = str(Path.home())
+def _iter_config_sections(file: StrPath) -> Iterator[tuple[str, str, Any]]:
     config = configparser.ConfigParser(delimiters=('=',), interpolation=None)
     config.optionxform = str  # type: ignore[assignment]
-    file = Path(file).resolve(strict=True)
-    is_default_file = file == DEFAULT_FILE
-    displayed_file = re.sub(rf'^{home}/', '~/', str(file))
     try:
         config.read(file)
     except (UnicodeDecodeError, configparser.MissingSectionHeaderError, configparser.ParsingError):
@@ -400,7 +383,6 @@ def get_kwriteconfig_commands(file: StrPath = DEFAULT_FILE) -> Iterator[str]:
             if is_binary_string(value.encode()):
                 log.debug('Ignoring binary value in key %s.', key)
                 continue
-            is_int = re.match(r'^-?[0-9]+$', value)
             if re.search(POSITION_RE, key):
                 log.debug('Skipping metrics key "%s".', key)
                 continue
@@ -410,21 +392,60 @@ def get_kwriteconfig_commands(file: StrPath = DEFAULT_FILE) -> Iterator[str]:
             if key.endswith('[$e]'):
                 log.debug('Skipping special key "%s".', key)
                 continue
-            type_ = None
-            try:
-                is_file = '/' in value and Path(value).exists()
-            except OSError:
-                is_file = False
-            if is_file:
-                type_ = 'path'
-            elif re.match(r'^(?:1|true|false|on|yes)$', value):
-                type_ = 'bool'
-            elif is_int:
-                type_ = 'int'
-            cmd: tuple[str, ...] = ('kwriteconfig6',)
-            if is_default_file:
-                cmd += ('--file', displayed_file)
-            if type_:
-                cmd += ('--type', quote(type_))
-            cmd += ('--group', quote(section), '--key', quote(key), quote(value))
-            yield ' '.join(cmd)
+            yield section, key, value
+
+
+def get_kwriteconfig_commands(file: StrPath = DEFAULT_FILE) -> Iterator[str]:
+    """
+    Get ``kwriteconfig`` commands from KDE Plasma configuration files.
+
+    Parameters
+    ----------
+    file : StrPath
+        Override the path to the ``kdeglobals`` file.
+
+    Yields
+    ------
+    str
+        ``kwriteconfig`` commands.
+    """
+    home = str(Path.home())
+    file = Path(file).resolve(strict=True)
+    is_default_file = file == DEFAULT_FILE
+    displayed_file = re.sub(rf'^{home}/', '~/', str(file))
+    for section, key, value in _iter_config_sections(file):
+        type_ = None
+        re.match(r'^-?[0-9]+$', value)
+        try:
+            is_file = '/' in value and Path(value).exists()
+        except OSError:
+            is_file = False
+        if is_file:
+            type_ = 'path'
+        elif re.match(r'^(?:1|true|false|on|yes)$', value, flags=re.IGNORECASE):
+            type_ = 'bool'
+        elif re.match(r'^-?[0-9]+$', value):
+            type_ = 'int'
+        cmd: tuple[str, ...] = ('kwriteconfig6',)
+        if not is_default_file:
+            cmd += ('--file', displayed_file)
+        if type_:
+            cmd += ('--type', quote(type_))
+        cmd += ('--group', quote(section), '--key', quote(key), quote(value))
+        yield ' '.join(cmd)
+
+
+def get_kconfig_dict(file: StrPath = DEFAULT_FILE) -> dict[str, dict[str, Any]]:
+    file = Path(file).resolve(strict=True)
+    ret: dict[str, dict[str, Any]] = {}
+    for section, key, value_ in _iter_config_sections(file):
+        value = value_
+        if re.match(r'^(?:1|true|false|on|yes)$', value, flags=re.IGNORECASE):
+            value = bool(re.match(r'^(?:1|true|on|yes)', value, flags=re.IGNORECASE))
+        elif re.match(r'^-?[0-9]+$', value):
+            value = int(value)
+        try:
+            ret[section][key] = value
+        except KeyError:
+            ret[section] = {key: value}
+    return ret

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TextIO
+import json
 import logging
 import re
 import sys
@@ -16,6 +17,7 @@ from deltona.gentoo import (
 )
 from deltona.system import (
     MultipleKeySlots,
+    get_kconfig_dict,
     get_kwriteconfig_commands,
     patch_macos_bundle_info_plist,
     reset_tpm_enrollment,
@@ -210,6 +212,20 @@ def kconfig_to_commands_main(files: Sequence[Path],
     for file in sorted(files):
         for cmd in get_kwriteconfig_commands(file):
             click.echo(cmd)
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument('files', type=click.Path(exists=True, dir_okay=False, path_type=Path), nargs=-1)
+@click.option('-a', '--all', 'all_', is_flag=True, help='Find compatible files and process them.')
+@click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
+def kconfig_to_json_main(files: Sequence[Path], *, all_: bool = False, debug: bool = False) -> None:
+    """Convert Plasma and compatible settings (INI-style) to JSON."""
+    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+    if all_:
+        files = [*(Path.home() / '.config').glob('*rc'), Path.home() / '.config/kdeglobals']
+    for file in sorted(files):
+        click.echo(
+            json.dumps(get_kconfig_dict(file) | {'_file': str(file)}, indent=2, sort_keys=True))
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
