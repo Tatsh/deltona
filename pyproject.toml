@@ -174,7 +174,7 @@ keyring = "^25.6.0"
 python = ">=3.10,<3.14"
 requests = "^2.32.4"
 send2trash = "^1.8.3"
-typing-extensions = "^4.14.0"
+typing-extensions = "^4.14.1"
 
 [tool.poetry.dependencies.beautifulsoup4]
 optional = true
@@ -244,7 +244,7 @@ version = "^1.4.0"
 
 [tool.poetry.dependencies.yt-dlp]
 optional = true
-version = "^2025.6.30"
+version = "^2025.7.21"
 
 [tool.poetry.extras]
 admin = ["paramiko"]
@@ -261,12 +261,12 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 commitizen = "^4.8.3"
 djlint = "^1.36.4"
-mypy = "^1.16.1"
+mypy = "^1.17.0"
 pydbus-stubs = "^0.0.3"
-ruff = "^0.12.1"
+ruff = "^0.12.4"
 types-beautifulsoup4 = "^4.12.0.20250516"
 types-binaryornot = "^0.4.0.20250507"
-types-paramiko = "^3.5.0.20250516"
+types-paramiko = "^3.5.0.20250708"
 types-pexpect = "^4.9.0.20250516"
 types-pillow = "^10.2.0.20240822"
 types-psutil = "^7.0.0.20250601"
