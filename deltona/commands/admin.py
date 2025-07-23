@@ -58,10 +58,11 @@ def reset_tpm_enrollments_main(uuids: Sequence[str],
     logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
     if all_:
         uuids = [
-            x[1][5:] for x in (re.split(r'\s+', line, maxsplit=4)
-                               for line in (li.strip() for li in crypttab.read_text().splitlines())
-                               if not line.startswith('#'))
-            if 'tpm2-device=auto' in x[3] and 'UUID=' in x[1]
+            x[1][5:]
+            for x in (re.split(r'\s+', line, maxsplit=4)
+                      for line in (li.strip()
+                                   for li in crypttab.read_text(encoding='utf-8').splitlines())
+                      if not line.startswith('#')) if 'tpm2-device=auto' in x[3] and 'UUID=' in x[1]
         ]
     for uuid in uuids:
         try:
