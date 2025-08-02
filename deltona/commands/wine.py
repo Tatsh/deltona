@@ -205,7 +205,7 @@ def winegoginstall_main(args: Sequence[str],
        /CLOSEAPPLICATIONS /FORCECLOSEAPPLICATIONS /NOCANCEL /NORESTART /SILENT
     """  # noqa: DOC501
     logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
-    if 'DISPLAY' not in os.environ or 'XAUTHORITY' not in os.environ:
+    if 'DISPLAY' not in os.environ or 'XAUTHORITY' not in os.environ:  # pragma: no cover
         log.warning('Wine will likely fail to run since DISPLAY or XAUTHORITY are not in the '
                     'environment.')
     env = {

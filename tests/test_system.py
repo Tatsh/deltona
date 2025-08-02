@@ -10,6 +10,7 @@ from deltona.system import (
     MultipleKeySlots,
     find_bluetooth_device_info_by_name,
     get_inhibitor,
+    get_kconfig_dict,
     get_kwriteconfig_commands,
     inhibit_notifications,
     kill_gamescope,
@@ -634,3 +635,23 @@ def test_get_kwriteconfig_commands_skips_sections_with_brackets(mocker: MockerFi
     mocker.patch('deltona.system.re.search', side_effect=lambda _, __: None)
     commands = list(get_kwriteconfig_commands('/home/user/.config/kdeglobals'))
     assert commands == []
+
+
+def test_get_kconfig_dict(mocker: MockerFixture) -> None:
+    mocker.patch('deltona.system.Path')
+    mock_config = mocker.patch('deltona.system.configparser.ConfigParser')
+    config_instance = mock_config.return_value
+    config_instance.sections.return_value = ['General']
+    config_instance.__getitem__.return_value.items.return_value = [('BoolKey', 'true'),
+                                                                   ('IntKey', '42'),
+                                                                   ('PathKey', '/some/file'),
+                                                                   ('StringKey', 'hello')]
+
+    assert get_kconfig_dict() == {
+        'General': {
+            'BoolKey': True,
+            'IntKey': 42,
+            'PathKey': '/some/file',
+            'StringKey': 'hello'
+        }
+    }

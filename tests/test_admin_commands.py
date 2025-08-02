@@ -7,6 +7,7 @@ from deltona.commands.admin import (
     clean_old_kernels_and_modules_main,
     generate_html_dir_tree_main,
     kconfig_to_commands_main,
+    kconfig_to_json_main,
     patch_bundle_main,
     reset_tpm_enrollments_main,
     slug_rename_main,
@@ -142,6 +143,26 @@ def test_kconfig_to_commands_main_file_arg(mocker: MockerFixture, runner: CliRun
     result = runner.invoke(kconfig_to_commands_main, [str(mock_file)])
     assert result.exit_code == 0
     mock_kconfig_to_commands.assert_called_once_with(mock_file)
+
+
+def test_kconfig_to_json_main_all(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
+    mock_kconfig_to_json = mocker.patch('deltona.commands.admin.get_kconfig_dict')
+    mock_kconfig_to_json.return_value = {}
+    mock_path = mocker.patch('deltona.commands.admin.Path')
+    result = runner.invoke(kconfig_to_json_main, ['--all'])
+    assert result.exit_code == 0
+    mock_kconfig_to_json.assert_called_with(mock_path.home.return_value.__truediv__.return_value)
+
+
+def test_kconfig_to_json_main_file_arg(mocker: MockerFixture, runner: CliRunner,
+                                       tmp_path: Path) -> None:
+    mock_kconfig_to_json = mocker.patch('deltona.commands.admin.get_kconfig_dict')
+    mock_kconfig_to_json.return_value = {}
+    mock_file = tmp_path / 'filename'
+    mock_file.write_text('content')
+    result = runner.invoke(kconfig_to_json_main, [str(mock_file)])
+    assert result.exit_code == 0
+    mock_kconfig_to_json.assert_called_once_with(mock_file)
 
 
 def test_generate_html_dir_tree_main_success(mocker: MockerFixture, runner: CliRunner,

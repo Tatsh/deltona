@@ -192,7 +192,7 @@ def run_ultraiso(
     env = {}
     if not IS_WINDOWS:
         env = {'WINEPREFIX': str(prefix), 'HOME': os.environ['HOME']}
-        if 'DISPLAY' not in os.environ or 'XAUTHORITY' not in os.environ:
+        if 'DISPLAY' not in os.environ or 'XAUTHORITY' not in os.environ:  # pragma: no cover
             log.warning(
                 'UltraISO.exe will likely fail to run since DISPLAY or XAUTHORITY are not in the '
                 'environment.')
