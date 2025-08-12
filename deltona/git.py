@@ -103,7 +103,7 @@ def merge_dependabot_pull_requests(*,
             try:
                 pull = repo.get_pull(num)
                 if not pull.merge(merge_method='rebase').merged:
-                    pull.as_issue().create_comment('@dependabot rebase')
+                    pull.as_issue().create_comment('@dependabot recreate')
             except github.GithubException:
                 should_raise = True
     if should_raise:

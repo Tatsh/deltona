@@ -123,4 +123,4 @@ def test_merge_dependabot_pull_requests_adds_rebase_comment(
     mock_github_repo.get_pull.assert_called_once_with(42)
     mock_pull.merge.assert_called_once_with(merge_method='rebase')
     mock_pull.as_issue.assert_called_once()
-    mock_issue.create_comment.assert_called_once_with('@dependabot rebase')
+    mock_issue.create_comment.assert_called_once_with('@dependabot recreate')
