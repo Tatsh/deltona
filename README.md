@@ -5,6 +5,7 @@
 [![GitHub tag (with filter)](https://img.shields.io/github/v/tag/Tatsh/deltona)](https://github.com/Tatsh/deltona/tags)
 [![License](https://img.shields.io/github/license/Tatsh/deltona)](https://github.com/Tatsh/deltona/blob/master/LICENSE.txt)
 [![GitHub commits since latest release (by SemVer including pre-releases)](https://img.shields.io/github/commits-since/Tatsh/deltona/v0.0.2/master)](https://github.com/Tatsh/deltona/compare/v0.0.2...master)
+[![CodeQL](https://github.com/Tatsh/deltona/actions/workflows/codeql.yml/badge.svg)](https://github.com/Tatsh/deltona/actions/workflows/codeql.yml)
 [![QA](https://github.com/Tatsh/deltona/actions/workflows/qa.yml/badge.svg)](https://github.com/Tatsh/deltona/actions/workflows/qa.yml)
 [![Tests](https://github.com/Tatsh/deltona/actions/workflows/tests.yml/badge.svg)](https://github.com/Tatsh/deltona/actions/workflows/tests.yml)
 [![Coverage Status](https://coveralls.io/repos/github/Tatsh/deltona/badge.svg?branch=master)](https://coveralls.io/github/Tatsh/deltona?branch=master)
