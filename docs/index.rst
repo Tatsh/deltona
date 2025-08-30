@@ -9,7 +9,7 @@ deltona
 
    .. image:: https://img.shields.io/pypi/v/deltona
       :target: https://pypi.org/project/deltona/
-      :alt: PyPI - Version
+      :alt: PyPI Version
 
    .. image:: https://img.shields.io/github/v/tag/Tatsh/deltona
       :target: https://github.com/Tatsh/deltona/tags
@@ -22,6 +22,10 @@ deltona
    .. image:: https://img.shields.io/github/commits-since/Tatsh/deltona/v0.0.2/master
       :target: https://github.com/Tatsh/deltona/compare/v0.0.2...master
       :alt: GitHub commits since latest release (by SemVer including pre-releases)
+
+   .. image:: https://github.com/Tatsh/deltona/actions/workflows/codeql.yml/badge.svg
+      :target: https://github.com/Tatsh/deltona/actions/workflows/codeql.yml
+      :alt: CodeQL
 
    .. image:: https://github.com/Tatsh/deltona/actions/workflows/qa.yml/badge.svg
       :target: https://github.com/Tatsh/deltona/actions/workflows/qa.yml

@@ -21,7 +21,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Fixed `kconfig-to-commands` not outputting the `--file` argument for non-default files.
 
-## [0.0.3] - 2025-06-08
+## [0.0.3] - 2025-06-09
 
 ### Added
 
@@ -66,3 +66,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 First version. `check_bookmarks_html_urls` may have unresolved issues.
 
 [unreleased]: https://github.com/Tatsh/deltona/compare/v0.0.3...HEAD
+[0.0.3]: https://github.com/Tatsh/deltona/compare/v0.0.2...v0.0.3
+[0.0.2]: https://github.com/Tatsh/deltona/compare/v0.0.1...v0.0.2
+[0.0.1]: https://github.com/Tatsh/deltona/releases/tag/v0.0.1
