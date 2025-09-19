@@ -75,4 +75,24 @@ html_theme_options = {
     'site_url': 'https://deltona.readthedocs.org',
     'toc_title_is_page_title': True
 }
-intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'bascom': ('https://bascom.readthedocs.io/en/latest/', None),
+    'binaryornot': ('https://binaryornot.readthedocs.io/en/latest/', None),
+    'bs4': ('https://www.crummy.com/software/BeautifulSoup/bs4/doc/', None),
+    'click': ('https://click.palletsprojects.com/en/latest/', None),
+    'gitpython': ('https://gitpython.readthedocs.io/en/stable/', None),
+    'keyring': ('https://keyring.readthedocs.io/en/latest/', None),
+    'mutagen': ('https://mutagen.readthedocs.io/en/latest/', None),
+    'paramiko': ('https://paramiko.org/', None),
+    'pexpect': ('https://pexpect.readthedocs.io/en/stable/', None),
+    'pillow': ('https://pillow.readthedocs.io/en/stable/', None),
+    'platformdirs': ('https://platformdirs.readthedocs.io/en/latest/', None),
+    'psutil': ('https://psutil.readthedocs.io/en/latest/', None),
+    'pydbus': ('https://pydbus.readthedocs.io/en/latest/', None),
+    'pygithub': ('https://pygithub.readthedocs.io/en/latest/', None),
+    'pygobject': ('https://pygobject.readthedocs.io/en/latest/', None),
+    'pyperclip': ('https://pyperclip.readthedocs.io/en/latest/', None),
+    'requests': ('https://requests.readthedocs.io/en/latest/', None),
+    'typing-extensions': ('https://typing-extensions.readthedocs.io/en/latest/', None),
+}
