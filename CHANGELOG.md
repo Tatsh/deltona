@@ -12,6 +12,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - Added `kconfig-to-json` and `deltona.system.kconfig_to_dict`.
+- Added `cssq`.
 
 ### Changed
 

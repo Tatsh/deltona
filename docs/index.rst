@@ -108,6 +108,10 @@ Commands
    :prog: cddb-query
    :nested: full
 
+.. click:: deltona.commands.string:cssq_main
+   :prog: cssq
+   :nested: full
+
 .. click:: deltona.commands.www:check_bookmarks_html_main
    :prog: check-bookmarks-html
    :nested: full

@@ -9,10 +9,18 @@ import json
 import plistlib
 import sys
 
+from bascom import setup_logging
 from binaryornot.helpers import is_binary_string
 from deltona import naming
 from deltona.constants import CONTEXT_SETTINGS
-from deltona.string import fullwidth_to_narrow, is_ascii, sanitize, slugify, underscorize
+from deltona.string import (
+    cssq,
+    fullwidth_to_narrow,
+    is_ascii,
+    sanitize,
+    slugify,
+    underscorize,
+)
 from deltona.typing import DecodeErrorsOption
 import click
 import yaml
@@ -178,3 +186,50 @@ def title_fixer_main(titles: tuple[str, ...],
         raise click.Abort
     for title in titles:
         click.echo(naming.adjust_title(title, modes, disable_names=no_names, ampersands=ampersands))
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument('selector', nargs=1)
+@click.argument('file', type=click.File('r'), default=sys.stdin)
+@click.option('-d', '--debug', is_flag=True, help='Enable debug logging.')
+@click.option('--debug-selector', is_flag=True, help='Enable SoupSieve debug logging.')
+@click.option('-l',
+              '--limit',
+              default=0,
+              type=click.IntRange(0, None),
+              help='Limit number of results.')
+@click.option('-j', '--json', 'json_lines', is_flag=True, help='Output as JSON lines.')
+@click.option('-s', '--strip', is_flag=True, help='Strip whitespace from text content.')
+@click.option('-t', '--text', is_flag=True, help='Output content within the HTML tags only.')
+def cssq_main(file: TextIO,
+              selector: str,
+              limit: int = 0,
+              *,
+              debug: bool = False,
+              debug_selector: bool = False,
+              json_lines: bool = False,
+              strip: bool = False,
+              text: bool = False) -> None:
+    """Filter HTML with CSS."""
+    setup_logging(debug=debug,
+                  loggers={
+                      'bs4': {
+                          'handlers': ('console',),
+                          'propagate': False
+                      },
+                      'deltona.string': {
+                          'handlers': ('console',),
+                          'propagate': False
+                      },
+                      'soupsieve': {
+                          'handlers': ('console',),
+                          'propagate': False
+                      }
+                  })
+    for item in cssq(selector,
+                     file,
+                     debug_selector=debug_selector,
+                     limit=limit,
+                     strip=strip,
+                     text=text):
+        click.echo(json.dumps(str(item)) if json_lines else str(item))

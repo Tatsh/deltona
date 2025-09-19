@@ -50,6 +50,7 @@ check-bookmarks-html = "deltona.commands.www:check_bookmarks_html_main"
 chrome-bisect-flags = "deltona.commands.www:chrome_bisect_flags_main"
 clean-old-kernels-modules = "deltona.commands.admin:clean_old_kernels_and_modules_main"
 connect-g603 = "deltona.commands.desktop:connect_g603_main"
+cssq = "deltona.commands.string:cssq_main"
 display-info-json = "deltona.commands.media:display_info_json_main"
 encode-dashcam = "deltona.commands.media:encode_dashcam_main"
 fix-pwa-icon = "deltona.commands.www:fix_chromium_pwa_icon_main"
@@ -167,6 +168,7 @@ warn_unreachable = true
 include = ["man", { format = "sdist", path = "tests" }]
 
 [tool.poetry.dependencies]
+bascom = "^0.0.1"
 binaryornot = "^0.4.4"
 click = "^8.2.1"
 colorlog = "^6.9.0"
@@ -174,6 +176,7 @@ keyring = "^25.6.0"
 python = ">=3.10,<3.14"
 requests = "^2.32.4"
 send2trash = "^1.8.3"
+soupsieve = "^2.8"
 typing-extensions = "^4.14.1"
 
 [tool.poetry.dependencies.beautifulsoup4]

@@ -5,19 +5,22 @@ from __future__ import annotations
 from functools import cache
 from itertools import batched, takewhile
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Literal, TextIO, cast, overload
 import os
 import re
 import string
+
+from bs4 import BeautifulSoup, Tag
+import soupsieve as sv
 
 from .typing import StrPath, assert_not_none
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
 
-__all__ = ('fullwidth_to_narrow', 'hexstr2bytes', 'hexstr2bytes_generator', 'is_ascii', 'is_url',
-           'sanitize', 'slugify', 'strip_ansi', 'strip_ansi_if_no_colors', 'underscorize',
-           'unix_path_to_wine')
+__all__ = ('cssq', 'cssq_one', 'fullwidth_to_narrow', 'hexstr2bytes', 'hexstr2bytes_generator',
+           'is_ascii', 'is_url', 'sanitize', 'slugify', 'strip_ansi', 'strip_ansi_if_no_colors',
+           'underscorize', 'unix_path_to_wine')
 
 ORD_MAX = 128
 STRIP_ANSI_PATTERN = re.compile(r'\x1B\[\d+(;\d+){0,2}m')
@@ -354,3 +357,138 @@ def rev_sentences(sentences: Sequence[str]) -> Iterator[str]:
     """
     for line in (x.strip() for x in sentences if x.strip()):
         yield rev_sentence(line)
+
+
+@overload
+def cssq_one(selector: str,
+             file: TextIO | str,
+             *,
+             debug_selector: bool = False,
+             strip: bool = True,
+             text: Literal[False] = False) -> Tag | None:  # pragma: no cover
+    ...
+
+
+@overload
+def cssq_one(selector: str,
+             file: TextIO | str,
+             *,
+             debug_selector: bool = False,
+             strip: bool = True,
+             text: Literal[True] = True) -> str | None:  # pragma: no cover
+    ...
+
+
+@overload
+def cssq_one(selector: str,
+             file: TextIO | str,
+             *,
+             debug_selector: bool = False,
+             strip: bool = True,
+             text: bool = False) -> str | Tag | None:  # pragma: no cover
+    ...
+
+
+def cssq_one(selector: str,
+             file: TextIO | str,
+             *,
+             debug_selector: bool = False,
+             strip: bool = True,
+             text: bool = False) -> str | Tag | None:
+    """Select a single item from HTML with CSS.
+
+    Parameters
+    ----------
+    selector : str
+        CSS selector.
+    file : TextIO | str
+        File-like object or string containing HTML.
+    debug_selector : bool
+        Enable SoupSieve debug logging.
+    strip : bool
+        Strip whitespace from text content.
+    text : bool
+        Output content within the HTML tags only.
+
+    Returns
+    -------
+    str | Tag | None
+        The selected item, or ``None`` if no match was found.
+    """
+    soup = BeautifulSoup(file, 'html5lib')
+    element = soup.select_one(selector, flags=sv.DEBUG if debug_selector else 0)
+    if element and text:
+        return element.get_text(strip=strip)
+    return element
+
+
+@overload
+def cssq(selector: str,
+         file: TextIO | str,
+         limit: int = 0,
+         *,
+         debug_selector: bool = False,
+         strip: bool = True,
+         text: Literal[False] = False) -> Iterator[Tag]:  # pragma: no cover
+    ...
+
+
+@overload
+def cssq(selector: str,
+         file: TextIO | str,
+         limit: int = 0,
+         *,
+         debug_selector: bool = False,
+         strip: bool = True,
+         text: Literal[True] = True) -> Iterator[str]:  # pragma: no cover
+    ...
+
+
+@overload
+def cssq(selector: str,
+         file: TextIO | str,
+         limit: int = 0,
+         *,
+         debug_selector: bool = False,
+         strip: bool = True,
+         text: bool = False) -> Iterator[str] | Iterator[Tag]:  # pragma: no cover
+    ...
+
+
+def cssq(selector: str,
+         file: TextIO | str,
+         limit: int = 0,
+         *,
+         debug_selector: bool = False,
+         strip: bool = True,
+         text: bool = False) -> Iterator[Tag] | Iterator[str]:
+    """
+    Filter HTML with CSS.
+
+    If passing ``limit=1``, consider using :py:func:`cssq_one` instead.
+
+    Parameters
+    ----------
+    selector : str
+        CSS selector.
+    file : TextIO | str
+        File-like object or string containing HTML.
+    limit : int
+        Limit number of results. ``0`` means no limit.
+    debug_selector : bool
+        Enable SoupSieve debug logging.
+    strip : bool
+        Strip whitespace from text content.
+    text : bool
+        Output content within the HTML tags only.
+
+    Yields
+    ------
+    Iterator[Tag] | Iterator[str]
+        The filtered items.
+    """
+    soup = BeautifulSoup(file, 'html5lib')
+    yield from [
+        item if not text else item.get_text(strip=strip)
+        for item in sv.iselect(selector, soup, flags=sv.DEBUG if debug_selector else 0, limit=limit)
+    ]

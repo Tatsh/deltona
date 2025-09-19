@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 import plistlib
 
 from deltona.commands.string import (
+    cssq_main,
     fullwidth2ascii_main,
     is_ascii_main,
     is_bin_main,
@@ -202,3 +203,26 @@ def test_title_fixer_main_no_modes(runner: CliRunner, tmp_path: Path) -> None:
     result = runner.invoke(title_fixer_main, ['--no-english'], input='some title\n')
     assert result.exit_code != 0
     assert 'No modes specified.' in result.output
+
+
+def test_cssq_prints_json_lines(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:
+    input_file = tmp_path / 'test_cssq.html'
+    input_file.write_text('<div>First</div><div>Second</div>', encoding='utf-8')
+    mocker.patch('deltona.commands.string.cssq', return_value=['A', 'B'])
+    mock_json = mocker.patch('deltona.commands.string.json.dumps',
+                             side_effect=lambda x, *a, **kw: f'"{x}"')  # noqa: ARG005
+    result = runner.invoke(cssq_main, ['-j', '-s', '-t', 'div', str(input_file)])
+    assert result.exit_code == 0
+    assert mock_json.call_count == 2
+    assert result.output == '"A"\n"B"\n'
+
+
+def test_cssq_prints_strings(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:
+    input_file = tmp_path / 'test_cssq.html'
+    input_file.write_text('<div>First</div><div>Second</div>', encoding='utf-8')
+    mocker.patch('deltona.commands.string.cssq', return_value=['A', 'B'])
+    mock_json = mocker.patch('deltona.commands.string.json.dumps')
+    result = runner.invoke(cssq_main, ['-s', '-t', 'div', str(input_file)])
+    assert result.exit_code == 0
+    assert mock_json.call_count == 0
+    assert result.output == 'A\nB\n'
