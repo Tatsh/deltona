@@ -1,17 +1,19 @@
-(import 'defaults.libjsonnet') + {
+local root = import 'defaults.libjsonnet';
+local utils = import 'utils.libjsonnet';
+
+root {
   // Project-specific
+  local settings = self,
   description: 'A lot of uncategorised utilities.',
   keywords: ['bluetooth', 'command line', 'file management', 'git', 'multimedia'],
   project_name: 'deltona',
   version: '0.0.2',
-  want_main: true,
-  citation+: {
-    'date-released': '2025-05-09',
-  },
+  want_main: false,  // Multiple entry points.
+  want_man: true,
   supported_python_versions: ['3.%d' % i for i in std.range(12, 13)],
   pyproject+: {
     project+: {
-      classifiers+: [
+      classifiers: utils.pyprojectClassifiers(settings, [
         'Environment :: Console',
         'Intended Audience :: End Users/Desktop',
         'Intended Audience :: Information Technology',
@@ -28,12 +30,13 @@
         'Topic :: System :: Hardware',
         'Topic :: System :: Systems Administration',
         'Topic :: Utilities',
-      ],
+      ]),
       scripts: {
         // admin
         'clean-old-kernels-modules': 'deltona.commands.admin:clean_old_kernels_and_modules_main',
         htmltree: 'deltona.commands.admin:generate_html_dir_tree_main',
         'kconfig-to-commands': 'deltona.commands.admin:kconfig_to_commands_main',
+        'kconfig-to-json': 'deltona.commands.admin:kconfig_to_json_main',
         'patch-bundle': 'deltona.commands.admin:patch_bundle_main',
         'slug-rename': 'deltona.commands.admin:slug_rename_main',
         smv: 'deltona.commands.admin:smv_main',
@@ -84,6 +87,7 @@
         gogextract: 'deltona.commands.misc:gogextract_main',
         'unpack-0day': 'deltona.commands.misc:unpack_0day_main',
         // string
+        cssq: 'deltona.commands.string:cssq_main',
         fullwidth2ascii: 'deltona.commands.string:fullwidth2ascii_main',
         'is-ascii': 'deltona.commands.string:is_ascii_main',
         'is-bin': 'deltona.commands.string:is_bin_main',
@@ -116,28 +120,85 @@
     tool+: {
       poetry+: {
         dependencies+: {
-          beautifulsoup4: { optional: true, version: '^4.13.4' },
-          binaryornot: '^0.4.4',
-          gitpython: { optional: true, version: '^3.1.44' },
-          html5lib: { optional: true, version: '^1.1' },
-          keyring: '^25.6.0',
-          mutagen: { optional: true, version: '^1.47.0' },
-          paramiko: { optional: true, version: '^3.5.1' },
-          pexpect: { optional: true, version: '^4.9.0' },
-          pillow: { optional: true, version: '^11.2.1' },
-          platformdirs: { optional: true, version: '^4.3.8' },
-          psutil: { optional: true, version: '^7.0.0' },
-          pydbus: { optional: true, platform: 'linux', version: '^0.6.0' },
-          pygithub: { optional: true, version: '^2.6.1' },
-          pygobject: { optional: true, platform: 'linux', version: '^3.52.3' },
-          pyperclip: { optional: true, version: '^1.9.0' },
+          beautifulsoup4: {
+            optional: true,
+            version: '^' + std.native('latestPypiPackageVersion')('beautifulsoup4'),
+          },
+          binaryornot: '^' + std.native('latestPypiPackageVersion')('binaryornot'),
+          gitpython: {
+            optional: true,
+            version: '^' + std.native('latestPypiPackageVersion')('gitpython'),
+          },
+          html5lib: {
+            optional: true,
+            version: '^' + std.native('latestPypiPackageVersion')('html5lib'),
+          },
+          keyring: '^' + std.native('latestPypiPackageVersion')('keyring'),
+          mutagen: {
+            optional: true,
+            version: '^' + std.native('latestPypiPackageVersion')('mutagen'),
+          },
+          paramiko: {
+            optional: true,
+            version: '^' + std.native('latestPypiPackageVersion')('paramiko'),
+          },
+          pexpect: {
+            optional: true,
+            version: '^' + std.native('latestPypiPackageVersion')('pexpect'),
+          },
+          pillow: {
+            optional: true,
+            version: '^' + std.native('latestPypiPackageVersion')('pillow'),
+          },
+          platformdirs: {
+            optional: true,
+            version: '^' + std.native('latestPypiPackageVersion')('platformdirs'),
+          },
+          psutil: {
+            optional: true,
+            version: '^' + std.native('latestPypiPackageVersion')('psutil'),
+          },
+          pydbus: {
+            optional: true,
+            platform: 'linux',
+            version: '^' + std.native('latestPypiPackageVersion')('pydbus'),
+          },
+          pygithub: {
+            optional: true,
+            version: '^' + std.native('latestPypiPackageVersion')('pygithub'),
+          },
+          pygobject: {
+            optional: true,
+            platform: 'linux',
+            version: '^' + std.native('latestPypiPackageVersion')('pygobject'),
+          },
+          pyperclip: {
+            optional: true,
+            version: '^' + std.native('latestPypiPackageVersion')('pyperclip'),
+          },
           python: '>=3.10,<3.14',
-          'python-xz': { optional: true, version: '^0.5.0' },
-          pyyaml: { optional: true, version: '^6.0.2' },
-          requests: '^2.32.3',
-          send2trash: '^1.8.3',
-          unidecode: { optional: true, version: '^1.4.0' },
-          'yt-dlp': { optional: true, version: '^2025.5.22' },
+          'python-xz': {
+            optional: true,
+            version: '^' + std.native('latestPypiPackageVersion')('python-xz'),
+          },
+          pyyaml: {
+            optional: true,
+            version: '^' + std.native('latestPypiPackageVersion')('pyyaml'),
+          },
+          requests: '^' + std.native('latestPypiPackageVersion')('requests'),
+          send2trash: '^' + std.native('latestPypiPackageVersion')('send2trash'),
+          soupsieve: {
+            optional: true,
+            version: '^' + std.native('latestPypiPackageVersion')('soupsieve'),
+          },
+          unidecode: {
+            optional: true,
+            version: '^' + std.native('latestPypiPackageVersion')('unidecode'),
+          },
+          'yt-dlp': {
+            optional: true,
+            version: '^' + std.native('latestPypiPackageVersion')('yt-dlp'),
+          },
         },
         extras: {
           admin: ['paramiko'],
@@ -152,45 +213,49 @@
           dev+: {
             dependencies+: {
               'pydbus-stubs': '^0',
-              'types-beautifulsoup4': '^4.12.0.20250516',
-              'types-binaryornot': '^0.4.0.20250507',
-              'types-paramiko': '^3.5.0.20250516',
-              'types-pexpect': '^4.9.0.20250516',
-              'types-pillow': '^10.2.0.20240822',
-              'types-psutil': '^7.0.0.20250516',
-              'types-pyperclip': '^1.9.0.20250218',
-              'types-pyyaml': '^6.0.12.20250516',
-              'types-requests': '^2.32.0.20250515',
-              'types-send2trash': '^1.8.2.7',
-              'yt-dlp-types': '^0',
+              'types-beautifulsoup4': '^' + std.native('latestPypiPackageVersion')('types-beautifulsoup4'),
+              'types-binaryornot': '^' + std.native('latestPypiPackageVersion')('types-binaryornot'),
+              'types-paramiko': '^' + std.native('latestPypiPackageVersion')('types-paramiko'),
+              'types-pexpect': '^' + std.native('latestPypiPackageVersion')('types-pexpect'),
+              'types-pillow': '^' + std.native('latestPypiPackageVersion')('types-pillow'),
+              'types-psutil': '^' + std.native('latestPypiPackageVersion')('types-psutil'),
+              'types-pyperclip': '^' + std.native('latestPypiPackageVersion')('types-pyperclip'),
+              'types-pyyaml': '^' + std.native('latestPypiPackageVersion')('types-pyyaml'),
+              'types-requests': '^' + std.native('latestPypiPackageVersion')('types-requests'),
+              'types-send2trash': '^' + std.native('latestPypiPackageVersion')('types-send2trash'),
+              'types-yt-dlp': '^' + std.native('latestPypiPackageVersion')('types-yt-dlp'),
             },
           },
           tests+: {
             dependencies+: {
-              'requests-mock': '^1.12.1',
+              'requests-mock': '^' + std.native('latestPypiPackageVersion')('requests-mock'),
             },
+          },
+        },
+      },
+      ruff+: {
+        lint+: {
+          pylint+: {
+            'max-nested-blocks': 6,
+            'max-statements': 150,
           },
         },
       },
     },
   },
-  // Common
-  authors: [
-    {
-      'family-names': 'Udvare',
-      'given-names': 'Andrew',
-      email: 'audvare@gmail.com',
-      name: '%s %s' % [self['given-names'], self['family-names']],
+  copilot: {
+    intro: 'Deltona is a collection of uncategorised CLI utilities and Python modules.',
+  },
+  readthedocs+: {
+    build+: {
+      apt_packages: [
+        'libcairo2-dev',
+        'libgirepository-2.0-dev',
+      ],
+      os: 'ubuntu-24.04',
     },
-  ],
-  local funding_name = '%s2' % std.asciiLower(self.github_username),
-  github_username: 'Tatsh',
-  github+: {
-    funding+: {
-      ko_fi: funding_name,
-      liberapay: funding_name,
-      patreon: funding_name,
+    sphinx+: {
+      fail_on_warning: false,
     },
   },
-  mastodon_id: '109370961877277568',
 }

@@ -13,11 +13,11 @@ classifiers = [
   "Operating System :: MacOS",
   "Operating System :: Microsoft :: Windows",
   "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
-  "Programming Language :: Python",
-  "Topic :: Desktop Environment :: K Desktop Environment (KDE)",
   "Topic :: Desktop Environment",
+  "Topic :: Desktop Environment :: K Desktop Environment (KDE)",
   "Topic :: File Formats",
   "Topic :: Games/Entertainment",
   "Topic :: Internet :: WWW/HTTP :: Browsers",
@@ -122,6 +122,8 @@ homepage = "https://tatsh.github.io/deltona/"
 repository = "https://github.com/Tatsh/deltona"
 
 [tool.commitizen]
+name = "cz_path"
+remove_path_prefixes = ["deltona", "include", "src"]
 tag_format = "v$version"
 version_files = [
   ".wiswa.jsonnet",
@@ -136,12 +138,12 @@ version_provider = "pep621"
 
 [tool.coverage.report]
 exclude_also = ["if TYPE_CHECKING:"]
-omit = ["conftest.py", "tests.py", "tests/test_*.py", "__main__.py"]
+omit = ["conftest.py", "tests.py", "tests/test_*.py"]
 show_missing = true
 
 [tool.coverage.run]
 branch = true
-omit = ["conftest.py", "tests.py", "tests/test_*.py", "__main__.py"]
+omit = ["conftest.py", "tests.py", "tests/test_*.py"]
 
 [tool.djlint]
 max_line_length = 100
@@ -170,22 +172,19 @@ include = ["man", { format = "sdist", path = "tests" }]
 [tool.poetry.dependencies]
 bascom = "^0.0.1"
 binaryornot = "^0.4.4"
-click = "^8.2.1"
-colorlog = "^6.9.0"
 keyring = "^25.6.0"
 python = ">=3.10,<3.14"
-requests = "^2.32.4"
+requests = "^2.32.5"
 send2trash = "^1.8.3"
-soupsieve = "^2.8"
-typing-extensions = "^4.14.1"
+typing-extensions = "^4.15.0"
 
 [tool.poetry.dependencies.beautifulsoup4]
 optional = true
-version = "^4.13.4"
+version = "^4.13.5"
 
 [tool.poetry.dependencies.gitpython]
 optional = true
-version = "^3.1.44"
+version = "^3.1.45"
 
 [tool.poetry.dependencies.html5lib]
 optional = true
@@ -197,7 +196,7 @@ version = "^1.47.0"
 
 [tool.poetry.dependencies.paramiko]
 optional = true
-version = "^3.5.1"
+version = "^4.0.0"
 
 [tool.poetry.dependencies.pexpect]
 optional = true
@@ -209,11 +208,11 @@ version = "^11.3.0"
 
 [tool.poetry.dependencies.platformdirs]
 optional = true
-version = "^4.3.8"
+version = "^4.4.0"
 
 [tool.poetry.dependencies.psutil]
 optional = true
-version = "^7.0.0"
+version = "^7.1.0"
 
 [tool.poetry.dependencies.pydbus]
 optional = true
@@ -222,16 +221,16 @@ version = "^0.6.0"
 
 [tool.poetry.dependencies.pygithub]
 optional = true
-version = "^2.6.1"
+version = "^2.8.1"
 
 [tool.poetry.dependencies.pygobject]
 optional = true
 platform = "linux"
-version = "^3.52.3"
+version = "^3.54.2"
 
 [tool.poetry.dependencies.pyperclip]
 optional = true
-version = "^1.9.0"
+version = "^1.10.0"
 
 [tool.poetry.dependencies.python-xz]
 optional = true
@@ -241,13 +240,17 @@ version = "^0.5.0"
 optional = true
 version = "^6.0.2"
 
+[tool.poetry.dependencies.soupsieve]
+optional = true
+version = "^2.8"
+
 [tool.poetry.dependencies.unidecode]
 optional = true
 version = "^1.4.0"
 
 [tool.poetry.dependencies.yt-dlp]
 optional = true
-version = "^2025.7.21"
+version = "^2025.9.5"
 
 [tool.poetry.extras]
 admin = ["paramiko"]
@@ -262,23 +265,24 @@ www = ["beautifulsoup4", "html5lib", "pillow"]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-commitizen = "^4.8.3"
+commitizen = "^4.9.1"
+cz-path = "^0.0.1"
 djlint = "^1.36.4"
-mypy = "^1.17.0"
-pydbus-stubs = "^0.0.3"
-ruff = "^0.12.4"
+mypy = "^1.18.2"
+pydbus-stubs = "^0"
+ruff = "^0.13.1"
 types-beautifulsoup4 = "^4.12.0.20250516"
 types-binaryornot = "^0.4.0.20250507"
-types-paramiko = "^3.5.0.20250708"
-types-pexpect = "^4.9.0.20250516"
+types-paramiko = "^4.0.0.20250822"
+types-pexpect = "^4.9.0.20250916"
 types-pillow = "^10.2.0.20240822"
-types-psutil = "^7.0.0.20250601"
-types-pyperclip = "^1.9.0.20250218"
-types-pyyaml = "^6.0.12.20250516"
-types-requests = "^2.32.4.20250611"
+types-psutil = "^7.0.0.20250822"
+types-pyperclip = "^1.9.0.20250801"
+types-pyyaml = "^6.0.12.20250915"
+types-requests = "^2.32.4.20250913"
 types-send2trash = "^1.8.2.7"
+types-yt-dlp = "^2025.9.5.20250907"
 yapf = "^0.43.0"
-yt-dlp-types = "^0.0.17"
 
 [tool.poetry.group.docs]
 optional = true
@@ -286,14 +290,14 @@ optional = true
 [tool.poetry.group.docs.dependencies]
 autodoc-pydantic = "^2.2.0"
 doc8 = "^2.0.0"
-docutils = "^0.21.2"
+docutils = "<0.22"
 esbonio = "^0.16.5"
 numpydoc = "^1.9.0"
 restructuredtext-lint = "^1.4.0"
-sphinx-click = "^6.0.0"
+sphinx-click = "^6.1.0"
 sphinx-datatables = "^0.3.0"
 sphinx-hoverxref = "^1.4.2"
-sphinx-immaterial = "^0.13.5"
+sphinx-immaterial = "^0.13.6"
 
 [tool.poetry.group.docs.dependencies.enum-tools]
 extras = ["sphinx"]
@@ -301,7 +305,7 @@ version = "^0.13.0"
 
 [[tool.poetry.group.docs.dependencies.sphinx]]
 python = ">=3.11"
-version = "^8.2.0"
+version = "^8.2.3"
 
 [[tool.poetry.group.docs.dependencies.sphinx]]
 python = "<3.11"
@@ -312,9 +316,9 @@ optional = true
 
 [tool.poetry.group.tests.dependencies]
 mock = "^5.2.0"
-pytest = "^8.4.1"
-pytest-cov = "^6.2.1"
-pytest-mock = "^3.14.1"
+pytest = "^8.4.2"
+pytest-cov = "^7.0.0"
+pytest-mock = "^3.15.1"
 requests-mock = "^1.12.1"
 
 [tool.poetry.group.tests.dependencies.coveralls]
@@ -418,12 +422,7 @@ extend-select = [
   "YTT",
 ]
 ignore = [
-  "A005",
   "ANN401",
-  "ARG001",
-  "ARG002",
-  "ARG004",
-  "C901",
   "COM812",
   "CPY001",
   "D201",
@@ -431,25 +430,18 @@ ignore = [
   "D204",
   "D212",
   "DOC201",
-  "EM101",
   "N818",
-  "PLR0912",
-  "PLR0913",
-  "PLR0914",
-  "PLR0915",
-  "PLR0917",
-  "PLR1702",
-  "PLR6301",
   "S101",
   "S404",
   "S603",
   "TD002",
-  "TD003",
-  "TD004",
   "UP046",
   "UP047",
 ]
 preview = true
+
+[tool.ruff.lint.flake8-builtins]
+allowed-modules = ["types", "typing"]
 
 [tool.ruff.lint.flake8-quotes]
 inline-quotes = "single"
@@ -462,11 +454,24 @@ from-first = true
 required-imports = ["from __future__ import annotations"]
 section-order = ["future", "standard-library", "third-party", "local-folder"]
 
+[tool.ruff.lint.mccabe]
+max-complexity = 20
+
 [tool.ruff.lint.pep8-naming]
 extend-ignore-names = ["test_*"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
+
+[tool.ruff.lint.pylint]
+max-args = 20
+max-branches = 20
+max-locals = 20
+max-nested-blocks = 6
+max-positional-args = 15
+max-public-methods = 30
+max-returns = 10
+max-statements = 150
 
 [tool.yapf]
 align_closing_bracket_with_visual_indent = true

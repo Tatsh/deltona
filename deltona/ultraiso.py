@@ -40,11 +40,11 @@ def get_ultraiso_path(prefix: StrPath) -> StrPath | None:
 
 
 class InsufficientArguments(Exception):
-    def __init__(self, *args: object) -> None:
+    def __init__(self) -> None:
         super().__init__('Insufficient amount of arguments.')
 
 
-def run_ultraiso(
+def run_ultraiso(  # noqa: PLR0913
         *,
         add_dirs: Iterable[StrPathMustExist] | None = None,
         add_files: Iterable[StrPathMustExist] | None = None,
@@ -282,7 +282,7 @@ ULTRAISO_FONT_REPLACEMENT_MAX_LENGTH = 13
 
 
 class InvalidExec(Exception):
-    def __init__(self, *args: object) -> None:
+    def __init__(self) -> None:
         super().__init__('Font not found in file. This is not the original UltraISO executable.')
 
 

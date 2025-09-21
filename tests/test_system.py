@@ -38,7 +38,7 @@ def make_fake_system_bus() -> tuple[Any, mock.Mock]:
     manager = mock.Mock()
 
     class FakeSystemBus:
-        def get(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        def get(self, *args: Any, **kwargs: Any) -> dict[str, Any]:  # noqa: PLR6301
             return {'org.freedesktop.login1.Manager': manager}
 
     return FakeSystemBus, manager
@@ -48,7 +48,7 @@ def make_fake_session_bus() -> tuple[Any, mock.Mock]:
     notifications = mock.Mock()
 
     class FakeSessionBus:
-        def get(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        def get(self, *args: Any, **kwargs: Any) -> dict[str, Any]:  # noqa: PLR6301
             return notifications
 
     return FakeSessionBus, notifications
@@ -160,7 +160,7 @@ def make_fake_bluez_system_bus() -> tuple[Any, mock.Mock]:
     manager = mock.Mock()
 
     class FakeSystemBus:
-        def get(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        def get(self, *args: Any, **kwargs: Any) -> dict[str, Any]:  # noqa: PLR6301
             return {'org.freedesktop.DBus.ObjectManager': manager}
 
     return FakeSystemBus, manager

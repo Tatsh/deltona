@@ -154,29 +154,30 @@ Q4WINE_DEFAULT_ICONS: tuple[tuple[str, str, str, str, str, str], ...] = (
 """Shortcuts to add to Q4Wine for the prefix."""
 
 
-def create_wine_prefix(prefix_name: str,
-                       *,
-                       _32bit: bool = False,
-                       asio: bool = False,
-                       disable_explorer: bool = False,
-                       disable_services: bool = False,
-                       dpi: int = DEFAULT_DPI,
-                       dxva_vaapi: bool = False,
-                       dxvk_nvapi: bool = False,
-                       eax: bool = False,
-                       gtk: bool = False,
-                       no_associations: bool = False,
-                       no_gecko: bool = False,
-                       no_mono: bool = False,
-                       no_xdg: bool = False,
-                       noto_sans: bool = False,
-                       prefix_root: StrPath | None = None,
-                       sandbox: bool = False,
-                       tmpfs: bool = False,
-                       tricks: Iterable[str] | None = None,
-                       vd: str = 'off',
-                       windows_version: WineWindowsVersion = '10',
-                       winrt_dark: bool = False) -> Path:
+def create_wine_prefix(  # noqa: C901, PLR0912, PLR0913
+        prefix_name: str,
+        *,
+        _32bit: bool = False,
+        asio: bool = False,
+        disable_explorer: bool = False,
+        disable_services: bool = False,
+        dpi: int = DEFAULT_DPI,
+        dxva_vaapi: bool = False,
+        dxvk_nvapi: bool = False,
+        eax: bool = False,
+        gtk: bool = False,
+        no_associations: bool = False,
+        no_gecko: bool = False,
+        no_mono: bool = False,
+        no_xdg: bool = False,
+        noto_sans: bool = False,
+        prefix_root: StrPath | None = None,
+        sandbox: bool = False,
+        tmpfs: bool = False,
+        tricks: Iterable[str] | None = None,
+        vd: str = 'off',
+        windows_version: WineWindowsVersion = '10',
+        winrt_dark: bool = False) -> Path:
     """
     Create a Wine prefix with custom settings.
 

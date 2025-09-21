@@ -13,6 +13,7 @@ arib
 arkit
 asio
 assocs
+asyncio
 autodoc
 automodule
 bascom
@@ -47,7 +48,6 @@ closeapplications
 cmdargs
 codeowners
 codepoint
-colorlog
 commitizen
 conftest
 consolas
@@ -59,6 +59,7 @@ crypttab
 cssq
 cuvid
 dashcam
+dataclasses
 datamode
 dataoffset
 datatable
@@ -70,6 +71,7 @@ desat
 dgenre
 directores
 djlint
+docstrings
 doctrees
 dontcare
 driveropts
@@ -145,6 +147,7 @@ inul
 ioctl
 iselect
 isort
+itertools
 jinja
 jlong
 jsonnet
@@ -202,6 +205,7 @@ msgbox
 mshtml
 mvid
 mypy
+namedtuples
 nocancel
 nonantialiased
 nonblock
@@ -237,7 +241,9 @@ pydocstyle
 pygithub
 pygobject
 pylance
+pylint
 pyperclip
+pypi
 pyproject
 pyright
 pytest
@@ -278,7 +284,6 @@ tatsh
 testpaths
 tmpfs
 tonemap
-topdown
 totalallowances
 tracknumber
 tryfirst

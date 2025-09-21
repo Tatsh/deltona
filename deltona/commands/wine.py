@@ -66,30 +66,31 @@ log = logging.getLogger(__name__)
 @click.option('-W', '--winrt-dark', is_flag=True, help='Enable dark mode for WinRT apps.')
 @click.option('-x', '--dxva-vaapi', is_flag=True, help='Enable DXVA2 support with VA-API.')
 @click.option('--32', '_32bit', help='Use 32-bit prefix.', is_flag=True)
-def mkwineprefix_main(prefix_name: str,
-                      prefix_root: Path,
-                      tricks: tuple[str, ...],
-                      vd: str = 'off',
-                      windows_version: WineWindowsVersion = '10',
-                      *,
-                      _32bit: bool = False,
-                      asio: bool = False,
-                      debug: bool = False,
-                      disable_explorer: bool = False,
-                      disable_services: bool = False,
-                      dpi: int = DEFAULT_DPI,
-                      dxva_vaapi: bool = False,
-                      eax: bool = False,
-                      gtk: bool = False,
-                      no_assocs: bool = False,
-                      no_gecko: bool = False,
-                      no_mono: bool = False,
-                      no_xdg: bool = False,
-                      noto: bool = False,
-                      nvapi: bool = False,
-                      sandbox: bool = False,
-                      tmpfs: bool = False,
-                      winrt_dark: bool = False) -> None:
+def mkwineprefix_main(  # noqa: PLR0913
+        prefix_name: str,
+        prefix_root: Path,
+        tricks: tuple[str, ...],
+        vd: str = 'off',
+        windows_version: WineWindowsVersion = '10',
+        *,
+        _32bit: bool = False,
+        asio: bool = False,
+        debug: bool = False,
+        disable_explorer: bool = False,
+        disable_services: bool = False,
+        dpi: int = DEFAULT_DPI,
+        dxva_vaapi: bool = False,
+        eax: bool = False,
+        gtk: bool = False,
+        no_assocs: bool = False,
+        no_gecko: bool = False,
+        no_mono: bool = False,
+        no_xdg: bool = False,
+        noto: bool = False,
+        nvapi: bool = False,
+        sandbox: bool = False,
+        tmpfs: bool = False,
+        winrt_dark: bool = False) -> None:
     """
     Create a Wine prefix with custom settings.
 
@@ -162,7 +163,7 @@ def wineshell_main(prefix_name: str, *, debug: bool = False) -> None:
                       dimensions=(terminal.lines, terminal.columns))
     c.sendline(f'export WINEPREFIX={quote(str(target))}; export PS1="{target.name}🍷$PS1"')
 
-    def resize(sig: Any, data: Any) -> None:  # pragma: no cover
+    def resize(sig: Any, data: Any) -> None:  # pragma: no cover  # noqa: ARG001
         terminal = shutil.get_terminal_size()
         c.setwinsize(terminal.lines, terminal.columns)
 
