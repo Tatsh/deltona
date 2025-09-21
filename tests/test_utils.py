@@ -84,6 +84,7 @@ def test_create_wine_prefix_basic(mocker: MockerFixture) -> None:
     sp_run = mocker.patch('deltona.utils.sp.run')
     mocker.patch('deltona.utils.which', return_value=None)
     mocker.patch('deltona.utils.requests.get')
+    mocker.patch('deltona.utils.sqlite3')
     mocker.patch('deltona.utils.xz.open')
     mocker.patch('deltona.utils.tarfile.TarFile')
     mocker.patch('deltona.utils.copyfile')
@@ -119,6 +120,7 @@ def test_create_wine_prefix_raises_if_exists(mocker: MockerFixture) -> None:
 
 def test_create_wine_prefix_with_tricks_and_winetricks(mocker: MockerFixture) -> None:
     sp_run = mocker.patch('deltona.utils.sp.run')
+    mocker.patch('deltona.utils.sqlite3')
     mocker.patch('deltona.utils.which', return_value='/usr/bin/winetricks')
     mock_path = mocker.patch('deltona.utils.Path')
     mock_path.home.return_value.__truediv__.return_value.__truediv__.return_value.exists.return_value = False  # noqa: E501
@@ -138,6 +140,7 @@ def test_create_wine_prefix_with_options(mocker: MockerFixture) -> None:
     mocker.patch('deltona.utils.which', return_value=None)
     mock_path = mocker.patch('deltona.utils.Path')
     mock_path.home.return_value.__truediv__.return_value.__truediv__.return_value.exists.return_value = False  # noqa: E501
+    mocker.patch('deltona.utils.sqlite3')
     mocker.patch.dict('deltona.utils.environ', {
         'PATH': '/bin',
         'DISPLAY': ':0',
@@ -170,6 +173,7 @@ def test_create_wine_prefix_with_options(mocker: MockerFixture) -> None:
 
 def test_create_wine_prefix_handles_winetricks_failure(mocker: MockerFixture) -> None:
     sp_run = mocker.patch('deltona.utils.sp.run')
+    mocker.patch('deltona.utils.sqlite3')
     mocker.patch('deltona.utils.which', return_value='/usr/bin/winetricks')
     mock_path = mocker.patch('deltona.utils.Path')
     mock_path.home.return_value.__truediv__.return_value.__truediv__.return_value.exists.return_value = False  # noqa: E501
@@ -199,6 +203,7 @@ def test_create_wine_prefix_dxvk_nvapi_true_no_q4wine_db(mocker: MockerFixture) 
     mocker.patch('deltona.utils.tarfile.TarFile')
     mocker.patch('deltona.utils.copyfile')
     mocker.patch('deltona.utils.struct.pack', return_value=b'\x00' * 92)
+    mocker.patch('deltona.utils.sqlite3')
     mocker.patch('deltona.utils.IS_WINDOWS', False)
     mocker.patch.dict('deltona.utils.environ', {
         'PATH': '/bin',
@@ -225,6 +230,7 @@ def test_create_wine_prefix_dxvk_nvapi_true_32bit(mocker: MockerFixture) -> None
     sp_run = mocker.patch('deltona.utils.sp.run')
     mocker.patch('deltona.utils.which',
                  side_effect=lambda x: '/usr/bin/winetricks' if x == 'winetricks' else None)
+    mocker.patch('deltona.utils.sqlite3')
     mock_get = mocker.patch('deltona.utils.requests.get')
     mocker.patch('deltona.utils.xz.open')
     mocker.patch('deltona.utils.tarfile.TarFile')
@@ -275,7 +281,7 @@ def test_create_wine_prefix_asio_true_register_found(mocker: MockerFixture) -> N
     mocker.patch('deltona.utils.tarfile.TarFile')
     mocker.patch('deltona.utils.copyfile')
     mocker.patch('deltona.utils.platformdirs.user_config_path')
-    mocker.patch('deltona.utils.sqlite3.connect')
+    mocker.patch('deltona.utils.sqlite3')
     mocker.patch('deltona.utils.rmtree')
     mocker.patch('deltona.utils.tempfile.gettempdir', return_value='/tmp')
     mocker.patch('deltona.utils.struct.pack', return_value=b'\x00' * 92)
