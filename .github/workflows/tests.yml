@@ -12,8 +12,10 @@ jobs:
         with:
           cache: 'poetry'
           python-version: '${{ matrix.python-version }}'
+      - run: sudo apt-get update
+      - run: sudo apt-get install -y libcairo2-dev libgirepository-2.0-dev
       - name: 'Install dependencies (Poetry)'
-        run: 'poetry install --with=tests'
+        run: 'poetry install --all-groups --all-extras'
       - name: 'Install dependencies (Yarn)'
         run: 'yarn'
       - name: 'Run tests'

@@ -125,6 +125,7 @@ root {
             version: '^' + std.native('latestPypiPackageVersion')('beautifulsoup4'),
           },
           binaryornot: '^' + std.native('latestPypiPackageVersion')('binaryornot'),
+          click: '^' + std.native('latestPypiPackageVersion')('click'),
           gitpython: {
             optional: true,
             version: '^' + std.native('latestPypiPackageVersion')('gitpython'),
