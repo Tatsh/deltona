@@ -47,7 +47,7 @@ def fix_chromium_pwa_icon(config_path: StrPath,
 
     See Also
     --------
-    https://issues.chromium.org/issues/40595456
+    `Bug 40595456 - PWA icons can be lost (on sync?) and reverted to a letter`_
 
     Raises
     ------

@@ -15,6 +15,7 @@ asio
 assocs
 asyncio
 autodoc
+autofunction
 automodule
 bascom
 beautifulsoup
@@ -283,6 +284,7 @@ taskmgr
 tatsh
 testpaths
 tmpfs
+toctree
 tonemap
 totalallowances
 tracknumber

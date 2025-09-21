@@ -33,6 +33,7 @@ UNIXStrPath = Annotated[StrPath, 'unix']
 StrPathMustExist = Annotated[StrPath, 'must_exist']
 """String or ``PathLike[str]`` that must exist."""
 _T = TypeVar('_T')
+"""T."""
 
 
 class CDStatus(IntEnum):
@@ -58,7 +59,17 @@ def assert_not_none(var: _T | None) -> _T:  # pragma: no cover
     """
     Assert the ``var`` is not None and return it.
 
-    This will remove ``| None`` from type ``_T``.
+    This will remove ``None`` from type ``_T | None``.
+
+    Parameters
+    ----------
+    var : _T | None
+        The variable to check.
+
+    Returns
+    -------
+    _T
+        The variable, guaranteed to be not None.
     """
     assert var is not None
     return var

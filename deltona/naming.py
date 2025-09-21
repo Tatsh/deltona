@@ -10,6 +10,8 @@ from .string import fix_apostrophes, is_roman_numeral
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+__all__ = ('Mode', 'adjust_title')
+
 # Non-strict, not including words like below, forms of to be, forms of you/he/etc, or words like
 # 'call'.
 STOP_WORDS = {
@@ -51,21 +53,15 @@ STOP_WORDS = {
     'within',
     'without'
 }
-"""Common stop words for English."""
 ENGLISH_ORDINAL_RE = r'(\d+)(st|nd|rd|th)'
-"""Regular expression for English ordinals."""
 ENGLISH_ABBREV = {'feat', 'mr', 'mrs', 'ms', 'vs'}
-"""English abbreviations for period removal."""
 JAPANESE_PARTICLES = {'de', 'e', 'ga', 'ha', 'ka', 'kana', 'ne', 'ni', 'no', 'to', 'wa', 'wo'}
-"""Only really common ones."""
 CHINESE_PARTICLES = {'de', 'ge', 'he', 'le', 'ma'}
-"""Only really common ones."""
 ARABIC_STOPS = {
     'al', 'ala', 'alayhi', 'alayka', 'alayya', 'an', 'anhu', 'anka', 'anni', 'bi', 'biha', 'bihi',
     'bika', 'fi', 'fihi', 'fika', 'fiya', 'ila', 'ilayhi', 'ilayka', 'ilayya', 'lahu', 'laka', 'li',
     'maa', 'maahu', 'maaka', 'mai', 'min', 'minhu', 'minka', 'minni', 'wa'
 }
-"""Not a complete set."""
 NAMES_TO_FIX = {
     "mcdonald's": "McDonald's",
     'Arkit': 'ARKit',
@@ -86,19 +82,34 @@ NAMES_TO_FIX = {
     'mcdonald': 'McDonald',
     'mcdonalds': "McDonald's",
 }
-"""Common names to fix. The key is the name to fix, and the value is the fixed name."""
 
 
 class Mode(IntEnum):
     """Mode to operate in."""
     English = 1
-    """English mode."""
+    """
+    English mode.
+
+    :meta hide-value:
+    """
     Japanese = 1 << 1
-    """Japanese mode."""
+    """
+    Japanese mode.
+
+    :meta hide-value:
+    """
     Chinese = 1 << 2
-    """Chinese mode."""
+    """
+    Chinese mode.
+
+    :meta hide-value:
+    """
     Arabic = 1 << 3
-    """Arabic mode."""
+    """
+    Arabic mode.
+
+    :meta hide-value:
+    """
 
 
 MODE_MAP = {
@@ -107,7 +118,6 @@ MODE_MAP = {
     Mode.English: STOP_WORDS,
     Mode.Japanese: JAPANESE_PARTICLES,
 }
-"""Map of modes to stop words or particles."""
 
 
 def _get_name(word: str, names: dict[str, str] = NAMES_TO_FIX) -> str | None:

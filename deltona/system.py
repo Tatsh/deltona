@@ -30,15 +30,35 @@ __all__ = ('CHROME_DEFAULT_CONFIG_PATH', 'CHROME_DEFAULT_LOCAL_STATE_PATH', 'IS_
            'uninhibit_notifications', 'wait_for_disc')
 
 CDROM_DRIVE_STATUS = 0x5326
-"""CDROM drive status ioctl command."""
+"""
+CDROM drive status ioctl command.
+
+:meta hide-value:
+"""
 IS_LINUX = sys.platform == 'linux'
-"""If the system is Linux."""
+"""
+If the system is Linux.
+
+:meta hide-value:
+"""
 IS_WINDOWS = sys.platform == 'win32' or sys.platform == 'cygwin'
-"""If the system is Windows."""
+"""
+If the system is Windows.
+
+:meta hide-value:
+"""
 CHROME_DEFAULT_CONFIG_PATH = Path('~/.config/google-chrome').expanduser()
-"""Default Chrome config path."""
+"""
+Default Chrome config path.
+
+:meta hide-value:
+"""
 CHROME_DEFAULT_LOCAL_STATE_PATH = str(CHROME_DEFAULT_CONFIG_PATH / 'Local State')
-"""Default Chrome local state path."""
+"""
+Default Chrome local state path.
+
+:meta hide-value:
+"""
 log = logging.getLogger(__name__)
 
 
