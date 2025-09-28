@@ -49,6 +49,7 @@ closeapplications
 cmdargs
 codeowners
 codepoint
+colorlog
 commitizen
 conftest
 consolas
@@ -99,6 +100,7 @@ ffprobe
 fica
 fihi
 fika
+filevers
 fiya
 flacted
 followlinks
@@ -225,6 +227,7 @@ nvofapi
 nvoptix
 nwinemenubuilder
 oleview
+onefile
 otherfilerc
 paramiko
 parms
@@ -234,6 +237,7 @@ pipx
 platformdirs
 pointsize
 proc
+prodvers
 psutil
 pycache
 pydantic
@@ -241,6 +245,7 @@ pydbus
 pydocstyle
 pygithub
 pygobject
+pyinstaller
 pylance
 pylint
 pyperclip
@@ -271,6 +276,7 @@ sigwinch
 siri
 sirikit
 slugified
+softprops
 soupsieve
 sphinxcontrib
 spouseblindness
@@ -285,7 +291,9 @@ tatsh
 testpaths
 tmpfs
 toctree
+tomlq
 tonemap
+tonumber
 totalallowances
 tracknumber
 tryfirst
@@ -308,6 +316,7 @@ urldecode
 vaapi
 vcodec
 vernum
+vers
 verysilent
 videotoolbox
 virtualenv
