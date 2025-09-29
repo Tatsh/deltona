@@ -21,6 +21,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - Fixed `kconfig-to-commands` not outputting the `--file` argument for non-default files.
+- `connect-g603`: import `Gio` late (fix for when `gi` is not installed especially on non-Linux).
 
 ## [0.0.3] - 2025-06-09
 

@@ -24,7 +24,6 @@ from deltona.system import (
     kill_gamescope,
 )
 from deltona.www import upload_to_imgbb
-from gi.repository import Gio
 from platformdirs import user_state_path
 from requests import HTTPError
 import click
@@ -133,6 +132,7 @@ def connect_g603_main(device_name: str = 'hci0', *, debug: bool = False) -> None
     if not IS_LINUX:
         click.echo('Only Linux is supported.', err=True)
         raise click.Abort
+    from gi.repository import Gio  # noqa: PLC0415
     try:
         g_lib = _get_gi_repository_glib()
         system_bus = _get_pydbus_system_bus_callable()
