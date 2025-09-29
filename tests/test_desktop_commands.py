@@ -345,7 +345,7 @@ def test_connect_g603_key_error(mocker: MockerFixture, runner: CliRunner) -> Non
     mock_get_gi_repository_glib.return_value.MainLoop.return_value.run.assert_called_once()
     mock_get_gi_repository_glib.return_value.MainLoop.return_value.quit.assert_called_once()
     mock_log_debug.assert_has_calls(
-        [mocker.call('Caught error with device %s: %s', '00:11:22:33:44:55', '')])
+        [mocker.call('Caught error with device %s: %s', '00:11:22:33:44:55', mocker.ANY)])
 
 
 def test_connect_g603_paired(mocker: MockerFixture, runner: CliRunner) -> None:

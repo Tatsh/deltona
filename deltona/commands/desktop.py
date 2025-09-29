@@ -164,7 +164,7 @@ def connect_g603_main(device_name: str = 'hci0', *, debug: bool = False) -> None
                     log.debug('Ignoring device %s (MAC: %s).', device.Name, mac)
                     return
             except (KeyError, RuntimeError) as e:
-                log.debug('Caught error with device %s: %s', mac, str(e))
+                log.debug('Caught error with device %s: %s', mac, e)
                 return
             if values.get('Paired'):
                 log.debug('Quitting.')
