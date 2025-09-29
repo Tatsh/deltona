@@ -21,6 +21,18 @@ jobs:
           vers=$(echo "$(tomlq -r '.project.version|split(".")|map(tonumber)|@csv' pyproject.toml),0")
           version=$(tomlq -r .project.version pyproject.toml)
           while IFS=$' ' read -r script_name python_path func_name; do
+              if [[ "${{ matrix.os }}" == windows* ]] && [[ "${script_name}" == *wine* ]]; then
+                  echo "Skipping ${script_name} on Windows."
+                  continue
+              fi
+              if [[ "${script_name}" == 'connect-g603' ]] ||
+                  [[ "${script_name}" == 'kill-gamescope' ]] ||
+                  [[ "${script_name}" == systemd-* ]] ||
+                  [[ "${script_name}" == 'wait-for-disc' ]] ||
+                  [[ "${script_name}" == 'clean-old-kernels-modules' ]]; then
+                  echo "Skipping ${script_name} on all platforms."
+                  continue
+              fi
               func_name="${func_name#"${func_name%%[![:space:]]*}"}"
               func_name="${func_name%"${func_name##*[![:space:]]}"}"
               cat > temp_script.py <<EOF
