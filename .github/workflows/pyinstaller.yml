@@ -29,7 +29,8 @@ jobs:
                   [[ "${script_name}" == 'kill-gamescope' ]] ||
                   [[ "${script_name}" == systemd-* ]] ||
                   [[ "${script_name}" == 'wait-for-disc' ]] ||
-                  [[ "${script_name}" == 'clean-old-kernels-modules' ]]; then
+                  [[ "${script_name}" == 'clean-old-kernels-modules' ]] ||
+                  [[ "${script_name}" == 'inhibit-notifications' ]]; then
                   echo "Skipping ${script_name} on all platforms."
                   continue
               fi
