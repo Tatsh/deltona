@@ -9,6 +9,7 @@ import re
 
 if TYPE_CHECKING:
     from git import Repo
+    from github.PullRequest import PullRequest
     from github.Repository import Repository
 
 __all__ = ('convert_git_ssh_url_to_https', 'get_github_default_branch',
@@ -99,12 +100,18 @@ def merge_dependabot_pull_requests(*,
                 ).get_repos(affiliation=affiliation, sort='full_name')  # type: ignore[call-arg]
             if not x.archived and uses_dependabot(x)):
         log.info('Repository: %s', repo.name)
+        pull: PullRequest | None = None
         for num in (x.number for x in repo.get_pulls() if x.user.login == 'dependabot[bot]'):
             try:
                 pull = repo.get_pull(num)
                 if not pull.merge(merge_method='rebase').merged:
+                    log.debug('merge() did not raise but merged is False.')
                     pull.as_issue().create_comment('@dependabot recreate')
             except github.GithubException:
+                log.exception('Failed to merge PR %s in repository %s.', num, repo.name)
+                if pull:
+                    pull.as_issue().create_comment('@dependabot recreate')
                 should_raise = True
+            pull = None
     if should_raise:
         raise RuntimeError

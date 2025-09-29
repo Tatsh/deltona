@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
-from unittest.mock import Mock
 
 from deltona.git import (
     convert_git_ssh_url_to_https,
@@ -43,12 +42,30 @@ def test_merge_dependabot_pull_requests_success(mocker: MockerFixture,
     mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
     mock_github_repo.archived = False
     mock_github_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
-    mock_github_repo.get_pulls.return_value = [Mock(user=Mock(login='dependabot[bot]'), number=1)]
+    mock_github_repo.get_pulls.return_value = [
+        mocker.Mock(user=mocker.Mock(login='dependabot[bot]'), number=1)
+    ]
     mock_github_repo.get_pull.return_value.merge.return_value.merged = True
     monkeypatch.setattr('github.Github', mock_github)
     merge_dependabot_pull_requests(token='fake_token')
     mock_github_repo.get_pull.assert_called_once_with(1)
     mock_github_repo.get_pull.return_value.merge.assert_called_once_with(merge_method='rebase')
+
+
+def test_merge_dependabot_pull_requests_success_get_pull_fails(
+        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
+    mock_github = mocker.Mock()
+    mock_github_repo = mocker.Mock()
+    mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
+    mock_github_repo.archived = False
+    mock_github_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
+    mock_pull = mocker.MagicMock(user=mocker.Mock(login='dependabot[bot]'), number=1)
+    mock_github_repo.get_pull.side_effect = github.GithubException(400)
+    mock_github_repo.get_pulls.return_value = [mock_pull]
+    monkeypatch.setattr('github.Github', mock_github)
+    with pytest.raises(RuntimeError):
+        merge_dependabot_pull_requests(token='fake_token')
+    mock_pull.as_issue.return_value.create_comment.assert_not_called()
 
 
 def test_merge_dependabot_pull_requests_success_alt(mocker: MockerFixture,
@@ -58,7 +75,9 @@ def test_merge_dependabot_pull_requests_success_alt(mocker: MockerFixture,
     mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
     mock_github_repo.archived = False
     mock_github_repo.security_and_analysis.dependabot_security_updates.status = 'not enabled'
-    mock_github_repo.get_pulls.return_value = [Mock(user=Mock(login='dependabot[bot]'), number=1)]
+    mock_github_repo.get_pulls.return_value = [
+        mocker.Mock(user=mocker.Mock(login='dependabot[bot]'), number=1)
+    ]
     mock_github_repo.get_pull.return_value.merge.return_value.merged = True
     monkeypatch.setattr('github.Github', mock_github)
     merge_dependabot_pull_requests(token='fake_token')
@@ -92,7 +111,9 @@ def test_merge_dependabot_pull_requests_should_raise(mocker: MockerFixture,
     mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
     mock_github_repo.archived = False
     mock_github_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
-    mock_github_repo.get_pulls.return_value = [Mock(user=Mock(login='dependabot[bot]'), number=1)]
+    mock_github_repo.get_pulls.return_value = [
+        mocker.Mock(user=mocker.Mock(login='dependabot[bot]'), number=1)
+    ]
     mock_github_repo.get_pull.return_value.merge.side_effect = raise_ghe
     monkeypatch.setattr('github.Github', mock_github)
     with pytest.raises(RuntimeError):
