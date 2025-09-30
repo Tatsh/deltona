@@ -27,6 +27,7 @@ log = logging.getLogger(__name__)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
+@click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('-H', '--hours', default=160, help='Hours worked in a month.', metavar='HOURS')
 @click.option('-r', '--pay-rate', default=70.0, help='Dollars per hour.', metavar='DOLLARS')
 @click.option(
@@ -36,8 +37,13 @@ log = logging.getLogger(__name__)
     default='FL',
     type=click.Choice(INCITS38Code.__args__),  # type: ignore[attr-defined]
     help='US state abbreviation.')
-def adp_main(hours: int = 160, pay_rate: float = 70.0, state: INCITS38Code = 'FL') -> None:
+def adp_main(hours: int = 160,
+             pay_rate: float = 70.0,
+             state: INCITS38Code = 'FL',
+             *,
+             debug: bool = False) -> None:
     """Calculate US salary."""
+    setup_logging(debug=debug, loggers={'deltona': {}, 'urllib3': {}})
     click.echo(str(calculate_salary(hours=hours, pay_rate=pay_rate, state=state)))
 
 
