@@ -170,7 +170,7 @@ warn_unreachable = true
 include = ["man", { format = "sdist", path = "tests" }]
 
 [tool.poetry.dependencies]
-bascom = "^0.0.1"
+bascom = "^0.0.2"
 binaryornot = "^0.4.4"
 click = "^8.3.0"
 keyring = "^25.6.0"
