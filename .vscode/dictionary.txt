@@ -106,6 +106,7 @@ flacted
 followlinks
 fontawesome
 forcecloseapplications
+fqxz
 froms
 fspath
 fullfacesize

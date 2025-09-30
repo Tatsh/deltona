@@ -17,21 +17,40 @@ jobs:
         shell: 'bash'
       - name: 'Build with PyInstaller'
         run: |
+          macos_exclusions=(
+            clean-old-kernels-modules
+            connect-g603
+            inhibit-notifications
+            kill-gamescope
+            systemd-reset-tpm-cryptenroll
+            wait-for-disc
+          )
+          windows_exclusions=(
+            clean-old-kernels-modules
+            connect-g603
+            inhibit-notifications
+            kill-gamescope
+            systemd-reset-tpm-cryptenroll
+            wait-for-disc
+            kill-wine
+            mkwineprefix
+            set-wine-fonts
+            unregister-wine-assocs
+            winegoginstall
+            wineshell
+          )
           project_name=$(tomlq -r '.project.urls.repository|split("/")[-1]' pyproject.toml)
           vers=$(echo "$(tomlq -r '.project.version|split(".")|map(tonumber)|@csv' pyproject.toml),0")
           version=$(tomlq -r .project.version pyproject.toml)
           while IFS=$' ' read -r script_name python_path func_name; do
-              if [[ "${{ matrix.os }}" == windows* ]] && [[ "${script_name}" == *wine* ]]; then
+              if [[ "${{ matrix.os }}" == windows* ]] &&
+                  printf '%s\0' "${windows_exclusions[@]}" | grep -Fqxz -- "${script_name}"; then
                   echo "Skipping ${script_name} on Windows."
                   continue
               fi
-              if [[ "${script_name}" == 'connect-g603' ]] ||
-                  [[ "${script_name}" == 'kill-gamescope' ]] ||
-                  [[ "${script_name}" == systemd-* ]] ||
-                  [[ "${script_name}" == 'wait-for-disc' ]] ||
-                  [[ "${script_name}" == 'clean-old-kernels-modules' ]] ||
-                  [[ "${script_name}" == 'inhibit-notifications' ]]; then
-                  echo "Skipping ${script_name} on all platforms."
+              if [[ "${{ matrix.os }}" == macos* ]] &&
+                  printf '%s\0' "${macos_exclusions[@]}" | grep -Fqxz -- "${script_name}"; then
+                  echo "Skipping ${script_name} on macOS."
                   continue
               fi
               func_name="${func_name#"${func_name%%[![:space:]]*}"}"

@@ -247,16 +247,35 @@ local utils = import 'utils.libjsonnet';
   copilot: {
     intro: 'Deltona is a collection of uncategorised CLI utilities and Python modules.',
   },
+  local exclude_from_all = [
+    'clean-old-kernels-modules',
+    'connect-g603',
+    'inhibit-notifications',
+    'kill-gamescope',
+    'systemd-reset-tpm-cryptenroll',
+    'wait-for-disc',
+  ],
+  pyinstaller: {
+    macos_exclusions: exclude_from_all,
+    windows_exclusions: exclude_from_all + [
+      'kill-wine',
+      'mkwineprefix',
+      'set-wine-fonts',
+      'unregister-wine-assocs',
+      'winegoginstall',
+      'wineshell',
+    ],
+  },
   local apt_packages = ['libcairo2-dev', 'libgirepository-2.0-dev'],
   github+: {
     workflows+: {
       qa+: {
-        apt_packages: apt_packages
+        apt_packages: apt_packages,
       },
       tests+: {
-        apt_packages: apt_packages
+        apt_packages: apt_packages,
       },
-    }
+    },
   },
   readthedocs+: {
     build+: {
