@@ -13,6 +13,7 @@ import subprocess as sp
 import sys
 import unicodedata
 
+from bascom import setup_logging
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.io import make_sfv, unpack_ebook
 from deltona.media import (
@@ -229,7 +230,7 @@ def ultraiso_main(  # noqa: PLR0913, PLR0917
     On non-Windows, runs UltraISO via Wine.
     """  # noqa: DOC501
     kwargs = {'prefix': prefix} if prefix and not IS_WINDOWS else {}
-    logging.basicConfig(level=logging.ERROR if not debug else logging.DEBUG)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     try:
         run_ultraiso(add_dirs=dirs or [],
                      add_files=files or [],
@@ -284,7 +285,7 @@ def ultraiso_main(  # noqa: PLR0913, PLR0917
 @click.argument('device')
 def supported_audio_input_formats_main(device: str, *, debug: bool = False) -> None:
     """Get supported input formats and sample rates by invoking ffmpeg."""  # noqa: DOC501
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     try:
         for format_, rate in supported_audio_input_formats(device):
             click.echo(f'{format_} @ {rate}')
@@ -298,7 +299,7 @@ def supported_audio_input_formats_main(device: str, *, debug: bool = False) -> N
 @click.argument('filename', type=click.Path(exists=True, dir_okay=False, path_type=Path), nargs=-1)
 def add_info_json_main(filename: Sequence[Path], *, debug: bool = False) -> None:
     """Embed info.json in a media file."""
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     for f in filename:
         add_info_json_to_media_file(f, debug=debug)
 
@@ -308,7 +309,7 @@ def add_info_json_main(filename: Sequence[Path], *, debug: bool = False) -> None
 @click.argument('filename', type=click.Path(exists=True, dir_okay=False, path_type=Path))
 def display_info_json_main(filename: Path, *, debug: bool = False) -> None:
     """Display embedded info.json in a media file."""  # noqa: DOC501
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     try:
         click.echo(get_info_json(filename, raw=True))
     except NotImplementedError as e:
@@ -342,7 +343,7 @@ def audio2vid_main(audio_filename: Path,
                    nvenc: bool = False,
                    videotoolbox: bool = False) -> None:
     """Create a video with static text and audio."""
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     create_static_text_video(audio_filename,
                              ' '.join(text),
                              font,
@@ -358,7 +359,7 @@ def audio2vid_main(audio_filename: Path,
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 def mvid_rename_main(filenames: tuple[str, ...], *, debug: bool = False) -> None:
     """Rename music video files."""
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     for filename in filenames:
         path = Path(filename).resolve(strict=True)
         if not path.is_dir():
@@ -384,7 +385,7 @@ def cddb_query_main(args: tuple[str, ...], host: str | None = None, *, debug: bo
 
     Does not handle if result is not an exact match.
     """
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     click.echo(json.dumps(cddb_query(' '.join(args), host=host)._asdict(), indent=2,
                           sort_keys=True))
 
@@ -431,7 +432,7 @@ def ripcd_main(drive: Path = DEFAULT_DRIVE_SR0,
 
     For Linux only.
     """  # noqa: DOC501
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     try:
         rip_cdda_to_flac(drive,
                          accept_first_cddb_match=accept_first_cddb_match,
@@ -472,7 +473,7 @@ def flacted_main(files: tuple[Path, ...],
                  debug: bool = False,
                  delete_all_before: bool = False) -> None:
     """Front-end to metaflac to set common tags."""  # noqa: DOC501
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}})
 
     def metaflac(*args: Any, **kwargs: Any) -> sp.CompletedProcess[str]:
         return sp.run(('metaflac', *cast('tuple[str, ...]', args)),
@@ -555,7 +556,7 @@ def ke_ebook_ex_main(paths: Sequence[Path],
                      debug: bool = False,
                      delete_paths: bool = False) -> None:
     """Extract ebooks from RARs within Zip files."""
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     for path in paths:
         unpack_ebook(path)
     if delete_paths:
@@ -661,7 +662,7 @@ def encode_dashcam_main(  # noqa: PLR0913, PLR0917
 
         encode-dashcam Movie_F/ Movie_R/ ~/output_dir
     """  # noqa: DOC501
-    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     if Path(front_dir).resolve(strict=True) == Path(rear_dir).resolve(strict=True):
         click.echo('Front and rear directories are the same.', err=True)
         raise click.Abort
@@ -709,7 +710,7 @@ def hlg2sdr_main(filename: Path,
                  delete_after: bool = False,
                  fast: bool = False) -> None:
     """Convert a HLG video to SDR."""
-    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     hlg_to_sdr(filename, crf, codec, output, fast=fast, delete_after=delete_after)
 
 
@@ -725,7 +726,7 @@ def tbc2srt_main(filename: Path, input_json: Path | None = None, *, debug: bool 
 
     Requires the following: ld-process-vbi, ld-export-metadata, scc2raw.pl, ccextractor.
     """
-    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     p_filename = Path(filename)
     scc_file = p_filename.parent / f'{p_filename.stem}.scc'
     bin_file = p_filename.parent / f'{p_filename.stem}.bin'
@@ -782,7 +783,7 @@ def flac_dir_finalize_main(directory: Path, *, debug: bool = False) -> None:
                                re.sub(r'\s&\s', ' and ', remove_accents(s),
                                       flags=re.IGNORECASE))))))
 
-    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     path = Path(directory).resolve(strict=True)
     flac_files = ((path / x) for x in Path(directory).iterdir() if x.name.endswith('.flac'))
     new_flac_files: list[Path] = []

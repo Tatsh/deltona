@@ -4,10 +4,10 @@ from __future__ import annotations
 from time import sleep
 from typing import TYPE_CHECKING
 import getpass
-import logging
 import re
 import webbrowser
 
+from bascom import setup_logging
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.git import (
     convert_git_ssh_url_to_https,
@@ -44,7 +44,7 @@ def git_checkout_default_branch_main(username: str,
     To set a token, ``keyring set tmu-github-api "${USER}"``. The token must have
     access to the public_repo or repo scope.
     """  # noqa: DOC501
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}, 'github': {}, 'keyring': {}})
     token = keyring.get_password('tmu-github-api', username)
     if not token:
         click.echo('No token.', err=True)
@@ -80,7 +80,7 @@ def git_rebase_default_branch_main(username: str,
     To set a token, ``keyring set tmu-github-api "${USER}"``. The token must have
     access to the public_repo or repo scope.
     """  # noqa: DOC501
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}, 'github': {}, 'keyring': {}})
     token = keyring.get_password('tmu-github-api', username)
     if not token:
         click.echo('No token.', err=True)
@@ -120,7 +120,7 @@ def merge_dependabot_prs_main(username: str,
                               *,
                               debug: bool = False) -> None:
     """Merge pull requests made by Dependabot on GitHub."""  # noqa: DOC501
-    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+    setup_logging(debug=debug, loggers={'deltona': {}, 'github': {}, 'keyring': {}})
     if not (token := keyring.get_password('tmu-github-api', username)):
         click.echo('No token.', err=True)
         raise click.Abort

@@ -12,6 +12,7 @@ import signal
 import subprocess as sp
 import sys
 
+from bascom import setup_logging
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.string import unix_path_to_wine
 from deltona.system import IS_WINDOWS, kill_wine
@@ -96,7 +97,7 @@ def mkwineprefix_main(  # noqa: PLR0913
 
     This should be used with eval: eval $(mkwineprefix ...)
     """  # noqa: DOC501
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     try:
         target = create_wine_prefix(prefix_name,
                                     _32bit=_32bit,
@@ -142,7 +143,7 @@ If you ran this with eval, your shell is ready.""",
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 def unregister_wine_file_associations_main(*, debug: bool = False) -> None:
     """Unregister Wine file associations. Terminates all Wine processes before starting."""
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     unregister_wine_file_associations(debug=debug)
 
 
@@ -155,7 +156,7 @@ def wineshell_main(prefix_name: str, *, debug: bool = False) -> None:
 
     For Bash and similar shells only.
     """  # noqa: DOC501
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}, 'pexpect': {}})
     target = (Path(prefix_name) if Path(prefix_name).exists() else
               Path('~/.local/share/wineprefixes').expanduser() / prefix_name)
     terminal = shutil.get_terminal_size()
@@ -205,7 +206,7 @@ def winegoginstall_main(args: Sequence[str],
 
        /CLOSEAPPLICATIONS /FORCECLOSEAPPLICATIONS /NOCANCEL /NORESTART /SILENT
     """  # noqa: DOC501
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     if 'DISPLAY' not in os.environ or 'XAUTHORITY' not in os.environ:  # pragma: no cover
         log.warning('Wine will likely fail to run since DISPLAY or XAUTHORITY are not in the '
                     'environment.')
@@ -248,7 +249,7 @@ def set_wine_fonts_main(dpi: int = DEFAULT_DPI,
 
     This will run on Windows but it is not recommended to try on newer than Windows 7.
     """
-    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     with NamedTemporaryFile(mode='w+',
                             suffix='.reg',
                             prefix='set-wine-fonts',
@@ -291,7 +292,7 @@ def patch_ultraiso_font_main(exe: Path | None = None,
                              *,
                              debug: bool = False) -> None:
     """Patch UltraISO's hard-coded font."""
-    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     if not exe:
         if not IS_WINDOWS:
             exe = (Path(os.environ.get('WINEPREFIX', str(Path.home() / '.wine'))) / 'drive_c' /

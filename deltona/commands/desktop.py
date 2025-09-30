@@ -14,6 +14,7 @@ import socket
 import subprocess as sp
 import webbrowser
 
+from bascom import setup_logging
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.media import ffprobe
 from deltona.string import is_url
@@ -58,7 +59,7 @@ def inhibit_notifications_main(sleep_time: int = 60, *, debug: bool = False) -> 
     This is an alternative to ``kde-inhibit``. Unlike ``kde-inhibit``, this tool may only sleep.
     A sleep time of ``0`` effectively does nothing.
     """
-    logging.basicConfig(level=logging.ERROR if not debug else logging.DEBUG)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     if inhibit_notifications():
         sleep(sleep_time)
 
@@ -69,7 +70,7 @@ def inhibit_notifications_main(sleep_time: int = 60, *, debug: bool = False) -> 
 @click.argument('files', type=click.Path(path_type=Path), nargs=-1)
 def umpv_main(files: Sequence[Path], mpv_command: str = 'mpv', *, debug: bool = False) -> None:
     """Run a single instance of mpv."""  # noqa: DOC501
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     fixed_files = ((p if is_url(p) else str(p.resolve(strict=True))) for p in files)
     socket_path = str(user_state_path() / 'umpv-socket')
     sock = None
@@ -140,7 +141,7 @@ def connect_g603_main(device_name: str = 'hci0', *, debug: bool = False) -> None
         click.echo('Imports are missing.', err=True)
         raise click.Abort from e
     loop = g_lib.MainLoop()
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     bus = system_bus()
     adapter = bus.get('org.bluez', f'/org/bluez/{device_name}')
 
@@ -236,7 +237,7 @@ def upload_to_imgbb_main(filenames: Sequence[Path],
 
     Get an API key at https://api.imgbb.com/ and set it with `keyring set imgbb "${USER}"`.
     """  # noqa: DOC501
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}, 'urllib3': {}})
     r: requests.Response | None = None
     if xdg_install:
         prefix = str(Path('~/.local').expanduser()) if xdg_install == '-' else xdg_install
@@ -324,7 +325,7 @@ def mpv_sbs_main(filenames: tuple[Path, Path],
              for i, x in enumerate(info['streams']) if x.get('disposition', {}).get('default', 0)),
             next((i for i, x in enumerate(info['streams']) if x['codec_type'] == 'video'), 0))
 
-    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     filename1, filename2 = filenames
     info1, info2 = ffprobe(filename1), ffprobe(filename2)
     width1, width2 = (int(get_prop('width', info1)), int(get_prop('width', info2)))

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 import logging
 import subprocess as sp
 
+from bascom import setup_logging
 from deltona.adp import calculate_salary
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.io import (
@@ -61,7 +62,7 @@ def unpack_0day_main(dirs: Sequence[Path]) -> None:
               help='Output directory.')
 def gogextract_main(filename: Path, output_dir: Path, *, debug: bool = False) -> None:
     """Extract a Linux gog.com archive."""
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     extract_gog(filename, output_dir)
 
 
@@ -91,7 +92,7 @@ def burnrariso_main(rar_filename: Path,
                     no_crc_check: bool = False,
                     test_extraction: bool = False) -> None:
     """Burns an ISO found in a RAR file via piping."""  # noqa: DOC501
-    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     rar_path = Path(rar_filename)
     unrar = UnRAR(unrar_path)
     isos = [x for x in unrar.list_files(rar_path) if x.name.lower().endswith('.iso')]

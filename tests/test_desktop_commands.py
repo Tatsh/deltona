@@ -47,7 +47,7 @@ def test_inhibit_notifications_main_args(mocker: MockerFixture, runner: CliRunne
 
 
 def test_umpv_main_success(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch('deltona.commands.desktop.user_state_path')
     mock_socket = mocker.patch('deltona.commands.desktop.socket.socket')
     mocker.patch('deltona.commands.desktop.sp.run')
@@ -61,7 +61,7 @@ def test_umpv_main_success(mocker: MockerFixture, runner: CliRunner, tmp_path: P
 
 def test_umpv_main_socket_conn_refused(mocker: MockerFixture, runner: CliRunner,
                                        tmp_path: Path) -> None:
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch('deltona.commands.desktop.user_state_path', return_value=tmp_path)
     mock_socket = mocker.patch('deltona.commands.desktop.socket.socket')
     sock_exc = OSError(errno.ECONNREFUSED, 'Connection refused')
@@ -79,7 +79,7 @@ def test_umpv_main_socket_conn_refused(mocker: MockerFixture, runner: CliRunner,
 
 
 def test_umpv_main_socket_enoent(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch('deltona.commands.desktop.user_state_path', return_value=tmp_path)
     mock_socket = mocker.patch('deltona.commands.desktop.socket.socket')
     sock_exc = OSError(errno.ENOENT, 'No such file or directory')
@@ -98,7 +98,7 @@ def test_umpv_main_socket_enoent(mocker: MockerFixture, runner: CliRunner, tmp_p
 
 def test_umpv_main_unhandled_socket_exception(mocker: MockerFixture, runner: CliRunner,
                                               tmp_path: Path) -> None:
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch('deltona.commands.desktop.user_state_path', return_value=tmp_path)
     mock_socket = mocker.patch('deltona.commands.desktop.socket.socket')
     sock_exc = OSError(errno.ENOTBLK, 'Block device required')
@@ -113,7 +113,7 @@ def test_umpv_main_unhandled_socket_exception(mocker: MockerFixture, runner: Cli
 
 
 def test_connect_g603_import_error(mocker: MockerFixture, runner: CliRunner) -> None:
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch('deltona.commands.desktop._get_gi_repository_glib')
     mock_system_bus_callable = mocker.patch(
         'deltona.commands.desktop._get_pydbus_system_bus_callable')
@@ -124,7 +124,7 @@ def test_connect_g603_import_error(mocker: MockerFixture, runner: CliRunner) -> 
 
 def test_connect_g603_not_linux(mocker: MockerFixture, runner: CliRunner) -> None:
     mocker.patch('deltona.commands.desktop.IS_LINUX', False)  # noqa: FBT003
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch('deltona.commands.desktop._get_gi_repository_glib')
     mocker.patch('deltona.commands.desktop._get_pydbus_system_bus_callable')
     result = runner.invoke(connect_g603_main)
@@ -132,7 +132,7 @@ def test_connect_g603_not_linux(mocker: MockerFixture, runner: CliRunner) -> Non
 
 
 def test_connect_g603(mocker: MockerFixture, runner: CliRunner) -> None:
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mock_get_gi_repository_glib = mocker.patch('deltona.commands.desktop._get_gi_repository_glib')
     mock_get_pydbus_callable = mocker.patch(
         'deltona.commands.desktop._get_pydbus_system_bus_callable')
@@ -188,7 +188,7 @@ def test_connect_g603(mocker: MockerFixture, runner: CliRunner) -> None:
 
 
 def test_connect_g603_unhandled_property_change(mocker: MockerFixture, runner: CliRunner) -> None:
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mock_log_debug = mocker.patch('deltona.commands.desktop.log.debug')
     mock_get_gi_repository_glib = mocker.patch('deltona.commands.desktop._get_gi_repository_glib')
     mock_get_pydbus_callable = mocker.patch(
@@ -230,7 +230,7 @@ def test_connect_g603_unhandled_property_change(mocker: MockerFixture, runner: C
 
 
 def test_connect_g603_disconnected(mocker: MockerFixture, runner: CliRunner) -> None:
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mock_log_debug = mocker.patch('deltona.commands.desktop.log.debug')
     mock_get_gi_repository_glib = mocker.patch('deltona.commands.desktop._get_gi_repository_glib')
     mock_get_pydbus_callable = mocker.patch(
@@ -273,7 +273,7 @@ def test_connect_g603_disconnected(mocker: MockerFixture, runner: CliRunner) -> 
 
 
 def test_connect_g603_ignores_non_g603_devices(mocker: MockerFixture, runner: CliRunner) -> None:
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mock_log_debug = mocker.patch('deltona.commands.desktop.log.debug')
     mock_get_gi_repository_glib = mocker.patch('deltona.commands.desktop._get_gi_repository_glib')
     mock_get_pydbus_callable = mocker.patch(
@@ -313,7 +313,7 @@ def test_connect_g603_ignores_non_g603_devices(mocker: MockerFixture, runner: Cl
 
 
 def test_connect_g603_key_error(mocker: MockerFixture, runner: CliRunner) -> None:
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mock_log_debug = mocker.patch('deltona.commands.desktop.log.debug')
     mock_get_gi_repository_glib = mocker.patch('deltona.commands.desktop._get_gi_repository_glib')
     mock_get_pydbus_callable = mocker.patch(
@@ -349,7 +349,7 @@ def test_connect_g603_key_error(mocker: MockerFixture, runner: CliRunner) -> Non
 
 
 def test_connect_g603_paired(mocker: MockerFixture, runner: CliRunner) -> None:
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mock_log_debug = mocker.patch('deltona.commands.desktop.log.debug')
     mock_get_gi_repository_glib = mocker.patch('deltona.commands.desktop._get_gi_repository_glib')
     mock_get_pydbus_callable = mocker.patch(
@@ -392,7 +392,7 @@ def test_kill_gamescope_main(mocker: MockerFixture, runner: CliRunner) -> None:
 
 def test_upload_to_imgbb_xdg_install(mocker: MockerFixture, runner: CliRunner,
                                      tmp_path: Path) -> None:
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mock_requests_get = mocker.patch('deltona.commands.desktop.requests.get')
     mock_requests_get.return_value.content = b'some image data'
     mock_sp_run = mocker.patch('deltona.commands.desktop.sp.run')
@@ -413,7 +413,7 @@ def test_upload_to_imgbb_no_gui(mocker: MockerFixture, runner: CliRunner, tmp_pa
     mocker.patch('deltona.commands.desktop.which', return_value=None)
     mocker.patch('deltona.commands.desktop.pyperclip.copy')
     mock_open = mocker.patch('deltona.commands.desktop.webbrowser.open')
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch('deltona.commands.desktop.upload_to_imgbb',
                  return_value=mocker.MagicMock(json=mocker.MagicMock(
                      return_value={'data': {
@@ -433,7 +433,7 @@ def test_upload_to_imgbb_gui(mocker: MockerFixture, runner: CliRunner, tmp_path:
     mock_copy = mocker.patch('deltona.commands.desktop.pyperclip.copy')
     mock_open = mocker.patch('deltona.commands.desktop.webbrowser.open')
     mock_sp_run = mocker.patch('deltona.commands.desktop.sp.run')
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch('deltona.commands.desktop.upload_to_imgbb',
                  return_value=mocker.MagicMock(json=mocker.MagicMock(
                      return_value={'data': {
@@ -457,7 +457,7 @@ def test_upload_to_imgbb_http_error_gui(mocker: MockerFixture, runner: CliRunner
     mock_copy = mocker.patch('deltona.commands.desktop.pyperclip.copy')
     mock_open = mocker.patch('deltona.commands.desktop.webbrowser.open')
     mock_sp_run = mocker.patch('deltona.commands.desktop.sp.run')
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch('deltona.commands.desktop.upload_to_imgbb', side_effect=HTTPError)
     a_png = tmp_path / 'a.png'
     a_png.write_bytes(b'some image data')
@@ -475,7 +475,7 @@ def test_upload_to_imgbb_http_error(mocker: MockerFixture, runner: CliRunner,
     mock_copy = mocker.patch('deltona.commands.desktop.pyperclip.copy')
     mock_open = mocker.patch('deltona.commands.desktop.webbrowser.open')
     mock_sp_run = mocker.patch('deltona.commands.desktop.sp.run')
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch('deltona.commands.desktop.upload_to_imgbb', side_effect=HTTPError)
     a_png = tmp_path / 'a.png'
     a_png.write_bytes(b'some image data')
@@ -491,7 +491,7 @@ def test_upload_to_imgbb_no_files(mocker: MockerFixture, runner: CliRunner, tmp_
     mocker.patch('deltona.commands.desktop.which', return_value=None)
     mocker.patch('deltona.commands.desktop.pyperclip.copy')
     mocker.patch('deltona.commands.desktop.webbrowser.open')
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch('deltona.commands.desktop.upload_to_imgbb',
                  return_value=mocker.MagicMock(json=mocker.MagicMock(
                      return_value={'data': {
@@ -505,7 +505,7 @@ def test_upload_to_imgbb(mocker: MockerFixture, runner: CliRunner, tmp_path: Pat
     mocker.patch('deltona.commands.desktop.which', return_value=None)
     mocker.patch('deltona.commands.desktop.pyperclip.copy')
     mock_open = mocker.patch('deltona.commands.desktop.webbrowser.open')
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch('deltona.commands.desktop.upload_to_imgbb',
                  return_value=mocker.MagicMock(json=mocker.MagicMock(
                      return_value={'data': {
@@ -519,7 +519,7 @@ def test_upload_to_imgbb(mocker: MockerFixture, runner: CliRunner, tmp_path: Pat
 
 
 def test_mpv_sbs_main(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch('deltona.commands.desktop.ffprobe',
                  return_value={
                      'streams': [{
@@ -553,7 +553,7 @@ def test_mpv_sbs_main(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) 
 
 def test_mpv_sbs_main_non_matching_height(mocker: MockerFixture, runner: CliRunner,
                                           tmp_path: Path) -> None:
-    mocker.patch('deltona.commands.desktop.logging.basicConfig')
+    mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch('deltona.commands.desktop.ffprobe',
                  side_effect=[{
                      'streams': [{

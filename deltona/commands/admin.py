@@ -4,10 +4,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TextIO
 import json
-import logging
 import re
 import sys
 
+from bascom import setup_logging
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.gentoo import (
     DEFAULT_ACTIVE_KERNEL_NAME,
@@ -55,7 +55,7 @@ def reset_tpm_enrollments_main(uuids: Sequence[str],
 
     Only crypttab files with UUID= entries are supported.
     """
-    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     if all_:
         uuids = [
             x[1][5:]
@@ -95,7 +95,7 @@ def clean_old_kernels_and_modules_main(path: Path = DEFAULT_KERNEL_LOCATION,
 
     By default, removes old Linux sources from /usr/src.
     """
-    logging.basicConfig(level=logging.INFO if not debug else logging.DEBUG)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     for item in clean_old_kernels_and_modules(path, modules_path, active_kernel_name):
         click.echo(item)
 
@@ -155,7 +155,7 @@ def smv_main(filenames: Sequence[Path],
 
     Always test with the --dry-run/-y option.
     """
-    logging.basicConfig(level=logging.DEBUG if debug else logging.ERROR)
+    setup_logging(debug=debug, loggers={'deltona': {}, 'paramiko': {}})
     username = target.split('@', maxsplit=1)[0] if '@' in target else None
     hostname = target.split(':', maxsplit=1)[0]
     target_dir_or_filename = target.split(':')[1]
@@ -178,6 +178,7 @@ def smv_main(filenames: Sequence[Path],
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('bundle', type=click.Path(dir_okay=True, file_okay=False, path_type=Path))
+@click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('-E',
               '--env-var',
               'env_vars',
@@ -188,8 +189,10 @@ def smv_main(filenames: Sequence[Path],
 def patch_bundle_main(bundle: Path,
                       env_vars: tuple[tuple[str, str], ...],
                       *,
+                      debug: bool = False,
                       retina: bool = False) -> None:
     """Patch a macOS/iOS/etc bundle's Info.plist file."""
+    setup_logging(debug=debug, loggers={'deltona': {}})
     data: dict[str, Any] = {}
     if env_vars:
         data['LSEnvironment'] = dict(env_vars)
@@ -207,7 +210,7 @@ def kconfig_to_commands_main(files: Sequence[Path],
                              all_: bool = False,
                              debug: bool = False) -> None:
     """Generate kwriteconfig6 commands to set (Plasma) settings from your current settings."""
-    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     if all_:
         files = [*(Path.home() / '.config').glob('*rc'), Path.home() / '.config/kdeglobals']
     for file in sorted(files):
@@ -221,7 +224,7 @@ def kconfig_to_commands_main(files: Sequence[Path],
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 def kconfig_to_json_main(files: Sequence[Path], *, all_: bool = False, debug: bool = False) -> None:
     """Convert Plasma and compatible settings (INI-style) to JSON."""
-    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     if all_:
         files = [*(Path.home() / '.config').glob('*rc'), Path.home() / '.config/kdeglobals']
     for file in sorted(files):

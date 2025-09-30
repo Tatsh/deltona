@@ -5,8 +5,8 @@ from copy import deepcopy
 from pathlib import Path
 from typing import TYPE_CHECKING
 import json
-import logging
 
+from bascom import setup_logging
 from deltona.chromium import fix_chromium_pwa_icon
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.system import CHROME_DEFAULT_CONFIG_PATH, CHROME_DEFAULT_LOCAL_STATE_PATH, IS_WINDOWS
@@ -144,7 +144,7 @@ def fix_chromium_pwa_icon_main(config_path: Path,
 
     For more information see https://issues.chromium.org/issues/40595456.
     """
-    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+    setup_logging(debug=debug, loggers={'deltona': {}})
     fix_chromium_pwa_icon(config_path,
                           app_id,
                           icon_src_uri,
@@ -158,7 +158,7 @@ def fix_chromium_pwa_icon_main(config_path: Path,
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 def check_bookmarks_html_main(filename: Path, *, debug: bool = False) -> None:
     """Check for URLs that are not valid any more (status 404) and redirections."""
-    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+    setup_logging(debug=debug, loggers={'deltona': {}, 'urllib3': {}})
     _, changed, not_found = check_bookmarks_html_urls(Path(filename).read_text(encoding='utf-8'))
     click.echo(f'{len(changed)} URLs changed.')
     click.echo(f'{len(not_found)} URLs resulted in 404 response.')

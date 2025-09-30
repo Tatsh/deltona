@@ -211,21 +211,7 @@ def cssq_main(file: TextIO,
               strip: bool = False,
               text: bool = False) -> None:
     """Filter HTML with CSS."""
-    setup_logging(debug=debug,
-                  loggers={
-                      'bs4': {
-                          'handlers': ('console',),
-                          'propagate': False
-                      },
-                      'deltona.string': {
-                          'handlers': ('console',),
-                          'propagate': False
-                      },
-                      'soupsieve': {
-                          'handlers': ('console',),
-                          'propagate': False
-                      }
-                  })
+    setup_logging(debug=debug, loggers={'bs4': {}, 'deltona': {}, 'soupsieve': {}})
     for item in cssq(selector,
                      file,
                      debug_selector=debug_selector,
