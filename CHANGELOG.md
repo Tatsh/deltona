@@ -31,6 +31,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Fixed `kconfig-to-commands` not outputting the `--file` argument for non-default files.
 - `connect-g603`: import `Gio` late (fix for when `gi` is not installed especially on non-Linux).
+- `merge-dependabot-mrs`: Post `@dependabot recreate` consistently and do not repost it if the last
+  comment is the same.
 
 ## [0.0.2] - 2025-06-07
 

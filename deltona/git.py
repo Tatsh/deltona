@@ -79,6 +79,7 @@ def merge_dependabot_pull_requests(*,
     Raises
     ------
     RuntimeError
+        If any pull request could not be merged.
     """
     import github  # noqa: PLC0415
 
@@ -93,6 +94,12 @@ def merge_dependabot_pull_requests(*,
         else:
             return True
 
+    def has_dependabot_recreate_comment(pull: PullRequest) -> bool:
+        try:
+            return '@dependabot recreate' in pull.get_issue_comments()[-1].body
+        except IndexError:
+            return False
+
     should_raise = False
     for repo in (
             x for x in github.Github(
@@ -106,10 +113,11 @@ def merge_dependabot_pull_requests(*,
                 pull = repo.get_pull(num)
                 if not pull.merge(merge_method='rebase').merged:
                     log.debug('merge() did not raise but merged is False.')
-                    pull.as_issue().create_comment('@dependabot recreate')
+                    if not has_dependabot_recreate_comment(pull):
+                        pull.as_issue().create_comment('@dependabot recreate')
             except github.GithubException:
                 log.exception('Failed to merge PR %s in repository %s.', num, repo.name)
-                if pull:
+                if pull and not has_dependabot_recreate_comment(pull):
                     pull.as_issue().create_comment('@dependabot recreate')
                 should_raise = True
             pull = None
