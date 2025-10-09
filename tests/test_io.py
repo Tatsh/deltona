@@ -53,7 +53,8 @@ def test_unpack_0day(mocker: MockerFixture) -> None:
     mock_path.return_value.glob.assert_any_call('*.rar')
     mock_path.return_value.glob.assert_any_call('*.[rstuvwxyz][0-9a][0-9r]')
     mock_path.return_value.open.return_value.__enter__.return_value.writelines.assert_any_call(
-        mocker.ANY)
+        mocker.ANY
+    )
 
 
 def test_unpack_0day_no_diz(mocker: MockerFixture) -> None:
@@ -69,7 +70,8 @@ def test_unpack_0day_no_diz(mocker: MockerFixture) -> None:
     mock_path.return_value.glob.assert_any_call('*.rar')
     mock_path.return_value.glob.assert_any_call('*.[rstuvwxyz][0-9a][0-9r]')
     mock_path.return_value.open.return_value.__enter__.return_value.writelines.assert_any_call(
-        mocker.ANY)
+        mocker.ANY
+    )
 
 
 def test_extract_rar_from_zip_extracts_rar_files(mocker: MockerFixture) -> None:
@@ -326,9 +328,7 @@ def test_extract_gog_success(mocker: MockerFixture) -> None:
     mock_path.side_effect = [mock_output_dir, mock_input_path]
     mock_game_bin = mocker.Mock()
     mock_input_path.resolve.return_value.open.return_value.__enter__.return_value = mock_game_bin
-    script = (b'#!/bin/sh\n'
-              b'offset=`head -n 5 "$0"`\n'
-              b'filesizes="1234"\n')
+    script = b'#!/bin/sh\noffset=`head -n 5 "$0"`\nfilesizes="1234"\n'
     mock_game_bin.read.side_effect = [
         script,
         script,
@@ -347,7 +347,9 @@ def test_extract_gog_success(mocker: MockerFixture) -> None:
     mock_mojosetup_tar_f = mocker.MagicMock()
     mock_datafile_f = mocker.MagicMock()
     mock_output_dir.__truediv__.return_value.open.return_value.__enter__.side_effect = [
-        mock_unpacker_sh_f, mock_mojosetup_tar_f, mock_datafile_f
+        mock_unpacker_sh_f,
+        mock_mojosetup_tar_f,
+        mock_datafile_f,
     ]
     extract_gog('input.gog', 'output_dir')
     mock_output_dir.mkdir.assert_called_once_with(parents=True)
@@ -377,8 +379,7 @@ def test_extract_gog_invalid_filesize(mocker: MockerFixture) -> None:
     mock_path.side_effect = [mock_output_dir, mock_input_path]
     mock_game_bin = mocker.Mock()
     mock_input_path.resolve.return_value.open.return_value.__enter__.return_value = mock_game_bin
-    script = (b'#!/bin/sh\n'
-              b'offset=`head -n 5 "$0"`\n')
+    script = b'#!/bin/sh\noffset=`head -n 5 "$0"`\n'
     mock_game_bin.read.side_effect = [script, script]
     mock_game_bin.seek = mocker.MagicMock()
     mock_game_bin.tell.side_effect = [42]
@@ -451,8 +452,9 @@ def test_verify_sfv_handles_multiple_files(mocker: MockerFixture) -> None:
         return 0
 
     parent = mock_file.parent
-    parent.__truediv__.side_effect = lambda fname: mocker.Mock(read_bytes=mocker.Mock(
-        return_value=b'data1' if fname == 'file1.bin' else b'data2'))
+    parent.__truediv__.side_effect = lambda fname: mocker.Mock(
+        read_bytes=mocker.Mock(return_value=b'data1' if fname == 'file1.bin' else b'data2')
+    )
     mocker.patch('deltona.io.crc32', side_effect=crc32_side_effect)
     verify_sfv('test.sfv')
 
@@ -529,8 +531,9 @@ def test_unrar_test_extraction_success(mocker: MockerFixture) -> None:
     unrar = UnRAR('unrar')
     # Should not raise
     unrar.test_extraction('archive.rar', 'file.txt')
-    mock_sp_run.assert_called_once_with(('unrar', 't', '-y', '-inul', 'archive.rar', 'file.txt'),
-                                        check=True)
+    mock_sp_run.assert_called_once_with(
+        ('unrar', 't', '-y', '-inul', 'archive.rar', 'file.txt'), check=True
+    )
 
 
 def test_unrar_test_extraction_failure(mocker: MockerFixture) -> None:
@@ -547,6 +550,6 @@ def test_unrar_pipe_context_manager(mocker: MockerFixture) -> None:
     unrar = UnRAR('unrar')
     with unrar.pipe('archive.rar', 'file.txt') as proc:
         assert proc is mock_proc
-    mock_popen.assert_called_once_with(('unrar', 'p', '-y', '-inul', 'archive.rar', 'file.txt'),
-                                       stdout=mocker.ANY,
-                                       close_fds=True)
+    mock_popen.assert_called_once_with(
+        ('unrar', 'p', '-y', '-inul', 'archive.rar', 'file.txt'), stdout=mocker.ANY, close_fds=True
+    )

@@ -1,4 +1,5 @@
 """UltraISO wrapper."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -45,48 +46,49 @@ class InsufficientArguments(Exception):
 
 
 def run_ultraiso(  # noqa: PLR0913
-        *,
-        add_dirs: Iterable[StrPathMustExist] | None = None,
-        add_files: Iterable[StrPathMustExist] | None = None,
-        cmd: StrPathMustExist | None = None,
-        input: StrPathMustExist | None = None,  # noqa: A002
-        output: StrPath | None = None,
-        appid: str | None = None,
-        preparer: str | None = None,
-        publisher: str | None = None,
-        sysid: str | None = None,
-        volset: int | None = None,
-        volume: str | None = None,
-        ilong: bool = False,
-        imax: bool = False,
-        lowercase: bool = False,
-        vernum: bool = False,
-        hfs: bool = False,
-        jlong: bool = False,
-        joliet: bool = False,
-        rockridge: bool = False,
-        udf: bool = False,
-        udfdvd: bool = False,
-        bootfile: StrPathMustExist | None = None,
-        bootinfotable: bool = False,
-        optimize: bool = False,
-        chdir: str | None = None,
-        newdir: str | None = None,
-        rmdir: str | None = None,
-        ahide: str | None = None,
-        hide: str | None = None,
-        pn: Literal[1, 2, 3, 4, 5, 6, 7, 8, 9] | None = None,
-        bin2iso: StrPathMustExist | None = None,
-        dmg2iso: StrPathMustExist | None = None,
-        bin2isz: StrPathMustExist | None = None,
-        compress: Literal[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] | None = None,
-        encrypt: Literal[1, 2, 3] | None = None,
-        password: str | None = None,
-        split: int | None = None,
-        extract: StrPath | None = None,
-        get: str | None = None,
-        list_: StrPath | None = None,
-        prefix: StrPathMustExist = DEFAULT_WINE_PREFIX) -> None:
+    *,
+    add_dirs: Iterable[StrPathMustExist] | None = None,
+    add_files: Iterable[StrPathMustExist] | None = None,
+    cmd: StrPathMustExist | None = None,
+    input: StrPathMustExist | None = None,  # noqa: A002
+    output: StrPath | None = None,
+    appid: str | None = None,
+    preparer: str | None = None,
+    publisher: str | None = None,
+    sysid: str | None = None,
+    volset: int | None = None,
+    volume: str | None = None,
+    ilong: bool = False,
+    imax: bool = False,
+    lowercase: bool = False,
+    vernum: bool = False,
+    hfs: bool = False,
+    jlong: bool = False,
+    joliet: bool = False,
+    rockridge: bool = False,
+    udf: bool = False,
+    udfdvd: bool = False,
+    bootfile: StrPathMustExist | None = None,
+    bootinfotable: bool = False,
+    optimize: bool = False,
+    chdir: str | None = None,
+    newdir: str | None = None,
+    rmdir: str | None = None,
+    ahide: str | None = None,
+    hide: str | None = None,
+    pn: Literal[1, 2, 3, 4, 5, 6, 7, 8, 9] | None = None,
+    bin2iso: StrPathMustExist | None = None,
+    dmg2iso: StrPathMustExist | None = None,
+    bin2isz: StrPathMustExist | None = None,
+    compress: Literal[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] | None = None,
+    encrypt: Literal[1, 2, 3] | None = None,
+    password: str | None = None,
+    split: int | None = None,
+    extract: StrPath | None = None,
+    get: str | None = None,
+    list_: StrPath | None = None,
+    prefix: StrPathMustExist = DEFAULT_WINE_PREFIX,
+) -> None:
     r"""
     Run UltraISO in a convenient way.
 
@@ -195,7 +197,8 @@ def run_ultraiso(  # noqa: PLR0913
         if 'DISPLAY' not in os.environ or 'XAUTHORITY' not in os.environ:  # pragma: no cover
             log.warning(
                 'UltraISO.exe will likely fail to run since DISPLAY or XAUTHORITY are not in the '
-                'environment.')
+                'environment.'
+            )
         env['DISPLAY'] = os.environ.get('DISPLAY', '')
         env['XAUTHORITY'] = os.environ.get('XAUTHORITY', '')
         env['WINEDEBUG'] = 'fixme-all'
@@ -207,11 +210,13 @@ def run_ultraiso(  # noqa: PLR0913
         for key, filename in (('-in', input), ('-out', output)):
             if filename:
                 sp_args += [key, unix_path_to_wine(filename)]
-        for file in (add_files or []):
+        for file in add_files or []:
             sp_args += ['-file', unix_path_to_wine(file)]
-        for dir_ in (add_dirs or []):
+        for dir_ in add_dirs or []:
             sp_args += ['-directory', str(dir_)]
-        for k in (k for k, v in {
+        for k in (
+            k
+            for k, v in {
                 'bootinfotable': bootinfotable,
                 'hfs': hfs,
                 'ilong': ilong,
@@ -223,17 +228,25 @@ def run_ultraiso(  # noqa: PLR0913
                 'rockridge': rockridge,
                 'udf': udf,
                 'udfdvd': udfdvd,
-                'vernum': vernum
-        }.items() if v):
+                'vernum': vernum,
+            }.items()
+            if v
+        ):
             sp_args += [f'-{k}']
-        for k, v in ((k, v) for k, v in {
+        for k, v in (
+            (k, v)
+            for k, v in {
                 'bootfile': bootfile,
                 'bin2iso': bin2iso,
                 'dmg2iso': dmg2iso,
-                'bin2isz': bin2isz
-        }.items() if v is not None):
+                'bin2isz': bin2isz,
+            }.items()
+            if v is not None
+        ):
             sp_args += [f'-{k}', unix_path_to_wine(v)]
-        for k, v in ((k, v) for k, v in {
+        for k, v in (
+            (k, v)
+            for k, v in {
                 'appid': appid,
                 'preparer': preparer,
                 'publisher': publisher,
@@ -247,16 +260,22 @@ def run_ultraiso(  # noqa: PLR0913
                 'password': password,
                 'extract': extract,
                 'get': get,
-                'list': list_
-        }.items() if v is not None):
+                'list': list_,
+            }.items()
+            if v is not None
+        ):
             sp_args += [f'-{k}', str(v)]
-        for k, i in ((k, i) for k, i in {
+        for k, i in (
+            (k, i)
+            for k, i in {
                 'volset': volset,
                 'compress': compress,
                 'encrypt': encrypt,
                 'split': split,
-                'pn': pn
-        }.items() if i is not None):
+                'pn': pn,
+            }.items()
+            if i is not None
+        ):
             sp_args += [f'-{k}', str(i)]
     if len(sp_args) < MIN_ARGUMENTS:
         raise InsufficientArguments
@@ -271,8 +290,11 @@ def run_ultraiso(  # noqa: PLR0913
         if stderr := e.stderr.strip():
             log.exception('stderr output:')
             for line in stderr.splitlines():
-                if (not IS_WINDOWS and ('winemenubuilder.exe' in line or 'fixme:' in line
-                                        or 'wine: using fast synchronization.' in line)):
+                if not IS_WINDOWS and (
+                    'winemenubuilder.exe' in line
+                    or 'fixme:' in line
+                    or 'wine: using fast synchronization.' in line
+                ):
                     continue
                 log.exception(' -> %s', line)
         raise

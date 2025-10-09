@@ -86,8 +86,9 @@ def test_git_open_main_convert_ssh(mocker: MockerFixture, runner: CliRunner) -> 
 
 
 def test_merge_dependabot_prs_main(mocker: MockerFixture, runner: CliRunner) -> None:
-    mock_merge = mocker.patch('deltona.commands.git.merge_dependabot_pull_requests',
-                              side_effect=[RuntimeError, None])
+    mock_merge = mocker.patch(
+        'deltona.commands.git.merge_dependabot_pull_requests', side_effect=[RuntimeError, None]
+    )
     mock_sleep = mocker.patch('deltona.commands.git.sleep')
     mocker.patch('deltona.commands.git.keyring.get_password', return_value='dummy_token')
 

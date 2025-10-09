@@ -105,8 +105,9 @@ def test_burnrariso_main_no_iso(runner: CliRunner, mocker: MockerFixture, tmp_pa
     assert result.exit_code != 0
 
 
-def test_burnrariso_main_iso_no_size(runner: CliRunner, mocker: MockerFixture,
-                                     tmp_path: Path) -> None:
+def test_burnrariso_main_iso_no_size(
+    runner: CliRunner, mocker: MockerFixture, tmp_path: Path
+) -> None:
     rar_file = tmp_path / 'test.rar'
     rar_file.write_text('data')
     iso_file = MagicMock()
@@ -129,15 +130,17 @@ def test_burnrariso_main_sfv_fail(runner: CliRunner, mocker: MockerFixture, tmp_
     unrar_instance = mock_unrar.return_value
     unrar_instance.list_files.return_value = [iso_file]
     mocker.patch('deltona.commands.misc.Path.exists', return_value=True)
-    mock_verify = mocker.patch('deltona.commands.misc.verify_sfv',
-                               side_effect=SFVVerificationError('.', 1, 0))
+    mock_verify = mocker.patch(
+        'deltona.commands.misc.verify_sfv', side_effect=SFVVerificationError('.', 1, 0)
+    )
     result = runner.invoke(burnrariso_main, [str(rar_file)])
     assert result.exit_code != 0
     mock_verify.assert_called()
 
 
-def test_burnrariso_main_test_extraction_fail(runner: CliRunner, mocker: MockerFixture,
-                                              tmp_path: Path) -> None:
+def test_burnrariso_main_test_extraction_fail(
+    runner: CliRunner, mocker: MockerFixture, tmp_path: Path
+) -> None:
     rar_file = tmp_path / 'test.rar'
     rar_file.write_text('data')
     iso_file = MagicMock()

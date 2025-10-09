@@ -1,4 +1,5 @@
 """String utilities."""
+
 # ruff: noqa: RUF001
 from __future__ import annotations
 
@@ -18,9 +19,21 @@ from .typing import StrPath, assert_not_none
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
 
-__all__ = ('cssq', 'cssq_one', 'fullwidth_to_narrow', 'hexstr2bytes', 'hexstr2bytes_generator',
-           'is_ascii', 'is_url', 'sanitize', 'slugify', 'strip_ansi', 'strip_ansi_if_no_colors',
-           'underscorize', 'unix_path_to_wine')
+__all__ = (
+    'cssq',
+    'cssq_one',
+    'fullwidth_to_narrow',
+    'hexstr2bytes',
+    'hexstr2bytes_generator',
+    'is_ascii',
+    'is_url',
+    'sanitize',
+    'slugify',
+    'strip_ansi',
+    'strip_ansi_if_no_colors',
+    'underscorize',
+    'unix_path_to_wine',
+)
 
 ORD_MAX = 128
 STRIP_ANSI_PATTERN = re.compile(r'\x1B\[\d+(;\d+){0,2}m')
@@ -113,6 +126,7 @@ def unix_path_to_wine(path: StrPath) -> str:
 
 def _get_yt_dlp_sanitize_filename() -> Callable[..., str]:  # pragma: no cover
     from yt_dlp.utils import sanitize_filename  # noqa: PLC0415
+
     return sanitize_filename
 
 
@@ -135,10 +149,12 @@ def sanitize(s: str, *, restricted: bool = True) -> str:
     """
     sanitize_filename = _get_yt_dlp_sanitize_filename()
     return re.sub(
-        r'([a-z0-9])\-s\-', r'\1s-',
-        re.sub(r'\.-', '-',
-               re.sub(r'[_\-]+', '-',
-                      sanitize_filename(s, restricted=restricted).lower())))
+        r'([a-z0-9])\-s\-',
+        r'\1s-',
+        re.sub(
+            r'\.-', '-', re.sub(r'[_\-]+', '-', sanitize_filename(s, restricted=restricted).lower())
+        ),
+    )
 
 
 @cache
@@ -155,9 +171,11 @@ def is_url(filename: StrPath) -> bool:
     return all(x in f'{string.ascii_letters}{string.digits}_' for x in parts[0])
 
 
-def _get_unidecode_cache_and_unidecode(
-) -> tuple[dict[int, Sequence[str | None] | None], Callable[..., str]]:  # pragma: no cover
+def _get_unidecode_cache_and_unidecode() -> tuple[
+    dict[int, Sequence[str | None] | None], Callable[..., str]
+]:  # pragma: no cover
     from unidecode import Cache, unidecode  # noqa: PLC0415
+
     return Cache, unidecode
 
 
@@ -178,10 +196,18 @@ def add_unidecode_custom_replacement(find: str, replace: str) -> None:
     codepoint = ord(find)
     section = codepoint >> 8
     position = codepoint % 256
-    new_section = cast('list[str | None]',
-                       (cache[section] if isinstance(cache[section], list) else
-                        (list(assert_not_none(cache[section])) if cache[section] is not None else
-                         [None for _ in range(position + 1)])))  # convert to mutable type
+    new_section = cast(
+        'list[str | None]',
+        (
+            cache[section]
+            if isinstance(cache[section], list)
+            else (
+                list(assert_not_none(cache[section]))
+                if cache[section] is not None
+                else [None for _ in range(position + 1)]
+            )
+        ),
+    )  # convert to mutable type
     assert len(new_section) > position
     new_section[position] = replace
     cache[section] = new_section
@@ -319,8 +345,10 @@ def is_roman_numeral(string: str) -> bool:
     """Check if a string is a Roman numeral."""
     if not string:
         return False
-    return re.match(r'^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$', string,
-                    re.IGNORECASE) is not None
+    return (
+        re.match(r'^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$', string, re.IGNORECASE)
+        is not None
+    )
 
 
 @cache
@@ -332,8 +360,11 @@ def fix_apostrophes(word: str) -> str:
     """
     if "'" not in word:
         return word
-    return re.sub(r"[A-Za-z]+('[A-Za-z]+)?",
-                  lambda mo: f'{mo.group(0)[0].upper()}{mo.group(0)[1:].lower()}', word)
+    return re.sub(
+        r"[A-Za-z]+('[A-Za-z]+)?",
+        lambda mo: f'{mo.group(0)[0].upper()}{mo.group(0)[1:].lower()}',
+        word,
+    )
 
 
 def rev_sentence(w: str) -> str:
@@ -360,41 +391,49 @@ def rev_sentences(sentences: Sequence[str]) -> Iterator[str]:
 
 
 @overload
-def cssq_one(selector: str,
-             file: TextIO | str,
-             *,
-             debug_selector: bool = False,
-             strip: bool = True,
-             text: Literal[False] = False) -> Tag | None:  # pragma: no cover
+def cssq_one(
+    selector: str,
+    file: TextIO | str,
+    *,
+    debug_selector: bool = False,
+    strip: bool = True,
+    text: Literal[False] = False,
+) -> Tag | None:  # pragma: no cover
     ...
 
 
 @overload
-def cssq_one(selector: str,
-             file: TextIO | str,
-             *,
-             debug_selector: bool = False,
-             strip: bool = True,
-             text: Literal[True] = True) -> str | None:  # pragma: no cover
+def cssq_one(
+    selector: str,
+    file: TextIO | str,
+    *,
+    debug_selector: bool = False,
+    strip: bool = True,
+    text: Literal[True] = True,
+) -> str | None:  # pragma: no cover
     ...
 
 
 @overload
-def cssq_one(selector: str,
-             file: TextIO | str,
-             *,
-             debug_selector: bool = False,
-             strip: bool = True,
-             text: bool = False) -> str | Tag | None:  # pragma: no cover
+def cssq_one(
+    selector: str,
+    file: TextIO | str,
+    *,
+    debug_selector: bool = False,
+    strip: bool = True,
+    text: bool = False,
+) -> str | Tag | None:  # pragma: no cover
     ...
 
 
-def cssq_one(selector: str,
-             file: TextIO | str,
-             *,
-             debug_selector: bool = False,
-             strip: bool = True,
-             text: bool = False) -> str | Tag | None:
+def cssq_one(
+    selector: str,
+    file: TextIO | str,
+    *,
+    debug_selector: bool = False,
+    strip: bool = True,
+    text: bool = False,
+) -> str | Tag | None:
     """Select a single item from HTML with CSS.
 
     Parameters
@@ -423,45 +462,53 @@ def cssq_one(selector: str,
 
 
 @overload
-def cssq(selector: str,
-         file: TextIO | str,
-         limit: int = 0,
-         *,
-         debug_selector: bool = False,
-         strip: bool = True,
-         text: Literal[False] = False) -> Iterator[Tag]:  # pragma: no cover
+def cssq(
+    selector: str,
+    file: TextIO | str,
+    limit: int = 0,
+    *,
+    debug_selector: bool = False,
+    strip: bool = True,
+    text: Literal[False] = False,
+) -> Iterator[Tag]:  # pragma: no cover
     ...
 
 
 @overload
-def cssq(selector: str,
-         file: TextIO | str,
-         limit: int = 0,
-         *,
-         debug_selector: bool = False,
-         strip: bool = True,
-         text: Literal[True] = True) -> Iterator[str]:  # pragma: no cover
+def cssq(
+    selector: str,
+    file: TextIO | str,
+    limit: int = 0,
+    *,
+    debug_selector: bool = False,
+    strip: bool = True,
+    text: Literal[True] = True,
+) -> Iterator[str]:  # pragma: no cover
     ...
 
 
 @overload
-def cssq(selector: str,
-         file: TextIO | str,
-         limit: int = 0,
-         *,
-         debug_selector: bool = False,
-         strip: bool = True,
-         text: bool = False) -> Iterator[str] | Iterator[Tag]:  # pragma: no cover
+def cssq(
+    selector: str,
+    file: TextIO | str,
+    limit: int = 0,
+    *,
+    debug_selector: bool = False,
+    strip: bool = True,
+    text: bool = False,
+) -> Iterator[str] | Iterator[Tag]:  # pragma: no cover
     ...
 
 
-def cssq(selector: str,
-         file: TextIO | str,
-         limit: int = 0,
-         *,
-         debug_selector: bool = False,
-         strip: bool = True,
-         text: bool = False) -> Iterator[Tag] | Iterator[str]:
+def cssq(
+    selector: str,
+    file: TextIO | str,
+    limit: int = 0,
+    *,
+    debug_selector: bool = False,
+    strip: bool = True,
+    text: bool = False,
+) -> Iterator[Tag] | Iterator[str]:
     """
     Filter HTML with CSS.
 

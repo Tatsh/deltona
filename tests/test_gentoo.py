@@ -21,8 +21,9 @@ def mock_rmtree(mocker: MockerFixture) -> Mock:
     return mocker.patch('deltona.gentoo.rmtree')
 
 
-def test_clean_old_kernels_and_modules_success(mock_path: Mock, mock_rmtree: Mock,
-                                               mocker: MockerFixture) -> None:
+def test_clean_old_kernels_and_modules_success(
+    mock_path: Mock, mock_rmtree: Mock, mocker: MockerFixture
+) -> None:
     mock_loc = mock_path.return_value.__truediv__.return_value
     mock_loc.exists.return_value = True
     mock_loc.is_symlink.return_value = True
@@ -35,8 +36,10 @@ def test_clean_old_kernels_and_modules_success(mock_path: Mock, mock_rmtree: Moc
     mock_kernel_dir.__str__.return_value = 'linux-5.9.0'
     other_non_dir = mocker.MagicMock()
     other_non_dir.is_dir.return_value = False
-    mock_path.return_value.glob.side_effect = [[mock_module_dir, other_non_dir],
-                                               [mock_kernel_dir, other_non_dir]]
+    mock_path.return_value.glob.side_effect = [
+        [mock_module_dir, other_non_dir],
+        [mock_kernel_dir, other_non_dir],
+    ]
     result = list(clean_old_kernels_and_modules())
     assert result == ['module-1', 'linux-5.9.0']
     mock_rmtree.assert_any_call(mock_module_dir)

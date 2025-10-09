@@ -1,4 +1,5 @@
 """Name utilities."""
+
 from __future__ import annotations
 
 from enum import IntEnum
@@ -51,16 +52,46 @@ STOP_WORDS = {
     'vs',
     'with',
     'within',
-    'without'
+    'without',
 }
 ENGLISH_ORDINAL_RE = r'(\d+)(st|nd|rd|th)'
 ENGLISH_ABBREV = {'feat', 'mr', 'mrs', 'ms', 'vs'}
 JAPANESE_PARTICLES = {'de', 'e', 'ga', 'ha', 'ka', 'kana', 'ne', 'ni', 'no', 'to', 'wa', 'wo'}
 CHINESE_PARTICLES = {'de', 'ge', 'he', 'le', 'ma'}
 ARABIC_STOPS = {
-    'al', 'ala', 'alayhi', 'alayka', 'alayya', 'an', 'anhu', 'anka', 'anni', 'bi', 'biha', 'bihi',
-    'bika', 'fi', 'fihi', 'fika', 'fiya', 'ila', 'ilayhi', 'ilayka', 'ilayya', 'lahu', 'laka', 'li',
-    'maa', 'maahu', 'maaka', 'mai', 'min', 'minhu', 'minka', 'minni', 'wa'
+    'al',
+    'ala',
+    'alayhi',
+    'alayka',
+    'alayya',
+    'an',
+    'anhu',
+    'anka',
+    'anni',
+    'bi',
+    'biha',
+    'bihi',
+    'bika',
+    'fi',
+    'fihi',
+    'fika',
+    'fiya',
+    'ila',
+    'ilayhi',
+    'ilayka',
+    'ilayya',
+    'lahu',
+    'laka',
+    'li',
+    'maa',
+    'maahu',
+    'maaka',
+    'mai',
+    'min',
+    'minhu',
+    'minka',
+    'minni',
+    'wa',
 }
 NAMES_TO_FIX = {
     "mcdonald's": "McDonald's",
@@ -86,6 +117,7 @@ NAMES_TO_FIX = {
 
 class Mode(IntEnum):
     """Mode to operate in."""
+
     English = 1
     """
     English mode.
@@ -128,12 +160,14 @@ def _get_name(word: str, names: dict[str, str] = NAMES_TO_FIX) -> str | None:
     return None
 
 
-def adjust_title(words: str,
-                 modes: Iterable[Mode] = (Mode.English,),
-                 names: dict[str, str] = NAMES_TO_FIX,
-                 *,
-                 disable_names: bool = False,
-                 ampersands: bool = False) -> str:
+def adjust_title(
+    words: str,
+    modes: Iterable[Mode] = (Mode.English,),
+    names: dict[str, str] = NAMES_TO_FIX,
+    *,
+    disable_names: bool = False,
+    ampersands: bool = False,
+) -> str:
     """
     Adjust a string that represents a title.
 
@@ -190,18 +224,21 @@ def adjust_title(words: str,
                 continue
             # Detect an upper-case new_word not to change.
             # First detect I and ignore it, then detect uppercase letters and numbers.
-            if ((original_words[index] == new_word.upper() and not re.match(r'[^\w]', new_word))
-                    and (not (mode == Mode.English and new_word == 'I') and
-                         (index == last_index and re.match(r'[A-Z0-9]+', original_words[index])))):
+            if (
+                original_words[index] == new_word.upper() and not re.match(r'[^\w]', new_word)
+            ) and (
+                not (mode == Mode.English and new_word == 'I')
+                and (index == last_index and re.match(r'[A-Z0-9]+', original_words[index]))
+            ):
                 title.append(original_words[index])
                 continue
             begin = end = ''
             if begin_match := re.match(r'^(\W+)', new_word):
                 begin = begin_match.group(0)
-                new_word = new_word[len(begin):]
+                new_word = new_word[len(begin) :]
             if end_match := re.search(r'(\W+)$', new_word):
                 end = end_match.group(0)
-                new_word = new_word[0:-len(end)]
+                new_word = new_word[0 : -len(end)]
             if new_word.lower() in to_lower_case_array:
                 new_word = word_list[index] = new_word.lower()
             new_word = fix_apostrophes(new_word)
@@ -211,7 +248,7 @@ def adjust_title(words: str,
                 end = ''
             ordinal_match = re.match(ENGLISH_ORDINAL_RE, new_word, flags=re.IGNORECASE)
             if mode == Mode.English and ordinal_match is not None:
-                new_word = (ordinal_match.group(1) + ordinal_match.group(2).lower())
+                new_word = ordinal_match.group(1) + ordinal_match.group(2).lower()
             new_word = f'{begin}{new_word}{end}'
             try:
                 title[index] = new_word

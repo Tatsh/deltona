@@ -1,4 +1,5 @@
 """System administration commands."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -38,16 +39,20 @@ if TYPE_CHECKING:
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('-a', '--all', 'all_', is_flag=True, help='Reset all enrolments.')
 @click.option('-f', '--force', is_flag=True, help='Apply the changes.')
-@click.option('--crypttab',
-              type=click.Path(path_type=Path, dir_okay=False, exists=True),
-              help='File to read from when passing --all.',
-              default='/etc/crypttab')
-def reset_tpm_enrollments_main(uuids: Sequence[str],
-                               crypttab: Path,
-                               *,
-                               all_: bool = False,
-                               debug: bool = False,
-                               force: bool = False) -> None:
+@click.option(
+    '--crypttab',
+    type=click.Path(path_type=Path, dir_okay=False, exists=True),
+    help='File to read from when passing --all.',
+    default='/etc/crypttab',
+)
+def reset_tpm_enrollments_main(
+    uuids: Sequence[str],
+    crypttab: Path,
+    *,
+    all_: bool = False,
+    debug: bool = False,
+    force: bool = False,
+) -> None:
     """
     Reset TPM enrolments that were created by systemd-cryptenroll -tpm2-device=auto.
 
@@ -59,10 +64,12 @@ def reset_tpm_enrollments_main(uuids: Sequence[str],
     if all_:
         uuids = [
             x[1][5:]
-            for x in (re.split(r'\s+', line, maxsplit=4)
-                      for line in (li.strip()
-                                   for li in crypttab.read_text(encoding='utf-8').splitlines())
-                      if not line.startswith('#')) if 'tpm2-device=auto' in x[3] and 'UUID=' in x[1]
+            for x in (
+                re.split(r'\s+', line, maxsplit=4)
+                for line in (li.strip() for li in crypttab.read_text(encoding='utf-8').splitlines())
+                if not line.startswith('#')
+            )
+            if 'tpm2-device=auto' in x[3] and 'UUID=' in x[1]
         ]
     for uuid in uuids:
         try:
@@ -73,23 +80,29 @@ def reset_tpm_enrollments_main(uuids: Sequence[str],
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('path',
-                type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
-                default=DEFAULT_KERNEL_LOCATION)
-@click.option('--active-kernel-name',
-              help='Kernel name like "linux".',
-              default=DEFAULT_ACTIVE_KERNEL_NAME)
-@click.option('-m',
-              '--modules-path',
-              type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
-              help='Location where modules get installed, such as "/lib/modules".',
-              default=DEFAULT_MODULES_PATH)
+@click.argument(
+    'path',
+    type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
+    default=DEFAULT_KERNEL_LOCATION,
+)
+@click.option(
+    '--active-kernel-name', help='Kernel name like "linux".', default=DEFAULT_ACTIVE_KERNEL_NAME
+)
+@click.option(
+    '-m',
+    '--modules-path',
+    type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
+    help='Location where modules get installed, such as "/lib/modules".',
+    default=DEFAULT_MODULES_PATH,
+)
 @click.option('-d', '--debug', is_flag=True, help='Enable debug logging.')
-def clean_old_kernels_and_modules_main(path: Path = DEFAULT_KERNEL_LOCATION,
-                                       modules_path: Path = DEFAULT_MODULES_PATH,
-                                       active_kernel_name: str = DEFAULT_ACTIVE_KERNEL_NAME,
-                                       *,
-                                       debug: bool = False) -> None:
+def clean_old_kernels_and_modules_main(
+    path: Path = DEFAULT_KERNEL_LOCATION,
+    modules_path: Path = DEFAULT_MODULES_PATH,
+    active_kernel_name: str = DEFAULT_ACTIVE_KERNEL_NAME,
+    *,
+    debug: bool = False,
+) -> None:
     """
     Remove inactive kernels and modules.
 
@@ -104,10 +117,9 @@ def clean_old_kernels_and_modules_main(path: Path = DEFAULT_KERNEL_LOCATION,
 @click.argument('filenames', nargs=-1)
 @click.option('--no-lower', is_flag=True, help='Disable lowercase.')
 @click.option('-v', '--verbose', is_flag=True, help='Enable verbose output.')
-def slug_rename_main(filenames: tuple[str, ...],
-                     *,
-                     no_lower: bool = False,
-                     verbose: bool = False) -> None:
+def slug_rename_main(
+    filenames: tuple[str, ...], *, no_lower: bool = False, verbose: bool = False
+) -> None:
     """Rename a file to a slugified version."""
     for name in filenames:
         target = slug_rename(name, no_lower=no_lower)
@@ -118,6 +130,7 @@ def slug_rename_main(filenames: tuple[str, ...],
 def get_ssh_client_cls() -> type[SSHClient]:  # pragma: no cover
     """Return the SSH client class."""
     from paramiko import SSHClient  # noqa: PLC0415
+
     return SSHClient
 
 
@@ -133,21 +146,23 @@ def get_ssh_client_cls() -> type[SSHClient]:  # pragma: no cover
     '-p',
     'preserve',
     is_flag=True,
-    help='Preserves modification times, access times, and file mode bits from the source file.')
-@click.option('-y',
-              '--dry-run',
-              is_flag=True,
-              help='Do not copy anything. Use with -d for testing.')
-def smv_main(filenames: Sequence[Path],
-             target: str,
-             key_filename: str,
-             port: int = 22,
-             timeout: float = 2,
-             *,
-             compress: bool = False,
-             debug: bool = False,
-             dry_run: bool = False,
-             preserve: bool = False) -> None:
+    help='Preserves modification times, access times, and file mode bits from the source file.',
+)
+@click.option(
+    '-y', '--dry-run', is_flag=True, help='Do not copy anything. Use with -d for testing.'
+)
+def smv_main(
+    filenames: Sequence[Path],
+    target: str,
+    key_filename: str,
+    port: int = 22,
+    timeout: float = 2,
+    *,
+    compress: bool = False,
+    debug: bool = False,
+    dry_run: bool = False,
+    preserve: bool = False,
+) -> None:
     """
     Secure move.
 
@@ -162,35 +177,34 @@ def smv_main(filenames: Sequence[Path],
     ssh_client_cls = get_ssh_client_cls()
     with ssh_client_cls() as client:
         client.load_system_host_keys()
-        client.connect(hostname,
-                       port,
-                       username,
-                       compress=compress,
-                       key_filename=key_filename,
-                       timeout=timeout)
+        client.connect(
+            hostname, port, username, compress=compress, key_filename=key_filename, timeout=timeout
+        )
         for filename in filenames:
-            secure_move_path(client,
-                             filename,
-                             target_dir_or_filename,
-                             dry_run=dry_run,
-                             preserve_stats=preserve)
+            secure_move_path(
+                client, filename, target_dir_or_filename, dry_run=dry_run, preserve_stats=preserve
+            )
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('bundle', type=click.Path(dir_okay=True, file_okay=False, path_type=Path))
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
-@click.option('-E',
-              '--env-var',
-              'env_vars',
-              help='Environment variable to set.',
-              multiple=True,
-              type=(str, str))
+@click.option(
+    '-E',
+    '--env-var',
+    'env_vars',
+    help='Environment variable to set.',
+    multiple=True,
+    type=(str, str),
+)
 @click.option('-r', '--retina', is_flag=True, help='For macOS apps, force Retina support.')
-def patch_bundle_main(bundle: Path,
-                      env_vars: tuple[tuple[str, str], ...],
-                      *,
-                      debug: bool = False,
-                      retina: bool = False) -> None:
+def patch_bundle_main(
+    bundle: Path,
+    env_vars: tuple[tuple[str, str], ...],
+    *,
+    debug: bool = False,
+    retina: bool = False,
+) -> None:
     """Patch a macOS/iOS/etc bundle's Info.plist file."""
     setup_logging(debug=debug, loggers={'deltona': {}})
     data: dict[str, Any] = {}
@@ -205,10 +219,9 @@ def patch_bundle_main(bundle: Path,
 @click.argument('files', type=click.Path(exists=True, dir_okay=False, path_type=Path), nargs=-1)
 @click.option('-a', '--all', 'all_', is_flag=True, help='Find compatible files and process them.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
-def kconfig_to_commands_main(files: Sequence[Path],
-                             *,
-                             all_: bool = False,
-                             debug: bool = False) -> None:
+def kconfig_to_commands_main(
+    files: Sequence[Path], *, all_: bool = False, debug: bool = False
+) -> None:
     """Generate kwriteconfig6 commands to set (Plasma) settings from your current settings."""
     setup_logging(debug=debug, loggers={'deltona': {}})
     if all_:
@@ -229,21 +242,23 @@ def kconfig_to_json_main(files: Sequence[Path], *, all_: bool = False, debug: bo
         files = [*(Path.home() / '.config').glob('*rc'), Path.home() / '.config/kdeglobals']
     for file in sorted(files):
         click.echo(
-            json.dumps(get_kconfig_dict(file) | {'_file': str(file)}, indent=2, sort_keys=True))
+            json.dumps(get_kconfig_dict(file) | {'_file': str(file)}, indent=2, sort_keys=True)
+        )
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('path',
-                type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
-                default='.')
+@click.argument(
+    'path',
+    type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
+    default='.',
+)
 @click.option('-d', '--depth', default=2, help='Maximum depth.', metavar='DEPTH')
 @click.option('-f', '--follow-symlinks', is_flag=True, help='Follow symbolic links.')
 @click.option('-o', '--output-file', type=click.File('w'), default=sys.stdout, help='Output file.')
-def generate_html_dir_tree_main(path: Path,
-                                *,
-                                output_file: TextIO,
-                                depth: int = 2,
-                                follow_symlinks: bool = False) -> None:
+def generate_html_dir_tree_main(
+    path: Path, *, output_file: TextIO, depth: int = 2, follow_symlinks: bool = False
+) -> None:
     """Generate a HTML directory listing."""
-    click.echo(generate_html_dir_tree(path, follow_symlinks=follow_symlinks, depth=depth),
-               output_file)
+    click.echo(
+        generate_html_dir_tree(path, follow_symlinks=follow_symlinks, depth=depth), output_file
+    )

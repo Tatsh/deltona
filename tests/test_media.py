@@ -55,9 +55,9 @@ def test_supported_audio_input_formats_partial_support(mocker: MockerFixture) ->
         return mocker.Mock(stdout='', stderr='cannot set sample format 0x')
 
     mocker.patch('deltona.media.sp.run', side_effect=fake_run)
-    result = supported_audio_input_formats('hw:Audio',
-                                           formats=('f32le', 's16le'),
-                                           rates=(44100, 48000))
+    result = supported_audio_input_formats(
+        'hw:Audio', formats=('f32le', 's16le'), rates=(44100, 48000)
+    )
     assert result == (('f32le', 44100),)
 
 
@@ -195,8 +195,9 @@ def test_create_static_text_video_videotoolbox(mocker: MockerFixture, tmp_path: 
     assert any('hevc_videotoolbox' in str(args) for args in called_args)
 
 
-def test_create_static_text_video_nvenc_and_videotoolbox_error(mocker: MockerFixture,
-                                                               tmp_path: Path) -> None:
+def test_create_static_text_video_nvenc_and_videotoolbox_error(
+    mocker: MockerFixture, tmp_path: Path
+) -> None:
     audio_file = tmp_path / 'audio.flac'
     audio_file.write_bytes(b'dummy audio')
     text = 'Error Test'
@@ -361,22 +362,23 @@ def test_cddb_query_no_host(mocker: MockerFixture) -> None:
 
 def test_cddb_query_success_single_match(mocker: MockerFixture) -> None:
     disc_id = '12345678 2 123 456 789'
-    query_response = ('200 rock 12345678 Artist / Album / 2020 / 2\n')
-    read_response = ("210 Found exact matches, list follows (until terminating `.')\n"
-                     "DTITLE=Artist / Album\n"
-                     "DYEAR=2020\n"
-                     "DGENRE=Rock\n"
-                     "TTITLE0=Track One\n"
-                     "TTITLE1=Track Two\n"
-                     ".\n")
+    query_response = '200 rock 12345678 Artist / Album / 2020 / 2\n'
+    read_response = (
+        "210 Found exact matches, list follows (until terminating `.')\n"
+        'DTITLE=Artist / Album\n'
+        'DYEAR=2020\n'
+        'DGENRE=Rock\n'
+        'TTITLE0=Track One\n'
+        'TTITLE1=Track Two\n'
+        '.\n'
+    )
     mocker.patch('deltona.media.socket.gethostname', return_value='host')
     mocker.patch('deltona.media.getpass.getuser', return_value='user')
     mocker.patch('deltona.media.keyring.get_password', return_value='host')
 
-    def fake_requests_get(url: str,
-                          params: Any = None,
-                          timeout: int | None = None,
-                          **kwargs: Any) -> Any:
+    def fake_requests_get(
+        url: str, params: Any = None, timeout: int | None = None, **kwargs: Any
+    ) -> Any:
         class FakeResponse:
             def __init__(self, text: str) -> None:
                 self.text = text
@@ -402,30 +404,34 @@ def test_cddb_query_success_single_match(mocker: MockerFixture) -> None:
     assert result.tracks == ('Track One', 'Track Two')
 
 
-def test_cddb_query_multiple_matches_accept_first(mocker: MockerFixture,
-                                                  requests_mock: Mocker) -> None:
+def test_cddb_query_multiple_matches_accept_first(
+    mocker: MockerFixture, requests_mock: Mocker
+) -> None:
     disc_id = '87654321 3 111 222 333'
-    query_response = ("210 Found exact matches, list follows (until terminating `.')\n"
-                      "rock 87654321 Artist / Album / 2021 / 3\n"
-                      "pop 87654321 Artist2 / Album2 / 2022 / 3\n"
-                      ".\n")
-    read_response = ("210 Found exact matches, list follows (until terminating `.')\n"
-                     "DTITLE=Artist / Album\n"
-                     "DYEAR=2021\n"
-                     "DGENRE=Rock\n"
-                     "TTITLE0=Track A\n"
-                     "TTITLE1=Track B\n"
-                     "TTITLE2=Track C\n"
-                     "OTHER=Some other info\n"
-                     ".\n")
+    query_response = (
+        "210 Found exact matches, list follows (until terminating `.')\n"
+        'rock 87654321 Artist / Album / 2021 / 3\n'
+        'pop 87654321 Artist2 / Album2 / 2022 / 3\n'
+        '.\n'
+    )
+    read_response = (
+        "210 Found exact matches, list follows (until terminating `.')\n"
+        'DTITLE=Artist / Album\n'
+        'DYEAR=2021\n'
+        'DGENRE=Rock\n'
+        'TTITLE0=Track A\n'
+        'TTITLE1=Track B\n'
+        'TTITLE2=Track C\n'
+        'OTHER=Some other info\n'
+        '.\n'
+    )
     mocker.patch('deltona.media.socket.gethostname', return_value='host')
     mocker.patch('deltona.media.getpass.getuser', return_value='user')
     mocker.patch('deltona.media.keyring.get_password', return_value='host')
 
-    def fake_requests_get(url: str,
-                          params: Any = None,
-                          timeout: int | None = None,
-                          **kwargs: Any) -> Any:
+    def fake_requests_get(
+        url: str, params: Any = None, timeout: int | None = None, **kwargs: Any
+    ) -> Any:
         class FakeResponse:
             def __init__(self, text: str) -> None:
                 self.text = text
@@ -451,29 +457,33 @@ def test_cddb_query_multiple_matches_accept_first(mocker: MockerFixture,
     assert result.tracks == ('Track A', 'Track B', 'Track C')
 
 
-def test_cddb_query_multiple_matches_not_accept_first(mocker: MockerFixture,
-                                                      requests_mock: Mocker) -> None:
+def test_cddb_query_multiple_matches_not_accept_first(
+    mocker: MockerFixture, requests_mock: Mocker
+) -> None:
     disc_id = '87654321 3 111 222 333'
-    query_response = ("210 Found exact matches, list follows (until terminating `.')\n"
-                      "rock 87654321 Artist / Album / 2021 / 3\n"
-                      "pop 87654321 Artist2 / Album2 / 2022 / 3\n"
-                      ".\n")
-    read_response = ("210 Found exact matches, list follows (until terminating `.')\n"
-                     "DTITLE=Artist / Album\n"
-                     "DYEAR=2021\n"
-                     "DGENRE=Rock\n"
-                     "TTITLE0=Track A\n"
-                     "TTITLE1=Track B\n"
-                     "TTITLE2=Track C\n"
-                     ".\n")
+    query_response = (
+        "210 Found exact matches, list follows (until terminating `.')\n"
+        'rock 87654321 Artist / Album / 2021 / 3\n'
+        'pop 87654321 Artist2 / Album2 / 2022 / 3\n'
+        '.\n'
+    )
+    read_response = (
+        "210 Found exact matches, list follows (until terminating `.')\n"
+        'DTITLE=Artist / Album\n'
+        'DYEAR=2021\n'
+        'DGENRE=Rock\n'
+        'TTITLE0=Track A\n'
+        'TTITLE1=Track B\n'
+        'TTITLE2=Track C\n'
+        '.\n'
+    )
     mocker.patch('deltona.media.socket.gethostname', return_value='host')
     mocker.patch('deltona.media.getpass.getuser', return_value='user')
     mocker.patch('deltona.media.keyring.get_password', return_value='host')
 
-    def fake_requests_get(url: str,
-                          params: Any = None,
-                          timeout: int | None = None,
-                          **kwargs: Any) -> Any:
+    def fake_requests_get(
+        url: str, params: Any = None, timeout: int | None = None, **kwargs: Any
+    ) -> Any:
         class FakeResponse:
             def __init__(self, text: str) -> None:
                 self.text = text
@@ -518,8 +528,9 @@ def test_cddb_query_http_error(mocker: MockerFixture) -> None:
         cddb_query(disc_id)
 
 
-def test_rip_cdda_to_flac_creates_album_dir_and_flac_files(mocker: MockerFixture,
-                                                           tmp_path: Path) -> None:
+def test_rip_cdda_to_flac_creates_album_dir_and_flac_files(
+    mocker: MockerFixture, tmp_path: Path
+) -> None:
     # Setup mocks
     fake_cddb_result = mocker.Mock()
     fake_cddb_result.artist = 'TestArtist'
@@ -556,11 +567,13 @@ def test_rip_cdda_to_flac_album_artist_override(mocker: MockerFixture, tmp_path:
     mocker.patch('deltona.media.sp.Popen').return_value.wait.return_value = 0
     mocker.patch('deltona.media.sp.run')
     album_dir = tmp_path / 'Override-Album-2022'
-    rip_cdda_to_flac(drive='/dev/cdrom',
-                     output_dir=tmp_path,
-                     album_artist='Override',
-                     stderr_callback=None,
-                     username='user')
+    rip_cdda_to_flac(
+        drive='/dev/cdrom',
+        output_dir=tmp_path,
+        album_artist='Override',
+        stderr_callback=None,
+        username='user',
+    )
     assert album_dir.exists()
 
 
@@ -583,8 +596,9 @@ def test_rip_cdda_to_flac_calls_stderr_callback(mocker: MockerFixture, tmp_path:
     cb.assert_any_call('progress line')
 
 
-def test_rip_cdda_to_flac_raises_on_cdparanoia_failure(mocker: MockerFixture,
-                                                       tmp_path: Path) -> None:
+def test_rip_cdda_to_flac_raises_on_cdparanoia_failure(
+    mocker: MockerFixture, tmp_path: Path
+) -> None:
     fake_cddb_result = mocker.Mock()
     fake_cddb_result.artist = 'A'
     fake_cddb_result.album = 'B'
@@ -669,8 +683,9 @@ def test_archive_dashcam_footage_basic_merge(mocker: MockerFixture, tmp_path: Pa
     assert mock_send2trash.call_count == 6
 
 
-def test_archive_dashcam_footage_group_discrepancy_resolution(mocker: MockerFixture,
-                                                              tmp_path: Path) -> None:
+def test_archive_dashcam_footage_group_discrepancy_resolution(
+    mocker: MockerFixture, tmp_path: Path
+) -> None:
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     output_dir = tmp_path / 'output'
@@ -683,10 +698,9 @@ def test_archive_dashcam_footage_group_discrepancy_resolution(mocker: MockerFixt
     (rear_dir / '20240612164401_rear.mp4').write_bytes(b'rear')  # extra rear file
     mock_run = mocker.patch('deltona.media.sp.run')
     mock_send2trash = mocker.patch('deltona.media.send2trash')
-    archive_dashcam_footage(front_dir,
-                            rear_dir,
-                            output_dir,
-                            allow_group_discrepancy_resolution=True)
+    archive_dashcam_footage(
+        front_dir, rear_dir, output_dir, allow_group_discrepancy_resolution=True
+    )
     assert mock_run.call_count == 3
     assert mock_send2trash.call_count == 4
 
@@ -702,10 +716,9 @@ def test_archive_dashcam_footage_group_discrepancy_raises(tmp_path: Path) -> Non
     (rear_dir / '20240512164400_rear.mp4').write_bytes(b'rear')
     (rear_dir / '20240512164401_rear.mp4').write_bytes(b'rear')
     with pytest.raises(ValueError, match=r'\d+'):
-        archive_dashcam_footage(front_dir,
-                                rear_dir,
-                                output_dir,
-                                allow_group_discrepancy_resolution=False)
+        archive_dashcam_footage(
+            front_dir, rear_dir, output_dir, allow_group_discrepancy_resolution=False
+        )
 
 
 def test_archive_dashcam_footage_group_discrepancy_raises_2(tmp_path: Path) -> None:
@@ -719,10 +732,9 @@ def test_archive_dashcam_footage_group_discrepancy_raises_2(tmp_path: Path) -> N
     (rear_dir / '20240512164400_rear.mp4').write_bytes(b'rear')
     (rear_dir / '20240515164401_rear.mp4').write_bytes(b'rear')
     with pytest.raises(ValueError, match=r'\d+'):
-        archive_dashcam_footage(front_dir,
-                                rear_dir,
-                                output_dir,
-                                allow_group_discrepancy_resolution=False)
+        archive_dashcam_footage(
+            front_dir, rear_dir, output_dir, allow_group_discrepancy_resolution=False
+        )
 
 
 def test_archive_dashcam_footage_group_discrepancy_unresolved(tmp_path: Path) -> None:
@@ -739,8 +751,9 @@ def test_archive_dashcam_footage_group_discrepancy_unresolved(tmp_path: Path) ->
         archive_dashcam_footage(front_dir, rear_dir, output_dir)
 
 
-def test_archive_dashcam_footage_group_discrepancy_solving_bg_len_gt(tmp_path: Path,
-                                                                     mocker: MockerFixture) -> None:
+def test_archive_dashcam_footage_group_discrepancy_solving_bg_len_gt(
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
     mocker.patch('deltona.media.sp.run')
     mock_trash = mocker.patch('deltona.media.send2trash')
     front_dir = tmp_path / 'front'
@@ -749,7 +762,7 @@ def test_archive_dashcam_footage_group_discrepancy_solving_bg_len_gt(tmp_path: P
     front_dir.mkdir()
     rear_dir.mkdir()
     output_dir.mkdir()
-    last = (rear_dir / '20240512164400_rear.mp4')
+    last = rear_dir / '20240512164400_rear.mp4'
     (front_dir / '20240512164400_front.mp4').write_bytes(b'front')
     (rear_dir / '20240512164401_rear.mp4').write_bytes(b'rear')
     last.write_bytes(b'rear')
@@ -758,7 +771,8 @@ def test_archive_dashcam_footage_group_discrepancy_solving_bg_len_gt(tmp_path: P
 
 
 def test_archive_dashcam_footage_group_discrepancy_solving_bg_len_gt_no_delete(
-        tmp_path: Path, mocker: MockerFixture) -> None:
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
     mocker.patch('deltona.media.sp.run')
     mock_trash = mocker.patch('deltona.media.send2trash')
     front_dir = tmp_path / 'front'
@@ -767,7 +781,7 @@ def test_archive_dashcam_footage_group_discrepancy_solving_bg_len_gt_no_delete(
     front_dir.mkdir()
     rear_dir.mkdir()
     output_dir.mkdir()
-    last = (rear_dir / '20240512164400_rear.mp4')
+    last = rear_dir / '20240512164400_rear.mp4'
     (front_dir / '20240512164400_front.mp4').write_bytes(b'front')
     (rear_dir / '20240512164401_rear.mp4').write_bytes(b'rear')
     last.write_bytes(b'rear')
@@ -775,8 +789,9 @@ def test_archive_dashcam_footage_group_discrepancy_solving_bg_len_gt_no_delete(
     mock_trash.assert_not_called()
 
 
-def test_archive_dashcam_footage_group_discrepancy_solving_fg_len_gt(tmp_path: Path,
-                                                                     mocker: MockerFixture) -> None:
+def test_archive_dashcam_footage_group_discrepancy_solving_fg_len_gt(
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
     mocker.patch('deltona.media.sp.run')
     mock_trash = mocker.patch('deltona.media.send2trash')
     front_dir = tmp_path / 'front'
@@ -785,7 +800,7 @@ def test_archive_dashcam_footage_group_discrepancy_solving_fg_len_gt(tmp_path: P
     front_dir.mkdir()
     rear_dir.mkdir()
     output_dir.mkdir()
-    last = (front_dir / '20240512164400_rear.mp4')
+    last = front_dir / '20240512164400_rear.mp4'
     (rear_dir / '20240512164400_front.mp4').write_bytes(b'front')
     (front_dir / '20240512164401_rear.mp4').write_bytes(b'rear')
     (output_dir / '20240512164400_rear.mkv').touch()
@@ -795,7 +810,8 @@ def test_archive_dashcam_footage_group_discrepancy_solving_fg_len_gt(tmp_path: P
 
 
 def test_archive_dashcam_footage_group_discrepancy_solving_fg_len_gt_no_delete(
-        tmp_path: Path, mocker: MockerFixture) -> None:
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
     mocker.patch('deltona.media.sp.run')
     mock_trash = mocker.patch('deltona.media.send2trash')
     front_dir = tmp_path / 'front'
@@ -804,7 +820,7 @@ def test_archive_dashcam_footage_group_discrepancy_solving_fg_len_gt_no_delete(
     front_dir.mkdir()
     rear_dir.mkdir()
     output_dir.mkdir()
-    last = (front_dir / '20240512164400_rear.mp4')
+    last = front_dir / '20240512164400_rear.mp4'
     (rear_dir / '20240512164400_front.mp4').write_bytes(b'front')
     (front_dir / '20240512164401_rear.mp4').write_bytes(b'rear')
     (output_dir / '20240512164400_rear.mkv').touch()
@@ -814,7 +830,8 @@ def test_archive_dashcam_footage_group_discrepancy_solving_fg_len_gt_no_delete(
 
 
 def test_archive_dashcam_footage_group_discrepancy_solving_ignores_extra(
-        tmp_path: Path, mocker: MockerFixture) -> None:
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
     mocker.patch('deltona.media.sp.run')
     mock_trash = mocker.patch('deltona.media.send2trash')
     front_dir = tmp_path / 'front'
@@ -823,7 +840,7 @@ def test_archive_dashcam_footage_group_discrepancy_solving_ignores_extra(
     front_dir.mkdir()
     rear_dir.mkdir()
     output_dir.mkdir()
-    last = (front_dir / '20240512164400_rear.mp4')
+    last = front_dir / '20240512164400_rear.mp4'
     (rear_dir / '20240512164400_front.mp4').write_bytes(b'front')
     (front_dir / '20240512164401_rear.mp4').write_bytes(b'rear')
     (front_dir / '20240512164402_rear.mp4').write_bytes(b'rear')
@@ -833,7 +850,8 @@ def test_archive_dashcam_footage_group_discrepancy_solving_ignores_extra(
 
 
 def test_archive_dashcam_footage_group_discrepancy_solving_ignores_extra_no_delete(
-        tmp_path: Path, mocker: MockerFixture) -> None:
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
     mocker.patch('deltona.media.sp.run')
     mock_trash = mocker.patch('deltona.media.send2trash')
     front_dir = tmp_path / 'front'
@@ -842,7 +860,7 @@ def test_archive_dashcam_footage_group_discrepancy_solving_ignores_extra_no_dele
     front_dir.mkdir()
     rear_dir.mkdir()
     output_dir.mkdir()
-    last = (front_dir / '20240512164400_rear.mp4')
+    last = front_dir / '20240512164400_rear.mp4'
     (rear_dir / '20240512164400_front.mp4').write_bytes(b'front')
     (front_dir / '20240512164401_rear.mp4').write_bytes(b'rear')
     (front_dir / '20240512164402_rear.mp4').write_bytes(b'rear')
@@ -851,10 +869,12 @@ def test_archive_dashcam_footage_group_discrepancy_solving_ignores_extra_no_dele
     assert mock_trash.call_count == 0
 
 
-def test_archive_dashcam_footage_crash_deletes_unfinished_files(tmp_path: Path,
-                                                                mocker: MockerFixture) -> None:
-    mocker.patch('deltona.media.sp.run',
-                 side_effect=[None, sp.CalledProcessError(1, 'ffmpeg', stderr=b'')])
+def test_archive_dashcam_footage_crash_deletes_unfinished_files(
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
+    mocker.patch(
+        'deltona.media.sp.run', side_effect=[None, sp.CalledProcessError(1, 'ffmpeg', stderr=b'')]
+    )
     mocker.patch('deltona.media.send2trash')
     mock_unlink = mocker.patch('deltona.media.Path.unlink')
     front_dir = tmp_path / 'front'
@@ -872,8 +892,9 @@ def test_archive_dashcam_footage_crash_deletes_unfinished_files(tmp_path: Path,
     assert mock_unlink.call_count == 1
 
 
-def test_archive_dashcam_footage_calls_with_correct_args(mocker: MockerFixture,
-                                                         tmp_path: Path) -> None:
+def test_archive_dashcam_footage_calls_with_correct_args(
+    mocker: MockerFixture, tmp_path: Path
+) -> None:
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     output_dir = tmp_path / 'output'
@@ -884,11 +905,9 @@ def test_archive_dashcam_footage_calls_with_correct_args(mocker: MockerFixture,
     (rear_dir / '0_rear.mp4').write_bytes(b'rear')
     mock_run = mocker.patch('deltona.media.sp.run')
     mock_send2trash = mocker.patch('deltona.media.send2trash')
-    archive_dashcam_footage(front_dir,
-                            rear_dir,
-                            output_dir,
-                            video_encoder='hevc_nvenc',
-                            video_bitrate='2M')
+    archive_dashcam_footage(
+        front_dir, rear_dir, output_dir, video_encoder='hevc_nvenc', video_bitrate='2M'
+    )
     args = mock_run.call_args_list[0].args[0]
     assert 'hevc_nvenc' in args
     assert '-b:v' in args
@@ -896,8 +915,9 @@ def test_archive_dashcam_footage_calls_with_correct_args(mocker: MockerFixture,
     assert mock_send2trash.called
 
 
-def test_archive_dashcam_footage_calls_with_correct_args_no_delete(mocker: MockerFixture,
-                                                                   tmp_path: Path) -> None:
+def test_archive_dashcam_footage_calls_with_correct_args_no_delete(
+    mocker: MockerFixture, tmp_path: Path
+) -> None:
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     output_dir = tmp_path / 'output'
@@ -908,12 +928,14 @@ def test_archive_dashcam_footage_calls_with_correct_args_no_delete(mocker: Mocke
     (rear_dir / '0_rear.mp4').write_bytes(b'rear')
     mock_run = mocker.patch('deltona.media.sp.run')
     mock_send2trash = mocker.patch('deltona.media.send2trash')
-    archive_dashcam_footage(front_dir,
-                            rear_dir,
-                            output_dir,
-                            no_delete=True,
-                            video_encoder='hevc_nvenc',
-                            video_bitrate='2M')
+    archive_dashcam_footage(
+        front_dir,
+        rear_dir,
+        output_dir,
+        no_delete=True,
+        video_encoder='hevc_nvenc',
+        video_bitrate='2M',
+    )
     args = mock_run.call_args_list[0].args[0]
     assert 'hevc_nvenc' in args
     assert '-b:v' in args
@@ -932,8 +954,10 @@ def test_archive_dashcam_footage_skips_hidden_files(mocker: MockerFixture, tmp_p
     (rear_dir / '.hidden_rear.mp4').write_bytes(b'rear')
     (front_dir / '0_front.mp4').write_bytes(b'front')
     (rear_dir / '0_rear.mp4').write_bytes(b'rear')
-    mocker.patch('deltona.media.group_files',
-                 side_effect=lambda items, *_: [[Path(x)] for x in sorted(items)])
+    mocker.patch(
+        'deltona.media.group_files',
+        side_effect=lambda items, *_: [[Path(x)] for x in sorted(items)],
+    )
     mock_run = mocker.patch('deltona.media.sp.run')
     mock_send2trash = mocker.patch('deltona.media.send2trash')
     archive_dashcam_footage(front_dir, rear_dir, output_dir)
@@ -942,8 +966,9 @@ def test_archive_dashcam_footage_skips_hidden_files(mocker: MockerFixture, tmp_p
 
 
 @pytest.mark.parametrize('ext', ['flac', 'mp3', 'opus'])
-def test_add_info_json_to_media_file_flac_mp3_opus(mocker: MockerFixture, tmp_path: Path,
-                                                   ext: str) -> None:
+def test_add_info_json_to_media_file_flac_mp3_opus(
+    mocker: MockerFixture, tmp_path: Path, ext: str
+) -> None:
     media_file = tmp_path / f'test.{ext}'
     media_file.write_bytes(b'dummy')
     info_json = tmp_path / 'test.info.json'
@@ -953,8 +978,9 @@ def test_add_info_json_to_media_file_flac_mp3_opus(mocker: MockerFixture, tmp_pa
     mocker.patch('deltona.media.utime')
     mocker.patch('deltona.media.Path.unlink')
     mocker.patch('deltona.media.Path.exists', return_value=True)
-    mocker.patch('deltona.media.Path.open',
-                 mocker.mock_open(read_data='{"upload_date": "20220101"}'))
+    mocker.patch(
+        'deltona.media.Path.open', mocker.mock_open(read_data='{"upload_date": "20220101"}')
+    )
     add_info_json_to_media_file(media_file, info_json)
     assert mock_run.called
 
@@ -969,26 +995,30 @@ def test_add_info_json_to_media_file_mp4(mocker: MockerFixture, tmp_path: Path) 
     mocker.patch('deltona.media.utime')
     mocker.patch('deltona.media.Path.unlink')
     mocker.patch('deltona.media.Path.exists', return_value=True)
-    mocker.patch('deltona.media.Path.open',
-                 mocker.mock_open(read_data='{"upload_date": "20220101"}'))
+    mocker.patch(
+        'deltona.media.Path.open', mocker.mock_open(read_data='{"upload_date": "20220101"}')
+    )
     add_info_json_to_media_file(media_file, info_json)
     assert mock_run.called
 
 
-def test_add_info_json_to_media_file_mkv_ignores_existing(mocker: MockerFixture,
-                                                          tmp_path: Path) -> None:
+def test_add_info_json_to_media_file_mkv_ignores_existing(
+    mocker: MockerFixture, tmp_path: Path
+) -> None:
     media_file = tmp_path / 'test.mkv'
     media_file.write_bytes(b'dummy')
     info_json = tmp_path / 'test.info.json'
     info_json.write_text('{"upload_date": "20220101"}')
     mock_run = mocker.patch('deltona.media.sp.run')
-    mock_run.return_value.stdout = ("Attachment ID 1: type 'application/json', size 123 bytes, "
-                                    "file name 'info.json'")
+    mock_run.return_value.stdout = (
+        "Attachment ID 1: type 'application/json', size 123 bytes, file name 'info.json'"
+    )
     mocker.patch('deltona.media.utime')
     mocker.patch('deltona.media.Path.unlink')
     mocker.patch('deltona.media.Path.exists', return_value=True)
-    mocker.patch('deltona.media.Path.open',
-                 mocker.mock_open(read_data='{"upload_date": "20220101"}'))
+    mocker.patch(
+        'deltona.media.Path.open', mocker.mock_open(read_data='{"upload_date": "20220101"}')
+    )
     add_info_json_to_media_file(media_file, info_json)
     assert mock_run.called
 
@@ -1003,15 +1033,17 @@ def test_add_info_json_to_media_file_mkv(mocker: MockerFixture, tmp_path: Path) 
     mock_utime = mocker.patch('deltona.media.utime')
     mocker.patch('deltona.media.Path.unlink')
     mocker.patch('deltona.media.Path.exists', return_value=True)
-    mocker.patch('deltona.media.Path.open',
-                 mocker.mock_open(read_data='{"upload_date": "20220101"}'))
+    mocker.patch(
+        'deltona.media.Path.open', mocker.mock_open(read_data='{"upload_date": "20220101"}')
+    )
     add_info_json_to_media_file(media_file, info_json)
     assert mock_run.call_count == 2
     mock_utime.assert_called_once()
 
 
-def test_add_info_json_to_media_file_json_path_not_exists(mocker: MockerFixture,
-                                                          tmp_path: Path) -> None:
+def test_add_info_json_to_media_file_json_path_not_exists(
+    mocker: MockerFixture, tmp_path: Path
+) -> None:
     media_file = tmp_path / 'test.flac'
     mocker.patch('deltona.media.Path.exists', return_value=False)
     mock_log = mocker.patch('deltona.media.log')
@@ -1019,21 +1051,24 @@ def test_add_info_json_to_media_file_json_path_not_exists(mocker: MockerFixture,
     mock_log.warning.assert_called_once()
 
 
-def test_add_info_json_to_media_file_unknown_extension(mocker: MockerFixture,
-                                                       tmp_path: Path) -> None:
+def test_add_info_json_to_media_file_unknown_extension(
+    mocker: MockerFixture, tmp_path: Path
+) -> None:
     media_file = tmp_path / 'test.unknown'
     info_json = tmp_path / 'test.info.json'
     info_json.write_text('{"upload_date": "20220101"}')
     mocker.patch('deltona.media.Path.exists', return_value=True)
-    mocker.patch('deltona.media.Path.open',
-                 mocker.mock_open(read_data='{"upload_date": "20220101"}'))
+    mocker.patch(
+        'deltona.media.Path.open', mocker.mock_open(read_data='{"upload_date": "20220101"}')
+    )
     mock_unlink = mocker.patch('deltona.media.Path.unlink')
     add_info_json_to_media_file(media_file, info_json)
     assert not mock_unlink.called
 
 
 def test_add_info_json_to_media_file_set_date_handles_missing_upload_date(
-        mocker: MockerFixture, tmp_path: Path) -> None:
+    mocker: MockerFixture, tmp_path: Path
+) -> None:
     media_file = tmp_path / 'test.flac'
     info_json = tmp_path / 'test.info.json'
     info_json.write_text('{}')
@@ -1048,7 +1083,8 @@ def test_add_info_json_to_media_file_set_date_handles_missing_upload_date(
 
 
 def test_add_info_json_to_media_file_set_date_handles_empty_upload_date(
-        mocker: MockerFixture, tmp_path: Path) -> None:
+    mocker: MockerFixture, tmp_path: Path
+) -> None:
     media_file = tmp_path / 'test.flac'
     info_json = tmp_path / 'test.info.json'
     info_json.write_text('{}')

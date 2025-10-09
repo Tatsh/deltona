@@ -9,6 +9,9 @@ alsa
 anhu
 anni
 appbar
+appdir
+appimage
+appinfo
 arib
 arkit
 asio
@@ -106,13 +109,13 @@ flacted
 followlinks
 fontawesome
 forcecloseapplications
+foxundermoon
 fqxz
 froms
 fspath
 fullfacesize
 fulltimestudent
 fullwidth
-furb
 gamescope
 gamescopereaper
 gbrpf
@@ -169,6 +172,7 @@ lahu
 laka
 lanczos
 lastrowid
+launchable
 lavfi
 leadout
 lextudio
@@ -272,6 +276,7 @@ segoe
 sendline
 setpts
 setwinsize
+shellformat
 shiftjis
 sigwinch
 siri
@@ -316,6 +321,7 @@ unrar
 urldecode
 vaapi
 vcodec
+venv
 vernum
 vers
 verysilent
@@ -351,5 +357,4 @@ wordpad
 wwdc
 xauthority
 yapf
-yapfignore
 zscale

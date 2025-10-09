@@ -11,13 +11,9 @@ if TYPE_CHECKING:
 
 
 def test_salary_response_str() -> None:
-    response = SalaryResponse(federal=100.0,
-                              fica=50.0,
-                              fuckery=175.0,
-                              gross=1000.0,
-                              medicare=25.0,
-                              net_pay=825.0,
-                              state=0)
+    response = SalaryResponse(
+        federal=100.0, fica=50.0, fuckery=175.0, gross=1000.0, medicare=25.0, net_pay=825.0, state=0
+    )
     expected_str = """Gross     \033[1;32m 1000.00\033[0m
 Federal   \033[1;32m  100.00\033[0m
 FICA      \033[1;32m   50.00\033[0m
@@ -42,16 +38,11 @@ FUCKERY = 175.0
 
 def test_calculate_salary_success(requests_mock: Mocker) -> None:
     mock_response = {
-        'content': {
-            'federal': 100.0,
-            'fica': 50.0,
-            'medicare': 25.0,
-            'netPay': 825.0,
-            'state': 0
-        }
+        'content': {'federal': 100.0, 'fica': 50.0, 'medicare': 25.0, 'netPay': 825.0, 'state': 0}
     }
-    requests_mock.post('https://calculators.symmetry.com/api/calculators/hourly?report=none',
-                       json=mock_response)
+    requests_mock.post(
+        'https://calculators.symmetry.com/api/calculators/hourly?report=none', json=mock_response
+    )
     result = calculate_salary(hours=70, pay_rate=70.0, state='FL')
 
     assert result.federal == FEDERAL_TAX
@@ -63,7 +54,8 @@ def test_calculate_salary_success(requests_mock: Mocker) -> None:
 
 
 def test_calculate_salary_http_error(requests_mock: Mocker) -> None:
-    requests_mock.post('https://calculators.symmetry.com/api/calculators/hourly?report=none',
-                       status_code=500)
+    requests_mock.post(
+        'https://calculators.symmetry.com/api/calculators/hourly?report=none', status_code=500
+    )
     with pytest.raises(HTTPError):
         calculate_salary(hours=70, pay_rate=70.0, state='FL')

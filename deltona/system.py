@@ -1,4 +1,5 @@
 """System utilities."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -25,9 +26,16 @@ if TYPE_CHECKING:
 
     from pydbus.bus import OrgBluezDict as OrgBluezDevice1Dict
 
-__all__ = ('CHROME_DEFAULT_CONFIG_PATH', 'CHROME_DEFAULT_LOCAL_STATE_PATH', 'IS_LINUX',
-           'find_bluetooth_device_info_by_name', 'inhibit_notifications', 'slug_rename',
-           'uninhibit_notifications', 'wait_for_disc')
+__all__ = (
+    'CHROME_DEFAULT_CONFIG_PATH',
+    'CHROME_DEFAULT_LOCAL_STATE_PATH',
+    'IS_LINUX',
+    'find_bluetooth_device_info_by_name',
+    'inhibit_notifications',
+    'slug_rename',
+    'uninhibit_notifications',
+    'wait_for_disc',
+)
 
 CDROM_DRIVE_STATUS = 0x5326
 """
@@ -65,6 +73,7 @@ log = logging.getLogger(__name__)
 def wait_for_disc(drive_path: StrPathMustExist = 'dev/sr0', *, sleep_time: float = 1.0) -> bool:
     """For Linux only."""
     import fcntl  # noqa: PLC0415
+
     with context_os_open(drive_path, os.O_RDONLY | os.O_NONBLOCK) as f:
         s = -1
         try:
@@ -103,8 +112,9 @@ def inhibit_notifications(name: str = __name__, reason: str = 'No reason specifi
     except (ImportError, ModuleNotFoundError):  # pragma: no cover
         log.exception('Cannot import pydbus.', stack_info=False)
         return False
-    notifications = SessionBus().get('org.freedesktop.Notifications',
-                                     '/org/freedesktop/Notifications')
+    notifications = SessionBus().get(
+        'org.freedesktop.Notifications', '/org/freedesktop/Notifications'
+    )
     if notifications.Inhibited:
         return False
     log.debug('Disabling notifications.')
@@ -133,8 +143,9 @@ def uninhibit_notifications() -> None:
     except (ImportError, ModuleNotFoundError):  # pragma: no cover
         log.exception('Cannot import pydbus.', stack_info=False)
         return
-    notifications = SessionBus().get('org.freedesktop.Notifications',
-                                     '/org/freedesktop/Notifications')
+    notifications = SessionBus().get(
+        'org.freedesktop.Notifications', '/org/freedesktop/Notifications'
+    )
     if not notifications:
         raise ConnectionError
     if not notifications.Inhibited:
@@ -181,10 +192,14 @@ def find_bluetooth_device_info_by_name(name: str) -> tuple[str, OrgBluezDevice1D
     if not IS_LINUX:
         raise NotImplementedError
     from pydbus import SystemBus  # noqa: PLC0415
+
     bluez = SystemBus().get('org.bluez', '/')
     for k, v in bluez['org.freedesktop.DBus.ObjectManager'].GetManagedObjects().items():
-        if ('org.bluez.Device1' in v and 'Name' in v['org.bluez.Device1']
-                and v['org.bluez.Device1']['Name'] == name):
+        if (
+            'org.bluez.Device1' in v
+            and 'Name' in v['org.bluez.Device1']
+            and v['org.bluez.Device1']['Name'] == name
+        ):
             return k, v['org.bluez.Device1']
     raise KeyError(name)
 
@@ -215,7 +230,8 @@ def pan_connect(device_mac: str, hci: str = 'hci0') -> None:
     if not IS_LINUX:
         raise NotImplementedError
     from pydbus import SystemBus  # noqa: PLC0415
-    device_mac = f"dev_{device_mac.upper().replace(':', '_')}"
+
+    device_mac = f'dev_{device_mac.upper().replace(":", "_")}'
     device = SystemBus().get('org.bluez', f'/org/bluez/{hci}/{device_mac}')
     device.Connect('nap')
 
@@ -245,7 +261,8 @@ def pan_disconnect(device_mac: str, hci: str = 'hci0') -> None:
     if not IS_LINUX:
         raise NotImplementedError
     from pydbus import SystemBus  # noqa: PLC0415
-    device_mac = f"dev_{device_mac.upper().replace(':', '_')}"
+
+    device_mac = f'dev_{device_mac.upper().replace(":", "_")}'
     device = SystemBus().get('org.bluez', f'/org/bluez/{hci}/{device_mac}')
     device.Disconnect()
 
@@ -295,22 +312,31 @@ def patch_macos_bundle_info_plist(bundle: StrPath, **data: Any) -> None:
 def kill_gamescope() -> None:
     """Kill ``gamescope`` and ``gamescopereaper`` processes."""
     import psutil  # noqa: PLC0415
-    for proc in (x for x in psutil.process_iter(('pid', 'name', 'username'))
-                 if x.info['name'] in {'gamescope', 'gamescopereaper'}):
+
+    for proc in (
+        x
+        for x in psutil.process_iter(('pid', 'name', 'username'))
+        if x.info['name'] in {'gamescope', 'gamescopereaper'}
+    ):
         proc.kill()
 
 
 def kill_wine() -> None:
     """If a process is named with ``.exe``, it is assumed to be a Wine process."""
     import psutil  # noqa: PLC0415
-    for proc in (x for x in psutil.process_iter(('pid', 'name', 'username'))
-                 if x.info['name'] in {'wineserver', 'wine-preloader', 'wine64-preloader'} or (
-                     x.info['name'].lower().endswith('.exe'))):
+
+    for proc in (
+        x
+        for x in psutil.process_iter(('pid', 'name', 'username'))
+        if x.info['name'] in {'wineserver', 'wine-preloader', 'wine64-preloader'}
+        or (x.info['name'].lower().endswith('.exe'))
+    ):
         proc.kill()
 
 
 class MultipleKeySlots(Exception):
     """Exception raised when a device has more than one keyslot."""
+
     def __init__(self, dev: str) -> None:
         super().__init__(f'Device {dev} has more than one keyslot. This is not supported.')
 
@@ -367,8 +393,12 @@ def reset_tpm_enrollment(uuid: str, *, dry_run: bool = True) -> None:
 
 
 IGNORED_GROUPS = {
-    'KFileDialog Settings', 'FileDialogSize', 'Recent Files[$e]', 'Recent URLs[$e]', 'Recent Files',
-    '$Version'
+    'KFileDialog Settings',
+    'FileDialogSize',
+    'Recent Files[$e]',
+    'Recent URLs[$e]',
+    'Recent Files',
+    '$Version',
 }
 """KDE Plasma config groups to ignore."""
 DEFAULT_FILE = Path.home() / '.config' / 'kdeglobals'
@@ -378,7 +408,8 @@ POSITION_RE = (
     r'((e?DP-[0-9]+|HDMI-[0-9]+(-[0-9]+)?|VNC-[0-9]+)$)|'
     r'((e?DP-[0-9]+|HDMI-[0-9]+(-[0-9]+)?|VNC-[0-9]+) (Height|Width|(X|Y)Position|Window-Maximized))|'  # noqa: E501
     r'([0-9]+x[0-9]+ screen: (Height|Width|(X|Y)Position)$)|'
-    r'([0-9] screens: (Height|Width|(X|Y)Position)$)')
+    r'([0-9] screens: (Height|Width|(X|Y)Position)$)'
+)
 """KDE Plasma config keys to ignore."""
 STATE_RE = r'^AAAA/'
 """KDE Plasma config state keys to ignore."""

@@ -1,4 +1,5 @@
 """Windows utilities."""
+
 from __future__ import annotations
 
 from struct import pack
@@ -12,6 +13,7 @@ class Weight(enum.IntEnum):
     For example, 400 is normal and 700 is bold. If this value is zero, a default weight is used.
     These values are provided for convenience.
     """
+
     FW_BLACK = 900
     FW_BOLD = 700
     FW_DEMIBOLD = 600
@@ -36,6 +38,7 @@ class ClipPrecision(enum.IntEnum):
     The clipping precision defines how to clip characters that are partially
     outside the clipping region.
     """
+
     CLIP_CHARACTER_PRECIS = 0x1
     """Not used."""
     CLIP_DEFAULT_PRECIS = 0x0
@@ -56,7 +59,7 @@ class ClipPrecision(enum.IntEnum):
     """
     CLIP_MASK = 0xF
     """Not used."""
-    CLIP_STROKE_PRECIS = 0x2c
+    CLIP_STROKE_PRECIS = 0x2C
     """
     Not used by the font mapper, but is returned when raster, vector, or TrueType fonts are
     enumerated. For compatibility, this value is always returned when enumerating fonts.
@@ -78,6 +81,7 @@ class CharacterSet(enum.IntEnum):
     typeface name in the ``lfFaceName`` member, make sure that the ``lfCharSet`` value matches the
     character set of the typeface specified in ``lfFaceName``.
     """
+
     ANSI_CHARSET = 0
     ARABIC_CHARSET = 178
     BALTIC_CHARSET = 186
@@ -111,6 +115,7 @@ class OutputPrecision(enum.IntEnum):
     The output precision defines how closely the output must match the requested font's height,
     width, character orientation, escapement, pitch, and font type.
     """
+
     OUT_CHARACTER_PRECIS = 2
     """Not used."""
     OUT_DEFAULT_PRECIS = 0
@@ -162,6 +167,7 @@ class Pitch(enum.IntEnum):
     In the ``iPitchAndFamily`` argument to ``CreateFontW``, these values represent the two low-order
     bits.
     """
+
     DEFAULT_PITCH = 0x0
     FIXED_PITCH = 0x01
     MONO_FONT = 0x08
@@ -177,6 +183,7 @@ class Family(enum.IntEnum):
 
     In the ``iPitchAndFamily`` argument to ``CreateFontW``, these values represent bits 4 through 7.
     """
+
     FF_DECORATIVE = 0x50
     """Novelty fonts. Old English is an example."""
     FF_DONTCARE = 0x0
@@ -207,6 +214,7 @@ class Quality(enum.IntEnum):
     If neither ``ANTIALIASED_QUALITY`` nor ``NONANTIALIASED_QUALITY`` is selected, the font is
     antialiased only if the user chooses smooth screen fonts in Control Panel.
     """
+
     ANTIALIASED_QUALITY = 4
     """
     Font is always antialiased if the font supports it and the size of the font is not too small or
@@ -236,6 +244,7 @@ class Quality(enum.IntEnum):
 
 class Field(enum.StrEnum):
     """Font field names in the registry."""
+
     CaptionFont = 'CaptionFont'
     """Font used in window title bars."""
     IconFont = 'IconFont'
@@ -256,29 +265,32 @@ MAX_LINE_LENGTH = 78
 
 class NameTooLong(Exception):
     """Raised when a font name is longer than 64 characters."""
+
     def __init__(self, name: str) -> None:
         super().__init__(self, f'{name} length exceeds 64 characters.')
 
 
-def make_font_entry(field: Field,
-                    name: str = '',
-                    *,
-                    char_set: CharacterSet = CharacterSet.DEFAULT_CHARSET,
-                    clip_precision: ClipPrecision = ClipPrecision.CLIP_DEFAULT_PRECIS,
-                    default_setting: bool = False,
-                    header: bool = False,
-                    dpi: int = DEFAULT_DPI,
-                    escapement: int = 0,
-                    font_size_pt: int = 9,
-                    italic: bool = False,
-                    orientation: int = 0,
-                    out_precision: OutputPrecision = OutputPrecision.OUT_DEFAULT_PRECIS,
-                    pitch_and_family: int = Pitch.VARIABLE_PITCH | Family.FF_SWISS,
-                    quality: Quality = Quality.DEFAULT_QUALITY,
-                    strike_out: bool = False,
-                    underline: bool = False,
-                    weight: Weight = Weight.FW_NORMAL,
-                    width: int = 0) -> str:
+def make_font_entry(
+    field: Field,
+    name: str = '',
+    *,
+    char_set: CharacterSet = CharacterSet.DEFAULT_CHARSET,
+    clip_precision: ClipPrecision = ClipPrecision.CLIP_DEFAULT_PRECIS,
+    default_setting: bool = False,
+    header: bool = False,
+    dpi: int = DEFAULT_DPI,
+    escapement: int = 0,
+    font_size_pt: int = 9,
+    italic: bool = False,
+    orientation: int = 0,
+    out_precision: OutputPrecision = OutputPrecision.OUT_DEFAULT_PRECIS,
+    pitch_and_family: int = Pitch.VARIABLE_PITCH | Family.FF_SWISS,
+    quality: Quality = Quality.DEFAULT_QUALITY,
+    strike_out: bool = False,
+    underline: bool = False,
+    weight: Weight = Weight.FW_NORMAL,
+    width: int = 0,
+) -> str:
     r"""
     Generate a string for a ``.reg`` file to set a font in ``HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics``.
 
@@ -340,20 +352,44 @@ def make_font_entry(field: Field,
     if len(name) > LF_FULLFACESIZE:
         raise NameTooLong(name)
     height = -((font_size_pt * dpi) // DEFAULT_DPI)
-    packed = pack('=5l8B64B', height, width, escapement, orientation, weight, italic, underline,
-                  strike_out, char_set, out_precision, clip_precision, quality, pitch_and_family,
-                  *name[:LF_FULLFACESIZE].encode('utf-16le').ljust(LF_FULLFACESIZE, b'\0'))
+    packed = pack(
+        '=5l8B64B',
+        height,
+        width,
+        escapement,
+        orientation,
+        weight,
+        italic,
+        underline,
+        strike_out,
+        char_set,
+        out_precision,
+        clip_precision,
+        quality,
+        pitch_and_family,
+        *name[:LF_FULLFACESIZE].encode('utf-16le').ljust(LF_FULLFACESIZE, b'\0'),
+    )
     lines: list[str] = []
     line = f'"{field}"=hex:'
     for n in packed:
         line += f'{n:02x},'
         lc = len(lines)
-        if ((lc == 0 and len(line) == MAX_LINE_LENGTH)
-                or (lc > 0 and len(line) == (MAX_LINE_LENGTH - 1))):
+        if (lc == 0 and len(line) == MAX_LINE_LENGTH) or (
+            lc > 0 and len(line) == (MAX_LINE_LENGTH - 1)
+        ):
             line += '\\'
             lines.append(line)
             line = '  '
     lines.append(line.rstrip(','))
-    return '\n'.join(
-        (*((r'HKEY_USERS\.Default\Control Panel\Desktop\WindowMetrics' if default_setting else
-            r'HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics') if header else '',), *lines))
+    return '\n'.join((
+        *(
+            (
+                r'HKEY_USERS\.Default\Control Panel\Desktop\WindowMetrics'
+                if default_setting
+                else r'HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics'
+            )
+            if header
+            else '',
+        ),
+        *lines,
+    ))

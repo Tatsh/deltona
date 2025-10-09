@@ -1,4 +1,5 @@
 """Git and Github-related utilities."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -12,8 +13,11 @@ if TYPE_CHECKING:
     from github.PullRequest import PullRequest
     from github.Repository import Repository
 
-__all__ = ('convert_git_ssh_url_to_https', 'get_github_default_branch',
-           'merge_dependabot_pull_requests')
+__all__ = (
+    'convert_git_ssh_url_to_https',
+    'get_github_default_branch',
+    'merge_dependabot_pull_requests',
+)
 
 log = logging.getLogger(__name__)
 
@@ -23,18 +27,20 @@ def convert_git_ssh_url_to_https(url: str) -> str:
     if url.startswith('https://'):
         return re.sub(r'\.git$', '', url)
     return re.sub(
-        r'\.git$', '',
-        re.sub(r'\.([a-z]+):',
-               r'.\1/',
-               re.sub(r'^(?:ssh://)?(?:[a-z0-9A-Z]+@)?', 'https://', url, count=1),
-               count=1))
+        r'\.git$',
+        '',
+        re.sub(
+            r'\.([a-z]+):',
+            r'.\1/',
+            re.sub(r'^(?:ssh://)?(?:[a-z0-9A-Z]+@)?', 'https://', url, count=1),
+            count=1,
+        ),
+    )
 
 
-def get_github_default_branch(*,
-                              repo: Repo,
-                              token: str,
-                              base_url: str | None = None,
-                              origin_name: str = 'origin') -> str:
+def get_github_default_branch(
+    *, repo: Repo, token: str, base_url: str | None = None, origin_name: str = 'origin'
+) -> str:
     """
     Get the default branch of a GitHub repository.
 
@@ -55,15 +61,17 @@ def get_github_default_branch(*,
         The default branch of the repository.
     """
     import github  # noqa: PLC0415
-    return github.Github(token, base_url=base_url or github.Consts.DEFAULT_BASE_URL).get_repo(
-        urlparse(convert_git_ssh_url_to_https(
-            repo.remote(origin_name).url)).path[1:]).default_branch
+
+    return (
+        github.Github(token, base_url=base_url or github.Consts.DEFAULT_BASE_URL)
+        .get_repo(urlparse(convert_git_ssh_url_to_https(repo.remote(origin_name).url)).path[1:])
+        .default_branch
+    )
 
 
-def merge_dependabot_pull_requests(*,
-                                   token: str,
-                                   affiliation: str = 'owner',
-                                   base_url: str | None = None) -> None:
+def merge_dependabot_pull_requests(
+    *, token: str, affiliation: str = 'owner', base_url: str | None = None
+) -> None:
     """
     Merge pull requests made by Dependabot on GitHub.
 
@@ -102,10 +110,14 @@ def merge_dependabot_pull_requests(*,
 
     should_raise = False
     for repo in (
-            x for x in github.Github(
-                token, base_url=base_url or github.Consts.DEFAULT_BASE_URL, per_page=100).get_user(
-                ).get_repos(affiliation=affiliation, sort='full_name')  # type: ignore[call-arg]
-            if not x.archived and uses_dependabot(x)):
+        x
+        for x in github.Github(
+            token, base_url=base_url or github.Consts.DEFAULT_BASE_URL, per_page=100
+        )
+        .get_user()
+        .get_repos(affiliation=affiliation, sort='full_name')  # type: ignore[call-arg]
+        if not x.archived and uses_dependabot(x)
+    ):
         log.info('Repository: %s', repo.name)
         pull: PullRequest | None = None
         for num in (x.number for x in repo.get_pulls() if x.user.login == 'dependabot[bot]'):

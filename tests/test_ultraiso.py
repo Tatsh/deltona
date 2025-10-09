@@ -25,8 +25,10 @@ def test_patch_ultraiso_font_success(mocker: MockerFixture, tmp_path: Path) -> N
     backup_path = tmp_path / 'UltraISO.exebak'
     original_data = b'headerMS Sans Serif\x00footer'
     exe_path.write_bytes(original_data)
-    mocker.patch('deltona.ultraiso.copyfile',
-                 side_effect=lambda src, dst: Path(dst).write_bytes(Path(src).read_bytes()))
+    mocker.patch(
+        'deltona.ultraiso.copyfile',
+        side_effect=lambda src, dst: Path(dst).write_bytes(Path(src).read_bytes()),
+    )
     patch_ultraiso_font(exe_path, font_name='Noto Sans')
     assert backup_path.exists()
     patched = exe_path.read_bytes()
@@ -90,8 +92,9 @@ def test_unix_path_to_wine_windows(mocker: MockerFixture) -> None:
 
 def test_unix_path_to_wine_non_windows(mocker: MockerFixture) -> None:
     mocker.patch('deltona.ultraiso.IS_WINDOWS', False)
-    mock_base = mocker.patch('deltona.ultraiso.base_unix_path_to_wine',
-                             return_value='Z:\\unix\\path')
+    mock_base = mocker.patch(
+        'deltona.ultraiso.base_unix_path_to_wine', return_value='Z:\\unix\\path'
+    )
     result = unix_path_to_wine('/unix/path')
     mock_base.assert_called_once_with('/unix/path')
     assert result == 'Z:\\unix\\path'
@@ -99,8 +102,9 @@ def test_unix_path_to_wine_non_windows(mocker: MockerFixture) -> None:
 
 def test_unix_path_to_wine_non_windows_str_path(mocker: MockerFixture) -> None:
     mocker.patch('deltona.ultraiso.IS_WINDOWS', False)
-    mock_base = mocker.patch('deltona.ultraiso.base_unix_path_to_wine',
-                             return_value='Z:\\unix\\path')
+    mock_base = mocker.patch(
+        'deltona.ultraiso.base_unix_path_to_wine', return_value='Z:\\unix\\path'
+    )
     result = unix_path_to_wine(Path('/unix/path'))
     mock_base.assert_called_once_with('/unix/path')
     assert result == 'Z:\\unix\\path'
@@ -254,16 +258,22 @@ def test_run_ultraiso_windows_env(mocker: MockerFixture, tmp_path: Path) -> None
     assert '-out' in args
 
 
-def test_run_ultraiso_called_process_error_with_stderr(mocker: MockerFixture,
-                                                       tmp_path: Path) -> None:
+def test_run_ultraiso_called_process_error_with_stderr(
+    mocker: MockerFixture, tmp_path: Path
+) -> None:
     exe_path = tmp_path / 'UltraISO.exe'
     exe_path.write_text('dummy')
     mocker.patch('deltona.ultraiso.get_ultraiso_path', return_value=exe_path)
     mocker.patch('deltona.ultraiso.IS_WINDOWS', False)
     mocker.patch('deltona.ultraiso.base_unix_path_to_wine', side_effect=lambda x: f'Z:\\{x}')
-    error = sp.CalledProcessError(1, ['wine'],
-                                  stderr=('some error\nfixme: ignored\nwinemenubuilder.exe'
-                                          '\nwine: using fast synchronization.\nreal error'))
+    error = sp.CalledProcessError(
+        1,
+        ['wine'],
+        stderr=(
+            'some error\nfixme: ignored\nwinemenubuilder.exe'
+            '\nwine: using fast synchronization.\nreal error'
+        ),
+    )
     mocker.patch('deltona.ultraiso.sp.run', side_effect=error)
     mock_log = mocker.patch('deltona.ultraiso.log')
     with pytest.raises(sp.CalledProcessError):
@@ -278,8 +288,9 @@ def test_run_ultraiso_called_process_error_with_stderr(mocker: MockerFixture,
     assert not any('wine: using fast synchronization.' in line for line in logged_lines)
 
 
-def test_run_ultraiso_called_process_error_with_empty_stderr(mocker: MockerFixture,
-                                                             tmp_path: Path) -> None:
+def test_run_ultraiso_called_process_error_with_empty_stderr(
+    mocker: MockerFixture, tmp_path: Path
+) -> None:
     exe_path = tmp_path / 'UltraISO.exe'
     exe_path.write_text('dummy')
     mocker.patch('deltona.ultraiso.get_ultraiso_path', return_value=exe_path)
@@ -293,8 +304,9 @@ def test_run_ultraiso_called_process_error_with_empty_stderr(mocker: MockerFixtu
     assert not mock_log.exception.called
 
 
-def test_run_ultraiso_warns_missing_display_xauthority(mocker: MockerFixture,
-                                                       tmp_path: Path) -> None:
+def test_run_ultraiso_warns_missing_display_xauthority(
+    mocker: MockerFixture, tmp_path: Path
+) -> None:
     exe_path = tmp_path / 'UltraISO.exe'
     exe_path.write_text('dummy')
     mocker.patch('deltona.ultraiso.get_ultraiso_path', return_value=exe_path)

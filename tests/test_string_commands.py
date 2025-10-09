@@ -33,9 +33,11 @@ if TYPE_CHECKING:
         ('hello', 0),
         # cspell: disable-next-line  # noqa: ERA001
         ('héllo', 1),
-    ])
-def test_is_ascii_main(runner: CliRunner, mocker: MockerFixture, tmp_path: Path, input_str: str,
-                       expected: int) -> None:
+    ],
+)
+def test_is_ascii_main(
+    runner: CliRunner, mocker: MockerFixture, tmp_path: Path, input_str: str, expected: int
+) -> None:
     input_file = tmp_path / 'test_is_ascii.txt'
     input_file.write_text(input_str, encoding='utf-8')
     mocker.patch('deltona.string.is_ascii', return_value=expected == 0)
@@ -133,8 +135,9 @@ def test_pl2json_main_invalid(runner: CliRunner, tmp_path: Path) -> None:
     assert result.exit_code != 0
 
 
-def test_pl2json_main_cannot_serialize(runner: CliRunner, tmp_path: Path,
-                                       mocker: MockerFixture) -> None:
+def test_pl2json_main_cannot_serialize(
+    runner: CliRunner, tmp_path: Path, mocker: MockerFixture
+) -> None:
     mocker.patch('deltona.commands.string.plistlib.load')
     mocker.patch('deltona.commands.string.json.dumps', side_effect=TypeError)
     pl_file = tmp_path / 'test.plist'
@@ -209,8 +212,10 @@ def test_cssq_prints_json_lines(runner: CliRunner, mocker: MockerFixture, tmp_pa
     input_file = tmp_path / 'test_cssq.html'
     input_file.write_text('<div>First</div><div>Second</div>', encoding='utf-8')
     mocker.patch('deltona.commands.string.cssq', return_value=['A', 'B'])
-    mock_json = mocker.patch('deltona.commands.string.json.dumps',
-                             side_effect=lambda x, *a, **kw: f'"{x}"')  # noqa: ARG005
+    mock_json = mocker.patch(
+        'deltona.commands.string.json.dumps',
+        side_effect=lambda x, *a, **kw: f'"{x}"',  # noqa: ARG005
+    )
     result = runner.invoke(cssq_main, ['-j', '-s', '-t', 'div', str(input_file)])
     assert result.exit_code == 0
     assert mock_json.call_count == 2

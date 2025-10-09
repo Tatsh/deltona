@@ -39,16 +39,20 @@ def mock_requests_get(mocker: MockerFixture) -> Mock:
 
 
 @pytest.fixture
-def mock_get_pil_image_module(mocker: MockerFixture, mock_pil_image_module: tuple[Mock,
-                                                                                  Mock]) -> Mock:
+def mock_get_pil_image_module(
+    mocker: MockerFixture, mock_pil_image_module: tuple[Mock, Mock]
+) -> Mock:
     mock_image_mod, _ = mock_pil_image_module
     mocker.patch('deltona.chromium._get_pil_image_module', return_value=mock_image_mod)
     return mock_image_mod
 
 
-def test_fix_chromium_pwa_icon_basic(tmp_path: Path, mock_get_pil_image_module: Mock,
-                                     mock_requests_get: Mock,
-                                     mock_pil_image_module: tuple[Mock, Mock]) -> None:
+def test_fix_chromium_pwa_icon_basic(
+    tmp_path: Path,
+    mock_get_pil_image_module: Mock,
+    mock_requests_get: Mock,
+    mock_pil_image_module: tuple[Mock, Mock],
+) -> None:
     app_id = 'test_app_id'
     icon_src_uri = 'http://example.com/icon.png'
     config_path = tmp_path
@@ -69,9 +73,12 @@ def test_fix_chromium_pwa_icon_basic(tmp_path: Path, mock_get_pil_image_module: 
         assert 'Icons' in str(file_path)
 
 
-def test_fix_chromium_pwa_icon_masked(tmp_path: Path, mock_get_pil_image_module: Mock,
-                                      mock_requests_get: Mock,
-                                      mock_pil_image_module: tuple[Mock, Mock]) -> None:
+def test_fix_chromium_pwa_icon_masked(
+    tmp_path: Path,
+    mock_get_pil_image_module: Mock,
+    mock_requests_get: Mock,
+    mock_pil_image_module: tuple[Mock, Mock],
+) -> None:
     app_id = 'test_app_id'
     icon_src_uri = 'http://example.com/icon.png'
     config_path = tmp_path
@@ -86,9 +93,12 @@ def test_fix_chromium_pwa_icon_masked(tmp_path: Path, mock_get_pil_image_module:
     assert any('Icons' in str(p) for p in paths)
 
 
-def test_fix_chromium_pwa_icon_monochrome(mocker: MockerFixture, mock_get_pil_image_module: Mock,
-                                          mock_requests_get: Mock,
-                                          mock_pil_image_module: tuple[Mock, Mock]) -> None:
+def test_fix_chromium_pwa_icon_monochrome(
+    mocker: MockerFixture,
+    mock_get_pil_image_module: Mock,
+    mock_requests_get: Mock,
+    mock_pil_image_module: tuple[Mock, Mock],
+) -> None:
     mock_path = mocker.patch('deltona.chromium.Path').return_value
     app_id = 'test_app_id'
     icon_src_uri = 'http://example.com/icon.png'
@@ -105,9 +115,12 @@ def test_fix_chromium_pwa_icon_monochrome(mocker: MockerFixture, mock_get_pil_im
     assert mock_img.save.call_count == 8
 
 
-def test_fix_chromium_pwa_icon_not_square(tmp_path: Path, mock_get_pil_image_module: Mock,
-                                          mock_requests_get: Mock,
-                                          mock_pil_image_module: tuple[Mock, Mock]) -> None:
+def test_fix_chromium_pwa_icon_not_square(
+    tmp_path: Path,
+    mock_get_pil_image_module: Mock,
+    mock_requests_get: Mock,
+    mock_pil_image_module: tuple[Mock, Mock],
+) -> None:
     app_id = 'test_app_id'
     icon_src_uri = 'http://example.com/icon.png'
     config_path = tmp_path
@@ -150,7 +163,7 @@ def test_get_latest_chrome_major_version_success(mocker: MockerFixture) -> None:
 
 def test_get_latest_chrome_major_version_requests_mock(requests_mock: Mocker) -> None:
     # Use requests-mock to mock the API endpoint
-    url = ('https://versionhistory.googleapis.com/v1/chrome/platforms/win/channels/stable/versions')
+    url = 'https://versionhistory.googleapis.com/v1/chrome/platforms/win/channels/stable/versions'
     requests_mock.get(url, json={'versions': [{'version': '125.0.6422.60'}]})
     get_latest_chrome_major_version.cache_clear()
     result = get_latest_chrome_major_version()

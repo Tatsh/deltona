@@ -1,4 +1,5 @@
 """Gentoo system utilities."""
+
 from __future__ import annotations
 
 from fnmatch import fnmatch
@@ -21,14 +22,16 @@ log = logging.getLogger(__name__)
 
 class InvalidActiveKernelSourcePath(Exception):
     """Raised when the active kernel source path is not a symbolic link."""
+
     def __init__(self, source_path: StrPath) -> None:
         super().__init__(f'{source_path} is not a symbolic link.')
 
 
 def clean_old_kernels_and_modules(
-        path: StrPath = DEFAULT_KERNEL_LOCATION,
-        modules_path: StrPath = DEFAULT_MODULES_PATH,
-        active_kernel_name: str = DEFAULT_ACTIVE_KERNEL_NAME) -> Iterator[str]:
+    path: StrPath = DEFAULT_KERNEL_LOCATION,
+    modules_path: StrPath = DEFAULT_MODULES_PATH,
+    active_kernel_name: str = DEFAULT_ACTIVE_KERNEL_NAME,
+) -> Iterator[str]:
     """
     Remove inactive kernels and modules.
 

@@ -1,4 +1,5 @@
 """Uncategorised commands."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -36,22 +37,23 @@ log = logging.getLogger(__name__)
     metavar='STATE',
     default='FL',
     type=click.Choice(INCITS38Code.__args__),  # type: ignore[attr-defined]
-    help='US state abbreviation.')
-def adp_main(hours: int = 160,
-             pay_rate: float = 70.0,
-             state: INCITS38Code = 'FL',
-             *,
-             debug: bool = False) -> None:
+    help='US state abbreviation.',
+)
+def adp_main(
+    hours: int = 160, pay_rate: float = 70.0, state: INCITS38Code = 'FL', *, debug: bool = False
+) -> None:
     """Calculate US salary."""
     setup_logging(debug=debug, loggers={'deltona': {}, 'urllib3': {}})
     click.echo(str(calculate_salary(hours=hours, pay_rate=pay_rate, state=state)))
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('dirs',
-                nargs=-1,
-                metavar='DIR',
-                type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path))
+@click.argument(
+    'dirs',
+    nargs=-1,
+    metavar='DIR',
+    type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
+)
 def unpack_0day_main(dirs: Sequence[Path]) -> None:
     """Unpack RAR files from 0day zip file sets."""
     for path in dirs:
@@ -61,11 +63,13 @@ def unpack_0day_main(dirs: Sequence[Path]) -> None:
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('filename', type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
-@click.option('-o',
-              '--output-dir',
-              default='.',
-              type=click.Path(exists=True, file_okay=False, path_type=Path),
-              help='Output directory.')
+@click.option(
+    '-o',
+    '--output-dir',
+    default='.',
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    help='Output directory.',
+)
 def gogextract_main(filename: Path, output_dir: Path, *, debug: bool = False) -> None:
     """Extract a Linux gog.com archive."""
     setup_logging(debug=debug, loggers={'deltona': {}})
@@ -77,26 +81,30 @@ def gogextract_main(filename: Path, output_dir: Path, *, debug: bool = False) ->
 @click.option('--no-crc-check', is_flag=True, help='Disable CRC check.')
 @click.option('--test-extraction', help='Enable extraction test.', is_flag=True)
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
-@click.option('-D',
-              '--device-name',
-              help='Device name.',
-              type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option(
+    '-D',
+    '--device-name',
+    help='Device name.',
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+)
 @click.option('-s', '--speed', type=int, help='Disc write speed.', default=8)
-@click.option('--sfv',
-              help='SFV file.',
-              type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option(
+    '--sfv', help='SFV file.', type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
 @click.option('--cdrecord-path', help='Path to cdrecord.', default='cdrecord')
 @click.option('--unrar-path', help='Path to unrar.', default='unrar')
-def burnrariso_main(rar_filename: Path,
-                    unrar_path: str = 'unrar',
-                    cdrecord_path: str = 'cdrecord',
-                    device_name: Path | None = None,
-                    sfv: Path | None = None,
-                    speed: int = 8,
-                    *,
-                    debug: bool = False,
-                    no_crc_check: bool = False,
-                    test_extraction: bool = False) -> None:
+def burnrariso_main(
+    rar_filename: Path,
+    unrar_path: str = 'unrar',
+    cdrecord_path: str = 'cdrecord',
+    device_name: Path | None = None,
+    sfv: Path | None = None,
+    speed: int = 8,
+    *,
+    debug: bool = False,
+    no_crc_check: bool = False,
+    test_extraction: bool = False,
+) -> None:
     """Burns an ISO found in a RAR file via piping."""  # noqa: DOC501
     setup_logging(debug=debug, loggers={'deltona': {}})
     rar_path = Path(rar_filename)
@@ -108,8 +116,9 @@ def burnrariso_main(rar_filename: Path,
     if not iso.size:
         raise click.Abort
     if not no_crc_check:
-        sfv_file_expected = (Path(sfv) if sfv else rar_path.parent /
-                             f'{rar_path.name.split(".", 1)}.sfv')
+        sfv_file_expected = (
+            Path(sfv) if sfv else rar_path.parent / f'{rar_path.name.split(".", 1)}.sfv'
+        )
         assert sfv_file_expected.exists()
         try:
             verify_sfv(sfv_file_expected)
@@ -123,12 +132,20 @@ def burnrariso_main(rar_filename: Path,
         except UnRARExtractionTestFailed as e:
             click.echo('RAR extraction test failed.', err=True)
             raise click.Abort from e
-    with (unrar.pipe(rar_filename, iso.name) as u,
-          sp.Popen(
-              (cdrecord_path, *((f'dev={device_name}',) if device_name else
-                                ()), f'speed={speed}', 'driveropts=burnfree', f'tsize={iso.size}'),
-              stdin=u.stdout,
-              close_fds=True) as cdrecord):
+    with (
+        unrar.pipe(rar_filename, iso.name) as u,
+        sp.Popen(
+            (
+                cdrecord_path,
+                *((f'dev={device_name}',) if device_name else ()),
+                f'speed={speed}',
+                'driveropts=burnfree',
+                f'tsize={iso.size}',
+            ),
+            stdin=u.stdout,
+            close_fds=True,
+        ) as cdrecord,
+    ):
         assert u.stdout is not None
         u.stdout.close()
         cdrecord.wait()

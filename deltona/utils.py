@@ -1,4 +1,5 @@
 """Uncategorised utilities."""
+
 # ruff: noqa: N815
 from __future__ import annotations
 
@@ -71,8 +72,9 @@ def add_cdda_times(times: Iterable[str] | None) -> str | None:
         if not (res := re.match(TIMES_RE, time_)):
             return None
         minutes, seconds, frames = [int(x) for x in res.groups()]
-        total_ms += (minutes * MAX_SECONDS * 1000) + (seconds * 1000) + (
-            (frames * 1000) // CD_FRAMES)
+        total_ms += (
+            (minutes * MAX_SECONDS * 1000) + (seconds * 1000) + ((frames * 1000) // CD_FRAMES)
+        )
     minutes = total_ms // (MAX_SECONDS * 1000)
     remainder_ms = total_ms % (MAX_SECONDS * 1000)
     seconds = remainder_ms // 1000
@@ -95,21 +97,46 @@ WINETRICKS_VERSION_MAPPING = {
     # 32-bit only
     '2k': 'win2k',
     '98': 'win98',
-    '95': 'win95'
+    '95': 'win95',
 }
 """Mapping of Windows versions to winetricks versions."""
 DEFAULT_DPI = 96
 """Default DPI for Wine prefixes."""
 _CREATE_WINE_PREFIX_NOTO_FONT_REPLACEMENTS = {
-    'Arial Baltic,186', 'Arial CE,238', 'Arial CYR,204', 'Arial Greek,161', 'Arial TUR,162',
-    'Courier New Baltic,186', 'Courier New CE,238', 'Courier New CYR,204', 'Courier New Greek,161',
-    'Courier New TUR,162', 'Helv', 'Helvetica', 'MS Shell Dlg', 'MS Shell Dlg 2', 'MS Sans Serif',
-    'Segoe UI', 'System', 'Tahoma', 'Times', 'Times New Roman Baltic,186', 'Times New Roman CE,238',
-    'Times New Roman CYR,204', 'Times New Roman Greek,161', 'Times New Roman TUR,162', 'Tms Rmn',
-    'Verdana'
+    'Arial Baltic,186',
+    'Arial CE,238',
+    'Arial CYR,204',
+    'Arial Greek,161',
+    'Arial TUR,162',
+    'Courier New Baltic,186',
+    'Courier New CE,238',
+    'Courier New CYR,204',
+    'Courier New Greek,161',
+    'Courier New TUR,162',
+    'Helv',
+    'Helvetica',
+    'MS Shell Dlg',
+    'MS Shell Dlg 2',
+    'MS Sans Serif',
+    'Segoe UI',
+    'System',
+    'Tahoma',
+    'Times',
+    'Times New Roman Baltic,186',
+    'Times New Roman CE,238',
+    'Times New Roman CYR,204',
+    'Times New Roman Greek,161',
+    'Times New Roman TUR,162',
+    'Tms Rmn',
+    'Verdana',
 }
 _CREATE_WINE_PREFIX_NOTO_REGISTRY_ENTRIES = {
-    'Caption', 'Icon', 'Menu', 'Message', 'SmCaption', 'Status'
+    'Caption',
+    'Icon',
+    'Menu',
+    'Message',
+    'SmCaption',
+    'Status',
 }
 WineWindowsVersion = Literal['11', '10', 'vista', '2k3', '7', '8', 'xp', '81', '2k', '98', '95']
 """Windows versions supported by Wine."""
@@ -117,6 +144,7 @@ WineWindowsVersion = Literal['11', '10', 'vista', '2k3', '7', '8', 'xp', '81', '
 
 class LOGFONTW(NamedTuple):
     """Windows LOGFONTW structure as a named tuple."""
+
     lfHeight: int
     lfWidth: int
     lfEscapement: int
@@ -135,19 +163,43 @@ class LOGFONTW(NamedTuple):
 Q4WINE_DEFAULT_ICONS: tuple[tuple[str, str, str, str, str, str], ...] = (
     ('', 'control.exe', 'control', 'Wine control panel', 'system', 'Control Panel'),
     ('', 'eject.exe', 'eject', 'Wine CD eject tool', 'system', 'Eject'),
-    ('', 'explorer.exe', 'explorer', 'Browse the files in the virtual Wine Drive', 'system',
-     'Explorer'),
+    (
+        '',
+        'explorer.exe',
+        'explorer',
+        'Browse the files in the virtual Wine Drive',
+        'system',
+        'Explorer',
+    ),
     ('', 'iexplore.exe', 'iexplore', 'Wine internet browser', 'system', 'Internet Explorer'),
     ('', 'notepad.exe', 'notepad', 'Wine notepad text editor', 'system', 'Notepad'),
     ('', 'oleview.exe', 'oleview', 'Wine OLE/COM object viewer', 'system', 'OLE Viewer'),
     ('', 'regedit.exe', 'regedit', 'Wine registry editor', 'system', 'Registry Editor'),
     ('', 'taskmgr.exe', 'taskmgr', 'Wine task manager', 'system', 'Task Manager'),
-    ('', 'uninstaller.exe', 'uninstaller', 'Uninstall Windows programs under Wine properly',
-     'system', 'Uninstaller'),
-    ('', 'winecfg.exe', 'winecfg', 'Configure the general settings for Wine', 'system',
-     'Configuration'),
-    ('', 'wineconsole', 'wineconsole', 'Wineconsole is similar to wine command wcmd', 'system',
-     'Console'),
+    (
+        '',
+        'uninstaller.exe',
+        'uninstaller',
+        'Uninstall Windows programs under Wine properly',
+        'system',
+        'Uninstaller',
+    ),
+    (
+        '',
+        'winecfg.exe',
+        'winecfg',
+        'Configure the general settings for Wine',
+        'system',
+        'Configuration',
+    ),
+    (
+        '',
+        'wineconsole',
+        'wineconsole',
+        'Wineconsole is similar to wine command wcmd',
+        'system',
+        'Console',
+    ),
     ('', 'winemine.exe', 'winemine', 'Wine sweeper game', 'system', 'Winemine'),
     ('', 'wordpad.exe', 'wordpad', 'Wine wordpad text editor', 'system', 'WordPad'),
 )
@@ -155,29 +207,30 @@ Q4WINE_DEFAULT_ICONS: tuple[tuple[str, str, str, str, str, str], ...] = (
 
 
 def create_wine_prefix(  # noqa: C901, PLR0912, PLR0913
-        prefix_name: str,
-        *,
-        _32bit: bool = False,
-        asio: bool = False,
-        disable_explorer: bool = False,
-        disable_services: bool = False,
-        dpi: int = DEFAULT_DPI,
-        dxva_vaapi: bool = False,
-        dxvk_nvapi: bool = False,
-        eax: bool = False,
-        gtk: bool = False,
-        no_associations: bool = False,
-        no_gecko: bool = False,
-        no_mono: bool = False,
-        no_xdg: bool = False,
-        noto_sans: bool = False,
-        prefix_root: StrPath | None = None,
-        sandbox: bool = False,
-        tmpfs: bool = False,
-        tricks: Iterable[str] | None = None,
-        vd: str = 'off',
-        windows_version: WineWindowsVersion = '10',
-        winrt_dark: bool = False) -> Path:
+    prefix_name: str,
+    *,
+    _32bit: bool = False,
+    asio: bool = False,
+    disable_explorer: bool = False,
+    disable_services: bool = False,
+    dpi: int = DEFAULT_DPI,
+    dxva_vaapi: bool = False,
+    dxvk_nvapi: bool = False,
+    eax: bool = False,
+    gtk: bool = False,
+    no_associations: bool = False,
+    no_gecko: bool = False,
+    no_mono: bool = False,
+    no_xdg: bool = False,
+    noto_sans: bool = False,
+    prefix_root: StrPath | None = None,
+    sandbox: bool = False,
+    tmpfs: bool = False,
+    tricks: Iterable[str] | None = None,
+    vd: str = 'off',
+    windows_version: WineWindowsVersion = '10',
+    winrt_dark: bool = False,
+) -> Path:
     """
     Create a Wine prefix with custom settings.
 
@@ -239,9 +292,15 @@ def create_wine_prefix(  # noqa: C901, PLR0912, PLR0913
     ------
     FileExistsError
     """
-    tricks = list((t for t in tricks
-                   if t not in WINETRICKS_VERSION_MAPPING.values() and not t.startswith('vd=')
-                   ) if tricks else [])
+    tricks = list(
+        (
+            t
+            for t in tricks
+            if t not in WINETRICKS_VERSION_MAPPING.values() and not t.startswith('vd=')
+        )
+        if tricks
+        else []
+    )
     prefix_root = Path(prefix_root) if prefix_root else Path.home() / '.local/share/wineprefixes'
     prefix_root.mkdir(parents=True, exist_ok=True)
     target = prefix_root / prefix_name
@@ -249,20 +308,21 @@ def create_wine_prefix(  # noqa: C901, PLR0912, PLR0913
         raise FileExistsError
     arch = 'win32' if _32bit else None
     if 'DISPLAY' not in environ or 'XAUTHORITY' not in environ:
-        log.warning('Wine will likely fail to run since DISPLAY or XAUTHORITY are not in the '
-                    'environment.')
+        log.warning(
+            'Wine will likely fail to run since DISPLAY or XAUTHORITY are not in the environment.'
+        )
     esync = environ.get('WINEESYNC', '')
-    env = {
-        'DISPLAY': environ.get('DISPLAY', ''),
-        'PATH': environ['PATH'],
-        'WINEPREFIX': str(target),
-        'XAUTHORITY': environ.get('XAUTHORITY', ''),
-        'WINEDEBUG': environ.get('WINEDEBUG', 'fixme-all')
-    } | ({
-        'WINEARCH': environ.get('WINEARCH', arch)
-    } if arch else {}) | ({
-        'WINEESYNC': esync
-    } if esync else {})
+    env = (
+        {
+            'DISPLAY': environ.get('DISPLAY', ''),
+            'PATH': environ['PATH'],
+            'WINEPREFIX': str(target),
+            'XAUTHORITY': environ.get('XAUTHORITY', ''),
+            'WINEDEBUG': environ.get('WINEDEBUG', 'fixme-all'),
+        }
+        | ({'WINEARCH': environ.get('WINEARCH', arch)} if arch else {})
+        | ({'WINEESYNC': esync} if esync else {})
+    )
     # Warm up Wine
     cmd: tuple[str, ...] = ('wineboot', '--init')
     log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
@@ -273,8 +333,19 @@ def create_wine_prefix(  # noqa: C901, PLR0912, PLR0913
     log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
     sp.run(cmd, env=env, check=True)
     if dpi != DEFAULT_DPI:
-        cmd = ('wine', 'reg', 'add', r'HKCU\Control Panel\Desktop', '/t', 'REG_DWORD', '/v',
-               'LogPixels', '/d', str(dpi), '/f')
+        cmd = (
+            'wine',
+            'reg',
+            'add',
+            r'HKCU\Control Panel\Desktop',
+            '/t',
+            'REG_DWORD',
+            '/v',
+            'LogPixels',
+            '/d',
+            str(dpi),
+            '/f',
+        )
         log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
         sp.run(cmd, env=env, check=True)
     if dxva_vaapi:
@@ -282,8 +353,17 @@ def create_wine_prefix(  # noqa: C901, PLR0912, PLR0913
         log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
         sp.run(cmd, env=env, check=True)
     if eax:
-        cmd = ('wine', 'reg', 'add', r'HKCU\Software\Wine\DirectSound', '/v', 'EAXEnabled', '/d',
-               'Y', '/f')
+        cmd = (
+            'wine',
+            'reg',
+            'add',
+            r'HKCU\Software\Wine\DirectSound',
+            '/v',
+            'EAXEnabled',
+            '/d',
+            'Y',
+            '/f',
+        )
         log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
         sp.run(cmd, env=env, check=True)
     if gtk:
@@ -292,19 +372,45 @@ def create_wine_prefix(  # noqa: C901, PLR0912, PLR0913
         sp.run(cmd, env=env, check=True)
     if winrt_dark:
         for k in ('AppsUseLightTheme', 'SystemUsesLightTheme'):
-            cmd = ('wine', 'reg', 'add',
-                   r'HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize', '/t',
-                   'REG_DWORD', '/v', k, '/d', '0', '/f')
+            cmd = (
+                'wine',
+                'reg',
+                'add',
+                r'HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize',
+                '/t',
+                'REG_DWORD',
+                '/v',
+                k,
+                '/d',
+                '0',
+                '/f',
+            )
             log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
             sp.run(cmd, env=env, check=True)
     if no_associations:
-        cmd = ('wine', 'reg', 'add', r'HKCU\Software\Wine\Explorer\FileAssociations', '/v',
-               'Enable', '/d', 'N', '/f')
+        cmd = (
+            'wine',
+            'reg',
+            'add',
+            r'HKCU\Software\Wine\Explorer\FileAssociations',
+            '/v',
+            'Enable',
+            '/d',
+            'N',
+            '/f',
+        )
         log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
         sp.run(cmd, env=env, check=True)
     if no_xdg:
-        cmd = ('wine', 'reg', 'add', r'HKCU\Software\Wine\DllOverrides', '/v',
-               'winemenubuilder.exe', '/f')
+        cmd = (
+            'wine',
+            'reg',
+            'add',
+            r'HKCU\Software\Wine\DllOverrides',
+            '/v',
+            'winemenubuilder.exe',
+            '/f',
+        )
         log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
         sp.run(cmd, env=env, check=True)
     if no_mono:
@@ -327,10 +433,12 @@ def create_wine_prefix(  # noqa: C901, PLR0912, PLR0913
         username = environ.get('USER', environ.get('USERNAME', 'user'))
         rmtree(target / f'drive_c/users/{username}/Temp', ignore_errors=True)
         rmtree(target / 'drive_c/windows/temp', ignore_errors=True)
-        Path(target / f'drive_c/users/{username}/Temp').symlink_to(tempfile.gettempdir(),
-                                                                   target_is_directory=True)
-        Path(target / 'drive_c/windows/temp').symlink_to(tempfile.gettempdir(),
-                                                         target_is_directory=True)
+        Path(target / f'drive_c/users/{username}/Temp').symlink_to(
+            tempfile.gettempdir(), target_is_directory=True
+        )
+        Path(target / 'drive_c/windows/temp').symlink_to(
+            tempfile.gettempdir(), target_is_directory=True
+        )
     if dxvk_nvapi:
         tricks += ['dxvk']
     try:
@@ -339,9 +447,15 @@ def create_wine_prefix(  # noqa: C901, PLR0912, PLR0913
             tricks += ['isolate_home', 'sandbox']
         if vd != 'off':
             tricks += [f'vd={vd}']
-        if (winetricks := which('winetricks')):
-            cmd = (winetricks, '--force', '--country=US', '--unattended', f'prefix={prefix_name}',
-                   *sorted(set(tricks)))
+        if winetricks := which('winetricks'):
+            cmd = (
+                winetricks,
+                '--force',
+                '--country=US',
+                '--unattended',
+                f'prefix={prefix_name}',
+                *sorted(set(tricks)),
+            )
             log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
             sp.run(cmd, check=True)
     except sp.CalledProcessError as e:  # pragma: no cover
@@ -355,40 +469,88 @@ def create_wine_prefix(  # noqa: C901, PLR0912, PLR0913
         prefix = f'{nvidia_libs}-{version}'
         r = requests.get(
             f'https://github.com/SveSop/{nvidia_libs}/releases/download/v{version}/{prefix}.tar.xz',
-            timeout=15)
+            timeout=15,
+        )
         r.raise_for_status()
         with xz.open(BytesIO(r.content)) as xz_file, tarfile.TarFile(fileobj=xz_file) as tar:
             for item in ('nvcuda', 'nvcuvid', 'nvencodeapi', 'nvapi'):
-                cmd = ('wine', 'reg', 'add', r'HKCU\Software\Wine\DllOverrides', '/v', item, '/d',
-                       'native', '/f')
+                cmd = (
+                    'wine',
+                    'reg',
+                    'add',
+                    r'HKCU\Software\Wine\DllOverrides',
+                    '/v',
+                    item,
+                    '/d',
+                    'native',
+                    '/f',
+                )
                 log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
                 sp.run(cmd, env=env, check=True)
                 member = tar.getmember(f'{prefix}/x32/{item}.dll')
                 member.name = f'{item}.dll'
                 tar.extract(member, target / 'drive_c' / 'windows' / 'syswow64')
             if not _32bit:
-                for item in ('nvcuda', 'nvoptix', 'nvcuvid', 'nvencodeapi64', 'nvapi64',
-                             'nvofapi64'):
-                    cmd = ('wine64', 'reg', 'add', r'HKCU\Software\Wine\DllOverrides', '/v', item,
-                           '/d', 'native', '/f')
+                for item in (
+                    'nvcuda',
+                    'nvoptix',
+                    'nvcuvid',
+                    'nvencodeapi64',
+                    'nvapi64',
+                    'nvofapi64',
+                ):
+                    cmd = (
+                        'wine64',
+                        'reg',
+                        'add',
+                        r'HKCU\Software\Wine\DllOverrides',
+                        '/v',
+                        item,
+                        '/d',
+                        'native',
+                        '/f',
+                    )
                     log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
                     sp.run(cmd, env=env, check=True)
                     member = tar.getmember(f'{prefix}/x64/{item}.dll')
                     member.name = f'{item}.dll'
                     tar.extract(member, target / 'drive_c' / 'windows' / 'system32')
         for prefix in ('', '_'):
-            copyfile(f'/lib64/nvidia/wine/{prefix}nvngx.dll',
-                     target / 'drive_c' / 'windows' / 'system32' / f'{prefix}nvngx.dll')
+            copyfile(
+                f'/lib64/nvidia/wine/{prefix}nvngx.dll',
+                target / 'drive_c' / 'windows' / 'system32' / f'{prefix}nvngx.dll',
+            )
         if not _32bit:
-            cmd = ('wine64', 'reg', 'add', r'HKLM\Software\NVIDIA Corporation\Global\NGXCore', '/t',
-                   'REG_SZ', '/v', 'FullPath', '/d', r'C:\Windows\system32', '/f')
+            cmd = (
+                'wine64',
+                'reg',
+                'add',
+                r'HKLM\Software\NVIDIA Corporation\Global\NGXCore',
+                '/t',
+                'REG_SZ',
+                '/v',
+                'FullPath',
+                '/d',
+                r'C:\Windows\system32',
+                '/f',
+            )
             log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
             sp.run(cmd, env=env, check=True)
     if noto_sans:
         for font_name in _CREATE_WINE_PREFIX_NOTO_FONT_REPLACEMENTS:
-            cmd = ('wine', 'reg', 'add',
-                   r'HKLM\Software\Microsoft\Windows NT\CurrentVersion\FontSubstitutes', '/t',
-                   'REG_SZ', '/v', font_name, '/d', 'Noto Sans', '/f')
+            cmd = (
+                'wine',
+                'reg',
+                'add',
+                r'HKLM\Software\Microsoft\Windows NT\CurrentVersion\FontSubstitutes',
+                '/t',
+                'REG_SZ',
+                '/v',
+                font_name,
+                '/d',
+                'Noto Sans',
+                '/f',
+            )
             log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
             sp.run(cmd, env=env, check=True)
         face_name = 'Noto Sans'.encode('utf-16le').ljust(LF_FULLFACESIZE, b'\0')
@@ -403,24 +565,32 @@ def create_wine_prefix(  # noqa: C901, PLR0912, PLR0913
                 '/v',
                 f'{entry_name}Font',
                 '/d',
-                ''.join(f'{x:02x}' for x in struct.pack(
-                    '=5l8B64B',
-                    *LOGFONTW(
-                        lfHeight=-12,  # Size 9 pt
-                        lfWidth=0,
-                        lfEscapement=0,
-                        lfOrientation=0,
-                        lfWeight=Weight.FW_BOLD if entry_name == 'Caption' else Weight.FW_NORMAL,
-                        lfItalic=False,
-                        lfUnderline=False,
-                        lfStrikeOut=False,
-                        lfCharSet=CharacterSet.DEFAULT_CHARSET,
-                        lfOutPrecision=OutputPrecision.OUT_DEFAULT_PRECIS,
-                        lfClipPrecision=ClipPrecision.CLIP_DEFAULT_PRECIS,
-                        lfQuality=Quality.DEFAULT_QUALITY,
-                        lfPitchAndFamily=Pitch.VARIABLE_PITCH | Family.FF_SWISS),
-                    *face_name)),
-                '/f')
+                ''.join(
+                    f'{x:02x}'
+                    for x in struct.pack(
+                        '=5l8B64B',
+                        *LOGFONTW(
+                            lfHeight=-12,  # Size 9 pt
+                            lfWidth=0,
+                            lfEscapement=0,
+                            lfOrientation=0,
+                            lfWeight=Weight.FW_BOLD
+                            if entry_name == 'Caption'
+                            else Weight.FW_NORMAL,
+                            lfItalic=False,
+                            lfUnderline=False,
+                            lfStrikeOut=False,
+                            lfCharSet=CharacterSet.DEFAULT_CHARSET,
+                            lfOutPrecision=OutputPrecision.OUT_DEFAULT_PRECIS,
+                            lfClipPrecision=ClipPrecision.CLIP_DEFAULT_PRECIS,
+                            lfQuality=Quality.DEFAULT_QUALITY,
+                            lfPitchAndFamily=Pitch.VARIABLE_PITCH | Family.FF_SWISS,
+                        ),
+                        *face_name,
+                    )
+                ),
+                '/f',
+            )
             log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
             sp.run(cmd, env=env, check=True)
     if asio:
@@ -439,10 +609,15 @@ def create_wine_prefix(  # noqa: C901, PLR0912, PLR0913
             c.execute(
                 'INSERT INTO prefix (name, path, mountpoint_windrive, run_string, version_id) '
                 'VALUES (?, ?, ?, ?, 1)',
-                (prefix_name, str(target), 'D:',
-                 r'%CONSOLE_BIN% %CONSOLE_ARGS% %ENV_BIN% %ENV_ARGS% /bin/sh -c '
-                 r'"%WORK_DIR% %SET_NICE% %WINE_BIN% %VIRTUAL_DESKTOP% %PROGRAM_BIN% '
-                 r'%PROGRAM_ARGS% 2>&1 "'))
+                (
+                    prefix_name,
+                    str(target),
+                    'D:',
+                    r'%CONSOLE_BIN% %CONSOLE_ARGS% %ENV_BIN% %ENV_ARGS% /bin/sh -c '
+                    r'"%WORK_DIR% %SET_NICE% %WINE_BIN% %VIRTUAL_DESKTOP% %PROGRAM_BIN% '
+                    r'%PROGRAM_ARGS% 2>&1 "',
+                ),
+            )
             prefix_id = c.lastrowid
             log.debug('Q4Wine prefix ID: %d', prefix_id)
             assert prefix_id is not None
@@ -456,7 +631,18 @@ def create_wine_prefix(  # noqa: C901, PLR0912, PLR0913
         ?, ?, ?, ?, (
             SELECT id FROM dir WHERE name = ? AND prefix_id = ?
         ), ?, ?, 0
-    )""", (args or None, exec_, icon_path, desc, folder, prefix_id, display_name, prefix_id))
+    )""",
+                    (
+                        args or None,
+                        exec_,
+                        icon_path,
+                        desc,
+                        folder,
+                        prefix_id,
+                        display_name,
+                        prefix_id,
+                    ),
+                )
             c.execute('DELETE FROM logging WHERE prefix_id = ?', (prefix_id,))
     return target
 
@@ -477,23 +663,31 @@ def unregister_wine_file_associations(*, debug: bool = False) -> None:
     for item in (Path.home() / '.local/share/application').glob('x-wine-extension*'):
         log.debug('Removing MIME file "%s".', item)
         item.unlink()
-    cmd: tuple[str, ...] = ('update-desktop-database', *(('-v',) if debug else ()),
-                            str(Path.home() / '.local/share/applications'))
+    cmd: tuple[str, ...] = (
+        'update-desktop-database',
+        *(('-v',) if debug else ()),
+        str(Path.home() / '.local/share/applications'),
+    )
     log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
     sp.run(cmd, check=True)
-    cmd = ('update-mime-database', *(('-v',) if debug else
-                                     ()), str(Path.home() / '.local/share/mime'))
+    cmd = (
+        'update-mime-database',
+        *(('-v',) if debug else ()),
+        str(Path.home() / '.local/share/mime'),
+    )
     log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
     sp.run(cmd, check=True)
 
 
-def secure_move_path(client: SSHClient,
-                     filename: StrPath,
-                     remote_target: str,
-                     *,
-                     dry_run: bool = False,
-                     preserve_stats: bool = False,
-                     write_into: bool = False) -> None:
+def secure_move_path(
+    client: SSHClient,
+    filename: StrPath,
+    remote_target: str,
+    *,
+    dry_run: bool = False,
+    preserve_stats: bool = False,
+    write_into: bool = False,
+) -> None:
     """Like ``scp`` but moves the file."""
     log.debug('Source: "%s", remote target: "%s"', filename, remote_target)
 
@@ -537,14 +731,16 @@ def secure_move_path(client: SSHClient,
                 p_root = Path(root)
                 remote_target_dir = f'{remote_target}/{bn_filename}'
                 p_root_stat = p_root.stat()
-                mkdir_ignore_existing(sftp, remote_target_dir,
-                                      (p_root_stat.st_atime, p_root_stat.st_mtime))
+                mkdir_ignore_existing(
+                    sftp, remote_target_dir, (p_root_stat.st_atime, p_root_stat.st_mtime)
+                )
                 for name in sorted(dirs):
                     p_root_stat = (p_root / name).stat()
                     dp = str(p_root / name).replace(dn_prefix, '')
                     remote_target_dir = f'{remote_target}/{dp}'
-                    mkdir_ignore_existing(sftp, remote_target_dir,
-                                          (p_root_stat.st_atime, p_root_stat.st_mtime))
+                    mkdir_ignore_existing(
+                        sftp, remote_target_dir, (p_root_stat.st_atime, p_root_stat.st_mtime)
+                    )
                 for name in sorted(files):
                     src = p_root / name
                     dp = str(p_root / name).replace(dn_prefix, '')
@@ -553,8 +749,9 @@ def secure_move_path(client: SSHClient,
                         sftp.put(src, f'{remote_target}/{dp}')
                         if preserve_stats:
                             local_s = Path(src).stat()
-                            sftp.utime(f'{remote_target}/{dp}',
-                                       (local_s.st_atime, local_s.st_mtime))
+                            sftp.utime(
+                                f'{remote_target}/{dp}', (local_s.st_atime, local_s.st_mtime)
+                            )
             if not dry_run:
                 rmtree(filename, ignore_errors=True)
             else:
@@ -567,19 +764,15 @@ def kill_processes_by_name(name: str) -> None:  # pragma: no cover
 
 
 @overload
-def kill_processes_by_name(name: str,
-                           wait_timeout: float,
-                           signal: int = SIGTERM,
-                           *,
-                           force: bool = False) -> list[int]:  # pragma: no cover
+def kill_processes_by_name(
+    name: str, wait_timeout: float, signal: int = SIGTERM, *, force: bool = False
+) -> list[int]:  # pragma: no cover
     pass
 
 
-def kill_processes_by_name(name: str,
-                           wait_timeout: float | None = None,
-                           signal: int = SIGTERM,
-                           *,
-                           force: bool = False) -> list[int] | None:
+def kill_processes_by_name(
+    name: str, wait_timeout: float | None = None, signal: int = SIGTERM, *, force: bool = False
+) -> list[int] | None:
     """
     Terminate processes by name.
 
@@ -610,21 +803,31 @@ def kill_processes_by_name(name: str,
         sp.run(('killall', f'-{signal}', name), check=False, capture_output=True)
     if wait_timeout:
         lines = sp.run(
-            ('tasklist.exe', '/fo', 'csv', '/fi', f'IMAGENAME eq {name}') if IS_WINDOWS else
-            ('ps', 'ax'),
+            ('tasklist.exe', '/fo', 'csv', '/fi', f'IMAGENAME eq {name}')
+            if IS_WINDOWS
+            else ('ps', 'ax'),
             check=True,
             capture_output=True,
-            text=True).stdout.splitlines()
-        if pids := [int(x[1]) for x in list(csv.reader(lines))[1:]] if IS_WINDOWS else [
-                int(y[0]) for y in (x.split() for x in lines) if Path(y[0]).name == name
-        ]:
+            text=True,
+        ).stdout.splitlines()
+        if (
+            pids := [int(x[1]) for x in list(csv.reader(lines))[1:]]
+            if IS_WINDOWS
+            else [int(y[0]) for y in (x.split() for x in lines) if Path(y[0]).name == name]
+        ):
             time.sleep(wait_timeout)
             if force:
-                sp.run(('taskkill.exe', *(t for sl in (('/pid', str(pid)) for pid in pids)
-                                          for t in sl), '/f') if IS_WINDOWS else
-                       ('kill', '-9', *(str(x) for x in pids)),
-                       check=False,
-                       capture_output=True)
+                sp.run(
+                    (
+                        'taskkill.exe',
+                        *(t for sl in (('/pid', str(pid)) for pid in pids) for t in sl),
+                        '/f',
+                    )
+                    if IS_WINDOWS
+                    else ('kill', '-9', *(str(x) for x in pids)),
+                    check=False,
+                    capture_output=True,
+                )
     return pids if wait_timeout else None
 
 
@@ -638,14 +841,17 @@ class DataAdapter(BaseAdapter):
        s = requests.Session()
        s.mount('data:', DataAdapter())
     """
+
     @override
-    def send(self,
-             request: requests.PreparedRequest,
-             stream: bool = False,
-             timeout: float | tuple[float, float] | tuple[float, None] | None = None,
-             verify: bool | str = True,
-             cert: bytes | str | tuple[bytes | str, bytes | str] | None = None,
-             proxies: Mapping[str, str] | None = None) -> requests.Response:
+    def send(
+        self,
+        request: requests.PreparedRequest,
+        stream: bool = False,
+        timeout: float | tuple[float, float] | tuple[float, None] | None = None,
+        verify: bool | str = True,
+        cert: bytes | str | tuple[bytes | str, bytes | str] | None = None,
+        proxies: Mapping[str, str] | None = None,
+    ) -> requests.Response:
         r = requests.Response()
         assert request.url is not None
         r._content = request.url[5:].encode()  # noqa: SLF001

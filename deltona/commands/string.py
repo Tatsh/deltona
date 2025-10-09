@@ -1,4 +1,5 @@
 """String commands."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -44,11 +45,12 @@ def is_ascii_main(file: TextIO) -> None:
     '--errors',
     default='strict',
     type=click.Choice(DecodeErrorsOption.__args__),  # type: ignore[attr-defined]
-    help='Error handling mode.')
+    help='Error handling mode.',
+)
 @click.argument('file', type=click.File('r'), default=sys.stdin)
-def urldecode_main(file: TextIO,
-                   encoding: str = 'utf-8',
-                   errors: DecodeErrorsOption = 'strict') -> None:
+def urldecode_main(
+    file: TextIO, encoding: str = 'utf-8', errors: DecodeErrorsOption = 'strict'
+) -> None:
     """Decode a URL-encoded string."""
     is_netloc = Path(sys.argv[0]).stem == 'netloc'
     for line in file:
@@ -166,14 +168,16 @@ def slugify_main(file: TextIO, *, no_lower: bool = False) -> None:
 @click.option('-c', '--chinese', help='Enable Chinese mode.', is_flag=True)
 @click.option('-j', '--japanese', help='Enable Japanese mode.', is_flag=True)
 @click.option('-s', '--ampersands', help='Replace " and " with " & ".', is_flag=True)
-def title_fixer_main(titles: tuple[str, ...],
-                     *,
-                     no_english: bool = False,
-                     chinese: bool = False,
-                     japanese: bool = False,
-                     arabic: bool = False,
-                     no_names: bool = False,
-                     ampersands: bool = False) -> None:
+def title_fixer_main(
+    titles: tuple[str, ...],
+    *,
+    no_english: bool = False,
+    chinese: bool = False,
+    japanese: bool = False,
+    arabic: bool = False,
+    no_names: bool = False,
+    ampersands: bool = False,
+) -> None:
     """Fix titles."""  # noqa: DOC501
     modes = (
         *((naming.Mode.Arabic,) if arabic else ()),
@@ -193,29 +197,26 @@ def title_fixer_main(titles: tuple[str, ...],
 @click.argument('file', type=click.File('r'), default=sys.stdin)
 @click.option('-d', '--debug', is_flag=True, help='Enable debug logging.')
 @click.option('--debug-selector', is_flag=True, help='Enable SoupSieve debug logging.')
-@click.option('-l',
-              '--limit',
-              default=0,
-              type=click.IntRange(0, None),
-              help='Limit number of results.')
+@click.option(
+    '-l', '--limit', default=0, type=click.IntRange(0, None), help='Limit number of results.'
+)
 @click.option('-j', '--json', 'json_lines', is_flag=True, help='Output as JSON lines.')
 @click.option('-s', '--strip', is_flag=True, help='Strip whitespace from text content.')
 @click.option('-t', '--text', is_flag=True, help='Output content within the HTML tags only.')
-def cssq_main(file: TextIO,
-              selector: str,
-              limit: int = 0,
-              *,
-              debug: bool = False,
-              debug_selector: bool = False,
-              json_lines: bool = False,
-              strip: bool = False,
-              text: bool = False) -> None:
+def cssq_main(
+    file: TextIO,
+    selector: str,
+    limit: int = 0,
+    *,
+    debug: bool = False,
+    debug_selector: bool = False,
+    json_lines: bool = False,
+    strip: bool = False,
+    text: bool = False,
+) -> None:
     """Filter HTML with CSS."""
     setup_logging(debug=debug, loggers={'bs4': {}, 'deltona': {}, 'soupsieve': {}})
-    for item in cssq(selector,
-                     file,
-                     debug_selector=debug_selector,
-                     limit=limit,
-                     strip=strip,
-                     text=text):
+    for item in cssq(
+        selector, file, debug_selector=debug_selector, limit=limit, strip=strip, text=text
+    ):
         click.echo(json.dumps(str(item)) if json_lines else str(item))
