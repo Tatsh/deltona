@@ -15,6 +15,7 @@ jobs:
       - name: 'Install dependencies (Poetry)'
         run: |
           poetry install --all-extras --all-groups
+          poetry self add poetry-plugin-export
           poetry run -- pip install python-appimage
           wget -O generic.svg 'https://raw.githubusercontent.com/KDE/breeze-icons/refs/heads/master/icons/preferences/32/preferences-other.svg'
         shell: 'bash'
@@ -51,6 +52,7 @@ jobs:
               cat > recipe/requirements.txt <<EOF
           $(pwd -P)
           EOF
+              poetry export --without-hashes --all-extras | awk '{ print $1 }' | grep -E 'beautifulsoup4|gitpython|html5lib|mutagen|paramiko|pexpect|pillow|platformdirs|psutil|pydbus|pygithub|pygobject|pyperclip|python-xz|pyyaml|unidecode|yt-dlp' >> recipe/requirements.txt
               if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
                   cat recipe/requirements.txt
               fi
