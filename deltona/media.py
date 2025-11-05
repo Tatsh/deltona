@@ -428,7 +428,7 @@ def create_static_text_video(
         Output file. If not passed, a generic name will be used.
     nvenc : bool
         Use NVENC.
-    virtualbox : bool
+    videotoolbox : bool
         Use VideoToolbox.
 
     Raises
