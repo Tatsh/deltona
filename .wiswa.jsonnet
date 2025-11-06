@@ -120,6 +120,7 @@ local utils = import 'utils.libjsonnet';
     tool+: {
       poetry+: {
         dependencies+: {
+          bascom: utils.latestPypiPackageVersionCaret('bascom'),
           beautifulsoup4: {
             optional: true,
             version: utils.latestPypiPackageVersionCaret('beautifulsoup4'),
@@ -227,6 +228,11 @@ local utils = import 'utils.libjsonnet';
               'types-yt-dlp': utils.latestPypiPackageVersionCaret('types-yt-dlp'),
             },
           },
+          docs+: {
+            dependencies+: {
+              'sphinx-click': utils.latestPypiPackageVersionCaret('sphinx-click'),
+            },
+          },
           tests+: {
             dependencies+: {
               'requests-mock': utils.latestPypiPackageVersionCaret('requests-mock'),
@@ -255,7 +261,7 @@ local utils = import 'utils.libjsonnet';
     'systemd-reset-tpm-cryptenroll',
     'wait-for-disc',
   ],
-  pyinstaller: {
+  pyinstaller+: {
     macos_exclusions: exclude_from_all,
     windows_exclusions: exclude_from_all + [
       'kill-wine',
@@ -269,6 +275,12 @@ local utils = import 'utils.libjsonnet';
   local apt_packages = ['libcairo2-dev', 'libgirepository-2.0-dev'],
   github+: {
     workflows+: {
+      appimage+: {
+        apt_packages: apt_packages,
+      },
+      pyinstaller+: {
+        apt_packages: apt_packages,
+      },
       qa+: {
         apt_packages: apt_packages,
       },

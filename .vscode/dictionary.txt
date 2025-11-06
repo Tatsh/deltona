@@ -1,4 +1,3 @@
-abbrev
 acodec
 ahide
 alayhi
@@ -46,6 +45,7 @@ cdromreadtochdr
 cdromtoc
 cdte
 cdth
+charliermarsh
 chinesebig
 cleartype
 closeapplications
@@ -85,7 +85,6 @@ dxva
 dxvk
 dyear
 econnrefused
-eeyore
 enoent
 enotblk
 enrollment
@@ -136,7 +135,6 @@ hexstr
 hkcu
 hklm
 hoverxref
-hstack
 htmlcov
 htmltree
 hwaccel
@@ -251,12 +249,10 @@ pydocstyle
 pygithub
 pygobject
 pyinstaller
-pylance
 pylint
 pyperclip
 pypi
 pyproject
-pyright
 pytest
 pyyaml
 rars
@@ -297,6 +293,7 @@ tatsh
 testpaths
 tmpfs
 toctree
+tomlkit
 tomlq
 tonemap
 tonumber
@@ -356,5 +353,4 @@ wkwebview
 wordpad
 wwdc
 xauthority
-yapf
 zscale
