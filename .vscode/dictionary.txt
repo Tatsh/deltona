@@ -250,6 +250,7 @@ pygithub
 pygobject
 pyinstaller
 pylint
+pypa
 pyperclip
 pypi
 pyproject

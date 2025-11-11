@@ -171,7 +171,7 @@ warn_unreachable = true
 include = ["man", { format = "sdist", path = "tests" }]
 
 [tool.poetry.dependencies]
-bascom = "^0.0.3"
+bascom = "^0.0.4"
 binaryornot = "^0.4.4"
 click = "^8.3.0"
 keyring = "^25.6.0"
@@ -267,12 +267,12 @@ www = ["beautifulsoup4", "html5lib", "pillow"]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-commitizen = "^4.9.1"
-cz-path = "^0.0.2"
+commitizen = "^4.10.0"
+cz-path = "^0.0.4"
 djlint = "^1.36.4"
 mypy = "^1.18.2"
 pydbus-stubs = "^0"
-ruff = "^0.14.3"
+ruff = "^0.14.4"
 types-beautifulsoup4 = "^4.12.0.20250516"
 types-binaryornot = "^0.4.0.20250507"
 types-paramiko = "^4.0.0.20250822"
@@ -318,7 +318,7 @@ optional = true
 
 [tool.poetry.group.tests.dependencies]
 mock = "^5.2.0"
-pytest = "^8.4.2"
+pytest = "^9.0.0"
 pytest-cov = "^7.0.0"
 pytest-mock = "^3.15.1"
 requests-mock = "^1.12.1"
