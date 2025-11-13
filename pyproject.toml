@@ -252,7 +252,7 @@ version = "^1.4.0"
 
 [tool.poetry.dependencies.yt-dlp]
 optional = true
-version = "^2025.10.22"
+version = "^2025.11.12"
 
 [tool.poetry.extras]
 admin = ["paramiko"]
@@ -278,7 +278,7 @@ types-binaryornot = "^0.4.0.20250507"
 types-paramiko = "^4.0.0.20250822"
 types-pexpect = "^4.9.0.20250916"
 types-pillow = "^10.2.0.20240822"
-types-psutil = "^7.0.0.20251001"
+types-psutil = "^7.0.0.20251111"
 types-pyperclip = "^1.9.0.20250801"
 types-pyyaml = "^6.0.12.20250915"
 types-requests = "^2.32.4.20250913"
@@ -318,7 +318,7 @@ optional = true
 
 [tool.poetry.group.tests.dependencies]
 mock = "^5.2.0"
-pytest = "^9.0.0"
+pytest = "^9.0.1"
 pytest-cov = "^7.0.0"
 pytest-mock = "^3.15.1"
 requests-mock = "^1.12.1"

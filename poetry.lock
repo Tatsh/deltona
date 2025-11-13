@@ -389,14 +389,14 @@ ujson = ["ujson (>=5.10.0)"]
 
 [[package]]
 name = "certifi"
-version = "2025.10.5"
+version = "2025.11.12"
 description = "Python package for providing Mozilla's CA Bundle."
 optional = false
 python-versions = ">=3.7"
 groups = ["main", "docs", "tests"]
 files = [
-    {file = "certifi-2025.10.5-py3-none-any.whl", hash = "sha256:0f212c2744a9bb6de0c56639a6f68afe01ecd92d91f14ae897c4fe7bbeeef0de"},
-    {file = "certifi-2025.10.5.tar.gz", hash = "sha256:47c09d31ccf2acf0be3f701ea53595ee7e0b8fa08801c6624be771df09ae7b43"},
+    {file = "certifi-2025.11.12-py3-none-any.whl", hash = "sha256:97de8790030bbd5c2d96b7ec782fc2f7820ef8dba6db909ccf95449f2d062d4b"},
+    {file = "certifi-2025.11.12.tar.gz", hash = "sha256:d8ab5478f2ecd78af242878415affce761ca6bc54a22a27e026d7c25357c3316"},
 ]
 
 [[package]]
@@ -2109,24 +2109,31 @@ files = [
 
 [[package]]
 name = "pycairo"
-version = "1.28.0"
+version = "1.29.0"
 description = "Python interface for cairo"
 optional = true
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 groups = ["main"]
 markers = "sys_platform == \"linux\" and extra == \"desktop\""
 files = [
-    {file = "pycairo-1.28.0-cp310-cp310-win32.whl", hash = "sha256:53e6dbc98456f789965dad49ef89ce2c62f9a10fc96c8d084e14da0ffb73d8a6"},
-    {file = "pycairo-1.28.0-cp310-cp310-win_amd64.whl", hash = "sha256:c8ab91a75025f984bc327ada335c787efb61c929ea0512063793cb36cee503d4"},
-    {file = "pycairo-1.28.0-cp311-cp311-win32.whl", hash = "sha256:0fee15f5d72b13ba5fd065860312493dc1bca6ff2dce200ee9d704e11c94e60a"},
-    {file = "pycairo-1.28.0-cp311-cp311-win_amd64.whl", hash = "sha256:6339979bfec8b58a06476094a9a5c104bd5a99932ddaff16ca0d9203d2f4482c"},
-    {file = "pycairo-1.28.0-cp312-cp312-win32.whl", hash = "sha256:c00cfbb7f30eb7ca1d48886712932e2d91e8835a8496f4e423878296ceba573e"},
-    {file = "pycairo-1.28.0-cp312-cp312-win_amd64.whl", hash = "sha256:d50d190f5033992b55050b9f337ee42a45c3568445d5e5d7987bab96c278d8a6"},
-    {file = "pycairo-1.28.0-cp313-cp313-win32.whl", hash = "sha256:d13352429d8a08a1cb3607767d23d2fb32e4c4f9faa642155383980ec1478c24"},
-    {file = "pycairo-1.28.0-cp313-cp313-win_amd64.whl", hash = "sha256:082aef6b3a9dcc328fa648d38ed6b0a31c863e903ead57dd184b2e5f86790140"},
-    {file = "pycairo-1.28.0-cp39-cp39-win32.whl", hash = "sha256:3ed16d48b8a79cc584cb1cb0ad62dfb265f2dda6d6a19ef5aab181693e19c83c"},
-    {file = "pycairo-1.28.0-cp39-cp39-win_amd64.whl", hash = "sha256:da0d1e6d4842eed4d52779222c6e43d254244a486ca9fdab14e30042fd5bdf28"},
-    {file = "pycairo-1.28.0.tar.gz", hash = "sha256:26ec5c6126781eb167089a123919f87baa2740da2cca9098be8b3a6b91cc5fbc"},
+    {file = "pycairo-1.29.0-cp310-cp310-win32.whl", hash = "sha256:96c67e6caba72afd285c2372806a0175b1aa2f4537aa88fb4d9802d726effcd1"},
+    {file = "pycairo-1.29.0-cp310-cp310-win_amd64.whl", hash = "sha256:65bddd944aee9f7d7d72821b1c87e97593856617c2820a78d589d66aa8afbd08"},
+    {file = "pycairo-1.29.0-cp310-cp310-win_arm64.whl", hash = "sha256:15b36aea699e2ff215cb6a21501223246032e572a3a10858366acdd69c81a1c8"},
+    {file = "pycairo-1.29.0-cp311-cp311-win32.whl", hash = "sha256:12757ebfb304b645861283c20585c9204c3430671fad925419cba04844d6dfed"},
+    {file = "pycairo-1.29.0-cp311-cp311-win_amd64.whl", hash = "sha256:3391532db03f9601c1cee9ebfa15b7d1db183c6020f3e75c1348cee16825934f"},
+    {file = "pycairo-1.29.0-cp311-cp311-win_arm64.whl", hash = "sha256:b69be8bb65c46b680771dc6a1a422b1cdd0cffb17be548f223e8cbbb6205567c"},
+    {file = "pycairo-1.29.0-cp312-cp312-win32.whl", hash = "sha256:91bcd7b5835764c616a615d9948a9afea29237b34d2ed013526807c3d79bb1d0"},
+    {file = "pycairo-1.29.0-cp312-cp312-win_amd64.whl", hash = "sha256:3f01c3b5e49ef9411fff6bc7db1e765f542dc1c9cfed4542958a5afa3a8b8e76"},
+    {file = "pycairo-1.29.0-cp312-cp312-win_arm64.whl", hash = "sha256:eafe3d2076f3533535ad4a361fa0754e0ee66b90e548a3a0f558fed00b1248f2"},
+    {file = "pycairo-1.29.0-cp313-cp313-win32.whl", hash = "sha256:3eb382a4141591807073274522f7aecab9e8fa2f14feafd11ac03a13a58141d7"},
+    {file = "pycairo-1.29.0-cp313-cp313-win_amd64.whl", hash = "sha256:91114e4b3fbf4287c2b0788f83e1f566ce031bda49cf1c3c3c19c3e986e95c38"},
+    {file = "pycairo-1.29.0-cp313-cp313-win_arm64.whl", hash = "sha256:09b7f69a5ff6881e151354ea092137b97b0b1f0b2ab4eb81c92a02cc4a08e335"},
+    {file = "pycairo-1.29.0-cp314-cp314-win32.whl", hash = "sha256:69e2a7968a3fbb839736257bae153f547bca787113cc8d21e9e08ca4526e0b6b"},
+    {file = "pycairo-1.29.0-cp314-cp314-win_amd64.whl", hash = "sha256:e91243437a21cc4c67c401eff4433eadc45745275fa3ade1a0d877e50ffb90da"},
+    {file = "pycairo-1.29.0-cp314-cp314-win_arm64.whl", hash = "sha256:b72200ea0e5f73ae4c788cd2028a750062221385eb0e6d8f1ecc714d0b4fdf82"},
+    {file = "pycairo-1.29.0-cp314-cp314t-win_amd64.whl", hash = "sha256:5e45fce6185f553e79e4ef1722b8e98e6cde9900dbc48cb2637a9ccba86f627a"},
+    {file = "pycairo-1.29.0-cp314-cp314t-win_arm64.whl", hash = "sha256:caba0837a4b40d47c8dfb0f24cccc12c7831e3dd450837f2a356c75f21ce5a15"},
+    {file = "pycairo-1.29.0.tar.gz", hash = "sha256:f3f7fde97325cae80224c09f12564ef58d0d0f655da0e3b040f5807bd5bd3142"},
 ]
 
 [[package]]
@@ -2541,14 +2548,14 @@ files = [
 
 [[package]]
 name = "pytest"
-version = "9.0.0"
+version = "9.0.1"
 description = "pytest: simple powerful testing with Python"
 optional = false
 python-versions = ">=3.10"
 groups = ["tests"]
 files = [
-    {file = "pytest-9.0.0-py3-none-any.whl", hash = "sha256:e5ccdf10b0bac554970ee88fc1a4ad0ee5d221f8ef22321f9b7e4584e19d7f96"},
-    {file = "pytest-9.0.0.tar.gz", hash = "sha256:8f44522eafe4137b0f35c9ce3072931a788a21ee40a2ed279e817d3cc16ed21e"},
+    {file = "pytest-9.0.1-py3-none-any.whl", hash = "sha256:67be0030d194df2dfa7b556f2e56fb3c3315bd5c8822c6951162b92b32ce7dad"},
+    {file = "pytest-9.0.1.tar.gz", hash = "sha256:3e9c069ea73583e255c3b21cf46b8d3c56f6e3a1a8f6da94ccb0fcf57b9d73c8"},
 ]
 
 [package.dependencies]
@@ -3035,15 +3042,15 @@ files = [
 
 [[package]]
 name = "secretstorage"
-version = "3.4.0"
+version = "3.4.1"
 description = "Python bindings to FreeDesktop.org Secret Service API"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 markers = "sys_platform == \"linux\""
 files = [
-    {file = "secretstorage-3.4.0-py3-none-any.whl", hash = "sha256:0e3b6265c2c63509fb7415717607e4b2c9ab767b7f344a57473b779ca13bd02e"},
-    {file = "secretstorage-3.4.0.tar.gz", hash = "sha256:c46e216d6815aff8a8a18706a2fbfd8d53fcbb0dce99301881687a1b0289ef7c"},
+    {file = "secretstorage-3.4.1-py3-none-any.whl", hash = "sha256:c55d57b4da3de568d8c3af89dad244ab24c35ca1da8625fc1b550edf005ebc41"},
+    {file = "secretstorage-3.4.1.tar.gz", hash = "sha256:a799acf5be9fb93db609ebaa4ab6e8f1f3ed5ae640e0fa732bfea59e9c3b50e8"},
 ]
 
 [package.dependencies]
@@ -3771,14 +3778,14 @@ files = [
 
 [[package]]
 name = "types-psutil"
-version = "7.0.0.20251001"
+version = "7.0.0.20251111"
 description = "Typing stubs for psutil"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "types_psutil-7.0.0.20251001-py3-none-any.whl", hash = "sha256:adc31de8386d31c61bd4123112fd51e2c700c7502a001cad72a3d56ba6b463d1"},
-    {file = "types_psutil-7.0.0.20251001.tar.gz", hash = "sha256:60d696200ddae28677e7d88cdebd6e960294e85adefbaafe0f6e5d0e7b4c1963"},
+    {file = "types_psutil-7.0.0.20251111-py3-none-any.whl", hash = "sha256:85ba00205dcfa3c73685122e5a360205d2fbc9b56f942b591027bf401ce0cc47"},
+    {file = "types_psutil-7.0.0.20251111.tar.gz", hash = "sha256:d109ee2da4c0a9b69b8cefc46e195db8cf0fc0200b6641480df71e7f3f51a239"},
 ]
 
 [[package]]
@@ -4132,21 +4139,21 @@ dev = ["pytest", "setuptools"]
 
 [[package]]
 name = "yt-dlp"
-version = "2025.10.22"
+version = "2025.11.12"
 description = "A feature-rich command-line audio/video downloader"
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
 markers = "extra == \"string\""
 files = [
-    {file = "yt_dlp-2025.10.22-py3-none-any.whl", hash = "sha256:9c803a9598859f91d0d5bd3337f1506ecb40bbe97f6efbe93bc4461fed344fb2"},
-    {file = "yt_dlp-2025.10.22.tar.gz", hash = "sha256:db2d48133222b1d9508c6de757859c24b5cefb9568cf68ccad85dac20b07f77b"},
+    {file = "yt_dlp-2025.11.12-py3-none-any.whl", hash = "sha256:b47af37bbb16b08efebb36825a280ea25a507c051f93bf413a6e4a0e586c6e79"},
+    {file = "yt_dlp-2025.11.12.tar.gz", hash = "sha256:5f0795a6b8fc57a5c23332d67d6c6acf819a0b46b91a6324bae29414fa97f052"},
 ]
 
 [package.extras]
 build = ["build", "hatchling (>=1.27.0)", "pip", "setuptools (>=71.0.2,<81)", "wheel"]
 curl-cffi = ["curl-cffi (>=0.5.10,<0.6.dev0 || >=0.10.dev0,<0.14) ; implementation_name == \"cpython\""]
-default = ["brotli ; implementation_name == \"cpython\"", "brotlicffi ; implementation_name != \"cpython\"", "certifi", "mutagen", "pycryptodomex", "requests (>=2.32.2,<3)", "urllib3 (>=2.0.2,<3)", "websockets (>=13.0)"]
+default = ["brotli ; implementation_name == \"cpython\"", "brotlicffi ; implementation_name != \"cpython\"", "certifi", "mutagen", "pycryptodomex", "requests (>=2.32.2,<3)", "urllib3 (>=2.0.2,<3)", "websockets (>=13.0)", "yt-dlp-ejs (==0.3.1)"]
 dev = ["autopep8 (>=2.0,<3.0)", "pre-commit", "pytest (>=8.1,<9.0)", "pytest-rerunfailures (>=14.0,<15.0)", "ruff (>=0.14.0,<0.15.0)"]
 pyinstaller = ["pyinstaller (>=6.13.0)"]
 secretstorage = ["cffi", "secretstorage"]
@@ -4186,4 +4193,4 @@ www = ["beautifulsoup4", "html5lib", "pillow"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.14"
-content-hash = "31ed6165cf83864b216186559bf7d5b4dbad9ed1757884e95f23f1ecc1f43ef7"
+content-hash = "1a24c1a9f307793eb657f771c7a2fab946dfb9815ef661adadeb1dd7bc56840f"
