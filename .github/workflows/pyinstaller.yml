@@ -133,6 +133,10 @@ jobs:
           name: deltona-binaries-${{ matrix.suffix }}
           path: |
             ${{ matrix.dist_path }}
+      - name: 'Attest'
+        uses: 'actions/attest-build-provenance@v3'
+        with:
+          subject-path: '${{ matrix.dist_path }}'
       - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && github.ref_type == 'tag'
         name: 'Zip files'
         run: |
@@ -146,6 +150,11 @@ jobs:
           New-Item -ItemType Directory -Name _out
           Compress-Archive -Path ${{ matrix.dist_path }} -DestinationPath _out/deltona-${{ github.ref_name }}-${{ matrix.suffix }}.zip
         shell: pwsh
+      - if: github.ref_type == 'tag'
+        name: 'Attest'
+        uses: 'actions/attest-build-provenance@v3'
+        with:
+          subject-path: '_out/*.zip'
       - if: github.ref_type == 'tag'
         name: Upload package
         uses: softprops/action-gh-release@v2
@@ -179,4 +188,6 @@ name: 'PyInstaller'
     tags:
       - 'v*.*.*'
 permissions:
+  attestations: 'write'
   contents: 'write'
+  id-token: 'write'

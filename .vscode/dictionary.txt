@@ -58,6 +58,7 @@ conftest
 consolas
 corefonts
 coveragerc
+coverallsapp
 cryptenroll
 cryptsetup
 crypttab
@@ -134,7 +135,6 @@ helv
 hexstr
 hkcu
 hklm
-hoverxref
 htmlcov
 htmltree
 hwaccel
@@ -176,6 +176,7 @@ leadout
 lextudio
 libc
 libcairo
+libera
 libgirepository
 libjsonnet
 libx
@@ -234,6 +235,7 @@ onefile
 otherfilerc
 paramiko
 parms
+pavelzw
 personalblindness
 pexpect
 pipx
