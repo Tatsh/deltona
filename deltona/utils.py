@@ -613,9 +613,11 @@ def create_wine_prefix(  # noqa: C901, PLR0912, PLR0913
                     prefix_name,
                     str(target),
                     'D:',
-                    r'%CONSOLE_BIN% %CONSOLE_ARGS% %ENV_BIN% %ENV_ARGS% /bin/sh -c '
-                    r'"%WORK_DIR% %SET_NICE% %WINE_BIN% %VIRTUAL_DESKTOP% %PROGRAM_BIN% '
-                    r'%PROGRAM_ARGS% 2>&1 "',
+                    (
+                        r'%CONSOLE_BIN% %CONSOLE_ARGS% %ENV_BIN% %ENV_ARGS% /bin/sh -c '
+                        r'"%WORK_DIR% %SET_NICE% %WINE_BIN% %VIRTUAL_DESKTOP% %PROGRAM_BIN% '
+                        r'%PROGRAM_ARGS% 2>&1 "'
+                    ),
                 ),
             )
             prefix_id = c.lastrowid

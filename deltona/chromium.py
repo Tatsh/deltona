@@ -101,7 +101,7 @@ def get_last_chrome_major_version() -> str:
     """
     for location in (
         '~/.config/google-chrome-beta',
-        '~/AppData/Local/Google/Chrome Beta/User Data'
+        '~/AppData/Local/Google/Chrome Beta/User Data',
         '~/Library/Application Support/Google/Chrome Beta',
         '~/.config/google-chrome',
         '~/AppData/Local/Google/Chrome/User Data',
@@ -123,7 +123,8 @@ def get_latest_chrome_major_version() -> str:
     """Get the latest Chrome major version."""
     return cast(
         'str',
-        requests.get(
+        requests
+        .get(
             (
                 'https://versionhistory.googleapis.com/v1/chrome/platforms/win/channels/stable/'
                 'versions'

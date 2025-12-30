@@ -188,6 +188,7 @@ maahu
 maaka
 magick
 makeself
+manylinux
 mapkit
 maskable
 maxrate

@@ -380,7 +380,8 @@ def get_info_json(path: StrPath, *, raw: bool = False) -> Any:
             ).stdout.strip()
         case 'mkv':
             out = (
-                sp.run(
+                sp
+                .run(
                     ('mkvextract', str(path), 'attachments', '1:/dev/stdout'),
                     check=True,
                     capture_output=True,

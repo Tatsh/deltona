@@ -63,7 +63,8 @@ def get_github_default_branch(
     import github  # noqa: PLC0415
 
     return (
-        github.Github(token, base_url=base_url or github.Consts.DEFAULT_BASE_URL)
+        github
+        .Github(token, base_url=base_url or github.Consts.DEFAULT_BASE_URL)
         .get_repo(urlparse(convert_git_ssh_url_to_https(repo.remote(origin_name).url)).path[1:])
         .default_branch
     )
@@ -111,9 +112,8 @@ def merge_dependabot_pull_requests(
     should_raise = False
     for repo in (
         x
-        for x in github.Github(
-            token, base_url=base_url or github.Consts.DEFAULT_BASE_URL, per_page=100
-        )
+        for x in github
+        .Github(token, base_url=base_url or github.Consts.DEFAULT_BASE_URL, per_page=100)
         .get_user()
         .get_repos(affiliation=affiliation, sort='full_name')  # type: ignore[call-arg]
         if not x.archived and uses_dependabot(x)
