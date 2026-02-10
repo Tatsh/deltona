@@ -259,7 +259,7 @@ class Field(enum.StrEnum):
 
 
 LF_FULLFACESIZE = 64
-DEFAULT_DPI = 72
+DEFAULT_DPI = 96
 MAX_LINE_LENGTH = 78
 
 
