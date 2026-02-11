@@ -50,7 +50,6 @@ chinesebig
 cleartype
 closeapplications
 cmdargs
-codeowners
 codepoint
 colorlog
 commitizen

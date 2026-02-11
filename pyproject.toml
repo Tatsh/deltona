@@ -177,7 +177,7 @@ click = "^8.3.1"
 keyring = "^25.7.0"
 python = ">=3.10,<3.14"
 requests = "^2.32.5"
-send2trash = "^2.0.0"
+send2trash = "^2.1.0"
 typing-extensions = "^4.15.0"
 
 [tool.poetry.dependencies.beautifulsoup4]
@@ -206,7 +206,7 @@ version = "^4.9.0"
 
 [tool.poetry.dependencies.pillow]
 optional = true
-version = "^12.0.0"
+version = "^12.1.0"
 
 [tool.poetry.dependencies.platformdirs]
 optional = true
@@ -214,7 +214,7 @@ version = "^4.5.1"
 
 [tool.poetry.dependencies.psutil]
 optional = true
-version = "^7.2.1"
+version = "^7.2.2"
 
 [tool.poetry.dependencies.pydbus]
 optional = true
@@ -244,7 +244,7 @@ version = "^6.0.3"
 
 [tool.poetry.dependencies.soupsieve]
 optional = true
-version = "^2.8.1"
+version = "^2.8.3"
 
 [tool.poetry.dependencies.unidecode]
 optional = true
@@ -252,7 +252,7 @@ version = "^1.4.0"
 
 [tool.poetry.dependencies.yt-dlp]
 optional = true
-version = "^2025.12.8"
+version = "^2026.2.4"
 
 [tool.poetry.extras]
 admin = ["paramiko"]
@@ -267,23 +267,23 @@ www = ["beautifulsoup4", "html5lib", "pillow"]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-commitizen = "^4.11.0"
+commitizen = "^4.13.7"
 cz-path = "^0.0.4"
 djlint = "^1.36.4"
 mypy = "^1.19.1"
 pydbus-stubs = "^0"
-ruff = "^0.14.10"
+ruff = "^0.15.0"
 types-beautifulsoup4 = "^4.12.0.20250516"
 types-binaryornot = "^0.4.0.20250507"
 types-paramiko = "^4.0.0.20250822"
-types-pexpect = "^4.9.0.20250916"
+types-pexpect = "^4.9.0.20260127"
 types-pillow = "^10.2.0.20240822"
-types-psutil = "^7.2.1.20251231"
+types-psutil = "^7.2.2.20260130"
 types-pyperclip = "^1.9.0.20250801"
 types-pyyaml = "^6.0.12.20250915"
-types-requests = "^2.32.4.20250913"
-types-send2trash = "^1.8.2.7"
-types-yt-dlp = "^2025.12.8.20251210"
+types-requests = "^2.32.4.20260107"
+types-send2trash = "^2.1.0.20260117"
+types-yt-dlp = "^2026.2.4.20260206"
 
 [tool.poetry.group.docs]
 optional = true
@@ -296,9 +296,9 @@ esbonio = "^1.0.0"
 numpydoc = "^1.10.0"
 restructuredtext-lint = "^2.0.2"
 sphinx-click = "^6.2.0"
-sphinx-datatables = "^0.5.0"
-sphinx-immaterial = "^0.13.8"
-tomlkit = "^0.13.3"
+sphinx-datatables = "^1.0.0"
+sphinx-immaterial = "^0.13.9"
+tomlkit = "^0.14.0"
 
 [tool.poetry.group.docs.dependencies.enum-tools]
 extras = ["sphinx"]
