@@ -206,11 +206,11 @@ version = "^4.9.0"
 
 [tool.poetry.dependencies.pillow]
 optional = true
-version = "^12.1.0"
+version = "^12.1.1"
 
 [tool.poetry.dependencies.platformdirs]
 optional = true
-version = "^4.5.1"
+version = "^4.9.2"
 
 [tool.poetry.dependencies.psutil]
 optional = true
@@ -252,7 +252,7 @@ version = "^1.4.0"
 
 [tool.poetry.dependencies.yt-dlp]
 optional = true
-version = "^2026.2.4"
+version = "^2026.2.21"
 
 [tool.poetry.extras]
 admin = ["paramiko"]
@@ -267,19 +267,19 @@ www = ["beautifulsoup4", "html5lib", "pillow"]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-commitizen = "^4.13.7"
+commitizen = "^4.13.8"
 cz-path = "^0.0.4"
 djlint = "^1.36.4"
 mypy = "^1.19.1"
 pydbus-stubs = "^0"
-ruff = "^0.15.0"
+ruff = "^0.15.2"
 types-beautifulsoup4 = "^4.12.0.20250516"
 types-binaryornot = "^0.4.0.20250507"
 types-paramiko = "^4.0.0.20250822"
 types-pexpect = "^4.9.0.20260127"
 types-pillow = "^10.2.0.20240822"
 types-psutil = "^7.2.2.20260130"
-types-pyperclip = "^1.9.0.20250801"
+types-pyperclip = "^1.11.0.20260216"
 types-pyyaml = "^6.0.12.20250915"
 types-requests = "^2.32.4.20260107"
 types-send2trash = "^2.1.0.20260117"
@@ -292,7 +292,7 @@ optional = true
 autodoc-pydantic = "^2.2.0"
 doc8 = "^2.0.0"
 docutils = "<0.22"
-esbonio = "^1.0.0"
+esbonio = "^1.1.0"
 numpydoc = "^1.10.0"
 restructuredtext-lint = "^2.0.2"
 sphinx-click = "^6.2.0"
