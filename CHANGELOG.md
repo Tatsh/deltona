@@ -34,6 +34,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `merge-dependabot-mrs`: Post `@dependabot recreate` consistently and do not repost it if the last
   comment is the same.
 
+### Removed
+
+- Moved `mkwineprefix` to its own package `mkwineprefix`.
+
 ## [0.0.2] - 2025-06-07
 
 ### Added
