@@ -17,7 +17,6 @@ from deltona.commands.media import (
     hlg2sdr_main,
     ke_ebook_ex_main,
     mvid_rename_main,
-    ripcd_main,
     supported_audio_input_formats_main,
     tbc2srt_main,
     ultraiso_main,
@@ -191,22 +190,6 @@ def test_cddb_query_main(mocker: MockerFixture, runner: CliRunner) -> None:
     result = runner.invoke(cddb_query_main, ['arg1', 'arg2'])
     assert result.exit_code == 0
     assert '"foo": "bar"' in result.output
-
-
-def test_ripcd_main_success(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
-    mocker.patch('deltona.commands.media.rip_cdda_to_flac')
-    drive_path = tmp_path / 'drive'
-    drive_path.touch()
-    result = runner.invoke(ripcd_main, ['--drive', str(drive_path)])
-    assert result.exit_code == 0
-
-
-def test_ripcd_main_error(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
-    mocker.patch('deltona.commands.media.rip_cdda_to_flac', side_effect=ValueError('fail'))
-    drive_path = tmp_path / 'drive'
-    drive_path.touch()
-    result = runner.invoke(ripcd_main, ['--drive', str(drive_path)])
-    assert result.exit_code != 0
 
 
 def test_flacted_main_show_tag(

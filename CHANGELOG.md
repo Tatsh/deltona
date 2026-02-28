@@ -37,6 +37,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Removed
 
 - Moved `mkwineprefix` to its own package `mkwineprefix`.
+- Moved `ripcd` to its own package `ripcd`.
 
 ## [0.0.2] - 2025-06-07
 

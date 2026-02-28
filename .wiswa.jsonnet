@@ -75,7 +75,6 @@ local utils = import 'utils.libjsonnet';
         mp4json: 'deltona.commands.media:add_info_json_main',
         'mp4json-display': 'deltona.commands.media:display_info_json_main',
         'mvid-rename': 'deltona.commands.media:mvid_rename_main',
-        ripcd: 'deltona.commands.media:ripcd_main',
         'show-info-json': 'deltona.commands.media:display_info_json_main',
         'supported-audio-input-formats': 'deltona.commands.media:supported_audio_input_formats_main',
         tbc2srt: 'deltona.commands.media:tbc2srt_main',

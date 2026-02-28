@@ -1666,68 +1666,6 @@ Arguments
 .B FILENAMES
 Optional argument(s)
 .UNINDENT
-.SH RIPCD
-.sp
-Rip an audio disc to FLAC files.
-.sp
-Requires cdparanoia and flac to be in PATH.
-.sp
-For Linux only.
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.EX
-ripcd [OPTIONS]
-.EE
-.UNINDENT
-.UNINDENT
-.sp
-Options
-.INDENT 0.0
-.TP
-.B \-D, \-\-drive <drive>
-Optical drive path.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-M, \-\-accept\-first\-cddb\-match
-Accept the first CDDB match in case of multiple matches.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-\-album\-artist <album_artist>
-Album artist override.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-\-album\-dir <album_dir>
-Album directory name. Defaults to artist\-album\-year format.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-\-cddb\-host <cddb_host>
-CDDB host.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-\-never\-skip <never_skip>
-Passed to cdparanoia\(aqs \-\-never\-skip=... option.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-d, \-\-debug
-Enable debug output.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-o, \-\-output\-dir <output_dir>
-Parent directory for album_dir. Defaults to current directory.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-u, \-\-username <username>
-Username for CDDB.
-.UNINDENT
 .SH SHOW-INFO-JSON
 .sp
 Display embedded info.json in a media file.
