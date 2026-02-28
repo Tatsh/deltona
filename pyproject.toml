@@ -227,7 +227,7 @@ version = "^2.8.1"
 [tool.poetry.dependencies.pygobject]
 optional = true
 platform = "linux"
-version = "^3.54.5"
+version = "^3.56.0"
 
 [tool.poetry.dependencies.pyperclip]
 optional = true
@@ -266,12 +266,12 @@ www = ["beautifulsoup4", "html5lib", "pillow"]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-commitizen = "^4.13.8"
+commitizen = "^4.13.9"
 cz-path = "^0.0.4"
 djlint = "^1.36.4"
 mypy = "^1.19.1"
 pydbus-stubs = "^0"
-ruff = "^0.15.2"
+ruff = "^0.15.4"
 types-beautifulsoup4 = "^4.12.0.20250516"
 types-binaryornot = "^0.4.0.20250507"
 types-paramiko = "^4.0.0.20250822"
@@ -282,7 +282,7 @@ types-pyperclip = "^1.11.0.20260216"
 types-pyyaml = "^6.0.12.20250915"
 types-requests = "^2.32.4.20260107"
 types-send2trash = "^2.1.0.20260117"
-types-yt-dlp = "^2026.2.4.20260206"
+types-yt-dlp = "^2026.2.21.20260223"
 
 [tool.poetry.group.docs]
 optional = true
@@ -331,6 +331,7 @@ include = "deltona"
 [tool.pyright]
 deprecateTypingAliases = true
 enableExperimentalFeatures = true
+exclude = ["**/.*", "**/__pycache__", "**/node_modules"]
 include = ["./deltona", "./tests"]
 pythonPlatform = "Linux"
 pythonVersion = "3.12"

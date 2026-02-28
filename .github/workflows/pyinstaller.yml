@@ -126,14 +126,14 @@ jobs:
               "./${file}" --help
           done
       - name: 'Upload Artifacts'
-        uses: 'actions/upload-artifact@v6'
+        uses: 'actions/upload-artifact@v7'
         with:
           if-no-files-found: error
           name: deltona-binaries-${{ matrix.suffix }}
           path: |
             ${{ matrix.dist_path }}
       - name: 'Attest'
-        uses: 'actions/attest-build-provenance@v3'
+        uses: 'actions/attest-build-provenance@v4'
         with:
           subject-path: '${{ matrix.dist_path }}'
       - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && github.ref_type == 'tag'
@@ -151,7 +151,7 @@ jobs:
         shell: pwsh
       - if: github.ref_type == 'tag'
         name: 'Attest'
-        uses: 'actions/attest-build-provenance@v3'
+        uses: 'actions/attest-build-provenance@v4'
         with:
           subject-path: '_out/*.zip'
       - if: github.ref_type == 'tag'
