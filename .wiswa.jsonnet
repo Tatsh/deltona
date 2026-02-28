@@ -103,7 +103,6 @@ local utils = import 'utils.libjsonnet';
         urldecode: 'deltona.commands.string:urldecode_main',
         // wine
         'kill-wine': 'deltona.commands.wine:kill_wine_main',
-        mkwineprefix: 'deltona.commands.wine:mkwineprefix_main',
         'patch-uiso-font': 'deltona.commands.wine:patch_ultraiso_font_main',
         'set-wine-fonts': 'deltona.commands.wine:set_wine_fonts_main',
         unix2wine: 'deltona.commands.wine:unix2wine_main',
@@ -265,7 +264,6 @@ local utils = import 'utils.libjsonnet';
     macos_exclusions: exclude_from_all,
     windows_exclusions: exclude_from_all + [
       'kill-wine',
-      'mkwineprefix',
       'set-wine-fonts',
       'unregister-wine-assocs',
       'winegoginstall',

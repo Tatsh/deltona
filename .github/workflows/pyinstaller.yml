@@ -33,7 +33,6 @@ jobs:
             systemd-reset-tpm-cryptenroll
             wait-for-disc
             kill-wine
-            mkwineprefix
             set-wine-fonts
             unregister-wine-assocs
             winegoginstall

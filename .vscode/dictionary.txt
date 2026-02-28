@@ -200,7 +200,6 @@ minni
 mkvextract
 mkvmerge
 mkvpropedit
-mkwineprefix
 modindex
 modtime
 mojo
