@@ -589,16 +589,16 @@ def get_cd_disc_id(drive: StrPath) -> str:
     drive : str
         Drive path.
 
+    Returns
+    -------
+    str
+        String for use with CDDB query.
+
     Raises
     ------
     NotImplementedError
         If not on Linux.
     OSError
-
-    Returns
-    -------
-    str
-        String for use with CDDB query.
     """
     if not IS_LINUX:
         raise NotImplementedError

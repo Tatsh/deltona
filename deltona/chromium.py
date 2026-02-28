@@ -48,15 +48,14 @@ def fix_chromium_pwa_icon(
     monochrome : bool
         If ``True``, save the icon as a monochrome icon. Default is ``False``.
 
-
-    See Also
-    --------
-    `Bug 40595456 - PWA icons can be lost (on sync?) and reverted to a letter`_
-
     Raises
     ------
     ValueError
         If the icon is not square.
+
+    See Also
+    --------
+    `Bug 40595456 - PWA icons can be lost (on sync?) and reverted to a letter`_
     """
     image_mod = _get_pil_image_module()
     config_path = Path(config_path) / profile / 'Web Applications' / app_id
