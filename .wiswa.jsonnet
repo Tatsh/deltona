@@ -48,15 +48,7 @@ local utils = import 'utils.libjsonnet';
         'mpv-sbs': 'deltona.commands.desktop:mpv_sbs_main',
         umpv: 'deltona.commands.desktop:umpv_main',
         'upload-to-imgbb': 'deltona.commands.desktop:upload_to_imgbb_main',
-        // flacted
-        'flac-album': 'deltona.commands.media:flacted_main',
-        'flac-artist': 'deltona.commands.media:flacted_main',
         'flac-dir-finalize': 'deltona.commands.media:flac_dir_finalize_main',
-        'flac-genre': 'deltona.commands.media:flacted_main',
-        'flac-title': 'deltona.commands.media:flacted_main',
-        'flac-track': 'deltona.commands.media:flacted_main',
-        'flac-year': 'deltona.commands.media:flacted_main',
-        flacted: 'deltona.commands.media:flacted_main',
         // git
         'git-checkout-default-branch': 'deltona.commands.git:git_checkout_default_branch_main',
         'git-co-default-branch': 'deltona.commands.git:git_checkout_default_branch_main',

@@ -38,6 +38,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Moved `mkwineprefix` to its own package `mkwineprefix`.
 - Moved `ripcd` to its own package `ripcd`.
+- Moved `flacted` to its own package `flacted`.
 
 ## [0.0.2] - 2025-06-07
 
