@@ -33,7 +33,7 @@ docs = [
   "sphinx-click>=6.2.0",
   "sphinx-datatables>=1.0.0",
   "sphinx-immaterial>=0.13.9",
-  "sphinx<9.0.0; python_version >= \"3.11\"",
+  "sphinx<10.0.0; python_version >= \"3.11\"",
   "sphinx>=7.2.5; python_version < \"3.11\"",
   "tomlkit>=0.14.0",
 ]
