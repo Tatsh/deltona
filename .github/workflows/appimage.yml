@@ -3,20 +3,20 @@ jobs:
     runs-on: ${{ matrix.system.image }}
     steps:
       - uses: 'actions/checkout@v6'
-      - name: 'Install Poetry'
-        run: 'pipx install poetry yq'
+      - name: 'Install yq'
+        run: 'pipx install yq'
+      - name: 'Install uv'
+        uses: 'astral-sh/setup-uv@v7'
       - name: 'Set up Python'
         uses: 'actions/setup-python@v6'
         with:
-          cache: 'poetry'
           python-version: '3.13'
       - name: 'Install dependencies'
         run: 'sudo apt-get update && sudo apt-get install -y libcairo2-dev libgirepository-2.0-dev'
-      - name: 'Install dependencies (Poetry)'
+      - name: 'Install dependencies (uv)'
         run: |
-          poetry install --all-extras --all-groups
-          poetry self add poetry-plugin-export
-          poetry run -- pip install python-appimage
+          uv sync --all-extras --all-groups
+          uv pip install python-appimage
           wget -O generic.svg 'https://raw.githubusercontent.com/KDE/breeze-icons/refs/heads/master/icons/preferences/32/preferences-other.svg'
         shell: 'bash'
       - name: 'Build with python-appimage'
@@ -52,7 +52,7 @@ jobs:
               cat > recipe/requirements.txt <<EOF
           $(pwd -P)
           EOF
-              poetry export --without-hashes --all-extras | awk '{ print $1 }' | grep -E 'beautifulsoup4|gitpython|html5lib|mutagen|paramiko|pexpect|pillow|platformdirs|psutil|pydbus|pygithub|pygobject|pyperclip|python-xz|pyyaml|unidecode|yt-dlp' >> recipe/requirements.txt
+              uv export --no-hashes --all-extras --no-annotate | awk '{ print $1 }' | grep -E 'beautifulsoup4|gitpython|html5lib|mutagen|paramiko|pexpect|pillow|platformdirs|psutil|pydbus|pygithub|pygobject|pyperclip|python-xz|pyyaml|unidecode|yt-dlp' >> recipe/requirements.txt
               if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
                   cat recipe/requirements.txt
               fi
@@ -84,7 +84,7 @@ jobs:
               fi
               cp generic.svg "recipe/${script_name}.svg"
               echo "Building executable for '${script_name}'..."
-              poetry run python -m python_appimage -v build app -l "manylinux2014_${{ matrix.system.arch }}" -p 3.13 recipe
+              uv run python -m python_appimage -v build app -l "manylinux2014_${{ matrix.system.arch }}" -p 3.13 recipe
               mv "${script_name}-${{ matrix.system.arch }}.AppImage" "dist/${script_name}-${{ matrix.system.arch }}.AppImage"
           done < <(tomlq -r '.project.scripts|to_entries[]|"\(.key) \(.value|split(":")|join(" "))"' pyproject.toml)
         shell: 'bash'

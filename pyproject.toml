@@ -1,6 +1,50 @@
 [build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core"]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[dependency-groups]
+dev = [
+  "commitizen>=4.13.9",
+  "cz-path>=0.0.5",
+  "djlint>=1.36.4",
+  "mypy>=1.19.1",
+  "pydbus-stubs>=0",
+  "ruff>=0.15.6",
+  "types-beautifulsoup4>=4.12.0.20250516",
+  "types-binaryornot>=0.4.0.20260309",
+  "types-paramiko>=4.0.0.20250822",
+  "types-pexpect>=4.9.0.20260127",
+  "types-pillow>=10.2.0.20240822",
+  "types-psutil>=7.2.2.20260130",
+  "types-pyperclip>=1.11.0.20260216",
+  "types-pyyaml>=6.0.12.20250915",
+  "types-requests>=2.32.4.20260107",
+  "types-send2trash>=2.1.0.20260117",
+  "types-yt-dlp>=2026.3.13.20260314",
+]
+docs = [
+  "autodoc-pydantic>=2.2.0",
+  "doc8>=2.0.0",
+  "docutils<0.22",
+  "enum-tools[sphinx]>=0.13.0",
+  "esbonio>=1.1.0",
+  "numpydoc>=1.10.0",
+  "restructuredtext-lint>=2.0.2",
+  "sphinx-click>=6.2.0",
+  "sphinx-datatables>=1.0.0",
+  "sphinx-immaterial>=0.13.9",
+  "sphinx<9.0.0; python_version >= \"3.11\"",
+  "sphinx>=7.2.5; python_version < \"3.11\"",
+  "tomlkit>=0.14.0",
+]
+tests = [
+  "coveralls>=4.1.0",
+  "mock>=5.2.0",
+  "pytest-cov>=7.0.0",
+  "pytest-mock>=3.15.1",
+  "pytest>=9.0.2",
+  "requests-mock>=1.12.1",
+]
 
 [project]
 classifiers = [
@@ -28,12 +72,39 @@ classifiers = [
   "Topic :: Utilities",
   "Typing :: Typed",
 ]
+dependencies = [
+  "bascom>=0.1.2",
+  "beautifulsoup4>=4.14.3",
+  "binaryornot>=0.6.0",
+  "click>=8.3.1",
+  "gitpython>=3.1.46",
+  "html5lib>=1.1",
+  "keyring>=25.7.0",
+  "mutagen>=1.47.0",
+  "paramiko>=4.0.0",
+  "pexpect>=4.9.0",
+  "pillow>=12.1.1",
+  "platformdirs>=4.9.4",
+  "psutil>=7.2.2",
+  "pydbus>=0.6.0",
+  "pygithub>=2.8.1",
+  "pygobject>=3.56.1",
+  "pyperclip>=1.11.0",
+  "python-xz>=0.6.0",
+  "pyyaml>=6.0.3",
+  "requests>=2.32.5",
+  "send2trash>=2.1.0",
+  "soupsieve>=2.8.3",
+  "typing-extensions>=4.15.0",
+  "unidecode>=1.4.0",
+  "yt-dlp>=2026.3.13",
+]
 description = "A lot of uncategorised utilities."
-dynamic = ["dependencies", "requires-python"]
 keywords = ["bluetooth", "command line", "file management", "git", "multimedia"]
 license = "MIT"
 name = "deltona"
 readme = "README.md"
+requires-python = ">=3.12,<4.0"
 version = "0.0.2"
 
 [[project.authors]]
@@ -158,172 +229,10 @@ strict = true
 strict_optional = true
 warn_unreachable = true
 
-[tool.poetry]
-include = ["man", { format = "sdist", path = "tests" }]
-
-[tool.poetry.dependencies]
-bascom = "^0.1.2"
-binaryornot = "^0.4.4"
-click = "^8.3.1"
-keyring = "^25.7.0"
-python = ">=3.10,<3.14"
-requests = "^2.32.5"
-send2trash = "^2.1.0"
-typing-extensions = "^4.15.0"
-
-[tool.poetry.dependencies.beautifulsoup4]
-optional = true
-version = "^4.14.3"
-
-[tool.poetry.dependencies.gitpython]
-optional = true
-version = "^3.1.46"
-
-[tool.poetry.dependencies.html5lib]
-optional = true
-version = "^1.1"
-
-[tool.poetry.dependencies.mutagen]
-optional = true
-version = "^1.47.0"
-
-[tool.poetry.dependencies.paramiko]
-optional = true
-version = "^4.0.0"
-
-[tool.poetry.dependencies.pexpect]
-optional = true
-version = "^4.9.0"
-
-[tool.poetry.dependencies.pillow]
-optional = true
-version = "^12.1.1"
-
-[tool.poetry.dependencies.platformdirs]
-optional = true
-version = "^4.9.2"
-
-[tool.poetry.dependencies.psutil]
-optional = true
-version = "^7.2.2"
-
-[tool.poetry.dependencies.pydbus]
-optional = true
-platform = "linux"
-version = "^0.6.0"
-
-[tool.poetry.dependencies.pygithub]
-optional = true
-version = "^2.8.1"
-
-[tool.poetry.dependencies.pygobject]
-optional = true
-platform = "linux"
-version = "^3.56.0"
-
-[tool.poetry.dependencies.pyperclip]
-optional = true
-version = "^1.11.0"
-
-[tool.poetry.dependencies.python-xz]
-optional = true
-version = "^0.6.0"
-
-[tool.poetry.dependencies.pyyaml]
-optional = true
-version = "^6.0.3"
-
-[tool.poetry.dependencies.soupsieve]
-optional = true
-version = "^2.8.3"
-
-[tool.poetry.dependencies.unidecode]
-optional = true
-version = "^1.4.0"
-
-[tool.poetry.dependencies.yt-dlp]
-optional = true
-version = "^2026.2.21"
-
-[tool.poetry.extras]
-admin = ["paramiko"]
-desktop = ["pydbus", "pygobject", "pyperclip"]
-git = ["gitpython", "pygithub"]
-media = ["mutagen", "platformdirs"]
-string = ["unidecode", "pyyaml", "yt-dlp"]
-wine = ["pexpect", "platformdirs", "psutil", "python-xz"]
-www = ["beautifulsoup4", "html5lib", "pillow"]
-
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.dev.dependencies]
-commitizen = "^4.13.9"
-cz-path = "^0.0.4"
-djlint = "^1.36.4"
-mypy = "^1.19.1"
-pydbus-stubs = "^0"
-ruff = "^0.15.4"
-types-beautifulsoup4 = "^4.12.0.20250516"
-types-binaryornot = "^0.4.0.20250507"
-types-paramiko = "^4.0.0.20250822"
-types-pexpect = "^4.9.0.20260127"
-types-pillow = "^10.2.0.20240822"
-types-psutil = "^7.2.2.20260130"
-types-pyperclip = "^1.11.0.20260216"
-types-pyyaml = "^6.0.12.20250915"
-types-requests = "^2.32.4.20260107"
-types-send2trash = "^2.1.0.20260117"
-types-yt-dlp = "^2026.2.21.20260223"
-
-[tool.poetry.group.docs]
-optional = true
-
-[tool.poetry.group.docs.dependencies]
-autodoc-pydantic = "^2.2.0"
-doc8 = "^2.0.0"
-docutils = "<0.22"
-esbonio = "^1.1.0"
-numpydoc = "^1.10.0"
-restructuredtext-lint = "^2.0.2"
-sphinx-click = "^6.2.0"
-sphinx-datatables = "^1.0.0"
-sphinx-immaterial = "^0.13.9"
-tomlkit = "^0.14.0"
-
-[tool.poetry.group.docs.dependencies.enum-tools]
-extras = ["sphinx"]
-version = "^0.13.0"
-
-[[tool.poetry.group.docs.dependencies.sphinx]]
-python = ">=3.11"
-version = "<9.0.0"
-
-[[tool.poetry.group.docs.dependencies.sphinx]]
-python = "<3.11"
-version = "^7.2.5"
-
-[tool.poetry.group.tests]
-optional = true
-
-[tool.poetry.group.tests.dependencies]
-mock = "^5.2.0"
-pytest = "^9.0.2"
-pytest-cov = "^7.0.0"
-pytest-mock = "^3.15.1"
-requests-mock = "^1.12.1"
-
-[tool.poetry.group.tests.dependencies.coveralls]
-python = "<3.13"
-version = "^4.0.1"
-
-[[tool.poetry.packages]]
-include = "deltona"
-
 [tool.pyright]
 deprecateTypingAliases = true
 enableExperimentalFeatures = true
-exclude = ["**/.*", "**/__pycache__", "**/node_modules"]
+exclude = [".venv", "**/node_modules", "**/__pycache__", "**/.*"]
 include = ["./deltona", "./tests"]
 pythonPlatform = "Linux"
 pythonVersion = "3.12"
@@ -411,3 +320,6 @@ max-positional-args = 15
 max-public-methods = 30
 max-returns = 10
 max-statements = 150
+
+[tool.uv]
+default-groups = ["dev"]

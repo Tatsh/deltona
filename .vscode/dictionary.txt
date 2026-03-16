@@ -3,7 +3,6 @@ ahide
 alayhi
 alayka
 alayya
-albumartist
 alsa
 anhu
 anni
@@ -34,8 +33,6 @@ cabac
 ccextractor
 cdda
 cddb
-cdparanoia
-cdparanoia's
 cdrecord
 cdrom
 cdrommsf
@@ -192,7 +189,6 @@ mkvmerge
 mkvpropedit
 mkwineprefix
 modindex
-modtime
 mojo
 mojosetup
 movflags
@@ -249,7 +245,6 @@ rssi
 rstcheck
 rstuvwxyz
 schemafile
-sdist
 segoe
 sendline
 setpts
@@ -318,4 +313,5 @@ wiswa
 wkwebview
 wwdc
 xauthority
+yarnrc
 zscale
