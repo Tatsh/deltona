@@ -11,6 +11,34 @@ jobs:
         uses: 'actions/setup-python@v6'
         with:
           python-version: '3.13'
+      - if: matrix.os == 'windows-11-arm' || matrix.os == 'windows-latest'
+        name: 'Restore vcpkg cache'
+        uses: 'actions/cache@v5'
+        with:
+          key: vcpkg-openssl-arm64-windows-${{ hashFiles('.github/workflows/pyinstaller.yml') }}
+          path: |
+            ~\vcpkg
+          restore-keys: |
+            vcpkg-openssl-arm64-windows-
+      - if: matrix.os == 'windows-11-arm' || matrix.os == 'windows-latest'
+        name: 'Set up vcpkg'
+        run: |
+          $triplet = if ("${{ matrix.os }}" -eq "windows-11-arm") { "arm64-windows" } else { "x64-windows" }
+
+          if (Test-Path "$env:USERPROFILE\vcpkg\.git") {
+            git -C "$env:USERPROFILE\vcpkg" pull --depth 1
+          } else {
+            git clone --depth 1 https://github.com/microsoft/vcpkg "$env:USERPROFILE\vcpkg"
+          }
+
+          & "$env:USERPROFILE\vcpkg\bootstrap-vcpkg.bat" -disableMetrics
+          & "$env:USERPROFILE\vcpkg\vcpkg.exe" install openssl glib gobject-introspection --triplet $triplet
+
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\vcpkg"
+          Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_ROOT=$env:USERPROFILE\vcpkg"
+          Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_DEFAULT_TRIPLET=$triplet"
+          Add-Content -Path $env:GITHUB_ENV -Value "OPENSSL_DIR=$env:USERPROFILE\vcpkg\installed\$triplet"
+        shell: 'pwsh'
       - name: 'Install dependencies (uv)'
         run: |
           uv sync --all-extras --all-groups
@@ -96,6 +124,10 @@ jobs:
                   cat version-info.txt
               fi
               echo "Building executable for '${script_name}'..."
+              openssl_args=()
+              if [[ -n "${OPENSSL_DIR:-}" ]]; then
+                  openssl_args=(--add-binary "${OPENSSL_DIR}/bin/*.dll;.")
+              fi
               uv run pyinstaller --log-level ERROR --onefile -n "${script_name}" --optimize 1 \
                 --hidden-import colorlog -y --version-file version-info.txt \
                 temp_script.py

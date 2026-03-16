@@ -115,6 +115,7 @@ getxattr
 gitpython
 globaltoc
 gnudb
+gobject
 gogextract
 gpac
 hable
@@ -290,6 +291,7 @@ unidecode
 uninhibit
 unrar
 urldecode
+userprofile
 vcodec
 venv
 vernum
