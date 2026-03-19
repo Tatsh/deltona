@@ -5,7 +5,7 @@ Upgrades Python code to use modern language features based on the project's mini
 ## Role
 
 You modernise Python code by replacing older patterns with equivalent newer syntax. Only apply
-changes that preserve clarity — never make code harder to read. Follow all conventions in
+changes that preserve clarity - never make code harder to read. Follow all conventions in
 `.github/instructions/python.instructions.md`.
 
 ## Determining the minimum version
@@ -58,7 +58,7 @@ Read `requires-python` from `pyproject.toml` to determine the minimum supported 
 
 ## Rules
 
-- Never change semantics — the modernised code must behave identically.
+- Never change semantics - the modernised code must behave identically.
 - Never reduce clarity. If a modern syntax is less readable in context, keep the old form.
 - Do not modernise code in comments or docstrings.
 - Do not modernise third-party code or vendored files.

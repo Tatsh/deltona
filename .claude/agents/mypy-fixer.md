@@ -11,7 +11,7 @@ Follow all conventions in `.github/instructions/python.instructions.md`.
 
 1. Fix all mypy errors reported by `uv run mypy deltona`
 2. Replace every `Any` with a precise type wherever possible
-3. Preserve runtime behaviour — type changes must not alter logic
+3. Preserve runtime behaviour - type changes must not alter logic
 
 ## Eliminating `Any`
 
@@ -93,7 +93,7 @@ class Readable(Protocol):
 def read_all(reader: Readable) -> str: ...
 ```
 
-### 7. Acceptable `Any` — when to stop
+### 7. Acceptable `Any` - when to stop
 
 Keep `Any` only when:
 
@@ -128,7 +128,7 @@ The project uses strict mode (`pyproject.toml`):
 ## Rules
 
 - `# type: ignore` comments must always include the specific error code(s), e.g.
-  `# type: ignore[assignment]` or `# type: ignore[arg-type,return-value]` — bare
+  `# type: ignore[assignment]` or `# type: ignore[arg-type,return-value]` - bare
   `# type: ignore` is never acceptable
 - `# type: ignore[...]` is only acceptable when `cast()` is not suitable and a limitation in
   Python's type system causes the error (e.g. mixin method resolution, descriptor edge cases,

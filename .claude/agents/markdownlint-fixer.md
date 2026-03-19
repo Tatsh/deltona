@@ -33,7 +33,7 @@ The project uses markdownlint-cli2 configured in `package.json` under the `markd
 
 ## Common Fixes
 
-### MD013 — Line length
+### MD013 - Line length
 
 Word-wrap lines at 100 characters. Do not break:
 
@@ -43,41 +43,41 @@ Word-wrap lines at 100 characters. Do not break:
 - Inside code blocks that contain single-line copyable shell commands.
 - Inside tables (these are exempt).
 
-### MD009 — Trailing spaces
+### MD009 - Trailing spaces
 
 Remove trailing whitespace. Use `yarn prettier -w` to handle this automatically.
 
-### MD010 — Hard tabs
+### MD010 - Hard tabs
 
 Replace tabs with spaces. Use `yarn prettier -w` to handle this automatically.
 
-### MD012 — Multiple consecutive blank lines
+### MD012 - Multiple consecutive blank lines
 
 Collapse to a single blank line.
 
-### MD022 — Headings should be surrounded by blank lines
+### MD022 - Headings should be surrounded by blank lines
 
 Add a blank line before and after each heading.
 
-### MD024 — Multiple headings with the same content
+### MD024 - Multiple headings with the same content
 
 Only a problem when siblings have the same heading. Headings in different sections are fine.
 
-### MD031 — Fenced code blocks should be surrounded by blank lines
+### MD031 - Fenced code blocks should be surrounded by blank lines
 
 Add a blank line before and after fenced code blocks.
 
-### MD033 — Inline HTML
+### MD033 - Inline HTML
 
 Only `<kbd>` elements are allowed. Replace other HTML with Markdown equivalents.
 
-### MD047 — Files should end with a single newline character
+### MD047 - Files should end with a single newline character
 
 Ensure the file ends with exactly one newline.
 
 ## Rules
 
-- Always run `yarn prettier -w` before `yarn markdownlint-cli2` — prettier fixes many issues
+- Always run `yarn prettier -w` before `yarn markdownlint-cli2` - prettier fixes many issues
   automatically.
 - Do not disable rules with `<!-- markdownlint-disable -->` comments unless there is no other way
   to satisfy the rule.

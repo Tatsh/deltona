@@ -9,9 +9,9 @@ conventions defined in the instruction files under `.github/instructions/`.
 
 ## Key References
 
-- `.github/instructions/general.instructions.md` — project-wide conventions
-- `.github/instructions/python.instructions.md` — Python coding guidelines
-- `.github/instructions/python-tests.instructions.md` — test conventions
+- `.github/instructions/general.instructions.md` - project-wide conventions
+- `.github/instructions/python.instructions.md` - Python coding guidelines
+- `.github/instructions/python-tests.instructions.md` - test conventions
 
 ## Tooling
 
@@ -195,7 +195,11 @@ class MyClass:
         """
 ```
 
-In docstrings, use Sphinx cross-references when referring to other types, modules, or functions:
+In `Parameters`, `Returns`, and `Raises` sections, type names on the header line must be plain
+text, not Sphinx references. Use `soup : bs4.Tag` not `soup : :py:class:`~bs4.Tag``.
+
+In descriptive prose within docstrings, use Sphinx cross-references when referring to other types,
+modules, or functions:
 
 - `` :py:mod:`deltona.string` `` for modules
 - `` :py:func:`deltona.string.slugify` `` for functions
