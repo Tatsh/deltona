@@ -21,3 +21,7 @@ alwaysApply: false
 - Mock external dependencies and IO operations in tests.
 - If a parameter must exist in a callback, use `_` as the identifier if it is not a keyword
   argument.
+- Use the `runner` fixture (type `CliRunner`) from `conftest.py` for testing Click commands.
+- Test Click commands by checking `result.exit_code` and `result.output`.
+- Use `mocker.patch` for complex mock setups; `monkeypatch.setattr` for simple attribute
+  replacement.
