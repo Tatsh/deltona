@@ -5,7 +5,7 @@ from __future__ import annotations
 from fnmatch import fnmatch
 from pathlib import Path
 from shutil import rmtree
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 import logging
 import re
 
@@ -23,6 +23,7 @@ log = logging.getLogger(__name__)
 class InvalidActiveKernelSourcePath(Exception):
     """Raised when the active kernel source path is not a symbolic link."""
 
+    @override
     def __init__(self, source_path: StrPath) -> None:
         super().__init__(f'{source_path} is not a symbolic link.')
 

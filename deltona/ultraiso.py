@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from shlex import quote
 from shutil import copyfile
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, override
 import logging
 import os
 import subprocess as sp
@@ -41,6 +41,7 @@ def get_ultraiso_path(prefix: StrPath) -> StrPath | None:
 
 
 class InsufficientArguments(Exception):
+    @override
     def __init__(self) -> None:
         super().__init__('Insufficient amount of arguments.')
 
@@ -304,6 +305,7 @@ ULTRAISO_FONT_REPLACEMENT_MAX_LENGTH = 13
 
 
 class InvalidExec(Exception):
+    @override
     def __init__(self) -> None:
         super().__init__('Font not found in file. This is not the original UltraISO executable.')
 

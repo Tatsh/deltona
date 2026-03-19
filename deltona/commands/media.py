@@ -5,7 +5,7 @@ from __future__ import annotations
 from operator import itemgetter
 from pathlib import Path
 from shlex import quote
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, override
+from typing import TYPE_CHECKING, Any, Literal, cast, override
 import json
 import logging
 import re
@@ -35,14 +35,13 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
 log = logging.getLogger(__name__)
-_T = TypeVar('_T', bound=str)
 
 
-class _CDDATimeStringParamType(click.ParamType):
+class _CDDATimeStringParamType[T: str](click.ParamType):
     name = 'cdda_time_string'
 
     @override
-    def convert(self, value: _T, param: click.Parameter | None, ctx: click.Context | None) -> _T:
+    def convert(self, value: T, param: click.Parameter | None, ctx: click.Context | None) -> T:
         if TIMES_RE.match(value):
             return value
         self.fail(f'{value!r} is not a valid CDDA time string.', param, ctx)

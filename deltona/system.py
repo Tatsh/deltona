@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from shlex import quote
 from time import sleep
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, cast, override
 import configparser
 import json
 import logging
@@ -178,7 +178,7 @@ def find_bluetooth_device_info_by_name(name: str) -> tuple[str, OrgBluezDevice1D
 
     Returns
     -------
-    tuple[str, dict[str, Any]]]
+    tuple[str, OrgBluezDevice1Dict]
         Returns the D-Bus object path and a dictionary representing the ``org.bluez.Device1``
         properties.
 
@@ -337,6 +337,7 @@ def kill_wine() -> None:
 class MultipleKeySlots(Exception):
     """Exception raised when a device has more than one keyslot."""
 
+    @override
     def __init__(self, dev: str) -> None:
         super().__init__(f'Device {dev} has more than one keyslot. This is not supported.')
 
@@ -415,7 +416,7 @@ STATE_RE = r'^AAAA/'
 """KDE Plasma config state keys to ignore."""
 
 
-def _iter_config_sections(file: StrPath) -> Iterator[tuple[str, str, Any]]:
+def _iter_config_sections(file: StrPath) -> Iterator[tuple[str, str, str]]:
     config = configparser.ConfigParser(delimiters=('=',), interpolation=None)
     config.optionxform = str  # type: ignore[assignment]
     try:
@@ -486,15 +487,17 @@ def get_kwriteconfig_commands(file: StrPath = DEFAULT_FILE) -> Iterator[str]:
         yield ' '.join(cmd)
 
 
-def get_kconfig_dict(file: StrPath = DEFAULT_FILE) -> dict[str, dict[str, Any]]:
+def get_kconfig_dict(file: StrPath = DEFAULT_FILE) -> dict[str, dict[str, str | int | bool]]:
     file = Path(file).resolve(strict=True)
-    ret: dict[str, dict[str, Any]] = {}
+    ret: dict[str, dict[str, str | int | bool]] = {}
     for section, key, value_ in _iter_config_sections(file):
-        value = value_
-        if re.match(r'^(?:1|true|false|on|yes)$', value, flags=re.IGNORECASE):
-            value = bool(re.match(r'^(?:1|true|on|yes)', value, flags=re.IGNORECASE))
-        elif re.match(r'^-?[0-9]+$', value):
-            value = int(value)
+        value: str | int | bool
+        if re.match(r'^(?:1|true|false|on|yes)$', value_, flags=re.IGNORECASE):
+            value = bool(re.match(r'^(?:1|true|on|yes)', value_, flags=re.IGNORECASE))
+        elif re.match(r'^-?[0-9]+$', value_):
+            value = int(value_)
+        else:
+            value = value_
         try:
             ret[section][key] = value
         except KeyError:

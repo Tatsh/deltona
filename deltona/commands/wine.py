@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from shlex import quote
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 import logging
 import os
 import shutil
@@ -24,6 +24,7 @@ import pexpect
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from types import FrameType
 
 log = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ def wineshell_main(prefix_name: str, *, debug: bool = False) -> None:
     )
     c.sendline(f'export WINEPREFIX={quote(str(target))}; export PS1="{target.name}🍷$PS1"')
 
-    def resize(sig: Any, data: Any) -> None:  # pragma: no cover  # noqa: ARG001
+    def resize(sig: int, frame: FrameType | None) -> None:  # pragma: no cover  # noqa: ARG001
         terminal = shutil.get_terminal_size()
         c.setwinsize(terminal.lines, terminal.columns)
 

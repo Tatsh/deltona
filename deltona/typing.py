@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from enum import IntEnum
 from os import PathLike
-from typing import TYPE_CHECKING, Annotated, Any, Literal, NotRequired, TypeVar, TypedDict
+from typing import TYPE_CHECKING, Annotated, Literal, NotRequired, TypedDict
 import os
 import typing
 
@@ -101,8 +101,6 @@ UNIXStrPath = Annotated[StrPath, 'unix']
 """String or ``PathLike[str]`` that is a UNIX path."""
 StrPathMustExist = Annotated[StrPath, 'must_exist']
 """String or ``PathLike[str]`` that must exist."""
-_T = TypeVar('_T')
-"""T."""
 
 
 class CDStatus(IntEnum):
@@ -120,12 +118,12 @@ class CDStatus(IntEnum):
     """Tray is open."""
 
 
-def contains_type_path_like_str(type_hints: Any) -> bool:  # pragma: no cover
+def contains_type_path_like_str(type_hints: object) -> bool:  # pragma: no cover
     """Check if a type hint contains ``os.PathLike[str]``."""
     return os.PathLike[str] in typing.get_args(type_hints)
 
 
-def assert_not_none(var: _T | None) -> _T:  # pragma: no cover
+def assert_not_none[T](var: T | None) -> T:  # pragma: no cover
     """
     Assert the ``var`` is not None and return it.
 

@@ -83,15 +83,16 @@ def umpv_main(files: Sequence[Path], mpv_command: str = 'mpv', *, debug: bool = 
         sock.connect(socket_path)
         socket_connected = True
     except OSError as e:
-        if e.errno == errno.ECONNREFUSED:
-            log.debug('Socket refused connection')
-            sock = None  # abandoned socket
-        elif e.errno == errno.ENOENT:
-            log.debug('Socket does not exist')
-            sock = None  # does not exist
-        else:
-            log.exception('Socket errno: %d', e.errno)
-            raise click.Abort from e
+        match e.errno:
+            case errno.ECONNREFUSED:
+                log.debug('Socket refused connection')
+                sock = None  # abandoned socket
+            case errno.ENOENT:
+                log.debug('Socket does not exist')
+                sock = None  # does not exist
+            case _:
+                log.exception('Socket errno: %d', e.errno)
+                raise click.Abort from e
     if sock and socket_connected:
         # Unhandled race condition: what if mpv is terminating right now?
         for f in fixed_files:

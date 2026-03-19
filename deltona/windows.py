@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from struct import pack
+from typing import override
 import enum
 
 
@@ -266,6 +267,7 @@ MAX_LINE_LENGTH = 78
 class NameTooLong(Exception):
     """Raised when a font name is longer than 64 characters."""
 
+    @override
     def __init__(self, name: str) -> None:
         super().__init__(self, f'{name} length exceeds 64 characters.')
 

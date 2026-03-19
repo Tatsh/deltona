@@ -6,7 +6,7 @@ from binascii import crc32
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 from zipfile import ZipFile
 import contextlib
 import io
@@ -351,6 +351,7 @@ class UnRAR:
 class SFVVerificationError(Exception):
     """Raised when SFV fails verification."""
 
+    @override
     def __init__(self, filename: StrPath, expected_crc: int, actual_crc: int) -> None:
         super().__init__(f'{filename}: Expected {expected_crc:08X}. Actual: {actual_crc:08X}.')
 
