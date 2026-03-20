@@ -105,7 +105,7 @@ license = "MIT"
 name = "deltona"
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
-version = "0.0.2"
+version = "0.0.3"
 
 [[project.authors]]
 email = "audvare@gmail.com"
