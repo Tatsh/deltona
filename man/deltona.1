@@ -27,9 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "DELTONA" "1" "Sep 21, 2025" "0.0.3" "deltona"
+.TH "DELTONA" "1" "Mar 20, 2026" "0.1.0" "deltona"
 .SH NAME
-deltona \- deltona v0.0.3
+deltona \- deltona v0.1.0
 .sp
 A lot of uncategorised utilities.
 .SH CLEAN-OLD-KERNELS-MODULES
@@ -37,6 +37,8 @@ A lot of uncategorised utilities.
 Remove inactive kernels and modules.
 .sp
 By default, removes old Linux sources from /usr/src.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -72,6 +74,8 @@ Optional argument
 .SH HTMLTREE
 .sp
 Generate a HTML directory listing.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -107,6 +111,8 @@ Optional argument
 .SH KCONFIG-TO-COMMANDS
 .sp
 Generate kwriteconfig6 commands to set (Plasma) settings from your current settings.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -137,6 +143,8 @@ Optional argument(s)
 .SH KCONFIG-TO-JSON
 .sp
 Convert Plasma and compatible settings (INI\-style) to JSON.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -167,6 +175,8 @@ Optional argument(s)
 .SH PATCH-BUNDLE
 .sp
 Patch a macOS/iOS/etc bundle\(aqs Info.plist file.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -177,6 +187,11 @@ patch\-bundle [OPTIONS] BUNDLE
 .UNINDENT
 .sp
 Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
 .INDENT 0.0
 .TP
 .B \-E, \-\-env\-var <env_vars>
@@ -197,6 +212,8 @@ Required argument
 .SH SLUG-RENAME
 .sp
 Rename a file to a slugified version.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -231,6 +248,8 @@ Secure move.
 This is similar to scp but deletes the file or directory after successful copy.
 .sp
 Always test with the \-\-dry\-run/\-y option.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -295,6 +314,8 @@ Reset TPM enrolments that were created by systemd\-cryptenroll \-tpm2\-device=au
 Requires root privileges to work.
 .sp
 Only crypttab files with UUID= entries are supported.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -340,6 +361,8 @@ For Linux only.
 .sp
 This is useful for connecting the mouse back when it randomly decides not to re\-pair, and you
 have no other mouse but you can get to your terminal.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -353,6 +376,7 @@ Options
 .INDENT 0.0
 .TP
 .B \-d, \-\-debug
+Enable debug output.
 .UNINDENT
 .INDENT 0.0
 .TP
@@ -368,6 +392,8 @@ disabled.
 .sp
 This is an alternative to \fBkde\-inhibit\fP\&. Unlike \fBkde\-inhibit\fP, this tool may only sleep.
 A sleep time of \fB0\fP effectively does nothing.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -391,6 +417,8 @@ Sleep time in seconds to inhibit notifications for.
 .SH KILL-GAMESCOPE
 .sp
 Terminate gamescope and gamescopereaper.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -402,6 +430,8 @@ kill\-gamescope [OPTIONS]
 .SH MPV-SBS
 .sp
 Display two videos side by side in mpv.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -427,6 +457,8 @@ Required argument(s)
 .SH UMPV
 .sp
 Run a single instance of mpv.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -440,6 +472,7 @@ Options
 .INDENT 0.0
 .TP
 .B \-d, \-\-debug
+Enable debug output.
 .UNINDENT
 .INDENT 0.0
 .TP
@@ -458,6 +491,8 @@ Optional argument(s)
 Upload image to ImgBB.
 .sp
 Get an API key at \X'tty: link https://api.imgbb.com/'\fI\%https://api.imgbb.com/\fP\X'tty: link' and set it with \fIkeyring set imgbb \(dq${USER}\(dq\fP\&.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -523,6 +558,8 @@ For repositories whose origin is on GitHub only.
 .sp
 To set a token, \fBkeyring set tmu\-github\-api \(dq${USER}\(dq\fP\&. The token must have
 access to the public_repo or repo scope.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -563,6 +600,8 @@ For repositories whose origin is on GitHub only.
 .sp
 To set a token, \fBkeyring set tmu\-github\-api \(dq${USER}\(dq\fP\&. The token must have
 access to the public_repo or repo scope.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -598,6 +637,8 @@ Optional argument
 .SH GIT-OPEN
 .sp
 Open assumed repository web representation (GitHub, GitLab, etc) based on the origin.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -621,6 +662,8 @@ For repositories whose origin is on GitHub only.
 .sp
 To set a token, \fBkeyring set tmu\-github\-api \(dq${USER}\(dq\fP\&. The token must have
 access to the public_repo or repo scope.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -661,6 +704,8 @@ Optional argument
 .SH MERGE-DEPENDABOT-PRS
 .sp
 Merge pull requests made by Dependabot on GitHub.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -702,6 +747,8 @@ Add CDDA timestamps together.
 .sp
 A CDDA timestamp is 3 zero\-prefixed integers MM:SS:FF, separated by colons. FF is the number of
 frames out of 75.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -722,6 +769,8 @@ Example invocation: add\-cdda\-times 01:02:73 02:05:09
 .SH ADD-INFO-JSON
 .sp
 Embed info.json in a media file.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -747,6 +796,8 @@ Optional argument(s)
 .SH AUDIO2VID
 .sp
 Create a video with static text and audio.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -804,6 +855,8 @@ Optional argument(s)
 Display a CDDB result in a simple JSON format.
 .sp
 Does not handle if result is not an exact match.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -834,6 +887,8 @@ Optional argument(s)
 .SH DISPLAY-INFO-JSON
 .sp
 Display embedded info.json in a media file.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -876,7 +931,7 @@ In many cases, the camera leaves behind stray rear camera files (usually no more
 group and always a video without a matching front video file the end). These are automatically
 ignored if possible. This behaviour can be disabled by passing \-\-no\-fix\-groups.
 .sp
-Original files\(aq whose content is successfully converted are sent to the wastebin.
+Original files whose content is successfully converted are sent to the wastebin.
 .sp
 Example use:
 .INDENT 0.0
@@ -884,6 +939,8 @@ Example use:
 encode\-dashcam Movie_F/ Movie_R/ ~/output_dir
 .UNINDENT
 .UNINDENT
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1026,139 +1083,11 @@ Required argument
 .B OUTPUT_DIR
 Optional argument
 .UNINDENT
-.SH FLAC-ALBUM
-.sp
-Front\-end to metaflac to set common tags.
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.EX
-flac\-album [OPTIONS] [FILES]...
-.EE
-.UNINDENT
-.UNINDENT
-.sp
-Options
-.INDENT 0.0
-.TP
-.B \-A, \-\-album <album>
-Album.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-D, \-\-delete\-all\-before
-Delete all existing tags before processing.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-T, \-\-track <track>
-Track number.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-a, \-\-artist <artist>
-Track artist.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-d, \-\-debug
-Enable debug output.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-g, \-\-genre <genre>
-Genre.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-p, \-\-picture <picture>
-Cover artwork to attach.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-t, \-\-title <title>
-Track title.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-y, \-\-year <year>
-Year.
-.UNINDENT
-.sp
-Arguments
-.INDENT 0.0
-.TP
-.B FILES
-Optional argument(s)
-.UNINDENT
-.SH FLAC-ARTIST
-.sp
-Front\-end to metaflac to set common tags.
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.EX
-flac\-artist [OPTIONS] [FILES]...
-.EE
-.UNINDENT
-.UNINDENT
-.sp
-Options
-.INDENT 0.0
-.TP
-.B \-A, \-\-album <album>
-Album.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-D, \-\-delete\-all\-before
-Delete all existing tags before processing.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-T, \-\-track <track>
-Track number.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-a, \-\-artist <artist>
-Track artist.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-d, \-\-debug
-Enable debug output.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-g, \-\-genre <genre>
-Genre.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-p, \-\-picture <picture>
-Cover artwork to attach.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-t, \-\-title <title>
-Track title.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-y, \-\-year <year>
-Year.
-.UNINDENT
-.sp
-Arguments
-.INDENT 0.0
-.TP
-.B FILES
-Optional argument(s)
-.UNINDENT
 .SH FLAC-DIR-FINALIZE
 .sp
 Finalise a FLAC album directory.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1181,334 +1110,11 @@ Arguments
 .B DIRECTORY
 Required argument
 .UNINDENT
-.SH FLAC-GENRE
-.sp
-Front\-end to metaflac to set common tags.
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.EX
-flac\-genre [OPTIONS] [FILES]...
-.EE
-.UNINDENT
-.UNINDENT
-.sp
-Options
-.INDENT 0.0
-.TP
-.B \-A, \-\-album <album>
-Album.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-D, \-\-delete\-all\-before
-Delete all existing tags before processing.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-T, \-\-track <track>
-Track number.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-a, \-\-artist <artist>
-Track artist.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-d, \-\-debug
-Enable debug output.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-g, \-\-genre <genre>
-Genre.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-p, \-\-picture <picture>
-Cover artwork to attach.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-t, \-\-title <title>
-Track title.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-y, \-\-year <year>
-Year.
-.UNINDENT
-.sp
-Arguments
-.INDENT 0.0
-.TP
-.B FILES
-Optional argument(s)
-.UNINDENT
-.SH FLAC-TITLE
-.sp
-Front\-end to metaflac to set common tags.
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.EX
-flac\-title [OPTIONS] [FILES]...
-.EE
-.UNINDENT
-.UNINDENT
-.sp
-Options
-.INDENT 0.0
-.TP
-.B \-A, \-\-album <album>
-Album.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-D, \-\-delete\-all\-before
-Delete all existing tags before processing.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-T, \-\-track <track>
-Track number.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-a, \-\-artist <artist>
-Track artist.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-d, \-\-debug
-Enable debug output.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-g, \-\-genre <genre>
-Genre.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-p, \-\-picture <picture>
-Cover artwork to attach.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-t, \-\-title <title>
-Track title.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-y, \-\-year <year>
-Year.
-.UNINDENT
-.sp
-Arguments
-.INDENT 0.0
-.TP
-.B FILES
-Optional argument(s)
-.UNINDENT
-.SH FLAC-TRACK
-.sp
-Front\-end to metaflac to set common tags.
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.EX
-flac\-track [OPTIONS] [FILES]...
-.EE
-.UNINDENT
-.UNINDENT
-.sp
-Options
-.INDENT 0.0
-.TP
-.B \-A, \-\-album <album>
-Album.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-D, \-\-delete\-all\-before
-Delete all existing tags before processing.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-T, \-\-track <track>
-Track number.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-a, \-\-artist <artist>
-Track artist.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-d, \-\-debug
-Enable debug output.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-g, \-\-genre <genre>
-Genre.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-p, \-\-picture <picture>
-Cover artwork to attach.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-t, \-\-title <title>
-Track title.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-y, \-\-year <year>
-Year.
-.UNINDENT
-.sp
-Arguments
-.INDENT 0.0
-.TP
-.B FILES
-Optional argument(s)
-.UNINDENT
-.SH FLAC-YEAR
-.sp
-Front\-end to metaflac to set common tags.
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.EX
-flac\-year [OPTIONS] [FILES]...
-.EE
-.UNINDENT
-.UNINDENT
-.sp
-Options
-.INDENT 0.0
-.TP
-.B \-A, \-\-album <album>
-Album.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-D, \-\-delete\-all\-before
-Delete all existing tags before processing.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-T, \-\-track <track>
-Track number.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-a, \-\-artist <artist>
-Track artist.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-d, \-\-debug
-Enable debug output.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-g, \-\-genre <genre>
-Genre.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-p, \-\-picture <picture>
-Cover artwork to attach.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-t, \-\-title <title>
-Track title.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-y, \-\-year <year>
-Year.
-.UNINDENT
-.sp
-Arguments
-.INDENT 0.0
-.TP
-.B FILES
-Optional argument(s)
-.UNINDENT
-.SH FLACTED
-.sp
-Front\-end to metaflac to set common tags.
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.EX
-flacted [OPTIONS] [FILES]...
-.EE
-.UNINDENT
-.UNINDENT
-.sp
-Options
-.INDENT 0.0
-.TP
-.B \-A, \-\-album <album>
-Album.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-D, \-\-delete\-all\-before
-Delete all existing tags before processing.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-T, \-\-track <track>
-Track number.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-a, \-\-artist <artist>
-Track artist.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-d, \-\-debug
-Enable debug output.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-g, \-\-genre <genre>
-Genre.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-p, \-\-picture <picture>
-Cover artwork to attach.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-t, \-\-title <title>
-Track title.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-y, \-\-year <year>
-Year.
-.UNINDENT
-.sp
-Arguments
-.INDENT 0.0
-.TP
-.B FILES
-Optional argument(s)
-.UNINDENT
 .SH HLG2SDR
 .sp
 Convert a HLG video to SDR.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1547,7 +1153,7 @@ Send processed file to wastebin.
 .INDENT 0.0
 .TP
 .B \-f, \-\-fast
-Use less filters (lower quality).
+Use fewer filters (lower quality).
 .UNINDENT
 .sp
 Arguments
@@ -1564,6 +1170,8 @@ Optional argument
 .SH KE-EBOOK-EX
 .sp
 Extract ebooks from RARs within Zip files.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1594,6 +1202,8 @@ Optional argument(s)
 .SH MP4JSON
 .sp
 Embed info.json in a media file.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1619,6 +1229,8 @@ Optional argument(s)
 .SH MP4JSON-DISPLAY
 .sp
 Display embedded info.json in a media file.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1644,6 +1256,8 @@ Required argument
 .SH MVID-RENAME
 .sp
 Rename music video files.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1669,6 +1283,8 @@ Optional argument(s)
 .SH SHOW-INFO-JSON
 .sp
 Display embedded info.json in a media file.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1694,6 +1310,8 @@ Required argument
 .SH SUPPORTED-AUDIO-INPUT-FORMATS
 .sp
 Get supported input formats and sample rates by invoking ffmpeg.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1721,6 +1339,8 @@ Required argument
 Convert VBI data in a ld\-decode/vhs\-decode TBC file to SubRip format.
 .sp
 Requires the following: ld\-process\-vbi, ld\-export\-metadata, scc2raw.pl, ccextractor.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1753,6 +1373,8 @@ Required argument
 CLI interface to UltraISO.
 .sp
 On non\-Windows, runs UltraISO via Wine.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1766,197 +1388,197 @@ Options
 .INDENT 0.0
 .TP
 .B \-\-appid <STRING>
-Application ID
+Application ID.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-preparer <STRING>
-Preparer
+Preparer.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-publisher <STRING>
-Publisher
+Publisher.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-sysid <STRING>
-System ID
+System ID.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-volset <STRING>
-Volume Set ID
+Volume Set ID.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-volume <STRING>
-Volume label
+Volume label.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-bootfile <FILENAME>
-Set boot file
+Set boot file.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-bootinfotable
-Generate boot information table in boot file
+Generate boot information table in boot file.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-optimize
-Optimise file systems by coding same files only once
+Optimise file systems by coding same files only once.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-f, \-\-file <FILENAME>
-Add one file or folder (include folder name and all files and folders under it)
+Add one file or folder (include folder name and all files and folders under it).
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-dir <DIRNAME>
-Add all files and folders under given directory (not include directory name itself)
+Add all files and folders under given directory (not include directory name itself).
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-newdir <DIRNAME>
-Create a new directory
+Create a new directory.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-c, \-\-chdir <DIRNAME>
-Change current directory in ISO image
+Change current directory in ISO image.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-r, \-\-rmdir <FILENAME>
-Remove a file or folder from ISO image (full path should be specified)
+Remove a file or folder from ISO image (full path should be specified).
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-hide <FILENAME>
-Set hidden attribute of a file or folder (full path should be specified)
+Set hidden attribute of a file or folder (full path should be specified).
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-ahide <FILENAME>
-Set advanced hidden attribute of a file or folder (full path should be specified)
+Set advanced hidden attribute of a file or folder (full path should be specified).
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-i, \-\-input <FILENAME>
-Input ISO image
+Input ISO image.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-o, \-\-output <FILENAME>
-Output ISO image
+Output ISO image.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-bin2iso <FILENAME>
-Convert input CD/DVD image to ISO format
+Convert input CD/DVD image to ISO format.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-dmg2iso <FILENAME>
-Convert input DMG image to ISO format
+Convert input DMG image to ISO format.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-bin2isz <FILENAME>
-Compress input CD/DVD image to ISZ format
+Compress input CD/DVD image to ISZ format.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-compress <compress>
-Set compression level
+Set compression level.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-encrypt <encrypt>
-Set encryption method
+Set encryption method.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-password <PASSWORD>
-Set ISZ password
+Set ISZ password.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-split <SIZE>
-Set segment size in bytes
+Set segment size in bytes.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-list <FILENAME>
-Create a list of files and folders in an ISO image
+Create a list of files and folders in an ISO image.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-get <FILENAME>
-Set a file or folder(full path should be specified) to be extracted
+Set a file or folder(full path should be specified) to be extracted.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-extract <DIRNAME>
-Extract ISO image to specified directory
+Extract ISO image to specified directory.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-cmd <FILENAME>
-Read arguments from a text file
+Read arguments from a text file.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-l, \-\-ilong
-Long filename for ISO 9660 volume, up to 31 chars
+Long filename for ISO 9660 volume, up to 31 chars.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-imax
-Max filename for ISO 9660 volume, up to 207 chars
+Max filename for ISO 9660 volume, up to 207 chars.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-vernum
-Include file version number
+Include file version number.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-lowercase
-Allow lowercase letter
+Allow lowercase letter.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-joliet
-Create Joliet volume
+Create Joliet volume.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-jlong
-Long filename for joliet volume, up to 103 chars
+Long filename for joliet volume, up to 103 chars.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-rockridge
-Create RockRidge volume
+Create RockRidge volume.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-udf
-Create UDF volume
+Create UDF volume.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-hfs
-Create Apple HFS volume
+Create Apple HFS volume.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-udfdvd
-Create UDF DVD image (this option will overwrite all other volume settings)
+Create UDF DVD image (this option will overwrite all other volume settings).
 .UNINDENT
 .INDENT 0.0
 .TP
@@ -1966,6 +1588,8 @@ Enable debug logging.
 .SH WAIT-FOR-DISC
 .sp
 Wait for a disc in a drive to be ready.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1991,6 +1615,8 @@ Required argument
 .SH ADP
 .sp
 Calculate US salary.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2001,6 +1627,11 @@ adp [OPTIONS]
 .UNINDENT
 .sp
 Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
 .INDENT 0.0
 .TP
 .B \-H, \-\-hours <HOURS>
@@ -2024,6 +1655,8 @@ AK | AL | AR | AS | AZ | CA | CO | CT | DC | DE | FL | FM | GA | GU | HI | IA | 
 .SH BURNRARISO
 .sp
 Burns an ISO found in a RAR file via piping.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2084,6 +1717,8 @@ Required argument
 .SH GOGEXTRACT
 .sp
 Extract a Linux gog.com archive.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2114,6 +1749,8 @@ Required argument
 .SH UNPACK-0DAY
 .sp
 Unpack RAR files from 0day zip file sets.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2132,6 +1769,8 @@ Optional argument(s)
 .SH CSSQ
 .sp
 Filter HTML with CSS.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2187,6 +1826,8 @@ Optional argument
 .SH FULLWIDTH2ASCII
 .sp
 Convert fullwidth characters to ASCII.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2205,6 +1846,8 @@ Optional argument
 .SH IS-ASCII
 .sp
 Check if a file is ASCII.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2227,6 +1870,8 @@ Check if a file has binary contents.
 For this utility, 0 byte files do not count as binary.
 .sp
 Exit code 0 means the file probably contains binary content.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2245,6 +1890,8 @@ Optional argument
 .SH JSON2YAML
 .sp
 Convert JSON to YAML.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2275,6 +1922,8 @@ Optional argument
 .SH NETLOC
 .sp
 Decode a URL\-encoded string.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2313,6 +1962,8 @@ Convert a Property List file to JSON.
 .sp
 This command does not do any type conversions. This means files containing <data> objects will
 not work.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2333,6 +1984,8 @@ Optional argument
 Transform a string to a \(aqsanitised\(aq form.
 .sp
 By default, a restricted character set safe for Windows filenames is used. Disable with \-R.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2358,6 +2011,8 @@ Optional argument
 .SH SLUGIFY
 .sp
 Slugify a string.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2383,6 +2038,8 @@ Optional argument
 .SH TITLE-FIXER
 .sp
 Fix titles.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2433,6 +2090,8 @@ Optional argument
 .SH TRIM
 .sp
 Trim lines in file.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2453,6 +2112,8 @@ Optional argument
 Run Python \fBstr.title()\fP for lines in file.
 .sp
 Named after PHP\(aqs function.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2471,6 +2132,8 @@ Optional argument
 .SH UNDERSCORIZE
 .sp
 Convert a string to an underscorised form.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2489,6 +2152,8 @@ Optional argument
 .SH URLDECODE
 .sp
 Decode a URL\-encoded string.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2524,6 +2189,8 @@ Optional argument
 .SH KILL-WINE
 .sp
 Terminate all Wine processes.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2535,6 +2202,8 @@ kill\-wine [OPTIONS]
 .SH PATCH-UISO-FONT
 .sp
 Patch UltraISO\(aqs hard\-coded font.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2565,6 +2234,8 @@ Font to use.
 Set all Wine fonts to be the one passed in.
 .sp
 This will run on Windows but it is not recommended to try on newer than Windows 7.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2598,6 +2269,8 @@ Font size in points.
 .SH UNIX2WINE
 .sp
 Convert a UNIX path to an absolute Wine path.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2616,6 +2289,8 @@ Required argument
 .SH UNREGISTER-WINE-ASSOCS
 .sp
 Unregister Wine file associations. Terminates all Wine processes before starting.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2644,6 +2319,8 @@ This calls the installer with the following arguments:
 .EE
 .UNINDENT
 .UNINDENT
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2686,6 +2363,8 @@ Required argument
 Start a new shell with WINEPREFIX set up.
 .sp
 For Bash and similar shells only.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2711,6 +2390,8 @@ Required argument
 .SH CHECK-BOOKMARKS-HTML
 .sp
 Check for URLs that are not valid any more (status 404) and redirections.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2738,6 +2419,8 @@ Required argument
 Determine which flag is causing an issue in Chrome or any Chromium\-based browser.
 .sp
 Only supports removing flags (setting back to default) and not setting them to \(aqsafe\(aq values.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2751,7 +2434,7 @@ Options
 .INDENT 0.0
 .TP
 .B \-s, \-\-subprocess\-name <subprocess_name>
-Chromium\-based browser subprocess name such as \(dqchrome\(dq
+Chromium\-based browser subprocess name such as \(dqchrome\(dq.
 .UNINDENT
 .INDENT 0.0
 .TP
@@ -2770,6 +2453,8 @@ Optional argument
 Fix a Chromium PWA icon that failed to sync.
 .sp
 For more information see \X'tty: link https://issues.chromium.org/issues/40595456'\fI\%https://issues.chromium.org/issues/40595456\fP\X'tty: link'\&.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2820,6 +2505,8 @@ Required argument
 .SH WHERE-FROM
 .sp
 Display URL where a file was downloaded from.
+.sp
+Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -2845,6 +2532,6 @@ Optional argument(s)
 .SH AUTHOR
 Andrew Udvare <audvare@gmail.com>
 .SH COPYRIGHT
-2025
+2026
 .\" Generated by docutils manpage writer.
 .
