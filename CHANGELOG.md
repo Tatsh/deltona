@@ -22,6 +22,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   hidden on macOS/Windows, Windows-incompatible commands hidden on Windows).
 - `windows`: set `DEFAULT_DPI` to 96 (was 72).
 - `kconfig_to_commands` boolean check is no longer case-sensitive.
+- Narrowed `pydbus` and `pygobject` platform markers from non-Windows to Linux-only (bluez is
+  Linux-specific).
 
 ### Fixed
 
