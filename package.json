@@ -83,6 +83,12 @@
         }
       },
       {
+        "files": ["*.json.dist"],
+        "options": {
+          "parser": "json"
+        }
+      },
+      {
         "files": ["*.md", "*.mdc"],
         "options": {
           "parser": "markdown"
