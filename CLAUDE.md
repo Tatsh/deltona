@@ -6,8 +6,9 @@ See @README.md for an overview of this project, and view @AGENTS.md for the agen
 
 Bash commands containing `$()` subshells trigger interactive permission prompts. Avoid these:
 
-- **Git commits**: write message to `/tmp/commit-msg` with `cat > /tmp/commit-msg <<'EOF'`, then
-  `git commit -S -s -F /tmp/commit-msg`. Never use `-m "$(cat <<'EOF' ...)"`.
+- **Git commits**: use the **Write** tool to write the message to `/tmp/commit-msg`, then run
+  `git commit -S -s -F /tmp/commit-msg` via Bash. Never use `-m "$(cat <<'EOF' ...)"` or
+  `cat > /tmp/commit-msg` in Bash (both trigger permission prompts).
 - **Command substitution**: prefer chaining with `&&` and temp files over `$()` inline.
 - **Backticks**: same issue as `$()` — avoid `` `command` `` in Bash tool calls.
 - **Pipes into commands** are fine (`echo foo | git commit --stdin` etc.).

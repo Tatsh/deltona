@@ -121,23 +121,12 @@ Closes: #123
 
 1. Stage files for each logical commit using `git add` with specific file paths.
 2. If `CHANGELOG.md` was updated by the changelog agent, stage it with the relevant commit.
-3. Write the commit message to a temp file and commit with `-F` to avoid `$()` subshells (which
-   trigger interactive permission prompts):
+3. Write the commit message to `/tmp/commit-msg` using the **Write** tool (not Bash `cat`), then
+   commit with `git commit -S -s -F /tmp/commit-msg`.
 
-```bash
-cat > /tmp/commit-msg <<'EOF'
-component.name: short description
-
-Optional body.
-
-Closes: #123
-EOF
-git commit -S -s -F /tmp/commit-msg
-```
-
-1. If a pre-commit hook fails, fix the issue, re-stage (use appropriate agent if there is one), and
+4. If a pre-commit hook fails, fix the issue, re-stage (use appropriate agent if there is one), and
    try to commit again.
-2. After all commits, run `git status` to verify clean state.
+5. After all commits, run `git status` to verify clean state.
 
 ## Rules
 
