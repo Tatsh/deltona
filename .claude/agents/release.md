@@ -29,7 +29,7 @@ checks, bump the version, and push.
 
 6. **Run `pre-commit run -a`** to ensure all hooks pass. Fix any issues before proceeding.
 
-7. **Run `cz bump --changelog --increment {MAJOR,MINOR,PATCH}`** with the appropriate increment.
+7. **Run `cz bump --changelog --gpg-sign --increment {MAJOR,MINOR,PATCH}`** with the appropriate increment.
    If `cz bump` fails for any reason, **stop work immediately and alert the user**. Do not attempt
    to work around the failure.
 
