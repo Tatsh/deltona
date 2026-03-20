@@ -24,5 +24,27 @@ instruction files under `.github/instructions/`.
 
 - Never suppress or disable linter rules to make checks pass. Fix the root cause.
 - Follow all project conventions when fixing issues (see `.github/instructions/`).
+- Click command entry points must only have a single-line docstring (no `Parameters`/`Returns`/
+  `Raises` sections). Click uses the docstring as CLI help text.
+- Use `http.HTTPStatus` constants (e.g. `HTTPStatus.FORBIDDEN`) instead of bare integer status codes.
+- Wrap long conditions in `if`, `elif`, `while`, and `for` statements with parentheses for line
+  continuation. Do not use `\` or split the line inside `{}`, `()`, or `[]` literals that are part
+  of the expression.
+
+  Correct:
+
+  ```python
+  if (response is not None
+          and response.status_code in {HTTPStatus.FORBIDDEN, HTTPStatus.TOO_MANY_REQUESTS}):
+  ```
+
+  Wrong:
+
+  ```python
+  if response is not None and response.status_code in {
+          HTTPStatus.FORBIDDEN, HTTPStatus.TOO_MANY_REQUESTS
+  }:
+  ```
+
 - If a fix introduces new errors, fix those too before re-running.
 - If stuck in a loop (same error persists after 3 attempts), stop and alert the user.
