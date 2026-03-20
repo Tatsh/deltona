@@ -101,17 +101,18 @@ Closes: #123
 
 1. Stage files for each logical commit using `git add` with specific file paths.
 2. If `CHANGELOG.md` was updated by the changelog agent, stage it with the relevant commit.
-3. Commit with `git commit -S -s` (GPG sign + sign-off) using a HEREDOC for the message:
+3. Write the commit message to a temp file and commit with `-F` to avoid `$()` subshells (which
+   trigger interactive permission prompts):
 
 ```bash
-git commit -S -s -m "$(cat <<'EOF'
+cat > /tmp/commit-msg <<'EOF'
 component.name: short description
 
 Optional body.
 
 Closes: #123
 EOF
-)"
+git commit -S -s -F /tmp/commit-msg
 ```
 
 1. If a pre-commit hook fails, fix the issue, re-stage, and create a NEW commit (never amend).
