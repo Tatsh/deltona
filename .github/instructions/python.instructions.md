@@ -118,7 +118,7 @@ applyTo: '**/*.py, **/*.pyi'
 - All test function names must start with `test_`.
 - Test files must be named `test_*.py`.
 - Use `pytest` for testing.
-- Use `@pytest.mark.parametrize` for parameterized tests.
+- Use `@pytest.mark.parametrize` for parametrised tests.
 - Use `@pytest.mark.asyncio` for asynchronous tests.
 - Use `pytest.raises` for testing exceptions.
 - Use `@pytest.fixture` decorator for fixtures.
@@ -257,9 +257,9 @@ applyTo: '**/*.py, **/*.pyi'
 
 When fixing mypy errors or eliminating `Any` usage, follow these strategies in order of preference:
 
-1. **TypedDict** for dictionary shapes — place shared ones in `deltona/typing.py` and add to
+1. **TypedDict** for dictionary shapes - place shared ones in `deltona/typing.py` and add to
    `__all__`.
-2. **PEP 695 generic type variables** (`def func[T](items: Sequence[T]) -> T`) — do not use
+2. **PEP 695 generic type variables** (`def func[T](items: Sequence[T]) -> T`) - do not use
    `TypeVar` directly.
 3. **ParamSpec** for decorators and callable wrappers
    (`def decorator[**P, R](fn: Callable[P, R]) -> Callable[P, R]`).
@@ -278,7 +278,7 @@ Keep `Any` only when:
 
 ### Rules
 
-- `# type: ignore` must always include specific error code(s), e.g. `# type: ignore[assignment]` —
+- `# type: ignore` must always include specific error code(s), e.g. `# type: ignore[assignment]` -
   bare `# type: ignore` is never acceptable.
 - `# type: ignore[...]` is only acceptable when `cast()` is not suitable and a limitation in
   Python's type system causes the error. Always add a brief comment explaining the limitation.

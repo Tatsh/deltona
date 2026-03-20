@@ -2,14 +2,20 @@
 
 ## Agents (Claude Code)
 
-| Agent                                              | Purpose                                      |
-| -------------------------------------------------- | -------------------------------------------- |
-| [markdownlint-fixer](agents/markdownlint-fixer.md) | Fix markdownlint-cli2 issues.                |
-| [mypy-fixer](agents/mypy-fixer.md)                 | Fix mypy errors and eliminate `Any`.         |
-| [python-expert](agents/python-expert.md)           | General expert-level Python coding.          |
-| [python-moderniser](agents/python-moderniser.md)   | Upgrade code to modern Python features.      |
-| [qa-fixer](agents/qa-fixer.md)                     | Run `yarn format` and `yarn qa` until clean. |
-| [release](agents/release.md)                       | Changelog, version bump, push.               |
+| Agent                                                        | Purpose                                                    |
+| ------------------------------------------------------------ | ---------------------------------------------------------- |
+| [python-expert](.claude/agents/python-expert.md)             | General expert-level Python coding (includes mypy/typing)  |
+| [mypy-fixer](.claude/agents/mypy-fixer.md)                   | Fix mypy errors and eliminate `Any`                        |
+| [python-moderniser](.claude/agents/python-moderniser.md)     | Upgrade code to modern Python features                     |
+| [docstring-fixer](.claude/agents/docstring-fixer.md)         | Audit and fix missing/incomplete docstrings                |
+| [test-writer](.claude/agents/test-writer.md)                 | Generate tests following project patterns                  |
+| [coverage-improver](.claude/agents/coverage-improver.md)     | Identify coverage gaps and write tests                     |
+| [click-auditor](.claude/agents/click-auditor.md)             | Validate Click command consistency                         |
+| [markdownlint-fixer](.claude/agents/markdownlint-fixer.md)   | Fix markdownlint-cli2 issues                               |
+| [qa-fixer](.claude/agents/qa-fixer.md)                       | Run `yarn format` and `yarn qa` until clean                |
+| [workflow-shellcheck](.claude/agents/workflow-shellcheck.md) | ShellCheck embedded Bash in workflow YAML                  |
+| [copy-editor](.claude/agents/copy-editor.md)                 | Fix prose style, grammar, and spelling in comments/strings |
+| [release](.claude/agents/release.md)                         | Changelog, version bump, push                              |
 
 ## Instruction Files
 
@@ -36,4 +42,3 @@ all three.
 | [json-yaml](.cursor/rules/json-yaml.mdc)       | JSON and YAML files                   |
 | [toml-ini](.cursor/rules/toml-ini.mdc)         | TOML and INI files                    |
 | [markdown](.cursor/rules/markdown.mdc)         | Markdown files                        |
-| [mypy-fixer](.cursor/rules/mypy-fixer.mdc)     | Mypy fixer guidelines                 |

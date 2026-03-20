@@ -9,7 +9,7 @@ applyTo: 'tests/**/*.py'
     `from pytest_mock import MockerFixture`.
 - All test function names must start with `test_`.
 - Test files must be named `test_*.py`.
-- Use `@pytest.mark.parametrize` for parameterized tests.
+- Use `@pytest.mark.parametrize` for parametrised tests.
 - Use `@pytest.mark.asyncio` for asynchronous tests.
 - Use `pytest.raises` for testing exceptions.
 - Use `@pytest.fixture` for fixtures.

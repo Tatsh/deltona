@@ -10,7 +10,7 @@ applyTo: '**/*.md'
 - Code blocks: line length applies unless the content is a single-line shell command meant to be
   copied and pasted (GitHub and others show a copy button).
 - Word-wrap prose at 100 characters. Do not break inside inline code, links, or URLs.
-- Run `yarn prettier -w` before `yarn markdownlint-cli2` — prettier fixes tables, trailing
+- Run `yarn prettier -w` before `yarn markdownlint-cli2` - prettier fixes tables, trailing
   whitespace, and other structural issues automatically.
 - Do not disable rules with `<!-- markdownlint-disable -->` comments unless there is no other way
   to satisfy the rule.

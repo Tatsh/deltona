@@ -105,11 +105,11 @@ forcecloseapplications
 foxundermoon
 fqxz
 froms
-functools
 fspath
 fullfacesize
 fulltimestudent
 fullwidth
+functools
 gamescope
 gamescopereaper
 gbrpf
@@ -150,13 +150,13 @@ jsonnet
 jsonschema
 kconfig
 kdeglobals
-kwargs
 kdialog
 keepends
 keyslot
 keyslots
 khtml
 killall
+kwargs
 kwriteconfig
 lahu
 laka
@@ -217,8 +217,8 @@ onefile
 oneline
 otherfilerc
 paramiko
-pathlib
 parms
+pathlib
 pavelzw
 personalblindness
 pexpect
@@ -260,6 +260,7 @@ sendline
 setattr
 setpts
 setwinsize
+shellcheck
 shellformat
 shiftjis
 sigwinch
@@ -278,8 +279,8 @@ tasklist
 tatsh
 testpaths
 toctree
-tomllib
 tomlkit
+tomllib
 tomlq
 tonemap
 tonumber
@@ -289,9 +290,9 @@ tryfirst
 ttitle
 tvos
 txxx
+ubyte
 ucwords
 udfdvd
-ubyte
 udvare
 uiso
 ultrabold
@@ -330,3 +331,4 @@ wwdc
 xauthority
 yarnrc
 zscale
+ångström
