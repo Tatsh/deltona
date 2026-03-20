@@ -11,8 +11,33 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Added top-level `deltona` CLI that wraps all commands as subcommands.
 - Added `kconfig-to-json` and `deltona.system.kconfig_to_dict`.
 - Added `cssq`.
+- `adp`: added `-d`/`--debug` flag for debug logging.
+
+### Changed
+
+- `windows`: set `DEFAULT_DPI` to 96 (was 72).
+- `kconfig_to_commands` boolean check is no longer case-sensitive.
+
+### Fixed
+
+- Fixed `kconfig-to-commands` not outputting the `--file` argument for non-default files.
+- `connect-g603`: import `Gio` late (fix for when `gi` is not installed especially on non-Linux).
+- `merge-dependabot-prs`: post `@dependabot recreate` consistently and do not repost it if the last
+  comment is the same.
+
+### Removed
+
+- Moved `mkwineprefix` to its own package `mkwineprefix`.
+- Moved `ripcd` to its own package `ripcd`.
+- Moved `flacted` to its own package `flacted`.
+
+## [0.0.3] - 2025-06-08
+
+### Added
+
 - `media.archive_dashcam_footage`
   - Added `container` parameter (defaults to `matroska`). Must match extension.
   - Added `extension` parameter (defaults to `'mkv'`).
@@ -25,20 +50,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Set default encoder to `'libx265'`.
 - `media.archive_dashcam_footage`
   - Set default `video_encoder` to `'libx265'`.
-- `kconfig_to_commands` boolean check is no longer case-sensitive.
-
-### Fixed
-
-- Fixed `kconfig-to-commands` not outputting the `--file` argument for non-default files.
-- `connect-g603`: import `Gio` late (fix for when `gi` is not installed especially on non-Linux).
-- `merge-dependabot-mrs`: Post `@dependabot recreate` consistently and do not repost it if the last
-  comment is the same.
-
-### Removed
-
-- Moved `mkwineprefix` to its own package `mkwineprefix`.
-- Moved `ripcd` to its own package `ripcd`.
-- Moved `flacted` to its own package `flacted`.
 
 ## [0.0.2] - 2025-06-07
 
@@ -67,6 +78,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 First version. `check_bookmarks_html_urls` may have unresolved issues.
 
-[unreleased]: https://github.com/Tatsh/deltona/compare/v0.0.2...HEAD
+[unreleased]: https://github.com/Tatsh/deltona/compare/v0.0.3...HEAD
+[0.0.3]: https://github.com/Tatsh/deltona/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/Tatsh/deltona/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/Tatsh/deltona/releases/tag/v0.0.1
