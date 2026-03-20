@@ -96,6 +96,7 @@ jobs:
           fi
           uv run pyinstaller --log-level ERROR --onefile -n deltona --optimize 1 \
             --hidden-import colorlog --collect-submodules deltona \
+            --collect-data binaryornot \
             -y --version-file version-info.txt \
             "${openssl_args[@]}" temp_script.py
           if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
