@@ -61,7 +61,10 @@ def process(data: str, *, verbose: bool = False) -> int:
 
 ## Rules
 
-- `Parameters` section required for all functions with parameters.
+- Click command entry points (functions decorated with `@click.command` or `@click.group`) must only
+  have a single-line docstring with a short description. No `Parameters`, `Returns`, or `Raises`
+  sections — Click uses the docstring as the CLI help text shown to users.
+- `Parameters` section required for all other functions with parameters.
 - `Returns` section required if return type is not `None`.
 - `Raises` section required with descriptions for each exception type.
 - No `, optional` - use `TypeName | None` instead.

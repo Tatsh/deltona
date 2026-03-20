@@ -135,9 +135,13 @@ All code and comments must be word-wrapped at 100 characters.
 
 ## Docstrings
 
-All functions with parameters must have a NumPy-style docstring with a `Parameters` section. If the
-return value is not `None`, include a `Returns` section. Single-line docstrings are fine for simple
-functions without parameters:
+Click command entry points (functions decorated with `@click.command` or `@click.group`) must only
+have a single-line docstring with a short description. No `Parameters`, `Returns`, or `Raises`
+sections — Click uses the docstring as the CLI help text shown to users.
+
+All other functions with parameters must have a NumPy-style docstring with a `Parameters` section.
+If the return value is not `None`, include a `Returns` section. Single-line docstrings are fine for
+simple functions without parameters:
 
 ```python
 def simple() -> None:
