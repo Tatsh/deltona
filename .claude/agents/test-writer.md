@@ -65,4 +65,4 @@ def test_my_func_raises_on_empty(self) -> None:
 3. Identify test cases: success paths, edge cases, error paths.
 4. Write tests following the patterns above.
 5. Run `uv run pytest` to verify tests pass.
-6. Run `yarn format` and `yarn qa` to ensure compliance.
+6. Launch the **qa-fixer** agent to format and fix any lint/spelling issues.

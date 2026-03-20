@@ -80,5 +80,5 @@ def process(data: str, *, verbose: bool = False) -> int:
    b. Identify symbols in `__all__`.
    c. Check each for a docstring. Flag missing or incomplete ones.
    d. Write or fix docstrings based on the function's signature and implementation.
-2. Run `yarn format` and `yarn qa`. Fix any issues.
+2. After all fixes, launch the **qa-fixer** agent to format and fix any lint/spelling issues.
 3. Run `uv run pytest` to verify no regressions.

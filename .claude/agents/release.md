@@ -23,13 +23,17 @@ checks, bump the version, and push.
 4. **Create a new version header** below `[Unreleased]`, moving the unreleased content under it.
    Format: `## [X.Y.Z] - YYYY-MM-DD`. Leave `[Unreleased]` empty above it.
 
-5. **Run `pre-commit run -a`** to ensure all hooks pass. Fix any issues before proceeding.
+5. **Launch agents in parallel** before bumping:
+   - **copy-editor** - to fix prose in the changelog entries.
+   - **qa-fixer** - to format and fix any lint/spelling issues.
 
-6. **Run `cz bump --changelog --increment {MAJOR,MINOR,PATCH}`** with the appropriate increment.
+6. **Run `pre-commit run -a`** to ensure all hooks pass. Fix any issues before proceeding.
+
+7. **Run `cz bump --changelog --increment {MAJOR,MINOR,PATCH}`** with the appropriate increment.
    If `cz bump` fails for any reason, **stop work immediately and alert the user**. Do not attempt
    to work around the failure.
 
-7. **Push the commit and tags.** Run `git push && git push --tags`.
+8. **Push the commit and tags.** Run `git push && git push --tags`.
 
 ## Rules
 

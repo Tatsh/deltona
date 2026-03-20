@@ -53,5 +53,5 @@ all rules in `.github/instructions/python.instructions.md`.
    b. Run each check above against every command.
    c. Apply fixes directly to the file.
 3. Cross-reference with test files to verify coverage. Report any gaps.
-4. Run `yarn format` and `yarn qa`. Fix any issues introduced by the changes.
+4. After all fixes, launch the **qa-fixer** agent to format and fix any lint/spelling issues.
 5. Run `uv run pytest` to verify no regressions.

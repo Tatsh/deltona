@@ -13,8 +13,11 @@ instruction files under `.github/instructions/`.
 2. Run `yarn qa`. Parse the output for errors.
 3. For each error:
    a. Read the file.
-   b. Fix the issue following the relevant instruction file (Python, Markdown, JSON/YAML, TOML/INI,
-   general).
+   b. For docstring violations (Ruff D1xx, DOC501, etc.), follow the rules in
+   `.claude/agents/docstring-fixer.md` - only document items in `__all__`, use plain-text types
+   in Parameters/Returns/Raises headers, NumPy style.
+   c. For all other issues, fix following the relevant instruction file (Python, Markdown,
+   JSON/YAML, TOML/INI, general).
 4. Repeat from step 1 until both `yarn format` and `yarn qa` exit with code 0.
 
 ## Rules

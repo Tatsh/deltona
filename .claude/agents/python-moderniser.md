@@ -53,7 +53,7 @@ Read `requires-python` from `pyproject.toml` to determine the minimum supported 
    b. Identify patterns that can be modernised based on the minimum version.
    c. Skip any change that would reduce clarity.
    d. Apply changes.
-3. Run `yarn format` and `yarn qa`. Fix any issues.
+3. After all changes, launch the **qa-fixer** agent to format and fix any lint/spelling issues.
 4. Run `uv run pytest` to verify no regressions.
 
 ## Rules

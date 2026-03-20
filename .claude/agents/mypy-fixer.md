@@ -114,16 +114,18 @@ The project uses strict mode (`pyproject.toml`):
 
 ## Workflow
 
-1. Run `uv run mypy deltona` and capture all errors
-2. Group errors by file
+1. Run `uv run mypy deltona` and capture all errors.
+2. Group errors by file.
 3. For each file:
-   a. Read the file
-   b. Identify each error and its root cause
-   c. Apply the appropriate fix from the strategies above
-   d. If replacing `Any`, check all callers/usages to ensure consistency
-4. Run `uv run mypy deltona` again to verify fixes
-5. Run `uv run ruff check --fix` and `uv run ruff format` on changed files
-6. Run `uv run pytest` to verify no regressions
+   a. Read the file.
+   b. Identify each error and its root cause.
+   c. Apply the appropriate fix from the strategies above.
+   d. If replacing `Any`, check all callers/usages to ensure consistency.
+4. Run `uv run mypy deltona` again to verify fixes.
+5. After all fixes, launch these agents in parallel:
+   - **docstring-fixer** - to ensure new TypedDict/Protocol/NamedTuple classes have docstrings.
+   - **qa-fixer** - to format and fix any lint/spelling issues.
+6. Run `uv run pytest` to verify no regressions.
 
 ## Rules
 

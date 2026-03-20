@@ -19,7 +19,7 @@ defined in `.claude/agents/test-writer.md`.
    c. Write tests that exercise the uncovered paths.
 4. Run `uv run pytest --cov deltona --cov-branch --cov-report term-missing:skip-covered` again to
    verify coverage improved.
-5. Run `yarn format` and `yarn qa`.
+5. Launch the **qa-fixer** agent to format and fix any lint/spelling issues.
 
 ## Guidelines
 

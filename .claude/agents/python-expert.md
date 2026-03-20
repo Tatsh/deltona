@@ -267,6 +267,7 @@ name : str, optional
 
 1. Read relevant existing code before making changes.
 2. Follow existing patterns in the codebase.
-3. Run `yarn format` to format all files. Must exit with code 0.
-4. Run `yarn qa` to type-check and run QA utilities. Must exit with code 0.
-5. Run `uv run pytest` to verify changes don't break tests.
+3. After making changes, launch these agents in parallel:
+   - **docstring-fixer** - to ensure new/changed public API has correct docstrings.
+   - **qa-fixer** - to format and fix any lint/type/spelling issues.
+4. Run `uv run pytest` to verify changes don't break tests.
