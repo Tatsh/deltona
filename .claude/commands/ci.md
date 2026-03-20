@@ -1,0 +1,104 @@
+# Commit
+
+Create high-quality Git commits for all pending changes.
+
+## Gathering context
+
+Run these in parallel:
+
+1. `git diff` - unstaged changes.
+2. `git diff --cached` - staged changes.
+3. `git status` - untracked files and overall state.
+4. `git log --no-merges --format='%s%n%b---' -20 | grep -v '^bump:' | grep -iv dependabot` -
+   recent commit message style examples.
+
+## Analysing changes
+
+Group changed files by component. Determine if one commit or multiple logical commits are needed.
+
+### When to split into multiple commits
+
+- Changes span unrelated components (e.g. `deltona/media.py` and `.claude/agents/release.md`).
+- A refactor and a bug fix in the same file should be separate commits.
+- New tests for existing code should be separate from the code changes they test only if the code
+  changes are themselves separate.
+- Dictionary updates (`.vscode/dictionary.txt`) should be committed first with message
+  `dictionary: update`.
+
+### When a single commit is fine
+
+- All changes serve the same purpose within a closely related set of files.
+- A bug fix and its test.
+
+## Commit message format
+
+```text
+component.name: short description
+
+Optional longer description explaining the why, not the what. Wrap at 72
+characters.
+
+Signed-off-by: Author Name <email>
+Closes: #123
+```
+
+### Subject line rules
+
+- Format: `component.name: short description`.
+- Lowercase after the colon (unless a proper noun).
+- No period at the end.
+- Maximum 72 characters.
+- Use imperative mood: 'add', 'fix', 'update', 'remove', not 'added', 'fixes', 'updated'.
+
+### Component prefix rules
+
+- Python file `deltona/media.py` → `deltona/media:`.
+- Multiple files under `deltona/commands/` → `deltona/commands:`.
+- Single command file `deltona/commands/admin.py` → `deltona/commands/admin:`.
+- Workflow file `.github/workflows/qa.yml` → `workflows/qa:`.
+- Multiple workflows → `workflows/*:`.
+- Agent files `.claude/agents/*.md` → `.claude:` or specific agent name.
+- Instruction files across all 3 locations → `project:` (since they span Copilot/Cursor/Claude).
+- Test files `tests/test_media.py` → `tests/test_media:` (or `tests:` for multiple).
+- Dictionary `.vscode/dictionary.txt` → `dictionary:`.
+- Top-level config (`pyproject.toml`, `package.json`) → `project:`.
+- If changes span many unrelated areas → `project:`.
+- CHANGELOG.md → `changelog:`.
+- CONTRIBUTING.md → `contributing:`.
+
+### Trailers
+
+- `Signed-off-by:` - always included on every commit. Use the author name and email from
+  `git config user.name` and `git config user.email`.
+- `Closes: #N` - when a commit closes a GitHub issue.
+- `Fixes: #N` - when a commit fixes a bug reported in an issue.
+- `Reviewed-by:` - if applicable.
+- `Co-authored-by:` - if applicable.
+
+## Making commits
+
+1. Stage files for each logical commit using `git add` with specific file paths.
+2. Commit with `git commit -S -s` (GPG sign + sign-off) using a HEREDOC for the message:
+
+```bash
+git commit -S -s -m "$(cat <<'EOF'
+component.name: short description
+
+Optional body.
+
+Closes: #123
+EOF
+)"
+```
+
+1. If a pre-commit hook fails, fix the issue, re-stage, and create a NEW commit (never amend).
+2. After all commits, run `git status` to verify clean state.
+
+## Rules
+
+- Never use `--no-verify` or `--no-gpg-sign`.
+- Never amend existing commits unless explicitly asked.
+- Never push unless explicitly asked.
+- Always use `-S` for GPG signing and `-s` for sign-off.
+- If there are no changes, do nothing.
+- Stage specific files, never use `git add -A` or `git add .`.
