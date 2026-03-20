@@ -68,7 +68,7 @@ The above all need to pass for any code changes to be accepted.
 - All test functions must start with `test_` and test files as `test_*.py`.
 - Always add type hints, including return values.
 - Use fixtures from `tests/conftest.py` only.
-- Use `@pytest.mark.parametrize` for parameterized tests and `@pytest.mark.asyncio` for async tests.
+- Use `@pytest.mark.parametrize` for parametrised tests and `@pytest.mark.asyncio` for async tests.
 - Do not add docstrings to test functions.
 - Mock external dependencies and I/O operations.
 - Strive to keep the coverage level the same or higher.
