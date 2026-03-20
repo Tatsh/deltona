@@ -12,9 +12,31 @@ Run these in parallel:
 4. `git log --no-merges --format='%s%n%b---' -20 | grep -v '^bump:' | grep -iv dependabot` -
    recent commit message style examples.
 
+## Updating the changelog
+
+After gathering context but before committing, launch the **changelog** agent (using the Agent tool
+with subagent_type `general-purpose`) and tell it to follow `.claude/agents/changelog.md`. Wait for
+the agent to finish. After it completes, check if `CHANGELOG.md` was modified (`git diff
+CHANGELOG.md`). If it was, it will be staged together with the relevant commit.
+
 ## Analysing changes
 
 Group changed files by component. Determine if one commit or multiple logical commits are needed.
+
+### Incidental files
+
+The following files do not count when determining the component prefix, unless they are the **only**
+file in a commit:
+
+- `CHANGELOG.md`
+- `.vscode/dictionary.txt`
+
+For example, if a commit contains `deltona/commands/main.py`, `tests/test_main_command.py`, and
+`CHANGELOG.md`, the component is determined by `deltona/commands/main.py` and
+`tests/test_main_command.py` only. `CHANGELOG.md` is simply staged alongside them.
+
+If `CHANGELOG.md` is the only file being committed, use the `changelog:` prefix. If
+`.vscode/dictionary.txt` is the only file, use `dictionary:` prefix.
 
 ### When to split into multiple commits
 
@@ -60,10 +82,10 @@ Closes: #123
 - Agent files `.claude/agents/*.md` → `.claude:` or specific agent name.
 - Instruction files across all 3 locations → `project:` (since they span Copilot/Cursor/Claude).
 - Test files `tests/test_media.py` → `tests/test_media:` (or `tests:` for multiple).
-- Dictionary `.vscode/dictionary.txt` → `dictionary:`.
+- Dictionary `.vscode/dictionary.txt` → `dictionary:` (only when committed alone).
 - Top-level config (`pyproject.toml`, `package.json`) → `project:`.
 - If changes span many unrelated areas → `project:`.
-- CHANGELOG.md → `changelog:`.
+- CHANGELOG.md → `changelog:` (only when committed alone).
 - CONTRIBUTING.md → `contributing:`.
 
 ### Trailers
@@ -78,7 +100,8 @@ Closes: #123
 ## Making commits
 
 1. Stage files for each logical commit using `git add` with specific file paths.
-2. Commit with `git commit -S -s` (GPG sign + sign-off) using a HEREDOC for the message:
+2. If `CHANGELOG.md` was updated by the changelog agent, stage it with the relevant commit.
+3. Commit with `git commit -S -s` (GPG sign + sign-off) using a HEREDOC for the message:
 
 ```bash
 git commit -S -s -m "$(cat <<'EOF'
