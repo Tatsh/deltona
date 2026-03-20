@@ -127,8 +127,7 @@ def slug_rename_main(
             click.echo(f'{name} -> {target}')
 
 
-def get_ssh_client_cls() -> type[SSHClient]:  # pragma: no cover
-    """Return the SSH client class."""
+def _get_ssh_client_cls() -> type[SSHClient]:  # pragma: no cover
     from paramiko import SSHClient  # noqa: PLC0415
 
     return SSHClient
@@ -174,7 +173,7 @@ def smv_main(
     username = target.split('@', maxsplit=1)[0] if '@' in target else None
     hostname = target.split(':', maxsplit=1)[0]
     target_dir_or_filename = target.split(':')[1]
-    ssh_client_cls = get_ssh_client_cls()
+    ssh_client_cls = _get_ssh_client_cls()
     with ssh_client_cls() as client:
         client.load_system_host_keys()
         client.connect(
@@ -252,7 +251,7 @@ def kconfig_to_json_main(files: Sequence[Path], *, all_: bool = False, debug: bo
     type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
     default='.',
 )
-@click.option('-d', '--depth', default=2, help='Maximum depth.', metavar='DEPTH')
+@click.option('-d', '--depth', default=2, type=int, help='Maximum depth.', metavar='DEPTH')
 @click.option('-f', '--follow-symlinks', is_flag=True, help='Follow symbolic links.')
 @click.option('-o', '--output-file', type=click.File('w'), default=sys.stdout, help='Output file.')
 def generate_html_dir_tree_main(

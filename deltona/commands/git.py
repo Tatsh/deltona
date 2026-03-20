@@ -118,7 +118,7 @@ def merge_dependabot_prs_main(
     username: str,
     affiliation: str = 'owner',
     base_url: str | None = None,
-    delay: int = 120,
+    delay: float = 120,
     *,
     debug: bool = False,
 ) -> None:

@@ -23,7 +23,19 @@ log = logging.getLogger(__name__)
 
 
 def convert_git_ssh_url_to_https(url: str) -> str:
-    """Convert a Git SSH URI to HTTPS."""
+    """
+    Convert a Git SSH URI to HTTPS.
+
+    Parameters
+    ----------
+    url : str
+        Git SSH URL to convert.
+
+    Returns
+    -------
+    str
+        The HTTPS equivalent URL.
+    """
     if url.startswith('https://'):
         return re.sub(r'\.git$', '', url)
     return re.sub(

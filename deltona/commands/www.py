@@ -49,7 +49,7 @@ def where_from_main(files: Sequence[Path], *, webpage: bool = False) -> None:
     '-s',
     '--subprocess-name',
     default='chrome' if not IS_WINDOWS else 'chrome.exe',
-    help='Chromium-based browser subprocess name such as "chrome"',
+    help='Chromium-based browser subprocess name such as "chrome".',
 )
 @click.option(
     '--sleep-time',
@@ -68,14 +68,10 @@ def chrome_bisect_flags_main(
     flags_min_len = 2
 
     def start_test(flags: Sequence[str], local_state: ChromeLocalState) -> tuple[bool, str | None]:
-        """
-        Test apparatus.
-
-        Returns ``True`` if:
-        - there are no more flags (problem flag not found)
-        - if there is only one flag left (problem flag possibly found)
-        - if the problematic flag exists within the passed in flags
-        """
+        # Test apparatus. Returns True if:
+        # - there are no more flags (problem flag not found)
+        # - if there is only one flag left (problem flag possibly found)
+        # - if the problematic flag exists within the passed in flags
         len_flags = len(flags)
         click.echo('Testing flags:')
         for flag in flags:

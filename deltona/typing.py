@@ -27,7 +27,11 @@ __all__ = (
 )
 
 DecodeErrorsOption = Literal['ignore', 'replace', 'strict']
-"""Decode errors option for :py:func:`deltona.utils.decode`."""
+"""
+Decode errors option for string decoding functions.
+
+:meta hide-value:
+"""
 INCITS38Code = Literal[
     'AK',
     'AL',
@@ -90,17 +94,36 @@ INCITS38Code = Literal[
     'WV',
     'WY',
 ]
-"""Two-letter state code according to INCITS 38-2009."""
+"""
+Two-letter state code according to INCITS 38-2009.
+
+:meta hide-value:
+"""
 StrOrBytesPath = str | bytes | PathLike[str] | PathLike[bytes]
-"""String, bytes, ``PathLike[str]`` or ``PathLike[bytes]``."""
+"""
+String, bytes, ``PathLike[str]`` or ``PathLike[bytes]``.
+
+:meta hide-value:
+"""
 StrPath = str | PathLike[str]
-"""String or ``PathLike[str]``."""
+"""
+String or ``PathLike[str]``.
+
+:meta hide-value:
+"""
 FileDescriptorOrPath = int | StrOrBytesPath
-"""File descriptor or path."""
+"""
+File descriptor or path.
+
+:meta hide-value:
+"""
 UNIXStrPath = Annotated[StrPath, 'unix']
-"""String or ``PathLike[str]`` that is a UNIX path."""
+"""
+String or ``PathLike[str]`` that is a UNIX path.
+
+:meta hide-value:
+"""
 StrPathMustExist = Annotated[StrPath, 'must_exist']
-"""String or ``PathLike[str]`` that must exist."""
 
 
 class CDStatus(IntEnum):
@@ -118,12 +141,24 @@ class CDStatus(IntEnum):
     """Tray is open."""
 
 
-def contains_type_path_like_str(type_hints: object) -> bool:  # pragma: no cover
-    """Check if a type hint contains ``os.PathLike[str]``."""
+def contains_type_path_like_str(type_hints: object) -> bool:
+    """
+    Check if a type hint contains ``os.PathLike[str]``.
+
+    Parameters
+    ----------
+    type_hints : object
+        The type hint to inspect.
+
+    Returns
+    -------
+    bool
+        ``True`` if the type hint contains ``os.PathLike[str]``.
+    """
     return os.PathLike[str] in typing.get_args(type_hints)
 
 
-def assert_not_none[T](var: T | None) -> T:  # pragma: no cover
+def assert_not_none[T](var: T | None) -> T:
     """
     Assert the ``var`` is not None and return it.
 
@@ -131,12 +166,12 @@ def assert_not_none[T](var: T | None) -> T:  # pragma: no cover
 
     Parameters
     ----------
-    var : _T | None
+    var : T | None
         The variable to check.
 
     Returns
     -------
-    _T
+    T
         The variable, guaranteed to be not None.
     """
     assert var is not None
@@ -145,17 +180,11 @@ def assert_not_none[T](var: T | None) -> T:  # pragma: no cover
 
 # Used by chrome-bisect-flags
 class ChromeLocalStateBrowser(TypedDict):
-    """Chrome ``local state[browser]`` dictionary."""
-
     enabled_labs_experiments: Sequence[str]
-    """Enabled labs experiments, also known as flags"""
 
 
 class ChromeLocalState(TypedDict):
-    """Chrome local state dictionary."""
-
     browser: ChromeLocalStateBrowser
-    """Browser."""
 
 
 class StreamDispositionDict(TypedDict):
@@ -166,12 +195,8 @@ class StreamDispositionDict(TypedDict):
 
 
 class TagsDict(TypedDict):
-    """Tags dictionary."""
-
     info_json: NotRequired[str]
-    """Info JSON."""
     TXXX: NotRequired[str]
-    """TXXX tag."""
 
 
 class StreamsDict(TypedDict):
@@ -190,10 +215,7 @@ class StreamsDict(TypedDict):
 
 
 class FormatDict(TypedDict):
-    """FFmpeg format dictionary."""
-
     tags: TagsDict
-    """Tags dictionary."""
 
 
 class ProbeDict(TypedDict):

@@ -77,28 +77,28 @@ def wait_for_disc_main(drive_path: Path, wait_time: float = 1.0) -> None:
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option('--appid', metavar='STRING', help='Application ID')
-@click.option('--preparer', metavar='STRING', help='Preparer')
-@click.option('--publisher', metavar='STRING', help='Publisher')
-@click.option('--sysid', metavar='STRING', help='System ID')
-@click.option('--volset', metavar='STRING', help='Volume Set ID', type=int)
-@click.option('--volume', metavar='STRING', help='Volume label')
+@click.option('--appid', metavar='STRING', help='Application ID.')
+@click.option('--preparer', metavar='STRING', help='Preparer.')
+@click.option('--publisher', metavar='STRING', help='Publisher.')
+@click.option('--sysid', metavar='STRING', help='System ID.')
+@click.option('--volset', metavar='STRING', help='Volume Set ID.', type=int)
+@click.option('--volume', metavar='STRING', help='Volume label.')
 @click.option(
     '--bootfile',
     metavar='FILENAME',
-    help='Set boot file',
+    help='Set boot file.',
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
 )
-@click.option('--bootinfotable', is_flag=True, help='Generate boot information table in boot file')
+@click.option('--bootinfotable', is_flag=True, help='Generate boot information table in boot file.')
 @click.option(
-    '--optimize', is_flag=True, help='Optimise file systems by coding same files only once'
+    '--optimize', is_flag=True, help='Optimise file systems by coding same files only once.'
 )
 @click.option(
     '-f',
     '--file',
     'files',
     metavar='FILENAME',
-    help='Add one file or folder (include folder name and all files and folders under it)',
+    help='Add one file or folder (include folder name and all files and folders under it).',
     multiple=True,
     type=click.Path(exists=True, path_type=Path),
 )
@@ -107,94 +107,98 @@ def wait_for_disc_main(drive_path: Path, wait_time: float = 1.0) -> None:
     'dirs',
     metavar='DIRNAME',
     multiple=True,
-    help='Add all files and folders under given directory (not include directory name itself)',
+    help='Add all files and folders under given directory (not include directory name itself).',
     type=click.Path(exists=True, path_type=Path),
 )
-@click.option('--newdir', metavar='DIRNAME', help='Create a new directory')
-@click.option('-c', '--chdir', metavar='DIRNAME', help='Change current directory in ISO image')
+@click.option('--newdir', metavar='DIRNAME', help='Create a new directory.')
+@click.option('-c', '--chdir', metavar='DIRNAME', help='Change current directory in ISO image.')
 @click.option(
     '-r',
     '--rmdir',
     metavar='FILENAME',
-    help='Remove a file or folder from ISO image (full path should be specified)',
+    help='Remove a file or folder from ISO image (full path should be specified).',
 )
 @click.option(
     '--hide',
     metavar='FILENAME',
-    help='Set hidden attribute of a file or folder (full path should be specified)',
+    help='Set hidden attribute of a file or folder (full path should be specified).',
 )
 @click.option(
     '--ahide',
     metavar='FILENAME',
-    help='Set advanced hidden attribute of a file or folder (full path should be specified)',
+    help='Set advanced hidden attribute of a file or folder (full path should be specified).',
 )
 @click.option(
     '-i',
     '--input',
     'input_',
     metavar='FILENAME',
-    help='Input ISO image',
+    help='Input ISO image.',
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
 )
-@click.option('-o', '--output', metavar='FILENAME', help='Output ISO image')
+@click.option('-o', '--output', metavar='FILENAME', help='Output ISO image.')
 @click.option(
     '--bin2iso',
     metavar='FILENAME',
-    help='Convert input CD/DVD image to ISO format',
+    help='Convert input CD/DVD image to ISO format.',
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
 )
 @click.option(
     '--dmg2iso',
     metavar='FILENAME',
-    help='Convert input DMG image to ISO format',
+    help='Convert input DMG image to ISO format.',
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
 )
 @click.option(
     '--bin2isz',
     metavar='FILENAME',
-    help='Compress input CD/DVD image to ISZ format',
+    help='Compress input CD/DVD image to ISZ format.',
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
 )
-@click.option('--compress', help='Set compression level', type=click.IntRange(1, 16))
-@click.option('--encrypt', help='Set encryption method', type=click.IntRange(1, 3))
+@click.option('--compress', help='Set compression level.', type=click.IntRange(1, 16))
+@click.option('--encrypt', help='Set encryption method.', type=click.IntRange(1, 3))
 @click.option(
-    '--password', metavar='PASSWORD', help='Set ISZ password', prompt_required=True, hide_input=True
+    '--password',
+    metavar='PASSWORD',
+    help='Set ISZ password.',
+    prompt_required=True,
+    hide_input=True,
 )
-@click.option('--split', metavar='SIZE', help='Set segment size in bytes', type=int)
+@click.option('--split', metavar='SIZE', help='Set segment size in bytes.', type=int)
 @click.option(
     '--list',
     'list_',
     metavar='FILENAME',
-    help='Create a list of files and folders in an ISO image',
+    help='Create a list of files and folders in an ISO image.',
     type=click.Path(dir_okay=False, path_type=Path),
 )
 @click.option(
     '--get',
     metavar='FILENAME',
-    help='Set a file or folder(full path should be specified) to be extracted',
+    help='Set a file or folder(full path should be specified) to be extracted.',
 )
-@click.option('--extract', metavar='DIRNAME', help='Extract ISO image to specified directory')
+@click.option('--extract', metavar='DIRNAME', help='Extract ISO image to specified directory.')
 @click.option(
     '--cmd',
     metavar='FILENAME',
-    help='Read arguments from a text file',
+    help='Read arguments from a text file.',
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
 )
 @click.option(
-    '-l', '--ilong', is_flag=True, help='Long filename for ISO 9660 volume, up to 31 chars'
+    '-l', '--ilong', is_flag=True, help='Long filename for ISO 9660 volume, up to 31 chars.'
 )
-@click.option('--imax', is_flag=True, help='Max filename for ISO 9660 volume, up to 207 chars')
-@click.option('--vernum', is_flag=True, help='Include file version number')
-@click.option('--lowercase', is_flag=True, help='Allow lowercase letter')
-@click.option('--joliet', is_flag=True, help='Create Joliet volume')
-@click.option('--jlong', is_flag=True, help='Long filename for joliet volume, up to 103 chars')
-@click.option('--rockridge', is_flag=True, help='Create RockRidge volume')
-@click.option('--udf', is_flag=True, help='Create UDF volume')
-@click.option('--hfs', is_flag=True, help='Create Apple HFS volume')
+@click.option('--imax', is_flag=True, help='Max filename for ISO 9660 volume, up to 207 chars.')
+@click.option('--vernum', is_flag=True, help='Include file version number.')
+@click.option('--lowercase', is_flag=True, help='Allow lowercase letter.')
+@click.option('--joliet', is_flag=True, help='Create Joliet volume.')
+@click.option('--jlong', is_flag=True, help='Long filename for joliet volume, up to 103 chars.')
+@click.option('--rockridge', is_flag=True, help='Create RockRidge volume.')
+@click.option('--udf', is_flag=True, help='Create UDF volume.')
+@click.option('--hfs', is_flag=True, help='Create Apple HFS volume.')
 @click.option(
     '--udfdvd',
     is_flag=True,
-    help='Create UDF DVD image (this option will overwrite all other volume settings)',
+    help='Create UDF DVD image (this option will overwrite all other volume settings).',
 )
 @click.option('-d', '--debug', is_flag=True, help='Enable debug logging.')
 def ultraiso_main(  # noqa: PLR0913, PLR0917
@@ -530,7 +534,7 @@ def encode_dashcam_main(  # noqa: PLR0913, PLR0917
     group and always a video without a matching front video file the end). These are automatically
     ignored if possible. This behaviour can be disabled by passing --no-fix-groups.
 
-    Original files' whose content is successfully converted are sent to the wastebin.
+    Original files whose content is successfully converted are sent to the wastebin.
 
     Example use:
 
@@ -575,7 +579,7 @@ def encode_dashcam_main(  # noqa: PLR0913, PLR0917
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('--crf', help='CRF value.', type=int, default=20)
 @click.option('--delete-after', help='Send processed file to wastebin.', is_flag=True)
-@click.option('-f', '--fast', help='Use less filters (lower quality).', is_flag=True)
+@click.option('-f', '--fast', help='Use fewer filters (lower quality).', is_flag=True)
 def hlg2sdr_main(
     filename: Path,
     output: Path | None,

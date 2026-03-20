@@ -29,7 +29,13 @@ if TYPE_CHECKING:
 
     from .typing import StrPath
 
-__all__ = ('add_cdda_times', 'secure_move_path')
+__all__ = (
+    'DataAdapter',
+    'add_cdda_times',
+    'kill_processes_by_name',
+    'secure_move_path',
+    'unregister_wine_file_associations',
+)
 
 ZERO_TO_99 = '|'.join(f'{x:02d}' for x in range(100))
 ZERO_TO_59 = '|'.join(f'{x:02d}' for x in range(60))
@@ -45,6 +51,16 @@ def add_cdda_times(times: Iterable[str] | None) -> str | None:
     Add CDDA time strings and get a total runtime in CDDA format.
 
     CDDA format is ``MM:SS:FF`` where ``MM`` is minutes, ``SS`` is seconds, and ``FF`` is frames.
+
+    Parameters
+    ----------
+    times : Iterable[str] | None
+        CDDA time strings to add together.
+
+    Returns
+    -------
+    str | None
+        The total runtime in CDDA format, or ``None`` if the input is empty or invalid.
     """
     if not times:
         return None
@@ -67,7 +83,16 @@ def add_cdda_times(times: Iterable[str] | None) -> str | None:
 
 
 def unregister_wine_file_associations(*, debug: bool = False) -> None:
-    """Unregister all Wine file associations."""
+    """
+    Remove Wine file associations, icons, and MIME types from the user's desktop environment.
+
+    Kills running Wine processes before removing files.
+
+    Parameters
+    ----------
+    debug : bool
+        If ``True``, pass verbose flags to ``update-desktop-database`` and ``update-mime-database``.
+    """
     kill_wine()
     for item in (Path.home() / '.local/share/applications').glob('wine-extension-*.desktop'):
         log.debug('Removing file association "%s".', item)
@@ -107,7 +132,26 @@ def secure_move_path(
     preserve_stats: bool = False,
     write_into: bool = False,
 ) -> None:
-    """Like ``scp`` but moves the file."""
+    """
+    Move a file or directory to a remote host over SSH.
+
+    Like ``scp`` but deletes the local file after a successful copy.
+
+    Parameters
+    ----------
+    client : paramiko.SSHClient
+        Connected SSH client.
+    filename : StrPath
+        Local file or directory to move.
+    remote_target : str
+        Remote destination path. ``~`` is expanded to the remote home directory.
+    dry_run : bool
+        If ``True``, do not perform any file operations.
+    preserve_stats : bool
+        If ``True``, preserve modification and access times.
+    write_into : bool
+        If ``True``, write into the target directory rather than creating a new one.
+    """
     log.debug('Source: "%s", remote target: "%s"', filename, remote_target)
 
     def mkdir_ignore_existing(sftp: SFTPClient, td: str, times: tuple[float, float]) -> None:
@@ -193,26 +237,26 @@ def kill_processes_by_name(
     name: str, wait_timeout: float | None = None, signal: int = SIGTERM, *, force: bool = False
 ) -> list[int] | None:
     """
-    Terminate processes by name.
+    Kill processes matching a name.
 
-    Alternative to using `psutil <https://pypi.org/project/psutil/>`_.
+    On Windows, uses ``taskkill.exe``. On other platforms, uses ``killall``.
 
     Parameters
     ----------
     name : str
-        Process name (base name) or image name (Windows).
+        Process name to kill.
     wait_timeout : float | None
-        If set and processes remain after ending processes, wait this amount of time in seconds.
+        Seconds to wait after sending the signal. If ``None``, do not wait or collect PIDs.
     signal : int
-        Signal to use. Only applies to non-Windows.
+        Signal number to send.
     force : bool
-        If ``wait_timeout`` is set and ``True``, forcefully end the processes after the wait time.
+        If ``True``, forcefully kill remaining processes after the timeout.
 
     Returns
     -------
     list[int] | None
-        PIDs of processes that may still be running, or ``None`` if ``wait_timeout`` is not
-        specified.
+        List of PIDs that were found after the initial signal, or ``None`` if ``wait_timeout``
+        is ``None``.
     """
     name = f'{name}{Path(name).suffix or ".exe"}' if IS_WINDOWS else name
     pids: list[int] = []
@@ -251,15 +295,7 @@ def kill_processes_by_name(
 
 
 class DataAdapter(BaseAdapter):
-    """
-    Adapter for requests to handle data: URLs.
-
-    Example use:
-
-    .. code-block:: python
-       s = requests.Session()
-       s.mount('data:', DataAdapter())
-    """
+    """Requests adapter that returns the URL content (after ``data:``) as the response body."""
 
     @override
     def send(
@@ -271,6 +307,29 @@ class DataAdapter(BaseAdapter):
         cert: bytes | str | tuple[bytes | str, bytes | str] | None = None,
         proxies: Mapping[str, str] | None = None,
     ) -> requests.Response:
+        """
+        Send a request and return the URL content as the response body.
+
+        Parameters
+        ----------
+        request : requests.PreparedRequest
+            The prepared request.
+        stream : bool
+            Unused.
+        timeout : float | tuple[float, float] | tuple[float, None] | None
+            Unused.
+        verify : bool | str
+            Unused.
+        cert : bytes | str | tuple[bytes | str, bytes | str] | None
+            Unused.
+        proxies : Mapping[str, str] | None
+            Unused.
+
+        Returns
+        -------
+        requests.Response
+            A response with the URL content (after ``data:``) as the body.
+        """
         r = requests.Response()
         assert request.url is not None
         r._content = request.url[5:].encode()  # noqa: SLF001
@@ -279,4 +338,4 @@ class DataAdapter(BaseAdapter):
 
     @override
     def close(self) -> None:
-        pass
+        """Clean up adapter resources."""

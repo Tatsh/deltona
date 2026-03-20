@@ -48,7 +48,7 @@ def context_os_open(
 
     Parameters
     ----------
-    path : str
+    path : StrPath
         Path to open.
     flags : int
         Flags to use when opening the file.
@@ -73,10 +73,10 @@ def unpack_0day(path: StrPath, *, remove_diz: bool = True) -> None:
 
     Parameters
     ----------
-    path : str
+    path : StrPath
         Path where zip files are located.
     remove_diz : bool
-        Remove any files matching `*.diz` glob (not case-sensitive). Defaults to ``True``.
+        Remove any files matching ``*.diz`` glob (not case-sensitive). Defaults to ``True``.
     """
     path = Path(path)
     with contextlib.chdir(path):
@@ -131,14 +131,17 @@ def unpack_ebook(path: StrPath) -> None:
 
     Parameters
     ----------
-    path : str
+    path : StrPath
         Path where the zip files are located.
 
     Raises
     ------
     ValueError
+        If no RAR, PDF, or ePub files are found, or if multiple are found unexpectedly.
     NotADirectoryError
+        If ``path`` is not a directory.
     FileExistsError
+        If no zip files are found.
     """
 
     def unrar_x(rar: StrPath) -> None:
@@ -194,9 +197,9 @@ def extract_gog(filename: StrPath, output_dir: StrPath) -> None:
 
     Parameters
     ----------
-    filename : str
+    filename : StrPath
         Path to the GOG archive.
-    output_dir : str
+    output_dir : StrPath
         Directory to extract the files to.
 
     Raises
@@ -288,9 +291,16 @@ class UnRAR:
         """
         Start of the pipe of the RAR's content.
 
+        Parameters
+        ----------
+        rar : StrPath
+            Path to the RAR archive.
+        inner_filename : str
+            Filename within the archive to pipe.
+
         Yields
         ------
-        sp.Popen[bytes]
+        subprocess.Popen[bytes]
             Handle to the ``unrar`` process.
         """
         with sp.Popen(
@@ -303,6 +313,13 @@ class UnRAR:
     def test_extraction(self, rar: StrPath, inner_filename: str | None = None) -> None:
         """
         Test extraction.
+
+        Parameters
+        ----------
+        rar : StrPath
+            Path to the RAR archive.
+        inner_filename : str | None
+            Specific file within the archive to test. If ``None``, tests all files.
 
         Raises
         ------
@@ -327,6 +344,11 @@ class UnRAR:
     def list_files(self, rar: StrPath) -> Iterator[RARInfo]:
         """
         List files.
+
+        Parameters
+        ----------
+        rar : StrPath
+            Path to the RAR archive.
 
         Yields
         ------
@@ -360,6 +382,11 @@ def verify_sfv(sfv_file: StrPath) -> None:
     """
     Verify an SFV file.
 
+    Parameters
+    ----------
+    sfv_file : StrPath
+        Path to the SFV file.
+
     Raises
     ------
     SFVVerificationError
@@ -387,12 +414,12 @@ def make_sfv(sfv_file: StrPath, files: Iterable[StrPath], *, header: bool = True
 
     Parameters
     ----------
-    sfv_file : str
+    sfv_file : StrPath
         Path to the SFV file.
-    files : Iterable[str]
-        List of files to include in the SFV file.
+    files : Iterable[StrPath]
+        Files to include in the SFV file.
     header : bool
-        If True, include a header with the file size and date. Defaults to ``True``.
+        If ``True``, include a header with the file size and date. Defaults to ``True``.
     """
     file_paths = sorted([Path(file) for file in files])
     with Path(sfv_file).open('w+', encoding='utf-8') as f:

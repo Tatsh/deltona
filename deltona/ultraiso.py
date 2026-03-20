@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
     from .typing import StrPath, StrPathMustExist
 
-__all__ = ('run_ultraiso',)
+__all__ = ('patch_ultraiso_font', 'run_ultraiso')
 
 DEFAULT_WINE_PREFIX = Path.home() / '.local/share/wineprefixes/ultraiso'
 MIN_ARGUMENTS = 4 if not IS_WINDOWS else 3
@@ -149,7 +149,7 @@ def run_ultraiso(  # noqa: PLR0913
     bootinfotable : bool
         Generate boot information table in boot file.
     optimize : bool
-        Optimize file systems by coding same files only once.
+        Optimise file systems by coding same files only once.
     chdir : str | None
         Change current directory in ISO image.
     newdir : str | None
@@ -181,7 +181,9 @@ def run_ultraiso(  # noqa: PLR0913
     get : str | None
         Set a file or directory (full path) to be extracted.
     list\_ : StrPath | None
-        Create a list of files and directores in an ISO image.
+        Create a list of files and directories in an ISO image.
+    prefix : StrPathMustExist
+        Wine prefix path.
 
     Raises
     ------
@@ -312,21 +314,28 @@ class InvalidExec(Exception):
 
 def patch_ultraiso_font(exe: os.PathLike[str], font_name: str = 'Noto Sans') -> None:
     """
-    Patch hard-coded UI font in UltraISO executable.
+    Patch the default font in the UltraISO executable.
 
-    Must use the original executable. This will use a backup file if present if it has the suffix
-    ``.exebak``.
+    Replaces ``MS Sans Serif`` with the specified font name. A backup of the original file is
+    created with a ``.exebak`` extension.
+
+    Parameters
+    ----------
+    exe : os.PathLike[str]
+        Path to the UltraISO executable.
+    font_name : str
+        Replacement font name. Maximum 13 characters.
 
     Raises
     ------
     ValueError
-        If the font name is too long.
+        If ``font_name`` exceeds the maximum length.
     FileNotFoundError
-        If the executable does not exist.
+        If ``exe`` does not exist.
     IsADirectoryError
-        If the executable is a directory.
+        If ``exe`` or the backup path is a directory.
     InvalidExec
-        If the executable is not the original UltraISO executable.
+        If the executable does not contain the expected font string.
     """
     exe = Path(exe)
     if len(font_name) > ULTRAISO_FONT_REPLACEMENT_MAX_LENGTH:

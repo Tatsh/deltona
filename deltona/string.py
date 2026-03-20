@@ -20,13 +20,17 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
 
 __all__ = (
+    'add_unidecode_custom_replacement',
     'cssq',
     'cssq_one',
+    'fix_apostrophes',
     'fullwidth_to_narrow',
     'hexstr2bytes',
     'hexstr2bytes_generator',
     'is_ascii',
+    'is_roman_numeral',
     'is_url',
+    'rev_sentences',
     'sanitize',
     'slugify',
     'strip_ansi',
@@ -42,12 +46,22 @@ STRIP_ANSI_PATTERN = re.compile(r'\x1B\[\d+(;\d+){0,2}m')
 @cache
 def strip_ansi(o: str) -> str:
     """
-    Remove ANSI escape sequences from `o`.
+    Remove ANSI escape sequences from ``o``.
 
     As defined by ECMA-048 in http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-048.
 
     Taken from https://github.com/ewen-lbh/python-strip-ansi/ due to installation issues with
     Poetry.
+
+    Parameters
+    ----------
+    o : str
+        String to strip ANSI escape sequences from.
+
+    Returns
+    -------
+    str
+        The string without ANSI escape sequences.
     """
     return STRIP_ANSI_PATTERN.sub('', o)
 
@@ -57,25 +71,64 @@ def strip_ansi_if_no_colors(s: str) -> str:
     Strip ANSI colour-codes if the ``NO_COLOR`` environment variable is set.
 
     See https://no-color.org/.
+
+    Parameters
+    ----------
+    s : str
+        String to conditionally strip.
+
+    Returns
+    -------
+    str
+        The string without ANSI escape sequences if ``NO_COLOR`` is set, otherwise unchanged.
     """
     return strip_ansi(s) if os.environ.get('NO_COLOR') else s
 
 
 @cache
 def underscorize(s: str) -> str:
-    """Replace all space-type characters with ``_``."""
+    """
+    Replace all space-type characters with ``_``.
+
+    Parameters
+    ----------
+    s : str
+        String to transform.
+
+    Returns
+    -------
+    str
+        The transformed string.
+    """
     return re.sub(r'\s+', '_', s)
 
 
 @cache
 def is_ascii(s: Sequence[str]) -> bool:
-    """Check if a string consists of only ASCII characters."""
+    """
+    Check if a string consists of only ASCII characters.
+
+    Parameters
+    ----------
+    s : Sequence[str]
+        String to check.
+
+    Returns
+    -------
+    bool
+        ``True`` if all characters are ASCII.
+    """
     return len(s) == len(list(takewhile(lambda x: ord(x) < ORD_MAX, s)))
 
 
 def hexstr2bytes_generator(s: str) -> Iterator[int]:
     """
     Convert a hex string such as ``"01020a"`` to integers.
+
+    Parameters
+    ----------
+    s : str
+        Hex string to convert.
 
     Yields
     ------
@@ -94,7 +147,19 @@ def hexstr2bytes_generator(s: str) -> Iterator[int]:
 
 
 def hexstr2bytes(s: str) -> bytes:
-    """Convert a hex string such as ``"01020a"`` to its bytes form (``0x1 0x2 0x10)``)."""
+    """
+    Convert a hex string such as ``"01020a"`` to its bytes form (``0x1 0x2 0x10)``).
+
+    Parameters
+    ----------
+    s : str
+        Hex string to convert.
+
+    Returns
+    -------
+    bytes
+        The bytes representation.
+    """
     return bytes(hexstr2bytes_generator(s))
 
 
@@ -163,6 +228,16 @@ def is_url(filename: StrPath) -> bool:
     Detect if ``filename`` is a URL.
 
     This is the same method mpv uses to decide this.
+
+    Parameters
+    ----------
+    filename : StrPath
+        Path or string to check.
+
+    Returns
+    -------
+    bool
+        ``True`` if ``filename`` looks like a URL.
     """
     parts = str(filename).split('://', 1)
     if len(parts) < 2:  # noqa: PLR2004
@@ -181,15 +256,14 @@ def _get_unidecode_cache_and_unidecode() -> tuple[
 
 def add_unidecode_custom_replacement(find: str, replace: str) -> None:
     """
-    Add a custom replacement to the Unidecode library.
+    Add a custom replacement to the Unidecode cache.
 
-    Call this before calling ``unidecode()``.
-
-    Notes
-    -----
-    Unidecode is GPL-only which makes anything calling into this significantly also GPL. If you do
-    not intend to release GPL code, then you must use a different library such as
-    `text-unidecode <https://github.com/kmike/text-unidecode>`_.
+    Parameters
+    ----------
+    find : str
+        Single character to find.
+    replace : str
+        Replacement string.
     """
     cache, unidecode = _get_unidecode_cache_and_unidecode()
     unidecode(find)  # Force it to load the module
@@ -328,6 +402,16 @@ def fullwidth_to_narrow(s: str) -> str:
     Convert fullwidth characters in ``s`` to narrow or halfwidth.
 
     Unlike Unidecode this will convert ``'￥'`` to its halfwidth form ``'¥'``.
+
+    Parameters
+    ----------
+    s : str
+        String containing fullwidth characters.
+
+    Returns
+    -------
+    str
+        The string with fullwidth characters replaced by their narrow equivalents.
     """
     for find, replace in FULLWIDTH_MAP:
         s = s.replace(find, replace)
@@ -336,13 +420,39 @@ def fullwidth_to_narrow(s: str) -> str:
 
 @cache
 def slugify(s: str, *, no_lower: bool = False) -> str:
-    """Slug string generator."""
+    """
+    Generate a slug string.
+
+    Parameters
+    ----------
+    s : str
+        String to slugify.
+    no_lower : bool
+        If ``True``, do not convert to lowercase.
+
+    Returns
+    -------
+    str
+        The slugified string.
+    """
     return re.sub(r'[-\s_]+', '-', re.sub(r'[^\w\s-]', '', s if no_lower else s.lower()).strip())
 
 
 @cache
 def is_roman_numeral(string: str) -> bool:
-    """Check if a string is a Roman numeral."""
+    """
+    Check if a string is a valid Roman numeral.
+
+    Parameters
+    ----------
+    string : str
+        String to check.
+
+    Returns
+    -------
+    bool
+        ``True`` if the string is a valid Roman numeral.
+    """
     if not string:
         return False
     return (
@@ -354,9 +464,17 @@ def is_roman_numeral(string: str) -> bool:
 @cache
 def fix_apostrophes(word: str) -> str:
     """
-    Fix letters around an apostrophe.
+    Title-case a word while preserving apostrophe contractions.
 
-    Example: ``"Don'T"`` becomes ``"Don't"``.
+    Parameters
+    ----------
+    word : str
+        Word to fix.
+
+    Returns
+    -------
+    str
+        The word with correct casing, or unchanged if it contains no apostrophe.
     """
     if "'" not in word:
         return word
@@ -368,7 +486,6 @@ def fix_apostrophes(word: str) -> str:
 
 
 def rev_sentence(w: str) -> str:
-    """Reverse a sentence by word."""
     ending = m.group(1) if (m := re.search(r'([\.\!\?])$', w)) else '.'
     lst = list(reversed(re.sub(r'([\.\!\?:;])$', '', w).split()))
     lst[0] = lst[0].title()
@@ -379,12 +496,17 @@ def rev_sentence(w: str) -> str:
 
 def rev_sentences(sentences: Sequence[str]) -> Iterator[str]:
     """
-    Reverse sentences by word.
+    Reverse the word order of each sentence.
+
+    Parameters
+    ----------
+    sentences : Sequence[str]
+        Sentences to reverse.
 
     Yields
     ------
     str
-        The reversed sentences.
+        Each sentence with its words in reversed order.
     """
     for line in (x.strip() for x in sentences if x.strip()):
         yield rev_sentence(line)
@@ -434,7 +556,8 @@ def cssq_one(
     strip: bool = True,
     text: bool = False,
 ) -> str | Tag | None:
-    """Select a single item from HTML with CSS.
+    """
+    Select a single item from HTML with CSS.
 
     Parameters
     ----------

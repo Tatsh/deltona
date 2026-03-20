@@ -56,7 +56,21 @@ def _getxattr(
 
 
 def where_from(file: FileDescriptorOrPath, *, webpage: bool = False) -> str | None:
-    """Determine where a file came from based on metadata in extended attributes."""
+    """
+    Determine where a file came from based on metadata in extended attributes.
+
+    Parameters
+    ----------
+    file : FileDescriptorOrPath
+        File to inspect.
+    webpage : bool
+        If ``True``, return the webpage URL instead of the direct download URL (macOS only).
+
+    Returns
+    -------
+    str | None
+        The URL the file was downloaded from, or ``None`` if not available.
+    """
     index = 1 if webpage else 0
     attr_value = _getxattr(file, KEY_ORIGIN_URL if IS_LINUX else KEY_WHERE_FROMS).decode()
     if not IS_LINUX:
@@ -67,7 +81,23 @@ def where_from(file: FileDescriptorOrPath, *, webpage: bool = False) -> str | No
 def generate_html_dir_tree(
     start_dir: StrPath, *, follow_symlinks: bool = False, depth: int = 2
 ) -> str:
-    """Generate a HTML directory listing."""
+    """
+    Generate a HTML directory listing.
+
+    Parameters
+    ----------
+    start_dir : StrPath
+        Root directory for the listing.
+    follow_symlinks : bool
+        If ``True``, follow symbolic links.
+    depth : int
+        Maximum recursion depth.
+
+    Returns
+    -------
+    str
+        Complete HTML document string.
+    """
 
     def recurse_cwd(path: Path, _cur_depth: int = 0) -> Iterator[str]:
         for entry in sorted(
@@ -140,6 +170,22 @@ def upload_to_imgbb(
     Upload an image to ImgBB.
 
     Get an API key at https://api.imgbb.com/ and set it with ``keyring set imgbb keyring_username``.
+
+    Parameters
+    ----------
+    path : StrPath
+        Path to the image file.
+    api_key : str | None
+        API key. If ``None``, the key is retrieved from the keyring.
+    keyring_username : str | None
+        Username for the keyring lookup. Defaults to the current user.
+    timeout : float
+        HTTP timeout in seconds.
+
+    Returns
+    -------
+    requests.Response
+        The response from the ImgBB API.
     """
     r = requests.post(
         'https://api.imgbb.com/1/upload',
@@ -159,46 +205,76 @@ class BookmarksHTMLAnchorAttributes(TypedDict):
     """Attributes of a bookmark link."""
 
     add_date: str
+    """Date the bookmark was added."""
     href: str
+    """URL of the bookmark."""
     icon: NotRequired[str]
+    """Icon data URI."""
 
 
 class BookmarksHTMLFolderAttributes(TypedDict):
     """Attributes of a bookmark folder."""
 
     add_date: str
+    """Date the folder was added."""
     last_modified: str
+    """Date the folder was last modified."""
     personal_toolbar_folder: NotRequired[Literal['true']]
+    """Whether this is the personal toolbar folder."""
 
 
 class BookmarksHTMLLink(TypedDict):
     """A bookmark link."""
 
     attrs: BookmarksHTMLAnchorAttributes
+    """Link attributes."""
     title: str
+    """Link title."""
     type: Literal['link']
+    """Type discriminator."""
 
 
 class BookmarksHTMLFolder(TypedDict):
     """A bookmark folder."""
 
     attrs: BookmarksHTMLFolderAttributes
+    """Folder attributes."""
     children: list[BookmarksHTMLLink | BookmarksHTMLFolder]
+    """Child items."""
     name: str
+    """Folder name."""
     type: Literal['folder']
+    """Type discriminator."""
 
 
 BookmarksDataset = list[BookmarksHTMLFolder | BookmarksHTMLLink]
-"""Bookmark top structure."""
+"""
+Bookmark top structure.
+
+:meta hide-value:
+"""
 
 RecurseBookmarksHTMLCallback = Callable[
     [BookmarksHTMLAnchorAttributes, str, Sequence[tuple[str, BookmarksHTMLFolderAttributes]]], None
 ]
-"""Callback for :py:func:`recurse_bookmarks_html` to call for each link."""
+"""
+Callback for :py:func:`recurse_bookmarks_html` to call for each link.
+
+:meta hide-value:
+"""
 
 
 def recurse_bookmarks_html(soup: Tag, callback: RecurseBookmarksHTMLCallback) -> None:
-    """Traverse the ``bookmarks.html`` tree and call the callback for each link."""
+    """
+    Traverse the ``bookmarks.html`` tree and call the callback for each link.
+
+    Parameters
+    ----------
+    soup : Tag
+        Parsed HTML tag to traverse.
+    callback : RecurseBookmarksHTMLCallback
+        Function called for each link found.
+    """
     for child in soup.children:
         if not isinstance(child, Tag):
             continue
@@ -244,7 +320,19 @@ def create_parsed_tree_structure(
 
 
 def parse_bookmarks_html(html_content: str) -> BookmarksDataset:
-    """Parse a browser's exported ``bookmarks.html``."""
+    """
+    Parse a browser's exported ``bookmarks.html``.
+
+    Parameters
+    ----------
+    html_content : str
+        Raw HTML string.
+
+    Returns
+    -------
+    BookmarksDataset
+        Parsed bookmark tree.
+    """
     from bs4 import BeautifulSoup as Soup  # noqa: PLC0415
 
     data: BookmarksDataset = []
@@ -269,6 +357,16 @@ def check_bookmarks_html_urls(
 
     Checks for URLs that are not valid any more (status ``404``) or have changed (statuses ``301``
     and ``302``).
+
+    Parameters
+    ----------
+    html_content : str
+        Raw HTML string of the bookmarks file.
+
+    Returns
+    -------
+    tuple[BookmarksDataset, BookmarksDataset, BookmarksDataset]
+        A tuple of ``(all_data, changed, not_found)`` bookmark datasets.
     """
     # After html5lib fixes it, the structure is:
     # DL -> many p -> many DT -> H3 (folder), DL then

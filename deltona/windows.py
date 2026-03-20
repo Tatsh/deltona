@@ -6,6 +6,22 @@ from struct import pack
 from typing import override
 import enum
 
+__all__ = (
+    'DEFAULT_DPI',
+    'LF_FULLFACESIZE',
+    'MAX_LINE_LENGTH',
+    'CharacterSet',
+    'ClipPrecision',
+    'Family',
+    'Field',
+    'NameTooLong',
+    'OutputPrecision',
+    'Pitch',
+    'Quality',
+    'Weight',
+    'make_font_entry',
+)
+
 
 class Weight(enum.IntEnum):
     """
@@ -16,20 +32,35 @@ class Weight(enum.IntEnum):
     """
 
     FW_BLACK = 900
+    """Black (heavy) weight."""
     FW_BOLD = 700
+    """Bold weight."""
     FW_DEMIBOLD = 600
+    """Demi-bold (semi-bold) weight."""
     FW_DONTCARE = 0
+    """Default weight."""
     FW_EXTRABOLD = 800
+    """Extra-bold (ultra-bold) weight."""
     FW_EXTRALIGHT = 200
+    """Extra-light (ultra-light) weight."""
     FW_HEAVY = 900
+    """Heavy (black) weight."""
     FW_LIGHT = 300
+    """Light weight."""
     FW_MEDIUM = 500
+    """Medium weight."""
     FW_NORMAL = 400
+    """Normal weight."""
     FW_REGULAR = 400
+    """Regular weight."""
     FW_SEMIBOLD = 600
+    """Semi-bold (demi-bold) weight."""
     FW_THIN = 100
+    """Thin weight."""
     FW_ULTRABOLD = 800
+    """Ultra-bold (extra-bold) weight."""
     FW_ULTRALIGHT = 200
+    """Ultra-light (extra-light) weight."""
 
 
 class ClipPrecision(enum.IntEnum):
@@ -54,7 +85,7 @@ class ClipPrecision(enum.IntEnum):
     CLIP_LH_ANGLES = 0x10
     """
     When this value is used, the rotation for all fonts depends on whether the orientation of the
-    coordinate system is left-handed or right-handed.If not used, device fonts always rotate
+    coordinate system is left-handed or right-handed. If not used, device fonts always rotate
     counter-clockwise, but the rotation of other fonts is dependent on the orientation of the
     coordinate system.
     """
@@ -84,29 +115,46 @@ class CharacterSet(enum.IntEnum):
     """
 
     ANSI_CHARSET = 0
+    """ANSI character set."""
     ARABIC_CHARSET = 178
+    """Arabic character set."""
     BALTIC_CHARSET = 186
+    """Baltic character set."""
     CHINESEBIG5_CHARSET = 136
+    """Chinese Big5 character set."""
     DEFAULT_CHARSET = 1
     """
     DEFAULT_CHARSET is set to a value based on the current system locale. For example, when the
     system locale is English (United States), it is set as ``ANSI_CHARSET``.
     """
     EE_CHARSET = 238
+    """Eastern European character set."""
     GB2312_CHARSET = 134
+    """GB2312 character set."""
     GREEK_CHARSET = 161
+    """Greek character set."""
     HANGUL_CHARSET = 129
+    """Hangul (Korean) character set."""
     HEBREW_CHARSET = 177
+    """Hebrew character set."""
     JOHAB_CHARSET = 130
+    """Johab character set."""
     MAC_CHARSET = 77
+    """Macintosh character set."""
     OEM_CHARSET = 255
     """Specifies a character set that is operating-system dependent."""
     RUSSIAN_CHARSET = 204
+    """Russian character set."""
     SHIFTJIS_CHARSET = 128
+    """Shift JIS character set."""
     SYMBOL_CHARSET = 2
+    """Symbol character set."""
     THAI_CHARSET = 222
+    """Thai character set."""
     TURKISH_CHARSET = 162
+    """Turkish character set."""
     VIETNAMESE_CHARSET = 163
+    """Vietnamese character set."""
 
 
 class OutputPrecision(enum.IntEnum):
@@ -170,9 +218,13 @@ class Pitch(enum.IntEnum):
     """
 
     DEFAULT_PITCH = 0x0
+    """Default pitch."""
     FIXED_PITCH = 0x01
+    """Fixed pitch (monospace)."""
     MONO_FONT = 0x08
+    """Mono font."""
     VARIABLE_PITCH = 0x02
+    """Variable pitch (proportional)."""
 
 
 class Family(enum.IntEnum):
@@ -255,13 +307,29 @@ class Field(enum.StrEnum):
     MessageFont = 'MessageFont'
     """Font used in message boxes and many other places."""
     SmCaptionFont = 'SmCaptionFont'
+    """Font used in small window title bars."""
     StatusFont = 'StatusFont'
     """Font used in status bars."""
 
 
 LF_FULLFACESIZE = 64
+"""
+Maximum face name length for ``LOGFONTW``.
+
+:meta hide-value:
+"""
 DEFAULT_DPI = 96
+"""
+Default DPI for font size calculation.
+
+:meta hide-value:
+"""
 MAX_LINE_LENGTH = 78
+"""
+Maximum line length in a ``.reg`` file hex value.
+
+:meta hide-value:
+"""
 
 
 class NameTooLong(Exception):
@@ -344,7 +412,8 @@ def make_font_entry(
 
     Returns
     -------
-    str : A string composed of multiple lines for use in a ``.reg`` file.
+    str
+        A string composed of multiple lines for use in a ``.reg`` file.
 
     Raises
     ------

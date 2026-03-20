@@ -38,9 +38,11 @@ __all__ = (
     'add_info_json_to_media_file',
     'archive_dashcam_footage',
     'cddb_query',
+    'create_static_text_video',
     'ffprobe',
     'get_cd_disc_id',
     'get_info_json',
+    'hlg_to_sdr',
     'is_audio_input_format_supported',
     'supported_audio_input_formats',
 )
@@ -157,7 +159,23 @@ def is_audio_input_format_supported(
     format: str,  # noqa: A002
     rate: int,
 ) -> bool:
-    """Check if an audio format is supported by a device."""
+    """
+    Check if an audio format is supported by a device.
+
+    Parameters
+    ----------
+    input_device : str
+        Device name. Platform specific.
+    format : str
+        Audio format to check, such as ``'s16le'``.
+    rate : int
+        Sample rate in Hz.
+
+    Returns
+    -------
+    bool
+        ``True`` if the format and rate are supported.
+    """
     return bool(supported_audio_input_formats(input_device, formats=(format,), rates=(rate,)))
 
 
@@ -184,6 +202,8 @@ def add_info_json_to_media_file(
     info_json : StrPath | None
         Path to ``info.json`` file. If not passed, ``path`` with suffix changed to ``info.json``
         is used.
+    debug : bool
+        If ``True``, show ffmpeg/mkvpropedit output.
     """
     path = Path(path)
     json_path = Path(info_json) if info_json else path.with_suffix('.info.json')
@@ -327,7 +347,19 @@ def add_info_json_to_media_file(
 
 
 def ffprobe(path: StrPath) -> ProbeDict:
-    """Run ``ffprobe`` and decode its JSON output."""
+    """
+    Run ``ffprobe`` and decode its JSON output.
+
+    Parameters
+    ----------
+    path : StrPath
+        Path to the media file.
+
+    Returns
+    -------
+    ProbeDict
+        Parsed JSON output from ``ffprobe``.
+    """
     return cast(
         'ProbeDict',
         json.loads(
@@ -410,31 +442,33 @@ def create_static_text_video(
     videotoolbox: bool = False,
 ) -> None:
     """
-    Create a video file consisting of static text in the centre with the audio file passed in.
-
-    Requires ImageMagick and ffmpeg.
+    Create a video with static text overlay from an audio file.
 
     Parameters
     ----------
     audio_file : StrPath
-        Path to audio file.
+        Path to the audio file.
     text : str
-        Text to show.
+        Text to overlay on the video.
     font : str
-        Font to use. Defaults to Roboto.
+        Font name to use. Default is ``'Roboto'``.
     font_size : int
-        Font size in pt. Defaults to 150.
+        Font size in points. Default is ``150``.
     output_file : StrPath | None
-        Output file. If not passed, a generic name will be used.
+        Output file path. If ``None``, defaults to ``<audio_file>-video.mkv``.
+    debug : bool
+        If ``True``, show ffmpeg/ImageMagick output.
     nvenc : bool
-        Use NVENC.
+        If ``True``, use NVENC hardware encoding.
     videotoolbox : bool
-        Use VideoToolbox.
+        If ``True``, use VideoToolbox hardware encoding.
 
     Raises
     ------
     ValueError
-    CalledProcessError
+        If both ``nvenc`` and ``videotoolbox`` are set to ``True``.
+    subprocess.CalledProcessError
+        If ImageMagick or FFmpeg fails.
     """
     if nvenc and videotoolbox:
         msg = 'nvenc and videotoolbox parameters are exclusive. Only one can be set to True.'
@@ -585,7 +619,7 @@ def get_cd_disc_id(drive: StrPath) -> str:
 
     Parameters
     ----------
-    drive : str
+    drive : StrPath
         Drive path.
 
     Returns
@@ -598,6 +632,7 @@ def get_cd_disc_id(drive: StrPath) -> str:
     NotImplementedError
         If not on Linux.
     OSError
+        If an ioctl call fails.
     """
     if not IS_LINUX:
         raise NotImplementedError
@@ -649,10 +684,15 @@ class CDDBQueryResult(NamedTuple):
     """CDDB query result."""
 
     artist: str
+    """Artist name."""
     album: str
+    """Album title."""
     year: int
+    """Release year."""
     genre: str
+    """Genre string."""
     tracks: tuple[str, ...]
+    """Track titles."""
 
 
 @cache
@@ -676,13 +716,17 @@ def cddb_query(
 
     Parameters
     ----------
-    app: str
+    disc_id : str
+        Disc ID string from :py:func:`get_cd_disc_id`.
+    accept_first_match : bool
+        If ``True``, accept the first match when multiple results are returned.
+    app : str
         App name.
-    host: str
+    host : str | None
         Hostname to query.
-    timeout: float
+    timeout : float
         HTTP timeout.
-    username: str
+    username : str | None
         Username for keyring and for the ``hello`` parameter to the CDDB server.
     version : str
         Application version.
@@ -825,7 +869,7 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     """
     Batch encode dashcam footage, merging rear and front camera footage.
 
-    This functions's defaults are intended for use with Red Tiger dashcam output and file structure.
+    This function's defaults are intended for use with Red Tiger dashcam output and file structure.
 
     The rear camera view will be placed in the bottom right of the video scaled by dividing the
     width and height by the ``rear_view_scale_divisor`` value specified. It will also be cropped
@@ -841,7 +885,7 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     group and always a video without a matching front video file the end). These are automatically
     ignored if possible.
 
-    Original files' whose content is successfully converted are sent to the wastebin.
+    Original files whose content is successfully converted are sent to the wastebin.
 
     Default parameters are set to use libx265 software encoding with CUVID hardware decoding.
 
@@ -898,7 +942,6 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
         Tier (HEVC).
     time_format : str
         Time format string. See `strptime() Format Codes`_ for more information.
-        for more information.
     video_bitrate : str | None
         Video bitrate string.
     video_decoder : str | None
@@ -1126,7 +1169,28 @@ def hlg_to_sdr(
     delete_after: bool = False,
     fast: bool = False,
 ) -> None:
-    """Convert a HLG HDR video to SDR."""
+    """
+    Convert an HLG HDR video to SDR using tone mapping.
+
+    Parameters
+    ----------
+    input_file : StrPath
+        Path to the input HLG video file.
+    crf : int
+        Constant rate factor. Default is ``20``.
+    output_codec : Literal['libx265', 'libx264']
+        Output video codec. Default is ``'libx265'``.
+    output_file : StrPath | None
+        Output file path. If ``None``, defaults to ``<input_file>-sdr.<ext>``.
+    input_args : Sequence[str] | None
+        Additional input arguments for FFmpeg.
+    output_args : Sequence[str] | None
+        Additional output arguments for FFmpeg.
+    delete_after : bool
+        If ``True``, send the input file to the wastebin after conversion.
+    fast : bool
+        If ``True``, use fewer filters for faster but lower quality conversion.
+    """
     input_file = Path(input_file)
     vf = (
         (

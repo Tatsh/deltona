@@ -14,6 +14,13 @@ if TYPE_CHECKING:
 
     from .typing import StrPath
 
+__all__ = (
+    'fix_chromium_pwa_icon',
+    'generate_chrome_user_agent',
+    'get_last_chrome_major_version',
+    'get_latest_chrome_major_version',
+)
+
 
 def _get_pil_image_module() -> ModuleType:  # pragma: no cover
     from PIL import Image  # noqa: PLC0415
@@ -119,7 +126,14 @@ def get_last_chrome_major_version() -> str:
 
 @cache
 def get_latest_chrome_major_version() -> str:
-    """Get the latest Chrome major version."""
+    """
+    Get the latest Chrome major version.
+
+    Returns
+    -------
+    str
+        The latest major version number as a string.
+    """
     return cast(
         'str',
         requests
@@ -144,6 +158,11 @@ def generate_chrome_user_agent(os: str = 'Windows NT 10.0; Win64; x64') -> str:
     ----------
     os : str
         The operating system. Default is ``'Windows NT 10.0; Win64; x64'``.
+
+    Returns
+    -------
+    str
+        A Chrome user agent string.
     """
     last_major = get_last_chrome_major_version() or get_latest_chrome_major_version()
     return (

@@ -29,8 +29,12 @@ log = logging.getLogger(__name__)
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
-@click.option('-H', '--hours', default=160, help='Hours worked in a month.', metavar='HOURS')
-@click.option('-r', '--pay-rate', default=70.0, help='Dollars per hour.', metavar='DOLLARS')
+@click.option(
+    '-H', '--hours', default=160, type=int, help='Hours worked in a month.', metavar='HOURS'
+)
+@click.option(
+    '-r', '--pay-rate', default=70.0, type=float, help='Dollars per hour.', metavar='DOLLARS'
+)
 @click.option(
     '-s',
     '--state',

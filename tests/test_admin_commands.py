@@ -185,7 +185,7 @@ def test_generate_html_dir_tree_main_success(
 
 
 def test_smv_main_success(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
-    mock_ssh_client_cls = mocker.patch('deltona.commands.admin.get_ssh_client_cls')
+    mock_ssh_client_cls = mocker.patch('deltona.commands.admin._get_ssh_client_cls')
     mock_client = mock_ssh_client_cls.return_value.return_value.__enter__.return_value
     mock_smv = mocker.patch('deltona.commands.admin.secure_move_path')
     mock_smv.return_value = 0

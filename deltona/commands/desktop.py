@@ -68,7 +68,7 @@ def inhibit_notifications_main(sleep_time: int = 60, *, debug: bool = False) -> 
 
 
 @click.command(context_settings={**CONTEXT_SETTINGS, 'auto_envvar_prefix': 'UMPV'})
-@click.option('-d', '--debug', is_flag=True)
+@click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('--mpv-command', default='mpv', help='mpv command including arguments.')
 @click.argument('files', type=click.Path(path_type=Path), nargs=-1)
 def umpv_main(files: Sequence[Path], mpv_command: str = 'mpv', *, debug: bool = False) -> None:
@@ -128,7 +128,7 @@ def _get_gi_repository_glib() -> ModuleType:  # pragma: no cover
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option('-d', '--debug', is_flag=True)
+@click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option(
     '--device', 'device_name', default='hci0', help='Bluetooth device (defaults to hci0).'
 )

@@ -30,19 +30,22 @@ __all__ = (
     'CHROME_DEFAULT_CONFIG_PATH',
     'CHROME_DEFAULT_LOCAL_STATE_PATH',
     'IS_LINUX',
+    'MultipleKeySlots',
     'find_bluetooth_device_info_by_name',
+    'get_kwriteconfig_commands',
     'inhibit_notifications',
+    'kill_gamescope',
+    'kill_wine',
+    'pan_connect',
+    'pan_disconnect',
+    'patch_macos_bundle_info_plist',
+    'reset_tpm_enrollment',
     'slug_rename',
     'uninhibit_notifications',
     'wait_for_disc',
 )
 
 CDROM_DRIVE_STATUS = 0x5326
-"""
-CDROM drive status ioctl command.
-
-:meta hide-value:
-"""
 IS_LINUX = sys.platform == 'linux'
 """
 If the system is Linux.
@@ -50,11 +53,6 @@ If the system is Linux.
 :meta hide-value:
 """
 IS_WINDOWS = sys.platform == 'win32' or sys.platform == 'cygwin'
-"""
-If the system is Windows.
-
-:meta hide-value:
-"""
 CHROME_DEFAULT_CONFIG_PATH = Path('~/.config/google-chrome').expanduser()
 """
 Default Chrome config path.
@@ -71,7 +69,23 @@ log = logging.getLogger(__name__)
 
 
 def wait_for_disc(drive_path: StrPathMustExist = 'dev/sr0', *, sleep_time: float = 1.0) -> bool:
-    """For Linux only."""
+    """
+    Wait for a disc to be ready in a drive.
+
+    For Linux only.
+
+    Parameters
+    ----------
+    drive_path : StrPathMustExist
+        Path to the optical drive device.
+    sleep_time : float
+        Seconds to sleep between polling attempts.
+
+    Returns
+    -------
+    bool
+        ``True`` if the disc is ready, ``False`` if interrupted.
+    """
     import fcntl  # noqa: PLC0415
 
     with context_os_open(drive_path, os.O_RDONLY | os.O_NONBLOCK) as f:
@@ -206,26 +220,19 @@ def find_bluetooth_device_info_by_name(name: str) -> tuple[str, OrgBluezDevice1D
 
 def pan_connect(device_mac: str, hci: str = 'hci0') -> None:
     """
-    Connect a Bluetooth PAN device for internet access.
-
-    For Linux with NetworkManager only.
-
-    This function must be called and then waited by an event loop.
-
-    Translation of the following command:
-
-    ... code-block:: bash
-       dbus-send --system --type=method_call --dest=org.bluez \
-           /org/bluez/hci0/dev_{MAC with : replaced by _} \
-           org.bluez.Network1.Connect \
-           string:nap
+    Connect to a Bluetooth PAN (Personal Area Network) device.
 
     Parameters
     ----------
     device_mac : str
-        MAC address of the device.
+        MAC address of the Bluetooth device.
     hci : str
-        HCI device name. Default is ``hci0``.
+        HCI adapter name.
+
+    Raises
+    ------
+    NotImplementedError
+        If not on Linux.
     """
     if not IS_LINUX:
         raise NotImplementedError
@@ -238,25 +245,19 @@ def pan_connect(device_mac: str, hci: str = 'hci0') -> None:
 
 def pan_disconnect(device_mac: str, hci: str = 'hci0') -> None:
     """
-    Disconnect a Bluetooth PAN device.
-
-    For Linux with NetworkManager only.
-
-    This function must be called and then waited by an event loop.
-
-    Translation of the following command:
-
-    ... code-block:: bash
-       dbus-send --system --type=method_call --dest=org.bluez \
-           /org/bluez/hci0/dev_{MAC with : replaced by _} \
-           org.bluez.Network1.Disconnect
+    Disconnect from a Bluetooth PAN (Personal Area Network) device.
 
     Parameters
     ----------
     device_mac : str
-        MAC address of the device.
+        MAC address of the Bluetooth device.
     hci : str
-        HCI device name. Default is ``hci0``.
+        HCI adapter name.
+
+    Raises
+    ------
+    NotImplementedError
+        If not on Linux.
     """
     if not IS_LINUX:
         raise NotImplementedError
@@ -277,6 +278,11 @@ def slug_rename(path: StrPath, *, no_lower: bool = False) -> StrPath:
         Path to the file or directory.
     no_lower : bool
         If ``True``, do not convert to lowercase.
+
+    Returns
+    -------
+    StrPath
+        The new path after renaming.
     """
     path = Path(path).resolve(strict=True)
     parent = path.parent
@@ -285,21 +291,14 @@ def slug_rename(path: StrPath, *, no_lower: bool = False) -> StrPath:
 
 def patch_macos_bundle_info_plist(bundle: StrPath, **data: Any) -> None:
     """
-    Patch a macOS/iOS/etc bundle's ``Info.plist`` file.
-
-    Example
-    -------
-    .. code-block :: python
-
-        # Force Retina support
-        patch_macos_bundle_info_plist('App.app', {'NSHighResolutionCapable': True})
+    Patch a macOS application bundle's ``Info.plist`` with additional data.
 
     Parameters
     ----------
     bundle : StrPath
-        Path to the bundle.
-    data : dict[str, Any]
-        Data to merge in.
+        Path to the ``.app`` bundle.
+    **data : Any
+        Key-value pairs to merge into the plist.
     """
     info_plist = Path(bundle).resolve(strict=True) / 'Contents' / 'Info.plist'
     with info_plist.open('rb') as f:
@@ -310,7 +309,7 @@ def patch_macos_bundle_info_plist(bundle: StrPath, **data: Any) -> None:
 
 
 def kill_gamescope() -> None:
-    """Kill ``gamescope`` and ``gamescopereaper`` processes."""
+    """Kill all running Gamescope and gamescopereaper processes."""
     import psutil  # noqa: PLC0415
 
     for proc in (
@@ -322,7 +321,7 @@ def kill_gamescope() -> None:
 
 
 def kill_wine() -> None:
-    """If a process is named with ``.exe``, it is assumed to be a Wine process."""
+    """Kill all running Wine processes including wineserver and Wine-wrapped executables."""
     import psutil  # noqa: PLC0415
 
     for proc in (
@@ -335,7 +334,7 @@ def kill_wine() -> None:
 
 
 class MultipleKeySlots(Exception):
-    """Exception raised when a device has more than one keyslot."""
+    """Raised when a LUKS device has more than one keyslot."""
 
     @override
     def __init__(self, dev: str) -> None:
@@ -344,21 +343,19 @@ class MultipleKeySlots(Exception):
 
 def reset_tpm_enrollment(uuid: str, *, dry_run: bool = True) -> None:
     """
-    Reset the systemd-cryptsetup TPM enrolment for a device.
-
-    Requires root privileges.
+    Reset TPM2 enrolment for a LUKS-encrypted device.
 
     Parameters
     ----------
     uuid : str
-        UUID of the device.
+        UUID of the LUKS device.
     dry_run : bool
-        If ``True``, do not run the commands, just log them.
+        If ``True``, only log the commands that would be run.
 
     Raises
     ------
     MultipleKeySlots
-        If the device has more than one keyslot.
+        If the device has more than one keyslot associated with the TPM2 token.
     """
     dev = f'/dev/disk/by-uuid/{uuid}'
     cmd = ('cryptsetup', 'luksDump', '--dump-json-metadata', dev)
@@ -401,9 +398,7 @@ IGNORED_GROUPS = {
     'Recent Files',
     '$Version',
 }
-"""KDE Plasma config groups to ignore."""
 DEFAULT_FILE = Path.home() / '.config' / 'kdeglobals'
-"""``kdeglobals`` path."""
 POSITION_RE = (
     r'(^(Height|Width|Window-Maximized) [0-9]+)|'
     r'((e?DP-[0-9]+|HDMI-[0-9]+(-[0-9]+)?|VNC-[0-9]+)$)|'
@@ -411,9 +406,7 @@ POSITION_RE = (
     r'([0-9]+x[0-9]+ screen: (Height|Width|(X|Y)Position)$)|'
     r'([0-9] screens: (Height|Width|(X|Y)Position)$)'
 )
-"""KDE Plasma config keys to ignore."""
 STATE_RE = r'^AAAA/'
-"""KDE Plasma config state keys to ignore."""
 
 
 def _iter_config_sections(file: StrPath) -> Iterator[tuple[str, str, str]]:
@@ -449,17 +442,17 @@ def _iter_config_sections(file: StrPath) -> Iterator[tuple[str, str, str]]:
 
 def get_kwriteconfig_commands(file: StrPath = DEFAULT_FILE) -> Iterator[str]:
     """
-    Get ``kwriteconfig`` commands from KDE Plasma configuration files.
+    Generate ``kwriteconfig6`` commands from a KDE configuration file.
 
     Parameters
     ----------
     file : StrPath
-        Override the path to the ``kdeglobals`` file.
+        Path to the KDE configuration file.
 
     Yields
     ------
     str
-        ``kwriteconfig`` commands.
+        A ``kwriteconfig6`` command string.
     """
     home = str(Path.home())
     file = Path(file).resolve(strict=True)

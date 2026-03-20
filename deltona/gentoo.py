@@ -14,9 +14,32 @@ if TYPE_CHECKING:
 
     from .typing import StrPath
 
+__all__ = (
+    'DEFAULT_ACTIVE_KERNEL_NAME',
+    'DEFAULT_KERNEL_LOCATION',
+    'DEFAULT_MODULES_PATH',
+    'InvalidActiveKernelSourcePath',
+    'clean_old_kernels_and_modules',
+)
+
 DEFAULT_ACTIVE_KERNEL_NAME = 'linux'
+"""
+Default kernel symlink name.
+
+:meta hide-value:
+"""
 DEFAULT_KERNEL_LOCATION = Path('/usr/src')
+"""
+Default kernel sources location.
+
+:meta hide-value:
+"""
 DEFAULT_MODULES_PATH = Path('/lib/modules/')
+"""
+Default kernel modules location.
+
+:meta hide-value:
+"""
 log = logging.getLogger(__name__)
 
 
@@ -57,6 +80,7 @@ def clean_old_kernels_and_modules(
     InvalidActiveKernelSourcePath
         If the active kernel source path is not a symbolic link.
     FileNotFoundError
+        If the active kernel source path does not exist.
     """
     path = Path(path)
     modules_path = Path(modules_path)
