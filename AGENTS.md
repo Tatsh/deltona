@@ -17,6 +17,7 @@
 | [copy-editor](.claude/agents/copy-editor.md)                 | Fix prose style, grammar, and spelling in comments/strings |
 | [badge-sync](.claude/agents/badge-sync.md)                   | Sync `docs/badges.rst` with `README.md`                    |
 | [release](.claude/agents/release.md)                         | Changelog, version bump, push                              |
+| [wiswa-sync](.claude/agents/wiswa-sync.md)                   | Reflect managed file changes back to `.wiswa.jsonnet`      |
 
 ## Instruction Files
 

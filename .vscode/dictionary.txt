@@ -269,6 +269,7 @@ sigwinch
 siri
 sirikit
 slugified
+snapcraft
 softprops
 soupsieve
 sphinxcontrib
