@@ -15,6 +15,7 @@
 | [qa-fixer](.claude/agents/qa-fixer.md)                       | Run `yarn format` and `yarn qa` until clean                |
 | [workflow-shellcheck](.claude/agents/workflow-shellcheck.md) | ShellCheck embedded Bash in workflow YAML                  |
 | [copy-editor](.claude/agents/copy-editor.md)                 | Fix prose style, grammar, and spelling in comments/strings |
+| [badge-sync](.claude/agents/badge-sync.md)                   | Sync `docs/badges.rst` with `README.md`                    |
 | [release](.claude/agents/release.md)                         | Changelog, version bump, push                              |
 
 ## Instruction Files
