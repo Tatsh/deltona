@@ -29,11 +29,15 @@ checks, bump the version, and push.
 
 6. **Run `pre-commit run -a`** to ensure all hooks pass. Fix any issues before proceeding.
 
-7. **Run `cz bump --changelog --gpg-sign --increment {MAJOR,MINOR,PATCH}`** with the appropriate increment.
-   If `cz bump` fails for any reason, **stop work immediately and alert the user**. Do not attempt
-   to work around the failure.
+7. **Record the current HEAD** before bumping: `git rev-parse HEAD` (save this as `PRE_BUMP_REF`).
 
-8. **Push the commit and tags.** Run `git push && git push --tags`.
+8. **Run `cz bump --changelog --gpg-sign --increment {MAJOR,MINOR,PATCH}`** with the appropriate
+   increment. If `cz bump` fails for any reason:
+   1. **Restore the repository** to the pre-bump state: `git reset --hard $PRE_BUMP_REF` and
+      `git tag -d` any tags that were created.
+   2. **Stop work immediately and alert the user.** Do not attempt to work around the failure.
+
+9. **Push the commit and tags.** Run `git push && git push --tags`.
 
 ## Rules
 
