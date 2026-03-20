@@ -68,7 +68,7 @@ jobs:
             wineshell
           )
           project_name=$(tomlq -r '.project.urls.repository|split("/")[-1]' pyproject.toml)
-          vers=$(echo "$(tomlq -r '.project.version|split(".")|map(tonumber)|@csv' pyproject.toml),0")
+          vers="$(tomlq -r '.project.version|split(".")|map(tonumber)|@csv' pyproject.toml),0"
           version=$(tomlq -r .project.version pyproject.toml)
           while IFS=$' ' read -r script_name python_path func_name; do
               if [[ "${{ matrix.os }}" == windows* ]] &&
@@ -130,7 +130,7 @@ jobs:
               fi
               uv run pyinstaller --log-level ERROR --onefile -n "${script_name}" --optimize 1 \
                 --hidden-import colorlog -y --version-file version-info.txt \
-                temp_script.py
+                "${openssl_args[@]}" temp_script.py
               if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
                   cat "${script_name}.spec"
               fi
