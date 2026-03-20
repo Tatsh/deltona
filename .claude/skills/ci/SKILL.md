@@ -12,12 +12,32 @@ Run these in parallel:
 4. `git log --no-merges --format='%s%n%b---' -20 | grep -v '^bump:' | grep -iv dependabot` -
    recent commit message style examples.
 
-## Updating the changelog
+## Running agents
 
-After gathering context but before committing, launch the **changelog** agent (using the Agent tool
-with subagent_type `general-purpose`) and tell it to follow `.claude/agents/changelog.md`. Wait for
-the agent to finish. After it completes, check if `CHANGELOG.md` was modified (`git diff
-CHANGELOG.md`). If it was, it will be staged together with the relevant commit.
+After gathering context but before committing, determine which agents to run based on the changed
+files. Launch each agent sequentially using the Agent tool with subagent_type `general-purpose`,
+telling it to follow the corresponding `.claude/agents/<name>.md` file. Scope each agent to only the
+changed files, not the entire project.
+
+### When Python code is being committed
+
+If any changed files are under `deltona/` or `tests/`, run the following agents **in order**:
+
+1. **python-moderniser** - upgrade to modern Python features.
+1. **click-auditor** - validate Click command consistency. **Only run if files under
+   `deltona/commands/` changed.**
+1. **docstring-fixer** - fix missing or incomplete docstrings.
+1. **copy-editor** - fix prose in comments, docstrings, and strings.
+1. **test-writer** - generate/update tests for new/changed code. **Skip if the only changes are in
+   `tests/`.**
+1. **coverage-improver** - find coverage gaps and write tests.
+1. **qa-fixer** - format and fix lint/spelling issues.
+
+### Always run
+
+- **changelog** - update `CHANGELOG.md` with entries for the changes. After it completes, check if
+  `CHANGELOG.md` was modified (`git diff CHANGELOG.md`). If it was, it will be staged together with
+  the relevant commit.
 
 ## Analysing changes
 
@@ -115,7 +135,8 @@ EOF
 git commit -S -s -F /tmp/commit-msg
 ```
 
-1. If a pre-commit hook fails, fix the issue, re-stage, and create a NEW commit (never amend).
+1. If a pre-commit hook fails, fix the issue, re-stage (use appropriate agent if there is one), and
+   try to commit again.
 2. After all commits, run `git status` to verify clean state.
 
 ## Rules
