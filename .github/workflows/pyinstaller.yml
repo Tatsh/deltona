@@ -152,6 +152,7 @@ jobs:
         name: Upload package
         uses: softprops/action-gh-release@v2
         with:
+          draft: true
           fail_on_unmatched_files: true
           files: |
             _out/*.zip

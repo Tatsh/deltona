@@ -12,7 +12,10 @@ jobs:
       - uses: 'pypa/gh-action-pypi-publish@release/v1'
       - uses: 'softprops/action-gh-release@v2'
         with:
-          files: 'dist/*'
+          draft: true
+          files: |
+            dist/*.tar.gz
+            dist/*.whl
 name: 'Publish'
 'on':
   push:
