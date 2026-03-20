@@ -20,7 +20,16 @@ jobs:
       - if: matrix.os == 'windows-11-arm'
         name: 'Set up vcpkg'
         run: |
+          $cachedInstalled = $null
+          if (Test-Path "$env:USERPROFILE\vcpkg\installed") {
+            $cachedInstalled = "$env:TEMP\vcpkg-installed"
+            Move-Item "$env:USERPROFILE\vcpkg\installed" $cachedInstalled
+            Remove-Item -Recurse -Force "$env:USERPROFILE\vcpkg"
+          }
           git clone --depth 1 https://github.com/microsoft/vcpkg "$env:USERPROFILE\vcpkg"
+          if ($cachedInstalled) {
+            Move-Item $cachedInstalled "$env:USERPROFILE\vcpkg\installed"
+          }
           & "$env:USERPROFILE\vcpkg\bootstrap-vcpkg.bat" -disableMetrics
           & "$env:USERPROFILE\vcpkg\vcpkg.exe" install openssl --triplet arm64-windows
 
