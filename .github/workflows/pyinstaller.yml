@@ -12,27 +12,21 @@ jobs:
         with:
           python-version: '3.13'
       - if: matrix.os == 'windows-11-arm' || matrix.os == 'windows-latest'
-        name: 'Restore vcpkg cache'
-        uses: 'actions/cache@v5'
+        name: 'Export GitHub Actions cache variables'
+        uses: 'actions/github-script@v7'
         with:
-          key: vcpkg-openssl-${{matrix.os}}-windows-${{ hashFiles('.github/workflows/pyinstaller.yml') }}
-          path: |
-            ~\vcpkg
-          restore-keys: |
-            vcpkg-openssl-${{matrix.os}}-windows-
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL);
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN);
       - if: matrix.os == 'windows-11-arm' || matrix.os == 'windows-latest'
         name: 'Set up vcpkg'
         run: |
           $triplet = if ("${{ matrix.os }}" -eq "windows-11-arm") { "arm64-windows" } else { "x64-windows" }
 
-          if (Test-Path "$env:USERPROFILE\vcpkg\.git") {
-            git -C "$env:USERPROFILE\vcpkg" pull --depth 1
-          } else {
-            git clone --depth 1 https://github.com/microsoft/vcpkg "$env:USERPROFILE\vcpkg"
-          }
-
+          git clone --depth 1 https://github.com/microsoft/vcpkg "$env:USERPROFILE\vcpkg"
           & "$env:USERPROFILE\vcpkg\bootstrap-vcpkg.bat" -disableMetrics
-          & "$env:USERPROFILE\vcpkg\vcpkg.exe" install openssl glib gobject-introspection pkgconf --triplet $triplet
+          & "$env:USERPROFILE\vcpkg\vcpkg.exe" install openssl glib gobject-introspection pkgconf `
+            --triplet $triplet --binarysource="clear;x-gha,readwrite"
 
           $installed = "$env:USERPROFILE\vcpkg\installed\$triplet"
 

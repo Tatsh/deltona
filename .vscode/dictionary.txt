@@ -19,6 +19,7 @@ autofunction
 automodule
 bascom
 beautifulsoup
+binarysource
 biha
 bihi
 bika
@@ -245,6 +246,7 @@ pytest
 pyyaml
 rars
 rdonly
+readwrite
 referer
 regedit
 regen
