@@ -52,7 +52,8 @@ def urldecode_main(
     file: TextIO, encoding: str = 'utf-8', errors: DecodeErrorsOption = 'strict'
 ) -> None:
     """Decode a URL-encoded string."""
-    is_netloc = Path(sys.argv[0]).stem == 'netloc'
+    ctx = click.get_current_context()
+    is_netloc = ctx.info_name == 'netloc' or Path(sys.argv[0]).stem == 'netloc'
     for line in file:
         val = unquote_plus(line, encoding, errors)
         if is_netloc:
