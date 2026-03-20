@@ -194,6 +194,7 @@ version_files = [
   "CITATION.cff",
   "README.md",
   "deltona/__init__.py",
+  "docs/badges.rst",
   "docs/index.rst",
   "man/deltona.1",
   "package.json",
