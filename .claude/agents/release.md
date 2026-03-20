@@ -27,17 +27,19 @@ checks, bump the version, and push.
    - **copy-editor** - to fix prose in the changelog entries.
    - **qa-fixer** - to format and fix any lint/spelling issues.
 
-6. **Run `pre-commit run -a`** to ensure all hooks pass. Fix any issues before proceeding.
+6. **Generate man pages.** Run `yarn gen-manpage` and then `git add man/`.
 
-7. **Record the current HEAD** before bumping: `git rev-parse HEAD` (save this as `PRE_BUMP_REF`).
+7. **Run `pre-commit run -a`** to ensure all hooks pass. Fix any issues before proceeding.
 
-8. **Run `cz bump --changelog --gpg-sign --increment {MAJOR,MINOR,PATCH}`** with the appropriate
-   increment. If `cz bump` fails for any reason:
+8. **Record the current HEAD** before bumping: `git rev-parse HEAD` (save this as `PRE_BUMP_REF`).
+
+9. **Run `cz bump --gpg-sign --increment {MAJOR,MINOR,PATCH}`** with the appropriate increment.
+   Never pass `--changelog` or `-ch` to `cz bump`. If `cz bump` fails for any reason:
    1. **Restore the repository** to the pre-bump state: `git reset --hard $PRE_BUMP_REF` and
       `git tag -d` any tags that were created.
    2. **Stop work immediately and alert the user.** Do not attempt to work around the failure.
 
-9. **Push the commit and tags.** Run `git push && git push --tags`.
+10. **Push the commit and tags.** Run `git push && git push --tags`.
 
 ## Rules
 
