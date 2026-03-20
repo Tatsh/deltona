@@ -31,9 +31,14 @@ jobs:
           $installed = "$env:USERPROFILE\vcpkg\installed\$triplet"
 
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\vcpkg"
+          Add-Content -Path $env:GITHUB_PATH -Value "$installed\tools\pkgconf"
           Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_ROOT=$env:USERPROFILE\vcpkg"
           Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_DEFAULT_TRIPLET=$triplet"
           Add-Content -Path $env:GITHUB_ENV -Value "OPENSSL_DIR=$installed"
+          Add-Content -Path $env:GITHUB_ENV -Value "PKG_CONFIG_PATH=$installed\lib\pkgconfig"
+          Add-Content -Path $env:GITHUB_ENV -Value "CMAKE_PREFIX_PATH=$installed"
+          Add-Content -Path $env:GITHUB_ENV -Value "LIB=$installed\lib"
+          Add-Content -Path $env:GITHUB_ENV -Value "INCLUDE=$installed\include"
         shell: 'pwsh'
       - name: 'Install dependencies (uv)'
         run: |
