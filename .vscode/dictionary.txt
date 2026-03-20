@@ -185,10 +185,10 @@ mimeinfo
 minhu
 minka
 minni
+mktemp
 mkvextract
 mkvmerge
 mkvpropedit
-mktemp
 mkwineprefix
 modindex
 mojo

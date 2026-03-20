@@ -30,7 +30,6 @@ If any changed files are under `deltona/` or `tests/`, run the following agents 
 1. **copy-editor** - fix prose in comments, docstrings, and strings.
 1. **test-writer** - generate/update tests for new/changed code. **Skip if the only changes are in
    `tests/`.**
-1. **coverage-improver** - find coverage gaps and write tests.
 1. **qa-fixer** - format and fix lint/spelling issues.
 
 ### When user-facing changes are being committed
@@ -103,7 +102,9 @@ Closes: #123
 
 ### Subject line rules
 
-- Format: `component.name: short description`.
+- Format: `component.name: short description`. Component name must be lowercase and must skip the
+  first period if present (`vscode` not `.vscode`, `README.md` -> `readme` not `README`), and must
+  omit the period with extension.
 - Lowercase after the colon (unless a proper noun).
 - No period at the end.
 - Maximum 72 characters.
@@ -144,9 +145,9 @@ For Python files, strip the `deltona/` prefix and replace `/` with `.` (like mod
 
 1. Stage files for each logical commit using `git add` with specific file paths.
 2. If `CHANGELOG.md` was updated by the changelog agent, stage it with the relevant commit.
-3. Write the commit message to `/tmp/commit-msg` using the **Write** tool (not Bash `cat`), then
-   commit with `git commit -S -s -F /tmp/commit-msg`.
-
+3. Create a unique temp file with `mktemp /tmp/commit-msg-XXXXXXXX`, write the commit message there
+   using the **Write** tool (not Bash `cat`), then commit with `git commit -S -s -F <tempfile>`.
+   Multiple Claude instances may run concurrently, so never use a fixed path.
 4. If a pre-commit hook fails, fix the issue, re-stage (use appropriate agent if there is one), and
    try to commit again.
 5. After all commits, run `git status` to verify clean state.
