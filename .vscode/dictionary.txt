@@ -122,6 +122,7 @@ halfwidth
 hangul
 headofhousehold
 hexstr
+hoverxref
 htmlcov
 htmltree
 hwaccel
