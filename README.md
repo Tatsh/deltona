@@ -33,19 +33,10 @@ This project will eventually be split into different projects by category.
 
 ## Installation
 
-### Poetry
-
-```shell
-poetry add deltona
-```
-
-### Pip
-
 ```shell
 pip install deltona
 ```
 
 ## Usage
 
-See [the documentation](https://deltona.readthedocs.org/?badge=latest) for commands
-and the library.
+See [the documentation](https://deltona.readthedocs.org/?badge=latest) for commands and the library.
