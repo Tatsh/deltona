@@ -33,11 +33,13 @@ If any changed files are under `deltona/` or `tests/`, run the following agents 
 1. **coverage-improver** - find coverage gaps and write tests.
 1. **qa-fixer** - format and fix lint/spelling issues.
 
-### Always run
+### When user-facing changes are being committed
 
 - **changelog** - update `CHANGELOG.md` with entries for the changes. After it completes, check if
   `CHANGELOG.md` was modified (`git diff CHANGELOG.md`). If it was, it will be staged together with
-  the relevant commit.
+  the relevant commit. **Only run when changes affect users**: files under `deltona/`, `tests/`,
+  or dependency/version changes in `pyproject.toml`. **Skip for**: workflows, CI config, `.claude/`,
+  `.cursor/`, `.github/instructions/`, documentation-only changes, and other non-user-facing files.
 
 ## Analysing changes
 
@@ -133,7 +135,8 @@ For Python files, strip the `deltona/` prefix and replace `/` with `.` (like mod
 ## Rules
 
 - Never use `--no-verify` or `--no-gpg-sign`.
-- Never amend existing commits unless explicitly asked.
+- Amend the previous commit when the new change is logically part of it (e.g. same file, same
+  topic, fixing something just committed). Create a new commit when the change is distinct.
 - Never push unless explicitly asked.
 - Always use `-S` for GPG signing and `-s` for sign-off.
 - If there are no changes, do nothing.
