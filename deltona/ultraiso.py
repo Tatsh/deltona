@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
     from .typing import StrPath, StrPathMustExist
 
-__all__ = ('patch_ultraiso_font', 'run_ultraiso')
+__all__ = ('InvalidExec', 'patch_ultraiso_font', 'run_ultraiso')
 
 DEFAULT_WINE_PREFIX = Path.home() / '.local/share/wineprefixes/ultraiso'
 MIN_ARGUMENTS = 4 if not IS_WINDOWS else 3
@@ -307,6 +307,8 @@ ULTRAISO_FONT_REPLACEMENT_MAX_LENGTH = 13
 
 
 class InvalidExec(Exception):
+    """Raised when the UltraISO executable does not contain the expected font string."""
+
     @override
     def __init__(self) -> None:
         super().__init__('Font not found in file. This is not the original UltraISO executable.')

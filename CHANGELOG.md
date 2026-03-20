@@ -15,6 +15,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added `kconfig-to-json` and `deltona.system.kconfig_to_dict`.
 - Added `cssq`.
 - `adp`: added `-d`/`--debug` flag for debug logging.
+- Exported `InvalidExec` from `deltona.ultraiso` as part of the public API.
 
 ### Changed
 
