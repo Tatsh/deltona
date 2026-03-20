@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from importlib import import_module
 from typing import Any
+import sys
 
 from deltona.constants import CONTEXT_SETTINGS
 import click
@@ -75,6 +76,32 @@ _COMMANDS: dict[str, str] = {
     'winegoginstall': 'deltona.commands.wine:winegoginstall_main',
     'wineshell': 'deltona.commands.wine:wineshell_main',
 }
+_LINUX_ONLY: frozenset[str] = frozenset({
+    'clean-old-kernels-modules',
+    'connect-g603',
+    'inhibit-notifications',
+    'kill-gamescope',
+    'systemd-reset-tpm-cryptenroll',
+    'wait-for-disc',
+})
+_NOT_WINDOWS: frozenset[str] = _LINUX_ONLY | frozenset({
+    'kill-wine',
+    'patch-uiso-font',
+    'set-wine-fonts',
+    'uiso',
+    'unix2wine',
+    'unregister-wine-assocs',
+    'winegoginstall',
+    'wineshell',
+})
+
+
+def _excluded() -> frozenset[str]:
+    if sys.platform == 'win32':
+        return _NOT_WINDOWS
+    if sys.platform == 'darwin':
+        return _LINUX_ONLY
+    return frozenset()
 
 
 class _LazyGroup(click.Group):
@@ -85,10 +112,11 @@ class _LazyGroup(click.Group):
         self._lazy_subcommands = lazy_subcommands or {}
 
     def list_commands(self, ctx: click.Context) -> list[str]:  # noqa: ARG002
-        return sorted(self._lazy_subcommands)
+        excluded = _excluded()
+        return sorted(k for k in self._lazy_subcommands if k not in excluded)
 
     def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:  # noqa: ARG002
-        if cmd_name not in self._lazy_subcommands:
+        if cmd_name not in self._lazy_subcommands or cmd_name in _excluded():
             return None
         module_path, func_name = self._lazy_subcommands[cmd_name].rsplit(':', 1)
         cmd: click.Command = getattr(import_module(module_path), func_name)

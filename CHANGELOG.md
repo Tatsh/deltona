@@ -18,11 +18,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `deltona` CLI now hides commands that are unavailable on the current platform (Linux-only commands
+  hidden on macOS/Windows, Windows-incompatible commands hidden on Windows).
 - `windows`: set `DEFAULT_DPI` to 96 (was 72).
 - `kconfig_to_commands` boolean check is no longer case-sensitive.
 
 ### Fixed
 
+- `netloc` subcommand now works correctly when invoked as `deltona netloc` (previously only worked
+  as a standalone script).
 - Fixed `kconfig-to-commands` not outputting the `--file` argument for non-default files.
 - `connect-g603`: import `Gio` late (fix for when `gi` is not installed especially on non-Linux).
 - `merge-dependabot-prs`: post `@dependabot recreate` consistently and do not repost it if the last
