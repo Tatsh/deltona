@@ -18,10 +18,7 @@ _LINUX_ONLY_COMMANDS = (
 )
 _WINE_COMMANDS = (
     'kill-wine',
-    'patch-uiso-font',
     'set-wine-fonts',
-    'uiso',
-    'unix2wine',
     'unregister-wine-assocs',
     'winegoginstall',
     'wineshell',

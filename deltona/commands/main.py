@@ -86,10 +86,7 @@ _LINUX_ONLY: frozenset[str] = frozenset({
 })
 _NOT_WINDOWS: frozenset[str] = _LINUX_ONLY | frozenset({
     'kill-wine',
-    'patch-uiso-font',
     'set-wine-fonts',
-    'uiso',
-    'unix2wine',
     'unregister-wine-assocs',
     'winegoginstall',
     'wineshell',
