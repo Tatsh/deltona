@@ -23,51 +23,37 @@ jobs:
         run: |
           project_name=$(tomlq -r '.project.urls.repository|split("/")[-1]' pyproject.toml)
           version=$(tomlq -r .project.version pyproject.toml)
-          rm -fR dist
-          mkdir dist
-          while IFS=$' ' read -r script_name python_path func_name; do
-              rm -fR recipe
-              mkdir recipe
-              func_name="${func_name#"${func_name%%[![:space:]]*}"}"
-              func_name="${func_name%"${func_name##*[![:space:]]}"}"
-              cat > recipe/entrypoint.sh <<EOF
-          {{ python-executable }} \${APPDIR}/opt/python{{ python-version }}/bin/${script_name} "\$@"
+          rm -fR dist recipe
+          mkdir dist recipe
+          cat > recipe/entrypoint.sh <<EOF
+          {{ python-executable }} \${APPDIR}/opt/python{{ python-version }}/bin/deltona "\$@"
           EOF
-              chmod +x recipe/entrypoint.sh
-              if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
-                  cat recipe/entrypoint.sh
-              fi
-              cat > "recipe/${script_name}.desktop" <<EOF
+          chmod +x recipe/entrypoint.sh
+          cat > recipe/deltona.desktop <<EOF
           [Desktop Entry]
           Type=Application
-          Name=${script_name}
-          Icon=${script_name}
+          Name=deltona
+          Icon=deltona
           Categories=Utility;
           Terminal=true
           X-AppImage-Version=${version}
           EOF
-              if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
-                  cat "recipe/${script_name}.desktop"
-              fi
-              cat > recipe/requirements.txt <<EOF
+          cat > recipe/requirements.txt <<EOF
           $(pwd -P)
           EOF
-              uv export --no-hashes --all-extras --no-annotate | awk '{ print $1 }' | grep -E 'beautifulsoup4|gitpython|html5lib|mutagen|paramiko|pexpect|pillow|platformdirs|psutil|pydbus|pygithub|pygobject|pyperclip|python-xz|pyyaml|unidecode|yt-dlp' >> recipe/requirements.txt
-              if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
-                  cat recipe/requirements.txt
-              fi
-              cat > "recipe/${script_name}.appinfo.xml" <<EOF
+          uv export --no-hashes --all-extras --no-annotate | awk '{ print $1 }' | grep -E 'beautifulsoup4|gitpython|html5lib|mutagen|paramiko|pexpect|pillow|platformdirs|psutil|pydbus|pygithub|pygobject|pyperclip|python-xz|pyyaml|unidecode|yt-dlp' >> recipe/requirements.txt
+          cat > recipe/deltona.appinfo.xml <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <component type="desktop-application">
-            <id>${script_name}</id>
+            <id>deltona</id>
             <metadata_license>GFDL-1.3</metadata_license>
             <project_license>MIT</project_license>
-            <name>${script_name}</name>
-            <summary>${script_name} from ${project_name}</summary>
+            <name>deltona</name>
+            <summary>A lot of uncategorised utilities.</summary>
             <description>
-              <p>${script_name} from ${project_name}. - ${{ github.server_url }}/${{ github.repository }}</p>
+              <p>${project_name} - ${{ github.server_url }}/${{ github.repository }}</p>
             </description>
-            <launchable type="desktop-id">${script_name}.desktop</launchable>
+            <launchable type="desktop-id">deltona.desktop</launchable>
             <url type="homepage">${{ github.server_url }}/${{ github.repository }}</url>
             <screenshots>
               <screenshot type="default">
@@ -75,31 +61,19 @@ jobs:
               </screenshot>
             </screenshots>
             <provides>
-              <id>${script_name}.desktop</id>
+              <id>deltona.desktop</id>
             </provides>
           </component>
           EOF
-              if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
-                  cat "recipe/${script_name}.appinfo.xml"
-              fi
-              cp generic.svg "recipe/${script_name}.svg"
-              echo "Building executable for '${script_name}'..."
-              uv run python -m python_appimage -v build app -l "manylinux2014_${{ matrix.system.arch }}" -p 3.13 recipe
-              mv "${script_name}-${{ matrix.system.arch }}.AppImage" "dist/${script_name}-${{ matrix.system.arch }}.AppImage"
-          done < <(tomlq -r '.project.scripts|to_entries[]|"\(.key) \(.value|split(":")|join(" "))"' pyproject.toml)
+          cp generic.svg recipe/deltona.svg
+          echo "Building AppImage for 'deltona'..."
+          uv run python -m python_appimage -v build app -l "manylinux2014_${{ matrix.system.arch }}" -p 3.13 recipe
+          mv "deltona-${{ matrix.system.arch }}.AppImage" "dist/deltona-${{ matrix.system.arch }}.AppImage"
         shell: 'bash'
       - name: 'Test binary'
         run: |
-          dist_files=(dist/*)
-          echo "Found ${#dist_files[@]} files in dist/: ${dist_files[*]##*/}"
-          for file in "${dist_files[@]}"; do
-              if [[ "${file}" == dist/index.*js ]]; then
-                  echo "Skipping index.js."
-                  continue
-              fi
-              echo "Testing '${file}'."
-              "./${file}" --help
-          done
+          ./dist/deltona-${{ matrix.system.arch }}.AppImage --help
+          ./dist/deltona-${{ matrix.system.arch }}.AppImage add-cdda-times --help
       - name: 'Upload Artifacts'
         uses: 'actions/upload-artifact@v7'
         with:

@@ -46,52 +46,18 @@ jobs:
         shell: 'bash'
       - name: 'Build with PyInstaller'
         run: |
-          macos_exclusions=(
-            clean-old-kernels-modules
-            connect-g603
-            inhibit-notifications
-            kill-gamescope
-            systemd-reset-tpm-cryptenroll
-            wait-for-disc
-          )
-          windows_exclusions=(
-            clean-old-kernels-modules
-            connect-g603
-            inhibit-notifications
-            kill-gamescope
-            systemd-reset-tpm-cryptenroll
-            wait-for-disc
-            kill-wine
-            set-wine-fonts
-            unregister-wine-assocs
-            winegoginstall
-            wineshell
-          )
           project_name=$(tomlq -r '.project.urls.repository|split("/")[-1]' pyproject.toml)
           vers="$(tomlq -r '.project.version|split(".")|map(tonumber)|@csv' pyproject.toml),0"
           version=$(tomlq -r .project.version pyproject.toml)
-          while IFS=$' ' read -r script_name python_path func_name; do
-              if [[ "${{ matrix.os }}" == windows* ]] &&
-                  printf '%s\0' "${windows_exclusions[@]}" | grep -Fqxz -- "${script_name}"; then
-                  echo "Skipping ${script_name} on Windows."
-                  continue
-              fi
-              if [[ "${{ matrix.os }}" == macos* ]] &&
-                  printf '%s\0' "${macos_exclusions[@]}" | grep -Fqxz -- "${script_name}"; then
-                  echo "Skipping ${script_name} on macOS."
-                  continue
-              fi
-              func_name="${func_name#"${func_name%%[![:space:]]*}"}"
-              func_name="${func_name%"${func_name##*[![:space:]]}"}"
-              cat > temp_script.py <<EOF
-          from ${python_path} import ${func_name}
+          cat > temp_script.py <<EOF
+          from deltona.commands.main import main
           if __name__ == '__main__':
-              ${func_name}()
+              main()
           EOF
-              if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
-                  cat temp_script.py
-              fi
-              cat > version-info.txt <<EOF
+          if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
+              cat temp_script.py
+          fi
+          cat > version-info.txt <<EOF
           VSVersionInfo(
               ffi=FixedFileInfo(date=(0, 0),
                                 filevers=(${vers}),
@@ -107,12 +73,12 @@ jobs:
                           StringStruct('CompanyName', 'Tatsh'),
                           StringStruct(
                               'FileDescription',
-                              '${script_name} from ${project_name}. - ${{ github.server_url }}/${{ github.repository }}'
+                              '${project_name} - ${{ github.server_url }}/${{ github.repository }}'
                           ),
                           StringStruct('FileVersion', '${version}'),
-                          StringStruct('InternalName', '${script_name}.exe'),
+                          StringStruct('InternalName', 'deltona.exe'),
                           StringStruct('LegalCopyright', 'Copyright (c) ${project_name} authors.'),
-                          StringStruct('OriginalFilename', '${script_name}.exe'),
+                          StringStruct('OriginalFilename', 'deltona.exe'),
                           StringStruct('ProductName', '${project_name}'),
                           StringStruct('ProductVersion', '${version}')
                       ])
@@ -120,44 +86,32 @@ jobs:
                   VarFileInfo([VarStruct('Translation', [0x409, 1200, 0x809, 1252])])
               ])
           EOF
-              if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
-                  cat version-info.txt
-              fi
-              echo "Building executable for '${script_name}'..."
-              openssl_args=()
-              if [[ -n "${OPENSSL_DIR:-}" ]]; then
-                  openssl_args=(--add-binary "${OPENSSL_DIR}/bin/*.dll;.")
-              fi
-              uv run pyinstaller --log-level ERROR --onefile -n "${script_name}" --optimize 1 \
-                --hidden-import colorlog -y --version-file version-info.txt \
-                "${openssl_args[@]}" temp_script.py
-              if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
-                  cat "${script_name}.spec"
-              fi
-          done < <(tomlq -r '.project.scripts|to_entries[]|"\(.key) \(.value|split(":")|join(" "))"' pyproject.toml)
+          if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
+              cat version-info.txt
+          fi
+          echo "Building executable for 'deltona'..."
+          openssl_args=()
+          if [[ -n "${OPENSSL_DIR:-}" ]]; then
+              openssl_args=(--add-binary "${OPENSSL_DIR}/bin/*.dll;.")
+          fi
+          uv run pyinstaller --log-level ERROR --onefile -n deltona --optimize 1 \
+            --hidden-import colorlog --collect-submodules deltona \
+            -y --version-file version-info.txt \
+            "${openssl_args[@]}" temp_script.py
+          if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
+              cat deltona.spec
+          fi
         shell: 'bash'
       - if: matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm'
         name: 'Test binary'
         run: |
-          $distFiles = Get-ChildItem -Path dist\*.exe
-          Write-Host "Found $($distFiles.Count) files in dist/: $(( $distFiles | ForEach-Object { $_.Name } ) -join ', ')"
-          foreach ($file in $distFiles) {
-            Write-Host "Testing '$($file.FullName)'."
-            & $file.FullName --help
-          }
+          & dist\deltona.exe --help
+          & dist\deltona.exe add-cdda-times --help
       - if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
         name: 'Test binary'
         run: |
-          dist_files=(dist/*)
-          echo "Found ${#dist_files[@]} files in dist/: ${dist_files[*]##*/}"
-          for file in "${dist_files[@]}"; do
-              if [[ "${file}" == dist/index.*js ]]; then
-                  echo "Skipping index.js."
-                  continue
-              fi
-              echo "Testing '${file}'."
-              "./${file}" --help
-          done
+          ./dist/deltona --help
+          ./dist/deltona add-cdda-times --help
       - name: 'Upload Artifacts'
         uses: 'actions/upload-artifact@v7'
         with:
