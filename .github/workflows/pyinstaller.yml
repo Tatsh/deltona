@@ -12,19 +12,17 @@ jobs:
         with:
           python-version: '3.13'
       - if: matrix.os == 'windows-11-arm'
-        name: 'Export GitHub Actions cache variables'
-        uses: 'actions/github-script@v7'
+        name: 'Cache vcpkg installed packages'
+        uses: 'actions/cache@v4'
         with:
-          script: |
-            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL);
-            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN);
+          key: vcpkg-arm64-windows-openssl-${{ hashFiles('.github/workflows/pyinstaller.yml') }}
+          path: '~/vcpkg/installed'
       - if: matrix.os == 'windows-11-arm'
         name: 'Set up vcpkg'
         run: |
           git clone --depth 1 https://github.com/microsoft/vcpkg "$env:USERPROFILE\vcpkg"
           & "$env:USERPROFILE\vcpkg\bootstrap-vcpkg.bat" -disableMetrics
-          & "$env:USERPROFILE\vcpkg\vcpkg.exe" install openssl `
-            --triplet arm64-windows --binarysource="clear;x-gha,readwrite"
+          & "$env:USERPROFILE\vcpkg\vcpkg.exe" install openssl --triplet arm64-windows
 
           $installed = "$env:USERPROFILE\vcpkg\installed\arm64-windows"
 
