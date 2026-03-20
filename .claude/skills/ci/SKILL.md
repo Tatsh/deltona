@@ -94,9 +94,11 @@ Closes: #123
 
 ### Component prefix rules
 
-- Python file `deltona/media.py` → `deltona/media:`.
-- Multiple files under `deltona/commands/` → `deltona/commands:`.
-- Single command file `deltona/commands/admin.py` → `deltona/commands/admin:`.
+For Python files, strip the `deltona/` prefix and replace `/` with `.` (like module imports).
+
+- Python file `deltona/media.py` → `media:`.
+- Multiple files under `deltona/commands/` → `commands:`.
+- Single command file `deltona/commands/admin.py` → `commands.admin:`.
 - Workflow file `.github/workflows/qa.yml` → `workflows/qa:`.
 - Multiple workflows → `workflows/*:`.
 - Agent files `.claude/agents/*.md` → `.claude:` or specific agent name.
