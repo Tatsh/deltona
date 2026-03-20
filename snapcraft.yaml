@@ -1,0 +1,30 @@
+apps:
+  deltona:
+    command: 'bin/deltona'
+    plugs:
+      - 'home'
+      - 'network'
+      - 'network-bind'
+base: 'core24'
+confinement: 'strict'
+description: 'A lot of uncategorised utilities.'
+grade: 'stable'
+name: 'deltona'
+parts:
+  deltona:
+    build-packages:
+      - 'libcairo2-dev'
+      - 'libgirepository-2.0-dev'
+      - 'pkg-config'
+    plugin: 'python'
+    python-packages:
+      - '.'
+    source: '.'
+    stage-packages: []
+platforms:
+  amd64:
+    build-on: 'amd64'
+  arm64:
+    build-on: 'arm64'
+summary: 'A lot of uncategorised utilities.'
+version: '0.1.0'

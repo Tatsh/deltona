@@ -19,7 +19,6 @@ autofunction
 automodule
 bascom
 beautifulsoup
-binarysource
 biha
 bihi
 bika
@@ -65,13 +64,10 @@ datamode
 dataoffset
 datatable
 datatables
-dbus
 debugpy
 demibold
 desat
 dgenre
-directores
-djlint
 docstrings
 doctrees
 dontcare
@@ -104,7 +100,6 @@ followlinks
 fontawesome
 forcecloseapplications
 foxundermoon
-fqxz
 froms
 fspath
 fullfacesize
@@ -120,7 +115,6 @@ getxattr
 gitpython
 globaltoc
 gnudb
-gobject
 gogextract
 gpac
 hable
@@ -145,7 +139,6 @@ ioctl
 iselect
 isort
 itertools
-jinja
 jlong
 jsonnet
 jsonschema
@@ -202,6 +195,7 @@ monkeypatch
 movflags
 msgbox
 mvid
+myproject
 mypy
 namedtuples
 nocancel
@@ -246,7 +240,6 @@ pytest
 pyyaml
 rars
 rdonly
-readwrite
 referer
 regedit
 regen
@@ -269,6 +262,7 @@ sigwinch
 siri
 sirikit
 slugified
+snapcore
 snapcraft
 softprops
 soupsieve

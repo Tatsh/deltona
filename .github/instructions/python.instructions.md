@@ -231,7 +231,7 @@ applyTo: '**/*.py, **/*.pyi'
   @click.option('-d', '--debug', is_flag=True)
   def my_command(debug: bool = False) -> None:
       """Do something."""
-      setup_logging(debug=debug, loggers={'deltona': {}})
+      setup_logging(debug=debug, loggers={'myproject': {}})
   ```
 
 - In library modules, define a module-level logger (not exported):
@@ -257,7 +257,7 @@ applyTo: '**/*.py, **/*.pyi'
 
 When fixing mypy errors or eliminating `Any` usage, follow these strategies in order of preference:
 
-1. **TypedDict** for dictionary shapes - place shared ones in `deltona/typing.py` and add to
+1. **TypedDict** for dictionary shapes - place shared ones in a `typing.py` module and add to
    `__all__`.
 2. **PEP 695 generic type variables** (`def func[T](items: Sequence[T]) -> T`) - do not use
    `TypeVar` directly.

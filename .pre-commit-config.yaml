@@ -44,7 +44,7 @@ repos:
           - '--frozen'
         id: 'uv-sync'
     repo: 'https://github.com/astral-sh/uv-pre-commit'
-    rev: '0.10.10'
+    rev: '0.10.12'
   - hooks:
       - id: 'check-github-actions'
       - id: 'check-github-workflows'

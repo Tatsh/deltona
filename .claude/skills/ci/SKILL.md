@@ -53,9 +53,10 @@ file in a commit:
 - `CHANGELOG.md`
 - `.vscode/dictionary.txt`
 
-For example, if a commit contains `deltona/commands/main.py`, `tests/test_main_command.py`, and
-`CHANGELOG.md`, the component is determined by `deltona/commands/main.py` and
-`tests/test_main_command.py` only. `CHANGELOG.md` is simply staged alongside them.
+For example, if a commit contains `deltona/commands/main.py`,
+`tests/test_main_command.py`, and `CHANGELOG.md`, the component is determined by
+`deltona/commands/main.py` and `tests/test_main_command.py` only.
+`CHANGELOG.md` is simply staged alongside them.
 
 If `CHANGELOG.md` is the only file being committed, use the `changelog:` prefix. If
 `.vscode/dictionary.txt` is the only file, use `dictionary:` prefix.
@@ -68,6 +69,20 @@ If `CHANGELOG.md` is the only file being committed, use the `changelog:` prefix.
   changes are themselves separate.
 - Dictionary updates (`.vscode/dictionary.txt`) should be committed first with message
   `dictionary: update`.
+
+### Cruft updates
+
+When all changes are from re-running Wiswa (the project generator) and no hand-written code changed,
+this is a **cruft update**. Indicators:
+
+- Only Wiswa-managed files changed (workflows, `package.json`, `pyproject.toml`,
+  `.pre-commit-config.yaml`, `.claude/agents/`, `.cursor/rules/`, `.github/instructions/`,
+  `CITATION.cff`, `.vscode/dictionary.txt`, `uv.lock`, `.wiswa.jsonnet`, etc.).
+- No files under the primary module or `tests/` changed.
+
+Commit everything in a single commit with the subject `cruft: update`. Include a body summarising
+what changed (e.g. new/updated workflows, updated agent files, dependency version bumps, new managed
+files). Do not run any agents. Do not split into multiple commits. Do not update the changelog.
 
 ### When a single commit is fine
 
@@ -114,12 +129,16 @@ For Python files, strip the `deltona/` prefix and replace `/` with `.` (like mod
 
 ### Trailers
 
-- `Signed-off-by:` - always included on every commit. Use the author name and email from
-  `git config user.name` and `git config user.email`.
-- `Closes: #N` - when a commit closes a GitHub issue.
-- `Fixes: #N` - when a commit fixes a bug reported in an issue.
+- `Closes: #N` - when a commit closes a GitHub issue. If it is another project, use the full URI.
+- `Fixes: #N` - when a commit fixes a bug reported in an issue. If it is another project, use the
+  full URI.
+- `Related: #N` - when a commit is related to an issue but does not fully close or fix it. If it is
+  another project, use the full URI.
 - `Reviewed-by:` - if applicable.
 - `Co-authored-by:` - if applicable.
+- `Reported-by:`: - if applicable. Could get this information from a bug report that led to the fix
+  if the issue ID/URL is known.
+- `Signed-off-by:` - always included on every commit. This will be added with `-s`.
 
 ## Making commits
 

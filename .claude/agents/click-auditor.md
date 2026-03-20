@@ -11,7 +11,7 @@ all rules in `.github/instructions/python.instructions.md`.
 
 ### Decorator conventions
 
-- Every command uses `context_settings=CONTEXT_SETTINGS` from `deltona.constants`. Add if missing.
+- Every command uses `context_settings={'help_option_names': ('-h', '--help')}`. Add if missing.
 - `click.Path` always includes `path_type=Path`. Add if missing.
 - Parameters that shadow builtins are renamed (e.g. `'all_'`). Rename if not.
 

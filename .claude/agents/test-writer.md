@@ -35,8 +35,8 @@ def test_my_command_success(runner: CliRunner, mocker: MockerFixture) -> None:
 
 - `mocker.patch` for complex setups and return value chains.
 - `monkeypatch.setattr` for simple attribute replacement.
-- Factory functions for reusable mock objects (e.g. `make_fake_system_bus()`). Place these at
-  module level in the test file, not as fixtures.
+- Factory functions for reusable mock objects. Place these at module level in the test file, not as
+  fixtures.
 
 ### Parametrised tests
 

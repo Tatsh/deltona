@@ -10,8 +10,7 @@ changes that preserve clarity - never make code harder to read. Follow all conve
 
 ## Determining the minimum version
 
-Read `requires-python` from `pyproject.toml` to determine the minimum supported version. Currently
-`>=3.12`.
+Read `requires-python` from `pyproject.toml` to determine the minimum supported version.
 
 ## Modernisation targets
 

@@ -31,8 +31,9 @@ class Config(TypedDict):
 def get_config() -> Config: ...
 ```
 
-Place new TypedDict classes in `deltona/typing.py` if they are used across modules, or locally if
-single-use. Add them to `__all__` in `deltona/typing.py` when shared.
+Place new TypedDict classes in `deltona/typing.py` if they are used across
+modules, or locally if single-use. Add them to `__all__` in
+`deltona/typing.py` when shared.
 
 ### 2. Generic type variables (PEP 695 syntax)
 

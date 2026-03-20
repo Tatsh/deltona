@@ -13,7 +13,7 @@ jobs:
           python-version: '3.13'
       - if: matrix.os == 'windows-11-arm'
         name: 'Cache vcpkg installed packages'
-        uses: 'actions/cache@v4'
+        uses: 'actions/cache@v5'
         with:
           key: vcpkg-arm64-windows-openssl-${{ hashFiles('.github/workflows/pyinstaller.yml') }}
           path: '~/vcpkg/installed'
@@ -53,12 +53,16 @@ jobs:
       - name: 'Build with PyInstaller'
         run: |
           project_name=$(tomlq -r '.project.urls.repository|split("/")[-1]' pyproject.toml)
-          vers="$(tomlq -r '.project.version|split(".")|map(tonumber)|@csv' pyproject.toml),0"
+          vers=$(echo "$(tomlq -r '.project.version|split(".")|map(tonumber)|@csv' pyproject.toml),0")
           version=$(tomlq -r .project.version pyproject.toml)
+          script_name='deltona'
+          IFS=$' ' read -r python_path func_name < <(tomlq -r '.project.scripts."'"${script_name}"'"|split(":")|join(" ")' pyproject.toml)
+          func_name="${func_name#"${func_name%%[![:space:]]*}"}"
+          func_name="${func_name%"${func_name##*[![:space:]]}"}"
           cat > temp_script.py <<EOF
-          from deltona.commands.main import main
+          from ${python_path} import ${func_name}
           if __name__ == '__main__':
-              main()
+              ${func_name}()
           EOF
           if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
               cat temp_script.py
@@ -79,12 +83,12 @@ jobs:
                           StringStruct('CompanyName', 'Tatsh'),
                           StringStruct(
                               'FileDescription',
-                              '${project_name} - ${{ github.server_url }}/${{ github.repository }}'
+                              '${script_name} from ${project_name}. - ${{ github.server_url }}/${{ github.repository }}'
                           ),
                           StringStruct('FileVersion', '${version}'),
-                          StringStruct('InternalName', 'deltona.exe'),
+                          StringStruct('InternalName', '${script_name}.exe'),
                           StringStruct('LegalCopyright', 'Copyright (c) ${project_name} authors.'),
-                          StringStruct('OriginalFilename', 'deltona.exe'),
+                          StringStruct('OriginalFilename', '${script_name}.exe'),
                           StringStruct('ProductName', '${project_name}'),
                           StringStruct('ProductVersion', '${version}')
                       ])
@@ -95,30 +99,46 @@ jobs:
           if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
               cat version-info.txt
           fi
-          echo "Building executable for 'deltona'..."
+          echo "Building executable for '${script_name}'..."
           openssl_args=()
           if [[ -n "${OPENSSL_DIR:-}" ]]; then
               openssl_args=(--add-binary "${OPENSSL_DIR}/bin/*.dll;.")
           fi
-          uv run pyinstaller --log-level ERROR --onefile -n deltona --optimize 1 \
-            --hidden-import colorlog --collect-submodules deltona \
+          uv run pyinstaller --log-level ERROR --onefile -n "${script_name}" --optimize 1 \
+            --hidden-import colorlog \
+            --collect-submodules deltona \
             --collect-data binaryornot \
             -y --version-file version-info.txt \
-            "${openssl_args[@]}" temp_script.py
+            "${openssl_args[@]}" \
+            temp_script.py
           if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
-              cat deltona.spec
+              cat "${script_name}.spec"
           fi
         shell: 'bash'
       - if: matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm'
         name: 'Test binary'
         run: |
-          & dist\deltona.exe --help
-          & dist\deltona.exe add-cdda-times --help
+          $distFiles = Get-ChildItem -Path dist\*.exe
+          Write-Host "Found $($distFiles.Count) files in dist/: $(( $distFiles | ForEach-Object { $_.Name } ) -join ', ')"
+          foreach ($file in $distFiles) {
+            Write-Host "Testing '$($file.FullName)'."
+            & $file.FullName --help
+            & $file.FullName add-cdda-times --help
+          }
       - if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
         name: 'Test binary'
         run: |
-          ./dist/deltona --help
-          ./dist/deltona add-cdda-times --help
+          dist_files=(dist/*)
+          echo "Found ${#dist_files[@]} files in dist/: ${dist_files[*]##*/}"
+          for file in "${dist_files[@]}"; do
+              if [[ "${file}" == dist/index.*js ]]; then
+                  echo "Skipping index.js."
+                  continue
+              fi
+              echo "Testing '${file}'."
+              "./${file}" --help
+              "./${file}" add-cdda-times --help
+          done
       - name: 'Upload Artifacts'
         uses: 'actions/upload-artifact@v7'
         with:

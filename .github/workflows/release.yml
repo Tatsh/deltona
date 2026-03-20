@@ -1,17 +1,19 @@
 jobs:
   publish-release:
-    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch
-      && startsWith(github.event.workflow_run.head_branch, 'v')
+    if: |
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch &&
+      startsWith(github.event.workflow_run.head_branch, 'v')
     runs-on: 'ubuntu-latest'
     steps:
       - uses: 'actions/checkout@v6'
-      - name: 'Check all workflows succeeded'
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - env:
+          GH_TOKEN: '${{ github.token }}'
+        name: 'Check all workflows succeeded'
         run: |
           tag="${{ github.event.workflow_run.head_branch }}"
           sha="${{ github.event.workflow_run.head_sha }}"
-          for workflow in AppImage Publish PyInstaller; do
+          for workflow in AppImage Publish PyInstaller Snap; do
             status=$(gh run list -w "$workflow" --commit "$sha" --json conclusion -q '.[0].conclusion')
             if [[ "$status" != 'success' ]]; then
               echo "Workflow '$workflow' has not succeeded yet (status: ${status:-pending})."
@@ -20,9 +22,9 @@ jobs:
           done
           echo "All workflows succeeded for ${tag}."
           echo "tag=${tag}" >> "$GITHUB_ENV"
-      - name: 'Publish release'
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - env:
+          GH_TOKEN: '${{ github.token }}'
+        name: 'Publish release'
         run: 'gh release edit "$tag" --draft=false'
 name: 'Release'
 'on':
@@ -33,5 +35,6 @@ name: 'Release'
       - 'AppImage'
       - 'Publish'
       - 'PyInstaller'
+      - 'Snap'
 permissions:
   contents: 'write'

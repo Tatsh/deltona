@@ -66,7 +66,7 @@ def process(data: str, *, verbose: bool = False) -> int:
 - `Raises` section required with descriptions for each exception type.
 - No `, optional` - use `TypeName | None` instead.
 - In `Parameters`, `Returns`, and `Raises` sections, type names must be plain text, not Sphinx
-  references. Use `bs4.Tag` not `:py:class:`~bs4.Tag``. Sphinx cross-references are only for
+  references. Use `bs4.Tag` not `` :py:class:`~bs4.Tag` ``. Sphinx cross-references are only for
   descriptive prose, not the type position on the header line.
 - No `Attributes` or `Methods` sections in class docstrings.
 - Use Sphinx cross-references: `:py:func:`, `:py:class:`, `:py:mod:`, `:py:meth:`, `~` for short

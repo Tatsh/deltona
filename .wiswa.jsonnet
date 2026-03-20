@@ -6,9 +6,11 @@ local utils = import 'utils.libjsonnet';
   description: 'A lot of uncategorised utilities.',
   keywords: ['bluetooth', 'command line', 'file management', 'git', 'multimedia'],
   project_name: 'deltona',
-  version: '0.0.2',
+  version: '0.1.0',
+  want_claude: true,
   want_main: false,  // Multiple entry points.
   want_man: true,
+  want_snap: true,
   supported_python_versions: ['3.%d' % i for i in std.range(12, 14)],
   has_multiple_entry_points: true,
   pyproject+: {
@@ -32,6 +34,7 @@ local utils = import 'utils.libjsonnet';
         'Topic :: Utilities',
       ]),
       scripts: {
+        deltona: 'deltona.commands.main:main',
         // admin
         'clean-old-kernels-modules': 'deltona.commands.admin:clean_old_kernels_and_modules_main',
         htmltree: 'deltona.commands.admin:generate_html_dir_tree_main',
@@ -168,7 +171,6 @@ local utils = import 'utils.libjsonnet';
             optional: true,
             version: utils.latestPypiPackageVersionCaret('pyperclip'),
           },
-          python: '>=3.10,<3.14',
           'python-xz': {
             optional: true,
             version: utils.latestPypiPackageVersionCaret('python-xz'),
@@ -230,6 +232,9 @@ local utils = import 'utils.libjsonnet';
           },
         },
       },
+      commitizen+: {
+        version_files+: ['docs/badges.rst'],
+      },
       ruff+: {
         lint+: {
           pylint+: {
@@ -243,23 +248,27 @@ local utils = import 'utils.libjsonnet';
   copilot: {
     intro: 'Deltona is a collection of uncategorised CLI utilities and Python modules.',
   },
-  local exclude_from_all = [
-    'clean-old-kernels-modules',
-    'connect-g603',
-    'inhibit-notifications',
-    'kill-gamescope',
-    'systemd-reset-tpm-cryptenroll',
-    'wait-for-disc',
-  ],
   pyinstaller+: {
-    macos_exclusions: exclude_from_all,
-    windows_exclusions: exclude_from_all + [
-      'kill-wine',
-      'set-wine-fonts',
-      'unregister-wine-assocs',
-      'winegoginstall',
-      'wineshell',
-    ],
+    include_only: ['deltona'],
+    collect_data: ['binaryornot'],
+    collect_submodules: ['deltona'],
+    test_commands: ['add-cdda-times --help'],
+    uv_sync_args: ['--all-extras', '--all-groups'],
+    vcpkg: {
+      enabled: true,
+      targets: {
+        'windows-11-arm': {
+          triplet: 'arm64-windows',
+          packages: ['openssl'],
+        },
+      },
+    },
+  },
+  appimage+: {
+    include_only: ['deltona'],
+    test_commands: ['add-cdda-times --help'],
+    uv_sync_args: ['--all-extras', '--all-groups'],
+    requirements_filter: 'beautifulsoup4|gitpython|html5lib|mutagen|paramiko|pexpect|pillow|platformdirs|psutil|pydbus|pygithub|pygobject|pyperclip|python-xz|pyyaml|unidecode|yt-dlp',
   },
   local apt_packages = ['libcairo2-dev', 'libgirepository-2.0-dev'],
   github+: {
@@ -278,6 +287,11 @@ local utils = import 'utils.libjsonnet';
       },
     },
   },
+  snap_python_build_packages: [
+    'libcairo2-dev',
+    'libgirepository-2.0-dev',
+    'pkg-config',
+  ],
   readthedocs+: {
     build+: {
       apt_packages: apt_packages,
