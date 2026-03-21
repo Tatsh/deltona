@@ -11,7 +11,6 @@ local utils = import 'utils.libjsonnet';
   want_main: false,  // Multiple entry points.
   want_man: true,
   want_snap: true,
-  supported_python_versions: ['3.%d' % i for i in std.range(12, 14)],
   has_multiple_entry_points: true,
   pyproject+: {
     project+: {

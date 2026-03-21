@@ -3,7 +3,7 @@
     "editor.defaultFormatter": "Grafana.vscode-jsonnet"
   },
   "[python]": {
-    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.defaultFormatter": "eeyore.yapf",
     "editor.formatOnSaveMode": "file",
     "editor.tabSize": 4
   },

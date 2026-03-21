@@ -53,7 +53,7 @@ jobs:
       - name: 'Build with PyInstaller'
         run: |
           project_name=$(tomlq -r '.project.urls.repository|split("/")[-1]' pyproject.toml)
-          vers=$(echo "$(tomlq -r '.project.version|split(".")|map(tonumber)|@csv' pyproject.toml),0")
+          vers="$(tomlq -r '.project.version|split(".")|map(tonumber)|@csv' pyproject.toml),0"
           version=$(tomlq -r .project.version pyproject.toml)
           script_name='deltona'
           IFS=$' ' read -r python_path func_name < <(tomlq -r '.project.scripts."'"${script_name}"'"|split(":")|join(" ")' pyproject.toml)
@@ -150,6 +150,17 @@ jobs:
         uses: 'actions/attest-build-provenance@v4'
         with:
           subject-path: '${{ matrix.dist_path }}'
+      - name: 'Generate SBOM'
+        uses: 'anchore/sbom-action@v0'
+        with:
+          path: 'dist/'
+          output-file: 'sbom.spdx.json'
+          upload-artifact: false
+      - name: 'Attest SBOM'
+        uses: 'actions/attest-sbom@v4'
+        with:
+          subject-path: '${{ matrix.dist_path }}'
+          sbom-path: 'sbom.spdx.json'
       - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && github.ref_type == 'tag'
         name: 'Zip files'
         run: |
@@ -168,6 +179,12 @@ jobs:
         uses: 'actions/attest-build-provenance@v4'
         with:
           subject-path: '_out/*.zip'
+      - if: github.ref_type == 'tag'
+        name: 'Attest SBOM'
+        uses: 'actions/attest-sbom@v4'
+        with:
+          subject-path: '_out/*.zip'
+          sbom-path: 'sbom.spdx.json'
       - if: github.ref_type == 'tag'
         name: Upload package
         uses: softprops/action-gh-release@v2
