@@ -3,15 +3,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: 'actions/checkout@v6'
-      - name: 'Determine version'
-        id: version
-        run: |
-          if [ "${{ github.ref_type }}" = tag ]; then
-            echo "value=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "value=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-          fi
-        shell: 'bash'
       - name: 'Install yq'
         run: 'pipx install yq'
       - name: 'Install uv'
@@ -163,7 +154,7 @@ jobs:
         uses: 'anchore/sbom-action@v0'
         env:
           SYFT_SOURCE_NAME: 'deltona'
-          SYFT_SOURCE_VERSION: ${{ steps.version.outputs.value }}
+          SYFT_SOURCE_VERSION: ${{ github.ref_name }}
         with:
           path: 'dist/'
           output-file: 'sbom.spdx.json'
