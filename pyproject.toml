@@ -75,30 +75,12 @@ classifiers = [
 ]
 dependencies = [
   "bascom>=0.1.2",
-  "beautifulsoup4>=4.14.3",
   "binaryornot>=0.6.0",
   "click>=8.3.1",
-  "gitpython>=3.1.46",
-  "html5lib>=1.1",
   "keyring>=25.7.0",
-  "mutagen>=1.47.0",
-  "paramiko>=4.0.0",
-  "pexpect>=4.9.0",
-  "pillow>=12.1.1",
-  "platformdirs>=4.9.4",
-  "psutil>=7.2.2",
-  "pydbus>=0.6.0; sys_platform == 'linux'",
-  "pygithub>=2.8.1",
-  "pygobject>=3.56.1; sys_platform == 'linux'",
-  "pyperclip>=1.11.0",
-  "python-xz>=0.6.0",
-  "pyyaml>=6.0.3",
   "requests>=2.32.5",
   "send2trash>=2.1.0",
-  "soupsieve>=2.8.3",
   "typing-extensions>=4.15.0",
-  "unidecode>=1.4.0",
-  "yt-dlp>=2026.3.17",
 ]
 description = "A lot of uncategorised utilities."
 keywords = ["bluetooth", "command line", "file management", "git", "multimedia"]
@@ -111,6 +93,19 @@ version = "0.1.2"
 [[project.authors]]
 email = "audvare@gmail.com"
 name = "Andrew Udvare"
+
+[project.optional-dependencies]
+admin = ["paramiko>=4.0.0"]
+desktop = [
+  "pydbus>=0.6.0; sys_platform == 'linux'",
+  "pygobject>=3.56.1; sys_platform == 'linux'",
+  "pyperclip>=1.11.0",
+]
+git = ["gitpython>=3.1.46", "pygithub>=2.8.1"]
+media = ["mutagen>=1.47.0", "platformdirs>=4.9.4"]
+string = ["pyyaml>=6.0.3", "unidecode>=1.4.0", "yt-dlp>=2026.3.17"]
+wine = ["pexpect>=4.9.0", "platformdirs>=4.9.4", "psutil>=7.2.2", "python-xz>=0.6.0"]
+www = ["beautifulsoup4>=4.14.3", "html5lib>=1.1", "pillow>=12.1.1"]
 
 [project.scripts]
 add-cdda-times = "deltona.commands.media:add_cdda_times_main"

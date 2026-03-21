@@ -783,30 +783,46 @@ version = "0.1.2"
 source = { editable = "." }
 dependencies = [
     { name = "bascom" },
-    { name = "beautifulsoup4" },
     { name = "binaryornot" },
     { name = "click" },
-    { name = "gitpython" },
-    { name = "html5lib" },
     { name = "keyring" },
-    { name = "mutagen" },
-    { name = "paramiko" },
-    { name = "pexpect" },
-    { name = "pillow" },
-    { name = "platformdirs" },
-    { name = "psutil" },
-    { name = "pydbus", marker = "sys_platform == 'linux'" },
-    { name = "pygithub" },
-    { name = "pygobject", marker = "sys_platform == 'linux'" },
-    { name = "pyperclip" },
-    { name = "python-xz" },
-    { name = "pyyaml" },
     { name = "requests" },
     { name = "send2trash" },
-    { name = "soupsieve" },
     { name = "typing-extensions" },
+]
+
+[package.optional-dependencies]
+admin = [
+    { name = "paramiko" },
+]
+desktop = [
+    { name = "pydbus", marker = "sys_platform == 'linux'" },
+    { name = "pygobject", marker = "sys_platform == 'linux'" },
+    { name = "pyperclip" },
+]
+git = [
+    { name = "gitpython" },
+    { name = "pygithub" },
+]
+media = [
+    { name = "mutagen" },
+    { name = "platformdirs" },
+]
+string = [
+    { name = "pyyaml" },
     { name = "unidecode" },
     { name = "yt-dlp" },
+]
+wine = [
+    { name = "pexpect" },
+    { name = "platformdirs" },
+    { name = "psutil" },
+    { name = "python-xz" },
+]
+www = [
+    { name = "beautifulsoup4" },
+    { name = "html5lib" },
+    { name = "pillow" },
 ]
 
 [package.dev-dependencies]
@@ -855,31 +871,32 @@ tests = [
 [package.metadata]
 requires-dist = [
     { name = "bascom", specifier = ">=0.1.2" },
-    { name = "beautifulsoup4", specifier = ">=4.14.3" },
+    { name = "beautifulsoup4", marker = "extra == 'www'", specifier = ">=4.14.3" },
     { name = "binaryornot", specifier = ">=0.6.0" },
     { name = "click", specifier = ">=8.3.1" },
-    { name = "gitpython", specifier = ">=3.1.46" },
-    { name = "html5lib", specifier = ">=1.1" },
+    { name = "gitpython", marker = "extra == 'git'", specifier = ">=3.1.46" },
+    { name = "html5lib", marker = "extra == 'www'", specifier = ">=1.1" },
     { name = "keyring", specifier = ">=25.7.0" },
-    { name = "mutagen", specifier = ">=1.47.0" },
-    { name = "paramiko", specifier = ">=4.0.0" },
-    { name = "pexpect", specifier = ">=4.9.0" },
-    { name = "pillow", specifier = ">=12.1.1" },
-    { name = "platformdirs", specifier = ">=4.9.4" },
-    { name = "psutil", specifier = ">=7.2.2" },
-    { name = "pydbus", marker = "sys_platform == 'linux'", specifier = ">=0.6.0" },
-    { name = "pygithub", specifier = ">=2.8.1" },
-    { name = "pygobject", marker = "sys_platform == 'linux'", specifier = ">=3.56.1" },
-    { name = "pyperclip", specifier = ">=1.11.0" },
-    { name = "python-xz", specifier = ">=0.6.0" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "mutagen", marker = "extra == 'media'", specifier = ">=1.47.0" },
+    { name = "paramiko", marker = "extra == 'admin'", specifier = ">=4.0.0" },
+    { name = "pexpect", marker = "extra == 'wine'", specifier = ">=4.9.0" },
+    { name = "pillow", marker = "extra == 'www'", specifier = ">=12.1.1" },
+    { name = "platformdirs", marker = "extra == 'media'", specifier = ">=4.9.4" },
+    { name = "platformdirs", marker = "extra == 'wine'", specifier = ">=4.9.4" },
+    { name = "psutil", marker = "extra == 'wine'", specifier = ">=7.2.2" },
+    { name = "pydbus", marker = "sys_platform == 'linux' and extra == 'desktop'", specifier = ">=0.6.0" },
+    { name = "pygithub", marker = "extra == 'git'", specifier = ">=2.8.1" },
+    { name = "pygobject", marker = "sys_platform == 'linux' and extra == 'desktop'", specifier = ">=3.56.1" },
+    { name = "pyperclip", marker = "extra == 'desktop'", specifier = ">=1.11.0" },
+    { name = "python-xz", marker = "extra == 'wine'", specifier = ">=0.6.0" },
+    { name = "pyyaml", marker = "extra == 'string'", specifier = ">=6.0.3" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "send2trash", specifier = ">=2.1.0" },
-    { name = "soupsieve", specifier = ">=2.8.3" },
     { name = "typing-extensions", specifier = ">=4.15.0" },
-    { name = "unidecode", specifier = ">=1.4.0" },
-    { name = "yt-dlp", specifier = ">=2026.3.17" },
+    { name = "unidecode", marker = "extra == 'string'", specifier = ">=1.4.0" },
+    { name = "yt-dlp", marker = "extra == 'string'", specifier = ">=2026.3.17" },
 ]
+provides-extras = ["admin", "desktop", "git", "media", "string", "wine", "www"]
 
 [package.metadata.requires-dev]
 dev = [
