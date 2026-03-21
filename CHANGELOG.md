@@ -9,6 +9,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+## [0.1.2] - 2026-03-21
+
+Minor release for testing the release process.
+
 ## [0.1.1] - 2026-03-21
 
 ### Changed
@@ -93,7 +97,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 First version. `check_bookmarks_html_urls` may have unresolved issues.
 
-[unreleased]: https://github.com/Tatsh/deltona/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/Tatsh/deltona/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/Tatsh/deltona/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/Tatsh/deltona/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Tatsh/deltona/compare/v0.0.3...v0.1.0
 [0.0.3]: https://github.com/Tatsh/deltona/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/Tatsh/deltona/compare/v0.0.1...v0.0.2
