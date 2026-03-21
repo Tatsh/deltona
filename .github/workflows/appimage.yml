@@ -83,7 +83,7 @@ jobs:
           cp generic.svg "recipe/${script_name}.svg"
           echo "Building AppImage for '${script_name}'..."
           uv run python -m python_appimage -v build app -l "manylinux2014_${{ matrix.system.arch }}" -p 3.13 recipe
-          mv "${script_name}-${{ matrix.system.arch }}.AppImage" "dist/${script_name}-${{ matrix.system.arch }}.AppImage"
+          mv "${script_name}-${{ matrix.system.arch }}.AppImage" "dist/${script_name}-v${version}-${{ matrix.system.arch }}.AppImage"
         shell: 'bash'
       - name: 'Test binary'
         run: |
@@ -107,6 +107,9 @@ jobs:
             dist/*
       - name: 'Generate SBOM'
         uses: 'anchore/sbom-action@v0'
+        env:
+          SYFT_SOURCE_NAME: 'deltona'
+          SYFT_SOURCE_VERSION: ${{ github.ref_name }}
         with:
           path: 'dist/'
           output-file: 'sbom.spdx.json'

@@ -152,6 +152,9 @@ jobs:
           subject-path: '${{ matrix.dist_path }}'
       - name: 'Generate SBOM'
         uses: 'anchore/sbom-action@v0'
+        env:
+          SYFT_SOURCE_NAME: 'deltona'
+          SYFT_SOURCE_VERSION: ${{ github.ref_name }}
         with:
           path: 'dist/'
           output-file: 'sbom.spdx.json'
