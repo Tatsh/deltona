@@ -6,7 +6,7 @@ local utils = import 'utils.libjsonnet';
   description: 'A lot of uncategorised utilities.',
   keywords: ['bluetooth', 'command line', 'file management', 'git', 'multimedia'],
   project_name: 'deltona',
-  version: '0.1.0',
+  version: '0.1.1',
   want_claude: true,
   want_main: false,  // Multiple entry points.
   want_man: true,

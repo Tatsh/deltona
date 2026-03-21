@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+## [0.1.1] - 2026-03-21
+
 ### Changed
 
 - Restored Python 3.10 compatibility; `requires-python` lowered to `>=3.10`.
