@@ -4,6 +4,7 @@ alayhi
 alayka
 alayya
 alsa
+anchore
 anhu
 anni
 appbar
@@ -41,7 +42,6 @@ cdromreadtochdr
 cdromtoc
 cdte
 cdth
-charliermarsh
 chinesebig
 cleartype
 closeapplications
@@ -76,6 +76,7 @@ dtitle
 dunder
 dyear
 econnrefused
+eeyore
 elif
 enoent
 enotblk
@@ -328,6 +329,8 @@ wiswa
 wkwebview
 wwdc
 xauthority
+yapf
+yapfignore
 yarnrc
 zscale
 ångström

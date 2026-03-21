@@ -46,6 +46,11 @@ repos:
     repo: 'https://github.com/astral-sh/uv-pre-commit'
     rev: '0.10.12'
   - hooks:
+      - id: 'yapf'
+        name: 'check Python files are formatted'
+    repo: 'https://github.com/google/yapf'
+    rev: 'v0.43.0'
+  - hooks:
       - id: 'check-github-actions'
       - id: 'check-github-workflows'
       - args:
