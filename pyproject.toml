@@ -199,6 +199,7 @@ version_files = [
   "docs/index.rst",
   "man/deltona.1",
   "package.json",
+  "snapcraft.yaml",
 ]
 version_provider = "pep621"
 
