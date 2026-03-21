@@ -16,7 +16,6 @@ from deltona.git import (
     merge_dependabot_pull_requests,
 )
 import click
-import keyring
 
 if TYPE_CHECKING:
     from git import Repo
@@ -46,6 +45,8 @@ def git_checkout_default_branch_main(username: str,
     To set a token, ``keyring set tmu-github-api "${USER}"``. The token must have
     access to the public_repo or repo scope.
     """  # noqa: DOC501
+    import keyring  # noqa: PLC0415
+
     setup_logging(debug=debug, loggers={'deltona': {}, 'github': {}, 'keyring': {}})
     token = keyring.get_password('tmu-github-api', username)
     if not token:
@@ -84,6 +85,8 @@ def git_rebase_default_branch_main(
     To set a token, ``keyring set tmu-github-api "${USER}"``. The token must have
     access to the public_repo or repo scope.
     """  # noqa: DOC501
+    import keyring  # noqa: PLC0415
+
     setup_logging(debug=debug, loggers={'deltona': {}, 'github': {}, 'keyring': {}})
     token = keyring.get_password('tmu-github-api', username)
     if not token:
@@ -128,6 +131,8 @@ def merge_dependabot_prs_main(
     debug: bool = False,
 ) -> None:
     """Merge pull requests made by Dependabot on GitHub."""  # noqa: DOC501
+    import keyring  # noqa: PLC0415
+
     setup_logging(debug=debug, loggers={'deltona': {}, 'github': {}, 'keyring': {}})
     if not (token := keyring.get_password('tmu-github-api', username)):
         click.echo('No token.', err=True)

@@ -127,7 +127,10 @@ local utils = import 'utils.libjsonnet';
             optional: true,
             version: utils.latestPypiPackageVersionCaret('html5lib'),
           },
-          keyring: utils.latestPypiPackageVersionCaret('keyring'),
+          keyring: {
+            optional: true,
+            version: utils.latestPypiPackageVersionCaret('keyring'),
+          },
           mutagen: {
             optional: true,
             version: utils.latestPypiPackageVersionCaret('mutagen'),
@@ -179,7 +182,10 @@ local utils = import 'utils.libjsonnet';
             version: utils.latestPypiPackageVersionCaret('pyyaml'),
           },
           requests: utils.latestPypiPackageVersionCaret('requests'),
-          send2trash: utils.latestPypiPackageVersionCaret('send2trash'),
+          send2trash: {
+            optional: true,
+            version: utils.latestPypiPackageVersionCaret('send2trash'),
+          },
           soupsieve: {
             optional: true,
             version: utils.latestPypiPackageVersionCaret('soupsieve'),
@@ -196,11 +202,11 @@ local utils = import 'utils.libjsonnet';
         extras: {
           admin: ['paramiko'],
           desktop: ['pydbus', 'pygobject', 'pyperclip'],
-          git: ['gitpython', 'pygithub'],
-          media: ['mutagen', 'platformdirs'],
+          git: ['gitpython', 'keyring', 'pygithub'],
+          media: ['keyring', 'mutagen', 'platformdirs', 'send2trash'],
           string: ['unidecode', 'pyyaml', 'yt-dlp'],
           wine: ['pexpect', 'platformdirs', 'psutil', 'python-xz'],
-          www: ['beautifulsoup4', 'html5lib', 'pillow'],
+          www: ['beautifulsoup4', 'html5lib', 'keyring', 'pillow'],
         },
         group+: {
           dev+: {

@@ -171,7 +171,7 @@ def test_mvid_rename_main(mocker: MockerFixture, runner: CliRunner, tmp_path: Pa
     src.write_text('dummy')
     non_dir = d / 'non_dir.mkv'
     non_dir.write_text('dummy')
-    mocker.patch('deltona.commands.media.send2trash', side_effect=[None, None, ValueError])
+    mocker.patch('send2trash.send2trash', side_effect=[None, None, ValueError])
     result = runner.invoke(mvid_rename_main, [str(d), str(non_dir), str(d)])
     assert result.exit_code == 0
 
@@ -188,7 +188,7 @@ def test_ke_ebook_ex_main(mocker: MockerFixture, runner: CliRunner, tmp_path: Pa
     d = tmp_path / 'dir'
     d.mkdir()
     mocker.patch('deltona.commands.media.unpack_ebook')
-    mocker.patch('deltona.commands.media.send2trash')
+    mocker.patch('send2trash.send2trash')
     result = runner.invoke(ke_ebook_ex_main, [str(d), '--delete-paths'])
     assert result.exit_code == 0
 
@@ -198,7 +198,7 @@ def test_ke_ebook_ex_main_no_delete(mocker: MockerFixture, runner: CliRunner,
     d = tmp_path / 'dir'
     d.mkdir()
     mocker.patch('deltona.commands.media.unpack_ebook')
-    mock_send2trash = mocker.patch('deltona.commands.media.send2trash')
+    mock_send2trash = mocker.patch('send2trash.send2trash')
     result = runner.invoke(ke_ebook_ex_main, [str(d)])
     assert result.exit_code == 0
     mock_send2trash.assert_not_called()
@@ -234,7 +234,7 @@ def test_tbc2srt_main(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) 
     f = tmp_path / 'file.tbc'
     f.write_text('dummy')
     mocker.patch('deltona.commands.media.sp.run')
-    mocker.patch('deltona.commands.media.send2trash')
+    mocker.patch('send2trash.send2trash')
     result = runner.invoke(tbc2srt_main, [str(f)])
     assert result.exit_code == 0
 

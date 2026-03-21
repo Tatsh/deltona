@@ -11,13 +11,12 @@ import os
 import re
 import string
 
-from bs4 import BeautifulSoup, Tag
-import soupsieve as sv
-
 from .typing import StrPath, assert_not_none
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
+
+    from bs4 import Tag
 
 __all__ = (
     'add_unidecode_custom_replacement',
@@ -569,6 +568,9 @@ def cssq_one(
     str | Tag | None
         The selected item, or ``None`` if no match was found.
     """
+    from bs4 import BeautifulSoup  # noqa: PLC0415
+    import soupsieve as sv  # noqa: PLC0415
+
     soup = BeautifulSoup(file, 'html5lib')
     element = soup.select_one(selector, flags=sv.DEBUG if debug_selector else 0)
     if element and text:
@@ -649,6 +651,9 @@ def cssq(
     Iterator[Tag] | Iterator[str]
         The filtered items.
     """
+    from bs4 import BeautifulSoup  # noqa: PLC0415
+    import soupsieve as sv  # noqa: PLC0415
+
     soup = BeautifulSoup(file, 'html5lib')
     yield from [
         item if not text else item.get_text(strip=strip)

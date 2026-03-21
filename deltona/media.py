@@ -22,8 +22,6 @@ import socket
 import subprocess as sp
 import tempfile
 
-from send2trash import send2trash
-import keyring
 import requests
 
 from .io import context_os_open
@@ -733,6 +731,8 @@ def cddb_query(
     username = username or getpass.getuser()
     if not username:
         raise ValueError(username)
+    import keyring  # noqa: PLC0415
+
     host = host or keyring.get_password('gnudb', username)
     if not host:
         raise ValueError(host)
@@ -951,6 +951,8 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
         is used and as such length counts must always match, unless a workaround is known. If a
         workaround cannot be used, this exception will be raised from ``zip()``.
     """  # noqa: DOC501
+    from send2trash import send2trash  # noqa: PLC0415
+
     front_dir = Path(front_dir)
     rear_dir = Path(rear_dir)
     output_dir = Path(output_dir)
@@ -1158,6 +1160,8 @@ def hlg_to_sdr(
     fast : bool
         If ``True``, use fewer filters for faster but lower quality conversion.
     """
+    from send2trash import send2trash  # noqa: PLC0415
+
     input_file = Path(input_file)
     vf = ((
         'zscale=t=linear:npl=100,'

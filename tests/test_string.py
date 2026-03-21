@@ -365,7 +365,7 @@ def test_add_unidecode_custom_replacement_calls_unidecode(mocker: MockerFixture)
 def test_cssq_one_returns_text_content(mocker: MockerFixture) -> None:
     fake_tag1 = mocker.Mock()
     fake_tag1.get_text.return_value = 'First'
-    mock_soup = mocker.patch('deltona.string.BeautifulSoup')
+    mock_soup = mocker.patch('bs4.BeautifulSoup')
     mock_soup.return_value.select_one.return_value = fake_tag1
     result = string.cssq_one('selector', '', text=True)
     assert result == 'First'
@@ -374,7 +374,7 @@ def test_cssq_one_returns_text_content(mocker: MockerFixture) -> None:
 
 
 def test_cssq_one_returns_none(mocker: MockerFixture) -> None:
-    mock_soup = mocker.patch('deltona.string.BeautifulSoup')
+    mock_soup = mocker.patch('bs4.BeautifulSoup')
     mock_soup.return_value.select_one.return_value = None
     result = string.cssq_one('selector', '')
     assert result is None
@@ -386,8 +386,8 @@ def test_cssq_returns_text_content(mocker: MockerFixture) -> None:
     fake_tag1.get_text.return_value = 'First'
     fake_tag2 = mocker.Mock()
     fake_tag2.get_text.return_value = 'Second'
-    mocker.patch('deltona.string.BeautifulSoup')
-    mock_iselect = mocker.patch('deltona.string.sv.iselect', return_value=[fake_tag1, fake_tag2])
+    mocker.patch('bs4.BeautifulSoup')
+    mock_iselect = mocker.patch('soupsieve.iselect', return_value=[fake_tag1, fake_tag2])
     results = list(string.cssq('selector', '', limit=0, text=True))
     assert results == ['First', 'Second']
     mock_iselect.assert_called_once_with('selector', mocker.ANY, flags=0, limit=0)

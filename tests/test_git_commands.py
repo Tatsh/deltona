@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 def test_git_checkout_default_branch_success(mocker: MockerFixture, runner: CliRunner) -> None:
     mock_repo = mocker.patch('deltona.commands.git._get_git_repo')
-    mocker.patch('deltona.commands.git.keyring.get_password', return_value='dummy_token')
+    mocker.patch('keyring.get_password', return_value='dummy_token')
     mock_get_gh_default_branch = mocker.patch('deltona.commands.git.get_github_default_branch')
     mock_get_gh_default_branch.return_value = 'main'
     mock_checkout = mocker.Mock()
@@ -32,7 +32,7 @@ def test_git_checkout_default_branch_success(mocker: MockerFixture, runner: CliR
 
 def test_git_checkout_default_branch_no_token(mocker: MockerFixture, runner: CliRunner) -> None:
     mock_repo = mocker.patch('deltona.commands.git._get_git_repo')
-    mocker.patch('deltona.commands.git.keyring.get_password', return_value=None)
+    mocker.patch('keyring.get_password', return_value=None)
     mock_get_gh_default_branch = mocker.patch('deltona.commands.git.get_github_default_branch')
     mock_checkout = mocker.Mock()
     mock_head = mocker.Mock(checkout=mock_checkout)
@@ -47,7 +47,7 @@ def test_git_checkout_default_branch_no_token(mocker: MockerFixture, runner: Cli
 
 def test_git_rebase_default_branch_success(mocker: MockerFixture, runner: CliRunner) -> None:
     mock_repo = mocker.patch('deltona.commands.git._get_git_repo')
-    mocker.patch('deltona.commands.git.keyring.get_password', return_value='dummy_token')
+    mocker.patch('keyring.get_password', return_value='dummy_token')
     mock_get_gh_default_branch = mocker.patch('deltona.commands.git.get_github_default_branch')
     mock_get_gh_default_branch.return_value = 'main'
 
@@ -58,7 +58,7 @@ def test_git_rebase_default_branch_success(mocker: MockerFixture, runner: CliRun
 
 
 def test_git_rebase_default_branch_no_token(mocker: MockerFixture, runner: CliRunner) -> None:
-    mocker.patch('deltona.commands.git.keyring.get_password', return_value=None)
+    mocker.patch('keyring.get_password', return_value=None)
     mock_get_gh_default_branch = mocker.patch('deltona.commands.git.get_github_default_branch')
 
     result = runner.invoke(git_rebase_default_branch_main)
@@ -89,7 +89,7 @@ def test_merge_dependabot_prs_main(mocker: MockerFixture, runner: CliRunner) -> 
     mock_merge = mocker.patch('deltona.commands.git.merge_dependabot_pull_requests',
                               side_effect=[RuntimeError, None])
     mock_sleep = mocker.patch('deltona.commands.git.sleep')
-    mocker.patch('deltona.commands.git.keyring.get_password', return_value='dummy_token')
+    mocker.patch('keyring.get_password', return_value='dummy_token')
 
     result = runner.invoke(merge_dependabot_prs_main)
     assert result.exit_code == 0
@@ -98,7 +98,7 @@ def test_merge_dependabot_prs_main(mocker: MockerFixture, runner: CliRunner) -> 
 
 
 def test_merge_dependabot_prs_main_no_token(mocker: MockerFixture, runner: CliRunner) -> None:
-    mocker.patch('deltona.commands.git.keyring.get_password', return_value=None)
+    mocker.patch('keyring.get_password', return_value=None)
     mock_get_gh_default_branch = mocker.patch('deltona.commands.git.get_github_default_branch')
 
     result = runner.invoke(merge_dependabot_prs_main)

@@ -26,10 +26,8 @@ from deltona.system import (
     kill_gamescope,
 )
 from deltona.www import upload_to_imgbb
-from platformdirs import user_state_path
 from requests import HTTPError
 import click
-import pyperclip
 import requests
 
 if TYPE_CHECKING:
@@ -73,6 +71,8 @@ def inhibit_notifications_main(sleep_time: int = 60, *, debug: bool = False) -> 
 @click.argument('files', type=click.Path(path_type=Path), nargs=-1)
 def umpv_main(files: Sequence[Path], mpv_command: str = 'mpv', *, debug: bool = False) -> None:
     """Run a single instance of mpv."""  # noqa: DOC501
+    from platformdirs import user_state_path  # noqa: PLC0415
+
     setup_logging(debug=debug, loggers={'deltona': {}})
     fixed_files = ((p if is_url(p) else str(p.resolve(strict=True))) for p in files)
     socket_path = str(user_state_path() / 'umpv-socket')
@@ -309,6 +309,8 @@ Version=1.0
     if r:
         url: str = r.json()['data']['url']
         if not no_clipboard:
+            import pyperclip  # noqa: PLC0415
+
             pyperclip.copy(url)
         if show_gui:
             click.echo(url)

@@ -16,9 +16,7 @@ import plistlib
 import re
 import urllib.parse
 
-from bs4 import BeautifulSoup as Soup, Tag
 from typing_extensions import NotRequired
-import keyring
 import requests
 
 from .chromium import generate_chrome_user_agent
@@ -26,6 +24,8 @@ from .string import hexstr2bytes
 from .system import IS_LINUX
 
 if TYPE_CHECKING:
+    from bs4 import Tag
+
     from .typing import FileDescriptorOrPath, StrPath
 
 __all__ = (
@@ -190,6 +190,8 @@ def upload_to_imgbb(
     requests.Response
         The response from the ImgBB API.
     """
+    import keyring  # noqa: PLC0415
+
     r = requests.post(
         'https://api.imgbb.com/1/upload',
         files={'image': Path(path).resolve(strict=True).read_bytes()},
@@ -201,6 +203,7 @@ def upload_to_imgbb(
 
 
 def stripped_strings_fixed(child: Tag) -> str:
+    """Join a tag's stripped strings into a single space-separated string."""
     return re.sub(r'\s+', ' ', ' '.join(child.stripped_strings))
 
 
@@ -277,8 +280,10 @@ def recurse_bookmarks_html(soup: Tag, callback: RecurseBookmarksHTMLCallback) ->
     callback : RecurseBookmarksHTMLCallback
         Function called for each link found.
     """
+    from bs4 import Tag as Tag_  # noqa: PLC0415
+
     for child in soup.children:
-        if not isinstance(child, Tag):
+        if not isinstance(child, Tag_):
             continue
         match child.name:
             case 'dl' | 'dt' | 'html' | 'body':
@@ -287,7 +292,7 @@ def recurse_bookmarks_html(soup: Tag, callback: RecurseBookmarksHTMLCallback) ->
                 folder_path: list[tuple[str, BookmarksHTMLFolderAttributes]] = []
                 for parent in child.parents:
                     if parent.name == 'dl' and (h3 := parent.find_previous_sibling('h3')):
-                        assert isinstance(h3, Tag)
+                        assert isinstance(h3, Tag_)
                         folder_path.append((
                             stripped_strings_fixed(h3),
                             cast('BookmarksHTMLFolderAttributes', h3.attrs),
@@ -420,5 +425,7 @@ def check_bookmarks_html_urls(
                 not_found.append(new_data)
         ref.append(new_data)
 
-    recurse_bookmarks_html(Soup(html_content, 'html5lib'), callback)
+    from bs4 import BeautifulSoup  # noqa: PLC0415
+
+    recurse_bookmarks_html(BeautifulSoup(html_content, 'html5lib'), callback)
     return data, changed, not_found

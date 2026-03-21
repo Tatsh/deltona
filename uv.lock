@@ -756,16 +756,16 @@ wheels = [
 
 [[package]]
 name = "cz-path"
-version = "0.0.5"
+version = "0.0.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "commitizen" },
     { name = "gitpython" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0a/09/1edd27013cfc20402696f6138552dd7675c85ca9fca5ac30c8c2861736b3/cz_path-0.0.5.tar.gz", hash = "sha256:c8c9b6a70ab250069760450ab7808b64a687dc04fbd920afe0e8ba0fb0730373", size = 1236236, upload-time = "2026-03-15T09:54:10.926Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f6/63/572eb6852727f0e732315e8bb6b147371848e9de7d1a457af1d4878d899a/cz_path-0.0.6.tar.gz", hash = "sha256:025c5556b03b58191a5c9ae2fbd9344456d4b3e1bd2420ed1790da1074cf34eb", size = 1247276, upload-time = "2026-03-21T19:30:14.582Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a1/de/65eb6d95d1f3cffcc854c6f7df70810f82c1aba94d62cae726ade9f89d7b/cz_path-0.0.5-py3-none-any.whl", hash = "sha256:79f505278c60f93c4f1f6cbab9e39acc040561364f85b9dfcb6f0607e003813f", size = 5275, upload-time = "2026-03-15T09:54:09.568Z" },
+    { url = "https://files.pythonhosted.org/packages/b8/8b/8db8066214db09d312baccbb9577b2b40cd6bfd0269479238adbea2730ac/cz_path-0.0.6-py3-none-any.whl", hash = "sha256:d616ebc6d374b8ae02b1435c274ac5a22ab706da5c2cc3c5257f61e49b768190", size = 5525, upload-time = "2026-03-21T19:30:13.401Z" },
 ]
 
 [[package]]
@@ -785,9 +785,7 @@ dependencies = [
     { name = "bascom" },
     { name = "binaryornot" },
     { name = "click" },
-    { name = "keyring" },
     { name = "requests" },
-    { name = "send2trash" },
     { name = "typing-extensions" },
 ]
 
@@ -802,11 +800,14 @@ desktop = [
 ]
 git = [
     { name = "gitpython" },
+    { name = "keyring" },
     { name = "pygithub" },
 ]
 media = [
+    { name = "keyring" },
     { name = "mutagen" },
     { name = "platformdirs" },
+    { name = "send2trash" },
 ]
 string = [
     { name = "pyyaml" },
@@ -822,6 +823,7 @@ wine = [
 www = [
     { name = "beautifulsoup4" },
     { name = "html5lib" },
+    { name = "keyring" },
     { name = "pillow" },
 ]
 
@@ -876,7 +878,9 @@ requires-dist = [
     { name = "click", specifier = ">=8.3.1" },
     { name = "gitpython", marker = "extra == 'git'", specifier = ">=3.1.46" },
     { name = "html5lib", marker = "extra == 'www'", specifier = ">=1.1" },
-    { name = "keyring", specifier = ">=25.7.0" },
+    { name = "keyring", marker = "extra == 'git'", specifier = ">=25.7.0" },
+    { name = "keyring", marker = "extra == 'media'", specifier = ">=25.7.0" },
+    { name = "keyring", marker = "extra == 'www'", specifier = ">=25.7.0" },
     { name = "mutagen", marker = "extra == 'media'", specifier = ">=1.47.0" },
     { name = "paramiko", marker = "extra == 'admin'", specifier = ">=4.0.0" },
     { name = "pexpect", marker = "extra == 'wine'", specifier = ">=4.9.0" },
@@ -891,7 +895,7 @@ requires-dist = [
     { name = "python-xz", marker = "extra == 'wine'", specifier = ">=0.6.0" },
     { name = "pyyaml", marker = "extra == 'string'", specifier = ">=6.0.3" },
     { name = "requests", specifier = ">=2.32.5" },
-    { name = "send2trash", specifier = ">=2.1.0" },
+    { name = "send2trash", marker = "extra == 'media'", specifier = ">=2.1.0" },
     { name = "typing-extensions", specifier = ">=4.15.0" },
     { name = "unidecode", marker = "extra == 'string'", specifier = ">=1.4.0" },
     { name = "yt-dlp", marker = "extra == 'string'", specifier = ">=2026.3.17" },
@@ -901,7 +905,7 @@ provides-extras = ["admin", "desktop", "git", "media", "string", "wine", "www"]
 [package.metadata.requires-dev]
 dev = [
     { name = "commitizen", specifier = ">=4.13.9" },
-    { name = "cz-path", specifier = ">=0.0.5" },
+    { name = "cz-path", specifier = ">=0.0.6" },
     { name = "mypy", specifier = ">=1.19.1" },
     { name = "pydbus-stubs", specifier = ">=0" },
     { name = "ruff", specifier = ">=0.15.7" },

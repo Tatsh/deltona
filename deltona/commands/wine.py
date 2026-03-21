@@ -20,7 +20,6 @@ from deltona.ultraiso import patch_ultraiso_font
 from deltona.utils import unregister_wine_file_associations
 from deltona.windows import DEFAULT_DPI, Field, make_font_entry
 import click
-import pexpect
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -46,6 +45,8 @@ def wineshell_main(prefix_name: str, *, debug: bool = False) -> None:
 
     For Bash and similar shells only.
     """  # noqa: DOC501
+    import pexpect  # noqa: PLC0415
+
     setup_logging(debug=debug, loggers={'deltona': {}, 'pexpect': {}})
     target = (Path(prefix_name) if Path(prefix_name).exists() else
               Path('~/.local/share/wineprefixes').expanduser() / prefix_name)

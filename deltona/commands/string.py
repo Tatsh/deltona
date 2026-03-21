@@ -11,7 +11,6 @@ import plistlib
 import sys
 
 from bascom import setup_logging
-from binaryornot.helpers import is_binary_string
 from deltona import naming
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.string import (
@@ -24,7 +23,6 @@ from deltona.string import (
 )
 from deltona.typing import DecodeErrorsOption
 import click
-import yaml
 
 if TYPE_CHECKING:
     from io import BytesIO
@@ -75,6 +73,8 @@ def underscorize_main(file: TextIO) -> None:
 @click.option('-i', '--indent', default=2, type=click.IntRange(2, 9), help='Indent width (spaces).')
 def json2yaml_main(file: TextIO, indent: int = 2, *, default_flow_style: bool = False) -> None:
     """Convert JSON to YAML."""
+    import yaml  # noqa: PLC0415
+
     click.echo(yaml.dump(json.load(file), indent=indent, default_flow_style=default_flow_style))
 
 
@@ -140,6 +140,8 @@ def is_bin_main(file: BytesIO) -> None:
     if file.tell() == 0:
         click.echo('File is empty. Not counting as binary.', err=True)
         raise click.Abort
+    from binaryornot.helpers import is_binary_string  # noqa: PLC0415
+
     file.seek(0)
     if is_binary_string(file.read(1024)):
         return

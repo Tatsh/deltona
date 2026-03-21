@@ -29,7 +29,7 @@ def test_unregister_wine_file_associations_main(mocker: MockerFixture, runner: C
 
 def test_wineshell_main_success(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
     shell = '/bin/bash'
-    mock_spawn = mocker.patch('deltona.commands.wine.pexpect.spawn')
+    mock_spawn = mocker.patch('pexpect.spawn')
     mock_spawn.return_value = mocker.Mock(status=0)
     mocker.patch('deltona.commands.wine.os.environ', {'SHELL': shell})
     prefix = tmp_path / 'prefix'
@@ -40,7 +40,7 @@ def test_wineshell_main_success(mocker: MockerFixture, runner: CliRunner, tmp_pa
 
 def test_wineshell_main_fail(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
     shell = '/bin/bash'
-    mock_spawn = mocker.patch('deltona.commands.wine.pexpect.spawn')
+    mock_spawn = mocker.patch('pexpect.spawn')
     mock_spawn.return_value = mocker.Mock(status=1)
     mocker.patch('deltona.commands.wine.os.environ', {'SHELL': shell})
     prefix = tmp_path / 'prefix'

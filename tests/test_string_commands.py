@@ -146,7 +146,7 @@ def test_pl2json_main_cannot_serialize(runner: CliRunner, tmp_path: Path,
 
 
 def test_is_bin_main_binary(runner: CliRunner, tmp_path: Path, mocker: MockerFixture) -> None:
-    mocker.patch('deltona.commands.string.is_binary_string', return_value=True)
+    mocker.patch('binaryornot.helpers.is_binary_string', return_value=True)
     file = tmp_path / 'binfile'
     file.write_bytes(b'\x00\x01\x02')
     result = runner.invoke(is_bin_main, [str(file)])

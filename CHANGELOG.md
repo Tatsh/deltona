@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+### Changed
+
+- All extras groups now work correctly; optional dependencies are lazily imported so modules load
+  without installing every group.
+- `keyring` and `send2trash` moved from core dependencies to extras (`git`, `media`, `www`).
+
 ## [0.1.3] - 2026-03-21
 
 ### Changed

@@ -28,7 +28,6 @@ from deltona.string import underscorize
 from deltona.system import IS_WINDOWS, wait_for_disc
 from deltona.ultraiso import InsufficientArguments, run_ultraiso
 from deltona.utils import TIMES_RE, add_cdda_times
-from send2trash import send2trash
 from typing_extensions import override
 import click
 
@@ -394,6 +393,8 @@ def audio2vid_main(
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 def mvid_rename_main(filenames: tuple[str, ...], *, debug: bool = False) -> None:
     """Rename music video files."""
+    from send2trash import send2trash as _send2trash  # noqa: PLC0415
+
     setup_logging(debug=debug, loggers={'deltona': {}})
     for filename in filenames:
         path = Path(filename).resolve(strict=True)
@@ -405,7 +406,7 @@ def mvid_rename_main(filenames: tuple[str, ...], *, debug: bool = False) -> None
             target = (path / f'../{path.name}.mkv').resolve()
             log.debug('%s -> %s', src, target)
             src.rename(target)
-            send2trash(path)
+            _send2trash(path)
         except Exception:
             log.exception('Exception with file %s.', path)
 
@@ -438,8 +439,10 @@ def ke_ebook_ex_main(paths: Sequence[Path],
     for path in paths:
         unpack_ebook(path)
     if delete_paths:
+        from send2trash import send2trash as _send2trash  # noqa: PLC0415
+
         for path in paths:
-            send2trash(path)
+            _send2trash(path)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -642,7 +645,9 @@ def tbc2srt_main(filename: Path, input_json: Path | None = None, *, debug: bool 
     cmd = ('ccextractor', '-in=raw', str(bin_file))
     log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
     sp.run(cmd, check=True)
-    send2trash([scc_file, bin_file, output_json_file, input_json])
+    from send2trash import send2trash as _send2trash  # noqa: PLC0415
+
+    _send2trash([scc_file, bin_file, output_json_file, input_json])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

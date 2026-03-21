@@ -344,7 +344,7 @@ def test_cddb_query_no_username(mocker: MockerFixture) -> None:
     disc_id = '12345678 1 123 456 789'
     mocker.patch('deltona.media.socket.gethostname', return_value='host')
     mocker.patch('deltona.media.getpass.getuser', return_value=None)
-    mocker.patch('deltona.media.keyring.get_password', return_value='host')
+    mocker.patch('keyring.get_password', return_value='host')
     with pytest.raises(ValueError):  # noqa: PT011
         cddb_query(disc_id)
 
@@ -353,7 +353,7 @@ def test_cddb_query_no_host(mocker: MockerFixture) -> None:
     disc_id = '12345678 1 123 456 789'
     mocker.patch('deltona.media.socket.gethostname', return_value='host')
     mocker.patch('deltona.media.getpass.getuser', return_value='username')
-    mocker.patch('deltona.media.keyring.get_password', return_value=None)
+    mocker.patch('keyring.get_password', return_value=None)
     with pytest.raises(ValueError):  # noqa: PT011
         cddb_query(disc_id)
 
@@ -370,7 +370,7 @@ def test_cddb_query_success_single_match(mocker: MockerFixture) -> None:
                      '.\n')
     mocker.patch('deltona.media.socket.gethostname', return_value='host')
     mocker.patch('deltona.media.getpass.getuser', return_value='user')
-    mocker.patch('deltona.media.keyring.get_password', return_value='host')
+    mocker.patch('keyring.get_password', return_value='host')
 
     def fake_requests_get(url: str,
                           params: Any = None,
@@ -419,7 +419,7 @@ def test_cddb_query_multiple_matches_accept_first(mocker: MockerFixture,
                      '.\n')
     mocker.patch('deltona.media.socket.gethostname', return_value='host')
     mocker.patch('deltona.media.getpass.getuser', return_value='user')
-    mocker.patch('deltona.media.keyring.get_password', return_value='host')
+    mocker.patch('keyring.get_password', return_value='host')
 
     def fake_requests_get(url: str,
                           params: Any = None,
@@ -467,7 +467,7 @@ def test_cddb_query_multiple_matches_not_accept_first(mocker: MockerFixture,
                      '.\n')
     mocker.patch('deltona.media.socket.gethostname', return_value='host')
     mocker.patch('deltona.media.getpass.getuser', return_value='user')
-    mocker.patch('deltona.media.keyring.get_password', return_value='host')
+    mocker.patch('keyring.get_password', return_value='host')
 
     def fake_requests_get(url: str,
                           params: Any = None,
@@ -499,7 +499,7 @@ def test_cddb_query_no_match_raises(mocker: MockerFixture) -> None:
     query_response = '202 No match found\n'
     mocker.patch('deltona.media.socket.gethostname', return_value='host')
     mocker.patch('deltona.media.getpass.getuser', return_value='user')
-    mocker.patch('deltona.media.keyring.get_password', return_value='host')
+    mocker.patch('keyring.get_password', return_value='host')
     mock_req = mocker.Mock(text=query_response)
     mocker.patch('deltona.media.requests.get', return_value=mock_req)
     with pytest.raises(ValueError, match='202'):
@@ -510,7 +510,7 @@ def test_cddb_query_http_error(mocker: MockerFixture) -> None:
     disc_id = '99999999 1 0'
     mocker.patch('deltona.media.socket.gethostname', return_value='host')
     mocker.patch('deltona.media.getpass.getuser', return_value='user')
-    mocker.patch('deltona.media.keyring.get_password', return_value='host')
+    mocker.patch('keyring.get_password', return_value='host')
     mock_get = mocker.patch('deltona.media.requests.get')
     mock_get.return_value.raise_for_status.side_effect = requests.HTTPError
     with pytest.raises(requests.HTTPError):
@@ -558,7 +558,7 @@ def test_hlg_to_sdr_with_all_args(mocker: MockerFixture, tmp_path: Path) -> None
 
 def test_hlg_to_sdr_delete_after_true(mocker: MockerFixture, tmp_path: Path) -> None:
     mocker.patch('deltona.media.sp.run')
-    mocker.patch('deltona.media.send2trash')
+    mocker.patch('send2trash.send2trash')
     input_file = tmp_path / 'input.mkv'
     input_file.write_bytes(b'dummy')
     hlg_to_sdr(input_file, delete_after=True)
@@ -583,7 +583,7 @@ def test_archive_dashcam_footage_basic_merge(mocker: MockerFixture, tmp_path: Pa
         (front_dir / f'2024051216440{i}_front.mp4').write_bytes(b'front')
         (rear_dir / f'2024051216440{i}_rear.mp4').write_bytes(b'rear')
     mock_run = mocker.patch('deltona.media.sp.run')
-    mock_send2trash = mocker.patch('deltona.media.send2trash')
+    mock_send2trash = mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir, rear_dir, output_dir)
     assert mock_run.call_count == 4
     assert mock_send2trash.call_count == 6
@@ -602,7 +602,7 @@ def test_archive_dashcam_footage_group_discrepancy_resolution(mocker: MockerFixt
         (rear_dir / f'2024051216440{i}_rear.mp4').write_bytes(b'rear')
     (rear_dir / '20240612164401_rear.mp4').write_bytes(b'rear')  # extra rear file
     mock_run = mocker.patch('deltona.media.sp.run')
-    mock_send2trash = mocker.patch('deltona.media.send2trash')
+    mock_send2trash = mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir,
                             rear_dir,
                             output_dir,
@@ -662,7 +662,7 @@ def test_archive_dashcam_footage_group_discrepancy_unresolved(tmp_path: Path) ->
 def test_archive_dashcam_footage_group_discrepancy_solving_bg_len_gt(tmp_path: Path,
                                                                      mocker: MockerFixture) -> None:
     mocker.patch('deltona.media.sp.run')
-    mock_trash = mocker.patch('deltona.media.send2trash')
+    mock_trash = mocker.patch('send2trash.send2trash')
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     output_dir = tmp_path / 'output'
@@ -680,7 +680,7 @@ def test_archive_dashcam_footage_group_discrepancy_solving_bg_len_gt(tmp_path: P
 def test_archive_dashcam_footage_group_discrepancy_solving_bg_len_gt_no_delete(
         tmp_path: Path, mocker: MockerFixture) -> None:
     mocker.patch('deltona.media.sp.run')
-    mock_trash = mocker.patch('deltona.media.send2trash')
+    mock_trash = mocker.patch('send2trash.send2trash')
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     output_dir = tmp_path / 'output'
@@ -698,7 +698,7 @@ def test_archive_dashcam_footage_group_discrepancy_solving_bg_len_gt_no_delete(
 def test_archive_dashcam_footage_group_discrepancy_solving_fg_len_gt(tmp_path: Path,
                                                                      mocker: MockerFixture) -> None:
     mocker.patch('deltona.media.sp.run')
-    mock_trash = mocker.patch('deltona.media.send2trash')
+    mock_trash = mocker.patch('send2trash.send2trash')
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     output_dir = tmp_path / 'output'
@@ -717,7 +717,7 @@ def test_archive_dashcam_footage_group_discrepancy_solving_fg_len_gt(tmp_path: P
 def test_archive_dashcam_footage_group_discrepancy_solving_fg_len_gt_no_delete(
         tmp_path: Path, mocker: MockerFixture) -> None:
     mocker.patch('deltona.media.sp.run')
-    mock_trash = mocker.patch('deltona.media.send2trash')
+    mock_trash = mocker.patch('send2trash.send2trash')
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     output_dir = tmp_path / 'output'
@@ -736,7 +736,7 @@ def test_archive_dashcam_footage_group_discrepancy_solving_fg_len_gt_no_delete(
 def test_archive_dashcam_footage_group_discrepancy_solving_ignores_extra(
         tmp_path: Path, mocker: MockerFixture) -> None:
     mocker.patch('deltona.media.sp.run')
-    mock_trash = mocker.patch('deltona.media.send2trash')
+    mock_trash = mocker.patch('send2trash.send2trash')
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     output_dir = tmp_path / 'output'
@@ -755,7 +755,7 @@ def test_archive_dashcam_footage_group_discrepancy_solving_ignores_extra(
 def test_archive_dashcam_footage_group_discrepancy_solving_ignores_extra_no_delete(
         tmp_path: Path, mocker: MockerFixture) -> None:
     mocker.patch('deltona.media.sp.run')
-    mock_trash = mocker.patch('deltona.media.send2trash')
+    mock_trash = mocker.patch('send2trash.send2trash')
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     output_dir = tmp_path / 'output'
@@ -775,7 +775,7 @@ def test_archive_dashcam_footage_crash_deletes_unfinished_files(tmp_path: Path,
                                                                 mocker: MockerFixture) -> None:
     mocker.patch('deltona.media.sp.run',
                  side_effect=[None, sp.CalledProcessError(1, 'ffmpeg', stderr=b'')])
-    mocker.patch('deltona.media.send2trash')
+    mocker.patch('send2trash.send2trash')
     mock_unlink = mocker.patch('deltona.media.Path.unlink')
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
@@ -803,7 +803,7 @@ def test_archive_dashcam_footage_calls_with_correct_args(mocker: MockerFixture,
     (front_dir / '0_front.mp4').write_bytes(b'front')
     (rear_dir / '0_rear.mp4').write_bytes(b'rear')
     mock_run = mocker.patch('deltona.media.sp.run')
-    mock_send2trash = mocker.patch('deltona.media.send2trash')
+    mock_send2trash = mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir,
                             rear_dir,
                             output_dir,
@@ -827,7 +827,7 @@ def test_archive_dashcam_footage_calls_with_correct_args_no_delete(mocker: Mocke
     (front_dir / '0_front.mp4').write_bytes(b'front')
     (rear_dir / '0_rear.mp4').write_bytes(b'rear')
     mock_run = mocker.patch('deltona.media.sp.run')
-    mock_send2trash = mocker.patch('deltona.media.send2trash')
+    mock_send2trash = mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(
         front_dir,
         rear_dir,
@@ -859,7 +859,7 @@ def test_archive_dashcam_footage_skips_hidden_files(mocker: MockerFixture, tmp_p
         side_effect=lambda items, *_: [[Path(x)] for x in sorted(items)],
     )
     mock_run = mocker.patch('deltona.media.sp.run')
-    mock_send2trash = mocker.patch('deltona.media.send2trash')
+    mock_send2trash = mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir, rear_dir, output_dir)
     assert mock_run.call_count == 2
     assert mock_send2trash.call_count == 2

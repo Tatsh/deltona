@@ -421,7 +421,7 @@ def test_get_kwriteconfig_commands_basic(mocker: MockerFixture) -> None:
     config_instance = mock_config.return_value
     config_instance.sections.return_value = ['General']
     config_instance.__getitem__.return_value.items.return_value = [('Key', 'Value')]
-    mocker.patch('deltona.system.is_binary_string', return_value=False)
+    mocker.patch('binaryornot.helpers.is_binary_string', return_value=False)
     mocker.patch('deltona.system.re.match', side_effect=lambda _, __, **_kw: None)
     mocker.patch('deltona.system.re.search', side_effect=lambda _, __: None)
     commands = list(get_kwriteconfig_commands())
@@ -445,7 +445,7 @@ def test_get_kwriteconfig_commands_not_default_file(mocker: MockerFixture) -> No
     config_instance = mock_config.return_value
     config_instance.sections.return_value = ['General']
     config_instance.__getitem__.return_value.items.return_value = [('Key', 'Value')]
-    mocker.patch('deltona.system.is_binary_string', return_value=False)
+    mocker.patch('binaryornot.helpers.is_binary_string', return_value=False)
     mocker.patch('deltona.system.Path.exists', return_value=False)
     mocker.patch('deltona.system.re.match', side_effect=lambda _, __, **_kw: None)
     mocker.patch('deltona.system.re.search', side_effect=lambda _, __: None)
@@ -470,7 +470,7 @@ def test_get_kwriteconfig_commands_ignores_binary(mocker: MockerFixture) -> None
     config_instance = mock_config.return_value
     config_instance.sections.return_value = ['General']
     config_instance.__getitem__.return_value.items.return_value = [('Key', 'Value')]
-    mocker.patch('deltona.system.is_binary_string', return_value=True)
+    mocker.patch('binaryornot.helpers.is_binary_string', return_value=True)
     mocker.patch('deltona.system.Path.exists', return_value=False)
     mocker.patch('deltona.system.re.match', side_effect=lambda _, __, **_kw: None)
     mocker.patch('deltona.system.re.search', side_effect=lambda _, __: None)
@@ -492,7 +492,7 @@ def test_get_kwriteconfig_commands_ignores_ignored_groups(mocker: MockerFixture)
     config_instance.sections.return_value = ['KFileDialog Settings']
     config_instance.__getitem__.return_value.items.return_value = [('Key', 'Value')]
 
-    mocker.patch('deltona.system.is_binary_string', return_value=False)
+    mocker.patch('binaryornot.helpers.is_binary_string', return_value=False)
     mocker.patch('deltona.system.Path.exists', return_value=False)
     mocker.patch('deltona.system.re.match', side_effect=lambda _, __: None)
     mocker.patch('deltona.system.re.search', side_effect=lambda _, __: None)
@@ -518,7 +518,7 @@ def test_get_kwriteconfig_commands_skips_metrics_and_state(mocker: MockerFixture
         ('NormalKey', 'bar'),
     ]
 
-    mocker.patch('deltona.system.is_binary_string', return_value=False)
+    mocker.patch('binaryornot.helpers.is_binary_string', return_value=False)
     mocker.patch('deltona.system.Path.exists', return_value=False)
 
     def fake_search(pattern: str, value: str) -> bool | None:
@@ -553,7 +553,7 @@ def test_get_kwriteconfig_commands_type_detection(mocker: MockerFixture) -> None
         ('PathKey', '/some/file'),
         ('StringKey', 'hello'),
     ]
-    mocker.patch('deltona.system.is_binary_string', return_value=False)
+    mocker.patch('binaryornot.helpers.is_binary_string', return_value=False)
 
     def fake_exists(path: Path) -> bool:
         return str(path) == '/some/file'
@@ -593,7 +593,7 @@ def test_get_kwriteconfig_commands_type_detection_path_not_file(mocker: MockerFi
         ('PathKey', '/some/file'),
         ('StringKey', 'hello'),
     ]
-    mocker.patch('deltona.system.is_binary_string', return_value=False)
+    mocker.patch('binaryornot.helpers.is_binary_string', return_value=False)
 
     def fake_match(pattern: str, value: str, *, flags: int = 0) -> bool | None:
         if pattern == r'^(?:1|true|false|on|yes)$' and value == 'true':
@@ -639,7 +639,7 @@ def test_get_kwriteconfig_commands_skips_sections_with_brackets(mocker: MockerFi
     # Section with '][' in the name should be skipped
     config_instance.sections.return_value = ['General][Extra']
     config_instance.__getitem__.return_value.items.return_value = [('Key', 'Value')]
-    mocker.patch('deltona.system.is_binary_string', return_value=False)
+    mocker.patch('binaryornot.helpers.is_binary_string', return_value=False)
     mocker.patch('deltona.system.Path.exists', return_value=False)
     mocker.patch('deltona.system.re.match', side_effect=lambda _, __: None)
     mocker.patch('deltona.system.re.search', side_effect=lambda _, __: None)

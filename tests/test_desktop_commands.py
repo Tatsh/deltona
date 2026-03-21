@@ -48,7 +48,7 @@ def test_inhibit_notifications_main_args(mocker: MockerFixture, runner: CliRunne
 
 def test_umpv_main_success(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
     mocker.patch('deltona.commands.desktop.setup_logging')
-    mocker.patch('deltona.commands.desktop.user_state_path')
+    mocker.patch('platformdirs.user_state_path')
     mock_socket = mocker.patch('deltona.commands.desktop.socket.socket')
     mocker.patch('deltona.commands.desktop.sp.run')
     out_mp4 = tmp_path / 'file"1.mp4'
@@ -62,7 +62,7 @@ def test_umpv_main_success(mocker: MockerFixture, runner: CliRunner, tmp_path: P
 def test_umpv_main_socket_conn_refused(mocker: MockerFixture, runner: CliRunner,
                                        tmp_path: Path) -> None:
     mocker.patch('deltona.commands.desktop.setup_logging')
-    mocker.patch('deltona.commands.desktop.user_state_path', return_value=tmp_path)
+    mocker.patch('platformdirs.user_state_path', return_value=tmp_path)
     mock_socket = mocker.patch('deltona.commands.desktop.socket.socket')
     sock_exc = OSError(errno.ECONNREFUSED, 'Connection refused')
     mock_socket.return_value.connect.side_effect = sock_exc
@@ -87,7 +87,7 @@ def test_umpv_main_socket_conn_refused(mocker: MockerFixture, runner: CliRunner,
 
 def test_umpv_main_socket_enoent(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
     mocker.patch('deltona.commands.desktop.setup_logging')
-    mocker.patch('deltona.commands.desktop.user_state_path', return_value=tmp_path)
+    mocker.patch('platformdirs.user_state_path', return_value=tmp_path)
     mock_socket = mocker.patch('deltona.commands.desktop.socket.socket')
     sock_exc = OSError(errno.ENOENT, 'No such file or directory')
     mock_socket.return_value.connect.side_effect = sock_exc
@@ -113,7 +113,7 @@ def test_umpv_main_socket_enoent(mocker: MockerFixture, runner: CliRunner, tmp_p
 def test_umpv_main_unhandled_socket_exception(mocker: MockerFixture, runner: CliRunner,
                                               tmp_path: Path) -> None:
     mocker.patch('deltona.commands.desktop.setup_logging')
-    mocker.patch('deltona.commands.desktop.user_state_path', return_value=tmp_path)
+    mocker.patch('platformdirs.user_state_path', return_value=tmp_path)
     mock_socket = mocker.patch('deltona.commands.desktop.socket.socket')
     sock_exc = OSError(errno.ENOTBLK, 'Block device required')
     mock_socket.return_value.connect.side_effect = sock_exc
@@ -493,7 +493,7 @@ def test_upload_to_imgbb_xdg_install(mocker: MockerFixture, runner: CliRunner,
 
 def test_upload_to_imgbb_no_gui(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
     mocker.patch('deltona.commands.desktop.which', return_value=None)
-    mocker.patch('deltona.commands.desktop.pyperclip.copy')
+    mocker.patch('pyperclip.copy')
     mock_open = mocker.patch('deltona.commands.desktop.webbrowser.open')
     mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch(
@@ -514,7 +514,7 @@ def test_upload_to_imgbb_no_gui(mocker: MockerFixture, runner: CliRunner, tmp_pa
 
 def test_upload_to_imgbb_gui(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
     mocker.patch('deltona.commands.desktop.which', return_value='fake')
-    mock_copy = mocker.patch('deltona.commands.desktop.pyperclip.copy')
+    mock_copy = mocker.patch('pyperclip.copy')
     mock_open = mocker.patch('deltona.commands.desktop.webbrowser.open')
     mock_sp_run = mocker.patch('deltona.commands.desktop.sp.run')
     mocker.patch('deltona.commands.desktop.setup_logging')
@@ -541,7 +541,7 @@ def test_upload_to_imgbb_gui(mocker: MockerFixture, runner: CliRunner, tmp_path:
 def test_upload_to_imgbb_http_error_gui(mocker: MockerFixture, runner: CliRunner,
                                         tmp_path: Path) -> None:
     mocker.patch('deltona.commands.desktop.which', return_value='fake')
-    mock_copy = mocker.patch('deltona.commands.desktop.pyperclip.copy')
+    mock_copy = mocker.patch('pyperclip.copy')
     mock_open = mocker.patch('deltona.commands.desktop.webbrowser.open')
     mock_sp_run = mocker.patch('deltona.commands.desktop.sp.run')
     mocker.patch('deltona.commands.desktop.setup_logging')
@@ -559,7 +559,7 @@ def test_upload_to_imgbb_http_error_gui(mocker: MockerFixture, runner: CliRunner
 def test_upload_to_imgbb_http_error(mocker: MockerFixture, runner: CliRunner,
                                     tmp_path: Path) -> None:
     mocker.patch('deltona.commands.desktop.which', return_value='fake')
-    mock_copy = mocker.patch('deltona.commands.desktop.pyperclip.copy')
+    mock_copy = mocker.patch('pyperclip.copy')
     mock_open = mocker.patch('deltona.commands.desktop.webbrowser.open')
     mock_sp_run = mocker.patch('deltona.commands.desktop.sp.run')
     mocker.patch('deltona.commands.desktop.setup_logging')
@@ -576,7 +576,7 @@ def test_upload_to_imgbb_http_error(mocker: MockerFixture, runner: CliRunner,
 
 def test_upload_to_imgbb_no_files(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
     mocker.patch('deltona.commands.desktop.which', return_value=None)
-    mocker.patch('deltona.commands.desktop.pyperclip.copy')
+    mocker.patch('pyperclip.copy')
     mocker.patch('deltona.commands.desktop.webbrowser.open')
     mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch(
@@ -592,7 +592,7 @@ def test_upload_to_imgbb_no_files(mocker: MockerFixture, runner: CliRunner, tmp_
 
 def test_upload_to_imgbb(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
     mocker.patch('deltona.commands.desktop.which', return_value=None)
-    mocker.patch('deltona.commands.desktop.pyperclip.copy')
+    mocker.patch('pyperclip.copy')
     mock_open = mocker.patch('deltona.commands.desktop.webbrowser.open')
     mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch(
