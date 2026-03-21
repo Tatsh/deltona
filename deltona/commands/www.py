@@ -57,9 +57,9 @@ def where_from_main(files: Sequence[Path], *, webpage: bool = False) -> None:
     type=float,
     help='Time to sleep after attempting to kill the browser processes in seconds.',
 )
-def chrome_bisect_flags_main(
-    local_state_path: Path, subprocess_name: str = 'chrome', sleep_time: float = 0.5
-) -> None:
+def chrome_bisect_flags_main(local_state_path: Path,
+                             subprocess_name: str = 'chrome',
+                             sleep_time: float = 0.5) -> None:
     """
     Determine which flag is causing an issue in Chrome or any Chromium-based browser.
 
@@ -88,12 +88,12 @@ def chrome_bisect_flags_main(
         len_flags = len(flags)
         if len_flags < flags_min_len:
             return flags[0] if len_flags == 1 else None
-        done, bad_flag = start_test(flags[: len_flags // 2], deepcopy(local_state))
+        done, bad_flag = start_test(flags[:len_flags // 2], deepcopy(local_state))
         if done:
-            return bad_flag or do_test(flags[: len_flags // 2], local_state)
-        done, bad_flag = start_test(flags[len_flags // 2 :], deepcopy(local_state))
+            return bad_flag or do_test(flags[:len_flags // 2], local_state)
+        done, bad_flag = start_test(flags[len_flags // 2:], deepcopy(local_state))
         if done:
-            return bad_flag or do_test(flags[len_flags // 2 :], local_state)
+            return bad_flag or do_test(flags[len_flags // 2:], local_state)
         return None
 
     p_ls = local_state_path.resolve(strict=True)
@@ -154,9 +154,12 @@ def fix_chromium_pwa_icon_main(
     For more information see https://issues.chromium.org/issues/40595456.
     """
     setup_logging(debug=debug, loggers={'deltona': {}})
-    fix_chromium_pwa_icon(
-        config_path, app_id, icon_src_uri, profile, masked=masked, monochrome=monochrome
-    )
+    fix_chromium_pwa_icon(config_path,
+                          app_id,
+                          icon_src_uri,
+                          profile,
+                          masked=masked,
+                          monochrome=monochrome)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

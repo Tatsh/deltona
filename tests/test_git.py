@@ -15,18 +15,12 @@ if TYPE_CHECKING:
 
 
 def test_convert_git_ssh_url_to_https() -> None:
-    assert (
-        convert_git_ssh_url_to_https('git@github.com:user/repo.git')
-        == 'https://github.com/user/repo'
-    )
-    assert (
-        convert_git_ssh_url_to_https('ssh://git@github.com:user/repo.git')
-        == 'https://github.com/user/repo'
-    )
-    assert (
-        convert_git_ssh_url_to_https('https://github.com/user/repo.git')
-        == 'https://github.com/user/repo'
-    )
+    assert (convert_git_ssh_url_to_https('git@github.com:user/repo.git') ==
+            'https://github.com/user/repo')
+    assert (convert_git_ssh_url_to_https('ssh://git@github.com:user/repo.git') ==
+            'https://github.com/user/repo')
+    assert (convert_git_ssh_url_to_https('https://github.com/user/repo.git') ==
+            'https://github.com/user/repo')
 
 
 def test_get_github_default_branch(mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -41,9 +35,8 @@ def test_get_github_default_branch(mocker: MockerFixture, monkeypatch: pytest.Mo
     mock_github.return_value.get_repo.assert_called_once_with('user/repo')
 
 
-def test_merge_dependabot_pull_requests_success(
-    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_merge_dependabot_pull_requests_success(mocker: MockerFixture,
+                                                monkeypatch: pytest.MonkeyPatch) -> None:
     mock_github = mocker.Mock()
     mock_github_repo = mocker.Mock()
     mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
@@ -60,8 +53,7 @@ def test_merge_dependabot_pull_requests_success(
 
 
 def test_merge_dependabot_pull_requests_success_get_pull_fails(
-    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
-) -> None:
+        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
     mock_github = mocker.Mock()
     mock_github_repo = mocker.Mock()
     mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
@@ -76,9 +68,8 @@ def test_merge_dependabot_pull_requests_success_get_pull_fails(
     mock_pull.as_issue.return_value.create_comment.assert_not_called()
 
 
-def test_merge_dependabot_pull_requests_success_alt(
-    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_merge_dependabot_pull_requests_success_alt(mocker: MockerFixture,
+                                                    monkeypatch: pytest.MonkeyPatch) -> None:
     mock_github = mocker.Mock()
     mock_github_repo = mocker.Mock()
     mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
@@ -94,9 +85,8 @@ def test_merge_dependabot_pull_requests_success_alt(
     mock_github_repo.get_pull.return_value.merge.assert_called_once_with(merge_method='rebase')
 
 
-def test_merge_dependabot_pull_requests_no_dependabot(
-    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_merge_dependabot_pull_requests_no_dependabot(mocker: MockerFixture,
+                                                      monkeypatch: pytest.MonkeyPatch) -> None:
     def raise_ghe(*args: Any) -> None:
         raise github.GithubException(400)
 
@@ -111,9 +101,8 @@ def test_merge_dependabot_pull_requests_no_dependabot(
     mock_github_repo.get_pulls.assert_not_called()
 
 
-def test_merge_dependabot_pull_requests_should_raise(
-    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_merge_dependabot_pull_requests_should_raise(mocker: MockerFixture,
+                                                     monkeypatch: pytest.MonkeyPatch) -> None:
     mock_github = mocker.Mock()
     mock_github_repo = mocker.Mock()
     mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
@@ -132,8 +121,7 @@ def test_merge_dependabot_pull_requests_should_raise(
 
 
 def test_merge_dependabot_pull_requests_adds_recreate_comment(
-    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
-) -> None:
+        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
     mock_github = mocker.Mock()
     mock_github_repo = mocker.Mock()
     mock_pull = mocker.Mock()
@@ -159,8 +147,7 @@ def test_merge_dependabot_pull_requests_adds_recreate_comment(
 
 
 def test_merge_dependabot_pull_requests_does_not_add_duplicate_recreate_comment(
-    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
-) -> None:
+        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
     mock_github = mocker.Mock()
     mock_github_repo = mocker.Mock()
     mock_pull = mocker.Mock()

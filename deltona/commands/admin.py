@@ -64,17 +64,15 @@ def reset_tpm_enrollments_main(
     if all_:
         uuids = [
             x[1][5:]
-            for x in (
-                re.split(r'\s+', line, maxsplit=4)
-                for line in (li.strip() for li in crypttab.read_text(encoding='utf-8').splitlines())
-                if not line.startswith('#')
-            )
-            if 'tpm2-device=auto' in x[3] and 'UUID=' in x[1]
+            for x in (re.split(r'\s+', line, maxsplit=4)
+                      for line in (li.strip()
+                                   for li in crypttab.read_text(encoding='utf-8').splitlines())
+                      if not line.startswith('#')) if 'tpm2-device=auto' in x[3] and 'UUID=' in x[1]
         ]
     for uuid in uuids:
         try:
             reset_tpm_enrollment(uuid, dry_run=not force)
-        except MultipleKeySlots:
+        except MultipleKeySlots:  # noqa: PERF203
             click.echo(f'Cannot reset TPM enrolment for {uuid}.')
             continue
 
@@ -85,9 +83,9 @@ def reset_tpm_enrollments_main(
     type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
     default=DEFAULT_KERNEL_LOCATION,
 )
-@click.option(
-    '--active-kernel-name', help='Kernel name like "linux".', default=DEFAULT_ACTIVE_KERNEL_NAME
-)
+@click.option('--active-kernel-name',
+              help='Kernel name like "linux".',
+              default=DEFAULT_ACTIVE_KERNEL_NAME)
 @click.option(
     '-m',
     '--modules-path',
@@ -117,9 +115,10 @@ def clean_old_kernels_and_modules_main(
 @click.argument('filenames', nargs=-1)
 @click.option('--no-lower', is_flag=True, help='Disable lowercase.')
 @click.option('-v', '--verbose', is_flag=True, help='Enable verbose output.')
-def slug_rename_main(
-    filenames: tuple[str, ...], *, no_lower: bool = False, verbose: bool = False
-) -> None:
+def slug_rename_main(filenames: tuple[str, ...],
+                     *,
+                     no_lower: bool = False,
+                     verbose: bool = False) -> None:
     """Rename a file to a slugified version."""
     for name in filenames:
         target = slug_rename(name, no_lower=no_lower)
@@ -147,9 +146,10 @@ def _get_ssh_client_cls() -> type[SSHClient]:  # pragma: no cover
     is_flag=True,
     help='Preserves modification times, access times, and file mode bits from the source file.',
 )
-@click.option(
-    '-y', '--dry-run', is_flag=True, help='Do not copy anything. Use with -d for testing.'
-)
+@click.option('-y',
+              '--dry-run',
+              is_flag=True,
+              help='Do not copy anything. Use with -d for testing.')
 def smv_main(
     filenames: Sequence[Path],
     target: str,
@@ -176,13 +176,18 @@ def smv_main(
     ssh_client_cls = _get_ssh_client_cls()
     with ssh_client_cls() as client:
         client.load_system_host_keys()
-        client.connect(
-            hostname, port, username, compress=compress, key_filename=key_filename, timeout=timeout
-        )
+        client.connect(hostname,
+                       port,
+                       username,
+                       compress=compress,
+                       key_filename=key_filename,
+                       timeout=timeout)
         for filename in filenames:
-            secure_move_path(
-                client, filename, target_dir_or_filename, dry_run=dry_run, preserve_stats=preserve
-            )
+            secure_move_path(client,
+                             filename,
+                             target_dir_or_filename,
+                             dry_run=dry_run,
+                             preserve_stats=preserve)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -218,9 +223,10 @@ def patch_bundle_main(
 @click.argument('files', type=click.Path(exists=True, dir_okay=False, path_type=Path), nargs=-1)
 @click.option('-a', '--all', 'all_', is_flag=True, help='Find compatible files and process them.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
-def kconfig_to_commands_main(
-    files: Sequence[Path], *, all_: bool = False, debug: bool = False
-) -> None:
+def kconfig_to_commands_main(files: Sequence[Path],
+                             *,
+                             all_: bool = False,
+                             debug: bool = False) -> None:
     """Generate kwriteconfig6 commands to set (Plasma) settings from your current settings."""
     setup_logging(debug=debug, loggers={'deltona': {}})
     if all_:
@@ -241,8 +247,7 @@ def kconfig_to_json_main(files: Sequence[Path], *, all_: bool = False, debug: bo
         files = [*(Path.home() / '.config').glob('*rc'), Path.home() / '.config/kdeglobals']
     for file in sorted(files):
         click.echo(
-            json.dumps(get_kconfig_dict(file) | {'_file': str(file)}, indent=2, sort_keys=True)
-        )
+            json.dumps(get_kconfig_dict(file) | {'_file': str(file)}, indent=2, sort_keys=True))
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -254,10 +259,11 @@ def kconfig_to_json_main(files: Sequence[Path], *, all_: bool = False, debug: bo
 @click.option('-d', '--depth', default=2, type=int, help='Maximum depth.', metavar='DEPTH')
 @click.option('-f', '--follow-symlinks', is_flag=True, help='Follow symbolic links.')
 @click.option('-o', '--output-file', type=click.File('w'), default=sys.stdout, help='Output file.')
-def generate_html_dir_tree_main(
-    path: Path, *, output_file: TextIO, depth: int = 2, follow_symlinks: bool = False
-) -> None:
-    """Generate a HTML directory listing."""
-    click.echo(
-        generate_html_dir_tree(path, follow_symlinks=follow_symlinks, depth=depth), output_file
-    )
+def generate_html_dir_tree_main(path: Path,
+                                *,
+                                output_file: TextIO,
+                                depth: int = 2,
+                                follow_symlinks: bool = False) -> None:
+    """Generate an HTML directory listing."""
+    click.echo(generate_html_dir_tree(path, follow_symlinks=follow_symlinks, depth=depth),
+               output_file)

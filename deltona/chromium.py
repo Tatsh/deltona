@@ -78,14 +78,12 @@ def fix_chromium_pwa_icon(
         img.resize((size, size), image_mod.LANCZOS).save(config_path / 'Icons' / f'{size}.png')
     if masked:
         for size in sizes:
-            img.resize((size, size), image_mod.LANCZOS).save(
-                config_path / 'Icons Maskable' / f'{size}.png'
-            )
+            img.resize((size, size),
+                       image_mod.LANCZOS).save(config_path / 'Icons Maskable' / f'{size}.png')
     if monochrome:
         for size in sizes:
-            img.resize((size, size), image_mod.LANCZOS).save(
-                config_path / 'Icons Monochrome' / f'{size}.png'
-            )
+            img.resize((size, size),
+                       image_mod.LANCZOS).save(config_path / 'Icons Monochrome' / f'{size}.png')
 
 
 @cache
@@ -106,18 +104,18 @@ def get_last_chrome_major_version() -> str:
         If no ``Last Version`` file is found, returns empty string.
     """
     for location in (
-        '~/.config/google-chrome-beta',
-        '~/AppData/Local/Google/Chrome Beta/User Data',
-        '~/Library/Application Support/Google/Chrome Beta',
-        '~/.config/google-chrome',
-        '~/AppData/Local/Google/Chrome/User Data',
-        '~/Library/Application Support/Google/Chrome',
-        '~/.config/google-chrome-unstable',
-        '~/AppData/Local/Google/Chrome Canary/User Data',
-        '~/Library/Application Support/Google/Chrome Canary',
-        '~/.config/chromium',
-        '~/AppData/Local/Google/Chromium/User Data',
-        '~/Library/Application Support/Google/Chromium',
+            '~/.config/google-chrome-beta',
+            '~/AppData/Local/Google/Chrome Beta/User Data',
+            '~/Library/Application Support/Google/Chrome Beta',
+            '~/.config/google-chrome',
+            '~/AppData/Local/Google/Chrome/User Data',
+            '~/Library/Application Support/Google/Chrome',
+            '~/.config/google-chrome-unstable',
+            '~/AppData/Local/Google/Chrome Canary/User Data',
+            '~/Library/Application Support/Google/Chrome Canary',
+            '~/.config/chromium',
+            '~/AppData/Local/Google/Chromium/User Data',
+            '~/Library/Application Support/Google/Chromium',
     ):
         if (p := (Path(location).expanduser() / 'Last Version')).exists():
             return p.read_text().split('.', 1)[0]
@@ -136,16 +134,11 @@ def get_latest_chrome_major_version() -> str:
     """
     return cast(
         'str',
-        requests
-        .get(
-            (
-                'https://versionhistory.googleapis.com/v1/chrome/platforms/win/channels/stable/'
-                'versions'
-            ),
+        requests.get(
+            ('https://versionhistory.googleapis.com/v1/chrome/platforms/win/channels/stable/'
+             'versions'),
             timeout=5,
-        )
-        .json()['versions'][0]['version']
-        .split('.')[0],
+        ).json()['versions'][0]['version'].split('.')[0],
     )
 
 
@@ -165,7 +158,5 @@ def generate_chrome_user_agent(os: str = 'Windows NT 10.0; Win64; x64') -> str:
         A Chrome user agent string.
     """
     last_major = get_last_chrome_major_version() or get_latest_chrome_major_version()
-    return (
-        f'Mozilla/5.0 ({os}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{last_major}.0.0.0'
-        ' Safari/537.36'
-    )
+    return (f'Mozilla/5.0 ({os}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{last_major}.0.0.0'
+            ' Safari/537.36')

@@ -33,9 +33,11 @@ def _get_git_repo() -> Repo:  # pragma: no cover
 @click.option('-b', '--base-url', help='Base URL for enterprise.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('-u', '--username', default=getpass.getuser(), help='Username (passed to keyring).')
-def git_checkout_default_branch_main(
-    username: str, base_url: str | None = None, origin_name: str = 'origin', *, debug: bool = False
-) -> None:
+def git_checkout_default_branch_main(username: str,
+                                     base_url: str | None = None,
+                                     origin_name: str = 'origin',
+                                     *,
+                                     debug: bool = False) -> None:
     """
     Checkout to the default branch.
 
@@ -50,9 +52,10 @@ def git_checkout_default_branch_main(
         click.echo('No token.', err=True)
         raise click.Abort
     repo = _get_git_repo()
-    default_branch = get_github_default_branch(
-        repo=repo, base_url=base_url, token=token, origin_name=origin_name
-    )
+    default_branch = get_github_default_branch(repo=repo,
+                                               base_url=base_url,
+                                               token=token,
+                                               origin_name=origin_name)
     next(b for b in repo.heads if b.name == default_branch).checkout()
 
 
@@ -61,9 +64,10 @@ def git_checkout_default_branch_main(
 @click.option('-b', '--base-url', help='Base URL for enterprise.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('-u', '--username', default=getpass.getuser(), help='Username (passed to keyring).')
-@click.option(
-    '-r', '--remote', is_flag=True, help='Rebase with the origin copy of the default branch.'
-)
+@click.option('-r',
+              '--remote',
+              is_flag=True,
+              help='Rebase with the origin copy of the default branch.')
 def git_rebase_default_branch_main(
     username: str,
     base_url: str | None = None,
@@ -86,9 +90,10 @@ def git_rebase_default_branch_main(
         click.echo('No token.', err=True)
         raise click.Abort
     repo = _get_git_repo()
-    default_branch = get_github_default_branch(
-        repo=repo, base_url=base_url, token=token, origin_name=origin_name
-    )
+    default_branch = get_github_default_branch(repo=repo,
+                                               base_url=base_url,
+                                               token=token,
+                                               origin_name=origin_name)
     repo.git.rebase(f'{origin_name}/{default_branch}' if remote else default_branch)
 
 

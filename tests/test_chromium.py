@@ -39,9 +39,8 @@ def mock_requests_get(mocker: MockerFixture) -> Mock:
 
 
 @pytest.fixture
-def mock_get_pil_image_module(
-    mocker: MockerFixture, mock_pil_image_module: tuple[Mock, Mock]
-) -> Mock:
+def mock_get_pil_image_module(mocker: MockerFixture, mock_pil_image_module: tuple[Mock,
+                                                                                  Mock]) -> Mock:
     mock_image_mod, _ = mock_pil_image_module
     mocker.patch('deltona.chromium._get_pil_image_module', return_value=mock_image_mod)
     return mock_image_mod

@@ -50,18 +50,16 @@ def test_wineshell_main_fail(mocker: MockerFixture, runner: CliRunner, tmp_path:
 
 
 def test_unix2wine_main(mocker: MockerFixture, runner: CliRunner) -> None:
-    unix_path_to_wine = mocker.patch(
-        'deltona.commands.wine.unix_path_to_wine', return_value=r'C:\foo\bar'
-    )
+    unix_path_to_wine = mocker.patch('deltona.commands.wine.unix_path_to_wine',
+                                     return_value=r'C:\foo\bar')
     result = runner.invoke(unix2wine_main, ['/foo/bar'])
     assert result.exit_code == 0
     unix_path_to_wine.assert_called_once_with('/foo/bar')
     assert r'C:\foo\bar' in result.output
 
 
-def test_winegoginstall_main_success(
-    mocker: MockerFixture, runner: CliRunner, tmp_path: Path
-) -> None:
+def test_winegoginstall_main_success(mocker: MockerFixture, runner: CliRunner,
+                                     tmp_path: Path) -> None:
     file = tmp_path / 'setup.exe'
     file.write_text('dummy')
     sp_run = mocker.patch('deltona.commands.wine.sp.run')
@@ -70,9 +68,9 @@ def test_winegoginstall_main_success(
     sp_run.assert_called_once()
 
 
-def test_winegoginstall_main_logs_warning_about_missing_env_vars(
-    mocker: MockerFixture, runner: CliRunner, tmp_path: Path
-) -> None:
+def test_winegoginstall_main_logs_warning_about_missing_env_vars(mocker: MockerFixture,
+                                                                 runner: CliRunner,
+                                                                 tmp_path: Path) -> None:
     mock_log_warning = mocker.patch('deltona.commands.wine.log.warning')
     mocker.patch(
         'deltona.commands.wine.os.environ',
@@ -88,13 +86,11 @@ def test_winegoginstall_main_logs_warning_about_missing_env_vars(
     assert result.exit_code == 0
     sp_run.assert_called_once()
     mock_log_warning.assert_called_once_with(
-        'Wine will likely fail to run since DISPLAY or XAUTHORITY are not in the environment.'
-    )
+        'Wine will likely fail to run since DISPLAY or XAUTHORITY are not in the environment.')
 
 
-def test_winegoginstall_main_with_prefix(
-    mocker: MockerFixture, runner: CliRunner, tmp_path: Path
-) -> None:
+def test_winegoginstall_main_with_prefix(mocker: MockerFixture, runner: CliRunner,
+                                         tmp_path: Path) -> None:
     file = tmp_path / 'setup.exe'
     file.write_text('dummy')
     prefix = tmp_path / 'a-prefix'
@@ -106,9 +102,8 @@ def test_winegoginstall_main_with_prefix(
     assert sp_run.call_args_list[0].kwargs['env']['WINEPREFIX'] == str(prefix)
 
 
-def test_winegoginstall_main_subprocess_error(
-    mocker: MockerFixture, runner: CliRunner, tmp_path: Path
-) -> None:
+def test_winegoginstall_main_subprocess_error(mocker: MockerFixture, runner: CliRunner,
+                                              tmp_path: Path) -> None:
     file = tmp_path / 'setup.exe'
     file.write_text('dummy')
     mocker.patch(
@@ -133,16 +128,15 @@ def test_set_wine_fonts_main(mocker: MockerFixture, runner: CliRunner, tmp_path:
             'WINEPREFIX': 'a-prefix',
         },
     )
-    result = runner.invoke(
-        set_wine_fonts_main, ['--dpi', '120', '--font', 'Arial', '--font-size', '10']
-    )
+    result = runner.invoke(set_wine_fonts_main,
+                           ['--dpi', '120', '--font', 'Arial', '--font-size', '10'])
     assert result.exit_code == 0
     sp_run.assert_called_once()
 
 
-def test_set_wine_fonts_main_logs_warning_about_missing_env_vars(
-    mocker: MockerFixture, runner: CliRunner, tmp_path: Path
-) -> None:
+def test_set_wine_fonts_main_logs_warning_about_missing_env_vars(mocker: MockerFixture,
+                                                                 runner: CliRunner,
+                                                                 tmp_path: Path) -> None:
     sp_run = mocker.patch('deltona.commands.wine.sp.run')
     mock_log_warning = mocker.patch('deltona.commands.wine.log.warning')
     mocker.patch('deltona.commands.wine.make_font_entry', return_value='FontEntry')
@@ -154,20 +148,17 @@ def test_set_wine_fonts_main_logs_warning_about_missing_env_vars(
             'PATH': '',
         },
     )
-    result = runner.invoke(
-        set_wine_fonts_main, ['--dpi', '120', '--font', 'Arial', '--font-size', '10']
-    )
+    result = runner.invoke(set_wine_fonts_main,
+                           ['--dpi', '120', '--font', 'Arial', '--font-size', '10'])
     assert result.exit_code == 0
     sp_run.assert_called_once()
     mock_log_warning.assert_called_once_with(
         'UltraISO.exe will likely fail to run since DISPLAY or XAUTHORITY are not in the '
-        'environment.'
-    )
+        'environment.')
 
 
-def test_patch_ultraiso_font_main_with_exe(
-    mocker: MockerFixture, runner: CliRunner, tmp_path: Path
-) -> None:
+def test_patch_ultraiso_font_main_with_exe(mocker: MockerFixture, runner: CliRunner,
+                                           tmp_path: Path) -> None:
     mocker.patch('deltona.commands.wine.IS_WINDOWS', False)  # noqa: FBT003
     exe = tmp_path / 'UltraISO.exe'
     exe.write_text('dummy')
@@ -177,9 +168,8 @@ def test_patch_ultraiso_font_main_with_exe(
     patch_ultraiso_font.assert_called_once_with(exe, 'Arial')
 
 
-def test_patch_ultraiso_font_main_windows_no_exe(
-    mocker: MockerFixture, runner: CliRunner, tmp_path: Path
-) -> None:
+def test_patch_ultraiso_font_main_windows_no_exe(mocker: MockerFixture, runner: CliRunner,
+                                                 tmp_path: Path) -> None:
     mocker.patch('deltona.commands.wine.IS_WINDOWS', True)  # noqa: FBT003
     patch_ultraiso_font = mocker.patch('deltona.commands.wine.patch_ultraiso_font')
     result = runner.invoke(patch_ultraiso_font_main, ['--font', 'Arial'])
@@ -187,9 +177,8 @@ def test_patch_ultraiso_font_main_windows_no_exe(
     patch_ultraiso_font.assert_called_once_with(mocker.ANY, 'Arial')
 
 
-def test_patch_ultraiso_font_main_without_exe(
-    mocker: MockerFixture, runner: CliRunner, tmp_path: Path
-) -> None:
+def test_patch_ultraiso_font_main_without_exe(mocker: MockerFixture, runner: CliRunner,
+                                              tmp_path: Path) -> None:
     patch_ultraiso_font = mocker.patch('deltona.commands.wine.patch_ultraiso_font')
     mocker.patch('deltona.commands.wine.IS_WINDOWS', False)  # noqa: FBT003
     mocker.patch('os.environ', {'WINEPREFIX': str(tmp_path)})

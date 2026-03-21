@@ -136,7 +136,7 @@ def test_unix_path_to_wine_relative_path() -> None:
     # Use a relative path
     rel_path = 'some/relative/path.txt'
     cwd = Path.cwd()
-    expected = f'Z:{str(cwd).replace("/", "\\")}\\some\\relative\\path.txt'
+    expected = 'Z:' + str(cwd).replace('/', '\\') + '\\some\\relative\\path.txt'
     result = string.unix_path_to_wine(rel_path)
     assert result == expected
 

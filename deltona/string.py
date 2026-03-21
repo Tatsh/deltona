@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from functools import cache
-from itertools import batched, takewhile
+from itertools import takewhile
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, TextIO, cast, overload
 import os
@@ -140,10 +140,11 @@ def hexstr2bytes_generator(s: str) -> Iterator[int]:
     ValueError
         If the string is not a valid hex string.
     """
-    for hex_num in batched(s, 2):
+    for i in range(0, len(s), 2):
+        hex_num = s[i:i + 2]
         if len(hex_num) != 2:  # noqa: PLR2004
             raise ValueError(hex_num)
-        yield int(''.join(hex_num), 16)
+        yield int(hex_num, 16)
 
 
 def hexstr2bytes(s: str) -> bytes:
@@ -216,9 +217,9 @@ def sanitize(s: str, *, restricted: bool = True) -> str:
     return re.sub(
         r'([a-z0-9])\-s\-',
         r'\1s-',
-        re.sub(
-            r'\.-', '-', re.sub(r'[_\-]+', '-', sanitize_filename(s, restricted=restricted).lower())
-        ),
+        re.sub(r'\.-', '-',
+               re.sub(r'[_\-]+', '-',
+                      sanitize_filename(s, restricted=restricted).lower())),
     )
 
 
@@ -246,9 +247,8 @@ def is_url(filename: StrPath) -> bool:
     return all(x in f'{string.ascii_letters}{string.digits}_' for x in parts[0])
 
 
-def _get_unidecode_cache_and_unidecode() -> tuple[
-    dict[int, Sequence[str | None] | None], Callable[..., str]
-]:  # pragma: no cover
+def _get_unidecode_cache_and_unidecode(
+) -> tuple[dict[int, Sequence[str | None] | None], Callable[..., str]]:  # pragma: no cover
     from unidecode import Cache, unidecode  # noqa: PLC0415
 
     return Cache, unidecode
@@ -272,15 +272,9 @@ def add_unidecode_custom_replacement(find: str, replace: str) -> None:
     position = codepoint % 256
     new_section = cast(
         'list[str | None]',
-        (
-            cache[section]
-            if isinstance(cache[section], list)
-            else (
-                list(assert_not_none(cache[section]))
-                if cache[section] is not None
-                else [None for _ in range(position + 1)]
-            )
-        ),
+        (cache[section] if isinstance(cache[section], list) else
+         (list(assert_not_none(cache[section]))
+          if cache[section] is not None else [None for _ in range(position + 1)])),
     )  # convert to mutable type
     assert len(new_section) > position
     new_section[position] = replace
@@ -455,10 +449,8 @@ def is_roman_numeral(string: str) -> bool:
     """
     if not string:
         return False
-    return (
-        re.match(r'^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$', string, re.IGNORECASE)
-        is not None
-    )
+    return (re.match(r'^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$', string,
+                     re.IGNORECASE) is not None)
 
 
 @cache

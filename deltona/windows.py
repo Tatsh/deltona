@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from struct import pack
-from typing import override
 import enum
+
+from typing_extensions import override
 
 __all__ = (
     'DEFAULT_DPI',
@@ -295,8 +296,11 @@ class Quality(enum.IntEnum):
     """
 
 
-class Field(enum.StrEnum):
+class Field(str, enum.Enum):
     """Font field names in the registry."""
+    @override
+    def __str__(self) -> str:
+        return self.value
 
     CaptionFont = 'CaptionFont'
     """Font used in window title bars."""
@@ -334,7 +338,6 @@ Maximum line length in a ``.reg`` file hex value.
 
 class NameTooLong(Exception):
     """Raised when a font name is longer than 64 characters."""
-
     @override
     def __init__(self, name: str) -> None:
         super().__init__(self, f'{name} length exceeds 64 characters.')
@@ -445,22 +448,14 @@ def make_font_entry(
     for n in packed:
         line += f'{n:02x},'
         lc = len(lines)
-        if (lc == 0 and len(line) == MAX_LINE_LENGTH) or (
-            lc > 0 and len(line) == (MAX_LINE_LENGTH - 1)
-        ):
+        if (lc == 0 and len(line) == MAX_LINE_LENGTH) or (lc > 0
+                                                          and len(line) == (MAX_LINE_LENGTH - 1)):
             line += '\\'
             lines.append(line)
             line = '  '
     lines.append(line.rstrip(','))
     return '\n'.join((
-        *(
-            (
-                r'HKEY_USERS\.Default\Control Panel\Desktop\WindowMetrics'
-                if default_setting
-                else r'HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics'
-            )
-            if header
-            else '',
-        ),
+        *((r'HKEY_USERS\.Default\Control Panel\Desktop\WindowMetrics' if default_setting else
+           r'HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics') if header else '',),
         *lines,
     ))

@@ -66,9 +66,8 @@ def test_add_cdda_times_main_success(
         assert result.exit_code != 0
 
 
-def test_wait_for_disc_main_success(
-    mocker: MockerFixture, runner: CliRunner, tmp_path: Path
-) -> None:
+def test_wait_for_disc_main_success(mocker: MockerFixture, runner: CliRunner,
+                                    tmp_path: Path) -> None:
     mocker.patch('deltona.commands.media.wait_for_disc', return_value=True)
     file = tmp_path / 'disc'
     file.write_text('dummy')
@@ -102,20 +101,17 @@ def test_ultraiso_main_file_not_found_error(mocker: MockerFixture, runner: CliRu
     assert result.exit_code != 0
 
 
-def test_supported_audio_input_formats_main_success(
-    mocker: MockerFixture, runner: CliRunner
-) -> None:
-    mocker.patch(
-        'deltona.commands.media.supported_audio_input_formats', return_value=[('wav', 44100)]
-    )
+def test_supported_audio_input_formats_main_success(mocker: MockerFixture,
+                                                    runner: CliRunner) -> None:
+    mocker.patch('deltona.commands.media.supported_audio_input_formats',
+                 return_value=[('wav', 44100)])
     result = runner.invoke(supported_audio_input_formats_main, ['dummy'])
     assert result.exit_code == 0
     assert 'wav @ 44100' in result.output
 
 
-def test_supported_audio_input_formats_main_oserror(
-    mocker: MockerFixture, runner: CliRunner
-) -> None:
+def test_supported_audio_input_formats_main_oserror(mocker: MockerFixture,
+                                                    runner: CliRunner) -> None:
     mocker.patch('deltona.commands.media.supported_audio_input_formats', side_effect=OSError)
     result = runner.invoke(supported_audio_input_formats_main, ['dummy'])
     assert result.exit_code != 0
@@ -129,9 +125,8 @@ def test_add_info_json_main(mocker: MockerFixture, runner: CliRunner, tmp_path: 
     assert result.exit_code == 0
 
 
-def test_display_info_json_main_success(
-    mocker: MockerFixture, runner: CliRunner, tmp_path: Path
-) -> None:
+def test_display_info_json_main_success(mocker: MockerFixture, runner: CliRunner,
+                                        tmp_path: Path) -> None:
     f = tmp_path / 'file.mp3'
     f.write_text('dummy')
     mocker.patch('deltona.commands.media.get_info_json', return_value='{"foo": "bar"}')
@@ -140,9 +135,8 @@ def test_display_info_json_main_success(
     assert '{"foo": "bar"}' in result.output
 
 
-def test_display_info_json_main_not_implemented(
-    mocker: MockerFixture, runner: CliRunner, tmp_path: Path
-) -> None:
+def test_display_info_json_main_not_implemented(mocker: MockerFixture, runner: CliRunner,
+                                                tmp_path: Path) -> None:
     f = tmp_path / 'file.mp3'
     f.write_text('dummy')
     mocker.patch('deltona.commands.media.get_info_json', side_effect=NotImplementedError)
@@ -150,9 +144,8 @@ def test_display_info_json_main_not_implemented(
     assert result.exit_code != 0
 
 
-def test_display_info_json_main_subprocess_error(
-    mocker: MockerFixture, runner: CliRunner, tmp_path: Path
-) -> None:
+def test_display_info_json_main_subprocess_error(mocker: MockerFixture, runner: CliRunner,
+                                                 tmp_path: Path) -> None:
     f = tmp_path / 'file.mp3'
     f.write_text('dummy')
     mocker.patch(
@@ -200,9 +193,8 @@ def test_ke_ebook_ex_main(mocker: MockerFixture, runner: CliRunner, tmp_path: Pa
     assert result.exit_code == 0
 
 
-def test_ke_ebook_ex_main_no_delete(
-    mocker: MockerFixture, runner: CliRunner, tmp_path: Path
-) -> None:
+def test_ke_ebook_ex_main_no_delete(mocker: MockerFixture, runner: CliRunner,
+                                    tmp_path: Path) -> None:
     d = tmp_path / 'dir'
     d.mkdir()
     mocker.patch('deltona.commands.media.unpack_ebook')
@@ -259,8 +251,7 @@ def test_flac_dir_finalize_main(mocker: MockerFixture, runner: CliRunner, tmp_pa
     mocker.patch(
         'deltona.commands.media.sp.run',
         return_value=mocker.MagicMock(
-            stdout='tracknumber=1\nartist=Artist\ntitle=Title\nunknown\n'
-        ),
+            stdout='tracknumber=1\nartist=Artist\ntitle=Title\nunknown\n'),
     )
     result = runner.invoke(flac_dir_finalize_main, [str(d)])
     assert result.exit_code == 0

@@ -47,15 +47,11 @@ def wineshell_main(prefix_name: str, *, debug: bool = False) -> None:
     For Bash and similar shells only.
     """  # noqa: DOC501
     setup_logging(debug=debug, loggers={'deltona': {}, 'pexpect': {}})
-    target = (
-        Path(prefix_name)
-        if Path(prefix_name).exists()
-        else Path('~/.local/share/wineprefixes').expanduser() / prefix_name
-    )
+    target = (Path(prefix_name) if Path(prefix_name).exists() else
+              Path('~/.local/share/wineprefixes').expanduser() / prefix_name)
     terminal = shutil.get_terminal_size()
-    c = pexpect.spawn(
-        os.environ.get('SHELL', '/bin/bash'), ['-i'], dimensions=(terminal.lines, terminal.columns)
-    )
+    c = pexpect.spawn(os.environ.get('SHELL', '/bin/bash'), ['-i'],
+                      dimensions=(terminal.lines, terminal.columns))
     c.sendline(f'export WINEPREFIX={quote(str(target))}; export PS1="{target.name}🍷$PS1"')
 
     def resize(sig: int, frame: FrameType | None) -> None:  # pragma: no cover  # noqa: ARG001
@@ -79,9 +75,10 @@ def unix2wine_main(filepath: str) -> None:
 @click.command(context_settings=CONTEXT_SETTINGS | {'ignore_unknown_options': True})
 @click.argument('args', nargs=-1, type=click.UNPROCESSED)
 @click.argument('filename', type=click.Path(exists=True, dir_okay=False, path_type=Path))
-@click.option(
-    '-S', '--very-silent', help='Pass /VERYSILENT (no windows will be displayed).', is_flag=True
-)
+@click.option('-S',
+              '--very-silent',
+              help='Pass /VERYSILENT (no windows will be displayed).',
+              is_flag=True)
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('-p', '--prefix', help='Wine prefix path or name.')
 def winegoginstall_main(
@@ -104,8 +101,7 @@ def winegoginstall_main(
     setup_logging(debug=debug, loggers={'deltona': {}})
     if 'DISPLAY' not in os.environ or 'XAUTHORITY' not in os.environ:  # pragma: no cover
         log.warning(
-            'Wine will likely fail to run since DISPLAY or XAUTHORITY are not in the environment.'
-        )
+            'Wine will likely fail to run since DISPLAY or XAUTHORITY are not in the environment.')
     env = {
         'DISPLAY': os.environ.get('DISPLAY', ''),
         'XAUTHORITY': os.environ.get('XAUTHORITY', ''),
@@ -113,11 +109,8 @@ def winegoginstall_main(
     }
     very_silent_args = ('/SP-', '/SUPPRESSMSGBOXES', '/VERYSILENT') if very_silent else ('/SILENT',)
     if prefix:
-        env['WINEPREFIX'] = (
-            prefix
-            if Path(prefix).exists()
-            else str((Path('~/.local/share/wineprefixes') / prefix).expanduser())
-        )
+        env['WINEPREFIX'] = (prefix if Path(prefix).exists() else str(
+            (Path('~/.local/share/wineprefixes') / prefix).expanduser()))
     cmd = (
         'wine',
         str(filename),
@@ -139,30 +132,34 @@ def winegoginstall_main(
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    '--dpi', default=DEFAULT_DPI, type=int, help='DPI. This should generally be left as 96.'
-)
+@click.option('--dpi',
+              default=DEFAULT_DPI,
+              type=int,
+              help='DPI. This should generally be left as 96.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('-f', '--font', default='Noto Sans', help='Font to use.')
 @click.option('-s', '--font-size', default=9, type=int, help='Font size in points.')
-def set_wine_fonts_main(
-    dpi: int = DEFAULT_DPI, font: str = 'Noto Sans', font_size: int = 9, *, debug: bool = False
-) -> None:
+def set_wine_fonts_main(dpi: int = DEFAULT_DPI,
+                        font: str = 'Noto Sans',
+                        font_size: int = 9,
+                        *,
+                        debug: bool = False) -> None:
     """
     Set all Wine fonts to be the one passed in.
 
     This will run on Windows but it is not recommended to try on newer than Windows 7.
     """
     setup_logging(debug=debug, loggers={'deltona': {}})
-    with NamedTemporaryFile(
-        mode='w+', suffix='.reg', prefix='set-wine-fonts', delete=False, encoding='utf-8'
-    ) as f:
+    with NamedTemporaryFile(mode='w+',
+                            suffix='.reg',
+                            prefix='set-wine-fonts',
+                            delete=False,
+                            encoding='utf-8') as f:
         f.write('Windows Registry Editor Version 5.00\n\n')
         f.write(r'[HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics]')
         f.write('\n')
-        f.write(
-            ''.join(make_font_entry(item, font, dpi=dpi, font_size_pt=font_size) for item in Field)
-        )
+        f.write(''.join(
+            make_font_entry(item, font, dpi=dpi, font_size_pt=font_size) for item in Field))
         f.write('\n')
     cmd = ('wine', 'regedit', '/S', f.name) if not IS_WINDOWS else ('regedit', '/S', f.name)
     log.debug('Registry file content:\n%s', Path(f.name).read_text(encoding='utf-8').strip())
@@ -171,8 +168,7 @@ def set_wine_fonts_main(
     if 'DISPLAY' not in os.environ or 'XAUTHORITY' not in os.environ:
         log.warning(
             'UltraISO.exe will likely fail to run since DISPLAY or XAUTHORITY are not in the '
-            'environment.'
-        )
+            'environment.')
     if 'WINEPREFIX' in os.environ:
         env['WINEPREFIX'] = os.environ['WINEPREFIX']
     env['DISPLAY'] = os.environ.get('DISPLAY', '')
@@ -193,26 +189,19 @@ def set_wine_fonts_main(
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
 )
 @click.option('-f', '--font', default='Noto Sans Regular', help='Font to use.')
-def patch_ultraiso_font_main(
-    exe: Path | None = None, font: str = 'Noto Sans', *, debug: bool = False
-) -> None:
+def patch_ultraiso_font_main(exe: Path | None = None,
+                             font: str = 'Noto Sans',
+                             *,
+                             debug: bool = False) -> None:
     """Patch UltraISO's hard-coded font."""
     setup_logging(debug=debug, loggers={'deltona': {}})
     if not exe:
         if not IS_WINDOWS:
-            exe = (
-                Path(os.environ.get('WINEPREFIX', str(Path.home() / '.wine')))
-                / 'drive_c'
-                / 'Program Files (x86)'
-                / 'UltraISO'
-                / 'UltraISO.exe'
-            )
+            exe = (Path(os.environ.get('WINEPREFIX', str(Path.home() / '.wine'))) / 'drive_c' /
+                   'Program Files (x86)' / 'UltraISO' / 'UltraISO.exe')
         else:
-            exe = (
-                Path(os.environ.get('PROGRAMFILES(X86)', os.environ.get('PROGRAMFILES', '')))
-                / 'UltraISO'
-                / 'UltraISO.exe'
-            )
+            exe = (Path(os.environ.get('PROGRAMFILES(X86)', os.environ.get('PROGRAMFILES', ''))) /
+                   'UltraISO' / 'UltraISO.exe')
     patch_ultraiso_font(exe, font)
 
 

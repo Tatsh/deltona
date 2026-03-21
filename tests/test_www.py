@@ -28,9 +28,8 @@ if TYPE_CHECKING:
     from requests_mock import Mocker
 
 
-def test_upload_to_imgbb_with_api_key(
-    tmp_path: Path, mocker: MockerFixture, requests_mock: Mocker
-) -> None:
+def test_upload_to_imgbb_with_api_key(tmp_path: Path, mocker: MockerFixture,
+                                      requests_mock: Mocker) -> None:
     # Create a dummy image file
     img_path = tmp_path / 'test.png'
     img_path.write_bytes(b'fake-image-data')
@@ -46,9 +45,8 @@ def test_upload_to_imgbb_with_api_key(
     assert r.json() == expected_response
 
 
-def test_upload_to_imgbb_with_keyring(
-    tmp_path: Path, mocker: MockerFixture, requests_mock: Mocker
-) -> None:
+def test_upload_to_imgbb_with_keyring(tmp_path: Path, mocker: MockerFixture,
+                                      requests_mock: Mocker) -> None:
     # Create a dummy image file
     img_path = tmp_path / 'test2.png'
     img_path.write_bytes(b'another-fake-image-data')
@@ -69,15 +67,14 @@ def test_upload_to_imgbb_with_keyring(
     assert r.json() == expected_response
 
 
-def test_upload_to_imgbb_raises_for_status(
-    tmp_path: Path, mocker: MockerFixture, requests_mock: Mocker
-) -> None:
+def test_upload_to_imgbb_raises_for_status(tmp_path: Path, mocker: MockerFixture,
+                                           requests_mock: Mocker) -> None:
     img_path = tmp_path / 'fail.png'
     img_path.write_bytes(b'fail-data')
 
-    requests_mock.post(
-        'https://api.imgbb.com/1/upload', status_code=400, json={'error': 'bad request'}
-    )
+    requests_mock.post('https://api.imgbb.com/1/upload',
+                       status_code=400,
+                       json={'error': 'bad request'})
     with pytest.raises(HTTPError):
         upload_to_imgbb(str(img_path), api_key='bad-key', timeout=1)
 
@@ -131,17 +128,16 @@ def test_check_bookmarks_html_urls_redirect(mocker: MockerFixture, requests_mock
     assert not_found == []
 
 
-def test_check_bookmarks_html_urls_full_redirect(
-    mocker: MockerFixture, requests_mock: Mocker
-) -> None:
+def test_check_bookmarks_html_urls_full_redirect(mocker: MockerFixture,
+                                                 requests_mock: Mocker) -> None:
     html = """
     <DL>
         <DT><A HREF="https://redirect.com" ADD_DATE="789">Redirected</A>
     </DL>
     """
-    requests_mock.head(
-        'https://redirect.com', status_code=301, headers={'location': 'https://new-host/new-loc'}
-    )
+    requests_mock.head('https://redirect.com',
+                       status_code=301,
+                       headers={'location': 'https://new-host/new-loc'})
     mocker.patch('deltona.www.generate_chrome_user_agent', return_value='UA')
     data, changed, not_found = check_bookmarks_html_urls(html)
     assert len(data) == 1
@@ -197,11 +193,8 @@ def test_check_bookmarks_html_urls_exhaustive_check(mocker: MockerFixture) -> No
             return mocker.MagicMock(status_code=HTTPStatus.OK)
         n += 1
         return mocker.MagicMock(
-            status_code=HTTPStatus.FOUND
-            if n % 3 == 0
-            else HTTPStatus.NOT_FOUND
-            if n % 2 == 0
-            else HTTPStatus.OK,
+            status_code=HTTPStatus.FOUND if n % 3 == 0 else HTTPStatus.NOT_FOUND if n %
+            2 == 0 else HTTPStatus.OK,
             headers={'location': 'https://deltona.dev' if n % 2 == 0 else '/index.html'},
         )
 
@@ -223,48 +216,112 @@ def test_check_bookmarks_html_urls_exhaustive_check(mocker: MockerFixture) -> No
         mocker.call('https://deltona.dev/downloads/deltona-0.2.0.tar.gz'),
     ])
     assert data == [
-        {'type': 'link', 'title': '', 'attrs': {'href': 'https://mail.google.com/'}},
-        {'type': 'link', 'title': '', 'attrs': {'href': 'https://github.com/issues'}},
         {
             'type': 'link',
             'title': '',
-            'attrs': {'href': 'https://forums.mydigitallife.net/index.html'},
+            'attrs': {
+                'href': 'https://mail.google.com/'
+            }
         },
-        {'type': 'link', 'title': 'Deltona', 'attrs': {'href': 'https://deltona.dev'}},
-        {'type': 'link', 'title': 'Deltona', 'attrs': {'href': 'https://deltona.zzz'}},
-        {'type': 'link', 'title': 'Documentation', 'attrs': {'href': 'https://deltona.yyy/docs'}},
         {
-            'attrs': {'add_date': '1620763254', 'last_modified': '1697216205'},
-            'children': [
-                {'type': 'link', 'title': 'Installation', 'attrs': {'href': 'https://deltona.dev'}}
-            ],
+            'type': 'link',
+            'title': '',
+            'attrs': {
+                'href': 'https://github.com/issues'
+            }
+        },
+        {
+            'type': 'link',
+            'title': '',
+            'attrs': {
+                'href': 'https://forums.mydigitallife.net/index.html'
+            },
+        },
+        {
+            'type': 'link',
+            'title': 'Deltona',
+            'attrs': {
+                'href': 'https://deltona.dev'
+            }
+        },
+        {
+            'type': 'link',
+            'title': 'Deltona',
+            'attrs': {
+                'href': 'https://deltona.zzz'
+            }
+        },
+        {
+            'type': 'link',
+            'title': 'Documentation',
+            'attrs': {
+                'href': 'https://deltona.yyy/docs'
+            }
+        },
+        {
+            'attrs': {
+                'add_date': '1620763254',
+                'last_modified': '1697216205'
+            },
+            'children': [{
+                'type': 'link',
+                'title': 'Installation',
+                'attrs': {
+                    'href': 'https://deltona.dev'
+                }
+            }],
             'name': 'Other folder',
             'type': 'folder',
         },
-        {'type': 'link', 'title': 'Usage', 'attrs': {'href': 'https://deltona.ggg/docs/usage'}},
-        {'type': 'link', 'title': 'Blog', 'attrs': {'href': 'https://deltona.dev/blog'}},
-        {'type': 'link', 'title': 'Contact', 'attrs': {'href': 'https://deltona.dev/contact'}},
         {
-            'attrs': {'add_date': '1620763254', 'last_modified': '1697216205'},
-            'children': [
-                {
-                    'type': 'link',
-                    'title': 'Deltona Downloads',
-                    'attrs': {'href': 'https://deltona.dev/downloads'},
-                }
-            ],
+            'type': 'link',
+            'title': 'Usage',
+            'attrs': {
+                'href': 'https://deltona.ggg/docs/usage'
+            }
+        },
+        {
+            'type': 'link',
+            'title': 'Blog',
+            'attrs': {
+                'href': 'https://deltona.dev/blog'
+            }
+        },
+        {
+            'type': 'link',
+            'title': 'Contact',
+            'attrs': {
+                'href': 'https://deltona.dev/contact'
+            }
+        },
+        {
+            'attrs': {
+                'add_date': '1620763254',
+                'last_modified': '1697216205'
+            },
+            'children': [{
+                'type': 'link',
+                'title': 'Deltona Downloads',
+                'attrs': {
+                    'href': 'https://deltona.dev/downloads'
+                },
+            }],
             'name': 'Downloads',
             'type': 'folder',
         },
         {
             'type': 'link',
             'title': 'Deltona 0.1.0',
-            'attrs': {'href': 'https://deltona.dev/downloads/deltona-0.1.0.tar.gz'},
+            'attrs': {
+                'href': 'https://deltona.dev/downloads/deltona-0.1.0.tar.gz'
+            },
         },
         {
             'type': 'link',
             'title': 'Deltona 0.2.0',
-            'attrs': {'href': 'https://deltona.dev/downloads/deltona-0.2.0.tar.gz'},
+            'attrs': {
+                'href': 'https://deltona.dev/downloads/deltona-0.2.0.tar.gz'
+            },
         },
     ]
     assert len(changed) == 2
@@ -384,8 +441,14 @@ def test_parse_bookmarks_html(mocker: MockerFixture) -> None:
 
 def test_create_parsed_tree_structure_creates_new_folders(mocker: MockerFixture) -> None:
     folder_path: list[tuple[str, BookmarksHTMLFolderAttributes]] = [
-        ('Folder1', {'add_date': '1', 'last_modified': '2'}),
-        ('Folder2', {'add_date': '3', 'last_modified': '4'}),
+        ('Folder1', {
+            'add_date': '1',
+            'last_modified': '2'
+        }),
+        ('Folder2', {
+            'add_date': '3',
+            'last_modified': '4'
+        }),
     ]
     data: BookmarksDataset = []
     result = create_parsed_tree_structure(folder_path, data)

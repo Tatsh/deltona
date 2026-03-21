@@ -43,9 +43,10 @@ def test_make_font_entry_name_too_long() -> None:
 
 
 def test_make_font_entry_with_header_current_user() -> None:
-    result = windows.make_font_entry(
-        field=windows.Field.StatusFont, name='Tahoma', header=True, default_setting=False
-    )
+    result = windows.make_font_entry(field=windows.Field.StatusFont,
+                                     name='Tahoma',
+                                     header=True,
+                                     default_setting=False)
     assert result.startswith(r'HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics')
     assert '"StatusFont"=hex:' in result
 

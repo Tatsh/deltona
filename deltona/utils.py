@@ -8,7 +8,7 @@ from pathlib import Path
 from shlex import quote
 from shutil import rmtree
 from signal import SIGTERM
-from typing import TYPE_CHECKING, overload, override
+from typing import TYPE_CHECKING, overload
 import csv
 import logging
 import os
@@ -17,6 +17,7 @@ import subprocess as sp
 import time
 
 from requests.adapters import BaseAdapter
+from typing_extensions import override
 import requests
 
 from .media import CD_FRAMES
@@ -69,9 +70,8 @@ def add_cdda_times(times: Iterable[str] | None) -> str | None:
         if not (res := re.match(TIMES_RE, time_)):
             return None
         minutes, seconds, frames = [int(x) for x in res.groups()]
-        total_ms += (
-            (minutes * MAX_SECONDS * 1000) + (seconds * 1000) + ((frames * 1000) // CD_FRAMES)
-        )
+        total_ms += ((minutes * MAX_SECONDS * 1000) + (seconds * 1000) +
+                     ((frames * 1000) // CD_FRAMES))
     minutes = total_ms // (MAX_SECONDS * 1000)
     remainder_ms = total_ms % (MAX_SECONDS * 1000)
     seconds = remainder_ms // 1000
@@ -194,16 +194,14 @@ def secure_move_path(
                 p_root = Path(root)
                 remote_target_dir = f'{remote_target}/{bn_filename}'
                 p_root_stat = p_root.stat()
-                mkdir_ignore_existing(
-                    sftp, remote_target_dir, (p_root_stat.st_atime, p_root_stat.st_mtime)
-                )
+                mkdir_ignore_existing(sftp, remote_target_dir,
+                                      (p_root_stat.st_atime, p_root_stat.st_mtime))
                 for name in sorted(dirs):
                     p_root_stat = (p_root / name).stat()
                     dp = str(p_root / name).replace(dn_prefix, '')
                     remote_target_dir = f'{remote_target}/{dp}'
-                    mkdir_ignore_existing(
-                        sftp, remote_target_dir, (p_root_stat.st_atime, p_root_stat.st_mtime)
-                    )
+                    mkdir_ignore_existing(sftp, remote_target_dir,
+                                          (p_root_stat.st_atime, p_root_stat.st_mtime))
                 for name in sorted(files):
                     src = p_root / name
                     dp = str(p_root / name).replace(dn_prefix, '')
@@ -212,9 +210,8 @@ def secure_move_path(
                         sftp.put(src, f'{remote_target}/{dp}')
                         if preserve_stats:
                             local_s = Path(src).stat()
-                            sftp.utime(
-                                f'{remote_target}/{dp}', (local_s.st_atime, local_s.st_mtime)
-                            )
+                            sftp.utime(f'{remote_target}/{dp}',
+                                       (local_s.st_atime, local_s.st_mtime))
             if not dry_run:
                 rmtree(filename, ignore_errors=True)
             else:
@@ -227,15 +224,19 @@ def kill_processes_by_name(name: str) -> None:  # pragma: no cover
 
 
 @overload
-def kill_processes_by_name(
-    name: str, wait_timeout: float, signal: int = SIGTERM, *, force: bool = False
-) -> list[int]:  # pragma: no cover
+def kill_processes_by_name(name: str,
+                           wait_timeout: float,
+                           signal: int = SIGTERM,
+                           *,
+                           force: bool = False) -> list[int]:  # pragma: no cover
     pass
 
 
-def kill_processes_by_name(
-    name: str, wait_timeout: float | None = None, signal: int = SIGTERM, *, force: bool = False
-) -> list[int] | None:
+def kill_processes_by_name(name: str,
+                           wait_timeout: float | None = None,
+                           signal: int = SIGTERM,
+                           *,
+                           force: bool = False) -> list[int] | None:
     """
     Kill processes matching a name.
 
@@ -266,18 +267,14 @@ def kill_processes_by_name(
         sp.run(('killall', f'-{signal}', name), check=False, capture_output=True)
     if wait_timeout:
         lines = sp.run(
-            ('tasklist.exe', '/fo', 'csv', '/fi', f'IMAGENAME eq {name}')
-            if IS_WINDOWS
-            else ('ps', 'ax'),
+            ('tasklist.exe', '/fo', 'csv', '/fi', f'IMAGENAME eq {name}') if IS_WINDOWS else
+            ('ps', 'ax'),
             check=True,
             capture_output=True,
             text=True,
         ).stdout.splitlines()
-        if (
-            pids := [int(x[1]) for x in list(csv.reader(lines))[1:]]
-            if IS_WINDOWS
-            else [int(y[0]) for y in (x.split() for x in lines) if Path(y[0]).name == name]
-        ):
+        if (pids := [int(x[1]) for x in list(csv.reader(lines))[1:]] if IS_WINDOWS else
+            [int(y[0]) for y in (x.split() for x in lines) if Path(y[0]).name == name]):
             time.sleep(wait_timeout)
             if force:
                 sp.run(
@@ -285,9 +282,7 @@ def kill_processes_by_name(
                         'taskkill.exe',
                         *(t for sl in (('/pid', str(pid)) for pid in pids) for t in sl),
                         '/f',
-                    )
-                    if IS_WINDOWS
-                    else ('kill', '-9', *(str(x) for x in pids)),
+                    ) if IS_WINDOWS else ('kill', '-9', *(str(x) for x in pids)),
                     check=False,
                     capture_output=True,
                 )
@@ -296,7 +291,6 @@ def kill_processes_by_name(
 
 class DataAdapter(BaseAdapter):
     """Requests adapter that returns the URL content (after ``data:``) as the response body."""
-
     @override
     def send(
         self,

@@ -5,7 +5,7 @@ from __future__ import annotations
 from operator import itemgetter
 from pathlib import Path
 from shlex import quote
-from typing import TYPE_CHECKING, Any, Literal, cast, override
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 import json
 import logging
 import re
@@ -29,6 +29,7 @@ from deltona.system import IS_WINDOWS, wait_for_disc
 from deltona.ultraiso import InsufficientArguments, run_ultraiso
 from deltona.utils import TIMES_RE, add_cdda_times
 from send2trash import send2trash
+from typing_extensions import override
 import click
 
 if TYPE_CHECKING:
@@ -36,21 +37,22 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
+_T = TypeVar('_T', bound=str)
 
-class _CDDATimeStringParamType[T: str](click.ParamType):
+
+class _CDDATimeStringParamType(click.ParamType):
     name = 'cdda_time_string'
 
     @override
-    def convert(self, value: T, param: click.Parameter | None, ctx: click.Context | None) -> T:
+    def convert(self, value: _T, param: click.Parameter | None, ctx: click.Context | None) -> _T:
         if TIMES_RE.match(value):
             return value
         self.fail(f'{value!r} is not a valid CDDA time string.', param, ctx)
         return None  # type: ignore[unreachable] # pragma: no cover
 
 
-@click.command(
-    context_settings=CONTEXT_SETTINGS, epilog='Example invocation: add-cdda-times 01:02:73 02:05:09'
-)
+@click.command(context_settings=CONTEXT_SETTINGS,
+               epilog='Example invocation: add-cdda-times 01:02:73 02:05:09')
 @click.argument('times', nargs=-1, type=_CDDATimeStringParamType())
 def add_cdda_times_main(times: tuple[str, ...]) -> None:
     """Add CDDA timestamps together.
@@ -64,12 +66,14 @@ def add_cdda_times_main(times: tuple[str, ...]) -> None:
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument(
-    'drive_path', type=click.Path(exists=True, dir_okay=False, writable=True, path_type=Path)
-)
-@click.option(
-    '-w', '--wait-time', type=float, default=1.0, help='Wait time in seconds.', metavar='TIME'
-)
+@click.argument('drive_path',
+                type=click.Path(exists=True, dir_okay=False, writable=True, path_type=Path))
+@click.option('-w',
+              '--wait-time',
+              type=float,
+              default=1.0,
+              help='Wait time in seconds.',
+              metavar='TIME')
 def wait_for_disc_main(drive_path: Path, wait_time: float = 1.0) -> None:
     """Wait for a disc in a drive to be ready."""  # noqa: DOC501
     if not wait_for_disc(str(drive_path), sleep_time=wait_time):
@@ -90,9 +94,9 @@ def wait_for_disc_main(drive_path: Path, wait_time: float = 1.0) -> None:
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
 )
 @click.option('--bootinfotable', is_flag=True, help='Generate boot information table in boot file.')
-@click.option(
-    '--optimize', is_flag=True, help='Optimise file systems by coding same files only once.'
-)
+@click.option('--optimize',
+              is_flag=True,
+              help='Optimise file systems by coding same files only once.')
 @click.option(
     '-f',
     '--file',
@@ -175,7 +179,7 @@ def wait_for_disc_main(drive_path: Path, wait_time: float = 1.0) -> None:
 @click.option(
     '--get',
     metavar='FILENAME',
-    help='Set a file or folder(full path should be specified) to be extracted.',
+    help='Set a file or folder (full path should be specified) to be extracted.',
 )
 @click.option('--extract', metavar='DIRNAME', help='Extract ISO image to specified directory.')
 @click.option(
@@ -184,9 +188,10 @@ def wait_for_disc_main(drive_path: Path, wait_time: float = 1.0) -> None:
     help='Read arguments from a text file.',
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
 )
-@click.option(
-    '-l', '--ilong', is_flag=True, help='Long filename for ISO 9660 volume, up to 31 chars.'
-)
+@click.option('-l',
+              '--ilong',
+              is_flag=True,
+              help='Long filename for ISO 9660 volume, up to 31 chars.')
 @click.option('--imax', is_flag=True, help='Max filename for ISO 9660 volume, up to 207 chars.')
 @click.option('--vernum', is_flag=True, help='Include file version number.')
 @click.option('--lowercase', is_flag=True, help='Allow lowercase letter.')
@@ -416,18 +421,18 @@ def cddb_query_main(args: tuple[str, ...], host: str | None = None, *, debug: bo
     Does not handle if result is not an exact match.
     """
     setup_logging(debug=debug, loggers={'deltona': {}})
-    click.echo(
-        json.dumps(cddb_query(' '.join(args), host=host)._asdict(), indent=2, sort_keys=True)
-    )
+    click.echo(json.dumps(cddb_query(' '.join(args), host=host)._asdict(), indent=2,
+                          sort_keys=True))
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('paths', type=click.Path(exists=True, file_okay=False, path_type=Path), nargs=-1)
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('-D', '--delete-paths', help='Delete paths after extraction.', is_flag=True)
-def ke_ebook_ex_main(
-    paths: Sequence[Path], *, debug: bool = False, delete_paths: bool = False
-) -> None:
+def ke_ebook_ex_main(paths: Sequence[Path],
+                     *,
+                     debug: bool = False,
+                     delete_paths: bool = False) -> None:
     """Extract ebooks from RARs within Zip files."""
     setup_logging(debug=debug, loggers={'deltona': {}})
     for path in paths:
@@ -451,12 +456,13 @@ def ke_ebook_ex_main(
 @click.option('--no-setpts', is_flag=True, help='Disable use of setpts.')
 @click.option('--preset', help='Output preset (various codecs).', default='slow')
 @click.option('--rear-crop', default='1920:1020:0:0', help='Crop string for the rear camera view.')
-@click.option(
-    '--rear-view-scale-divisor', default=2.5, type=float, help='Scaling divisor for rear view.'
-)
-@click.option(
-    '--setpts', help='setpts= string. Defaults to speeding video by 4x.', default='0.25*PTS'
-)
+@click.option('--rear-view-scale-divisor',
+              default=2.5,
+              type=float,
+              help='Scaling divisor for rear view.')
+@click.option('--setpts',
+              help='setpts= string. Defaults to speeding video by 4x.',
+              default='0.25*PTS')
 @click.option('--tier', help='Tier (HEVC).', default='high')
 @click.option(
     '--time-format',
@@ -472,9 +478,10 @@ def ke_ebook_ex_main(
     metavar='DECODER',
 )
 @click.option('--video-encoder', default='libx265', help='Video encoder.', metavar='ENCODER')
-@click.option(
-    '--video-max-bitrate', default='30M', help='Maximum video bitrate.', metavar='BITRATE'
-)
+@click.option('--video-max-bitrate',
+              default='30M',
+              help='Maximum video bitrate.',
+              metavar='BITRATE')
 @click.option('-D', '--no-delete', is_flag=True, help='Do not delete original files.')
 @click.option(
     '-M',
@@ -573,9 +580,10 @@ def encode_dashcam_main(  # noqa: PLR0913, PLR0917
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('filename', type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.argument('output', type=click.Path(dir_okay=False, path_type=Path), required=False)
-@click.option(
-    '--codec', help='Video codec.', type=click.Choice(('libx264', 'libx265')), default='libx265'
-)
+@click.option('--codec',
+              help='Video codec.',
+              type=click.Choice(('libx264', 'libx265')),
+              default='libx265')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('--crf', help='CRF value.', type=int, default=20)
 @click.option('--delete-after', help='Send processed file to wastebin.', is_flag=True)
@@ -642,7 +650,6 @@ def tbc2srt_main(filename: Path, input_json: Path | None = None, *, debug: bool 
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 def flac_dir_finalize_main(directory: Path, *, debug: bool = False) -> None:
     """Finalise a FLAC album directory."""
-
     def get_flac_tags(flac_path: Path) -> Iterator[tuple[str, str]]:
         def _split_eq(x: str) -> tuple[str, str] | None:
             y = x.split('=', 1)
@@ -650,26 +657,16 @@ def flac_dir_finalize_main(directory: Path, *, debug: bool = False) -> None:
                 return y[0].lower(), y[1]
             return None
 
-        return (
-            y
-            for y in (
-                _split_eq(x)
-                for x in sp.run(
-                    ('metaflac', '--export-tags-to=-', str(flac_path)),
-                    stdout=sp.PIPE,
-                    text=True,
-                    check=False,
-                ).stdout.splitlines()
-            )
-            if y is not None
-        )
+        return (y for y in (_split_eq(x) for x in sp.run(
+            ('metaflac', '--export-tags-to=-', str(flac_path)),
+            stdout=sp.PIPE,
+            text=True,
+            check=False,
+        ).stdout.splitlines()) if y is not None)
 
     def remove_accents(s: str) -> str:
-        return ''.join(
-            c
-            for c in unicodedata.normalize('NFD', re.sub(r'[Øø]', 'o', s))
-            if unicodedata.category(c) != 'Mn'
-        )
+        return ''.join(c for c in unicodedata.normalize('NFD', re.sub(r'[Øø]', 'o', s))
+                       if unicodedata.category(c) != 'Mn')
 
     def sanitize_for_filename(s: str) -> str:
         return underscorize(
@@ -689,33 +686,26 @@ def flac_dir_finalize_main(directory: Path, *, debug: bool = False) -> None:
                         ),
                     ),
                 ),
-            )
-        )
+            ))
 
     setup_logging(debug=debug, loggers={'deltona': {}})
     path = Path(directory).resolve(strict=True)
     flac_files = ((path / x) for x in Path(directory).iterdir() if x.name.endswith('.flac'))
     new_flac_files: list[Path] = []
-    imgs = (
-        (path / x)
-        for x in Path(directory).iterdir()
-        if re.search(r'\.(?:jpe?g|png|gif|webp)', str(x)) is not None
-    )
+    imgs = ((path / x) for x in Path(directory).iterdir()
+            if re.search(r'\.(?:jpe?g|png|gif|webp)', str(x)) is not None)
     misc_files_prefix = f'00-{path.name.lower()}'
     img_prefix = '-'.join(misc_files_prefix.split('-')[:-1])
     out_m3u = path / f'{misc_files_prefix}.m3u'
     out_sfv = path / f'{misc_files_prefix}.sfv'
     for flac in flac_files:
-        tracknumber, artist, title = itemgetter('tracknumber', 'artist', 'title')(
-            dict(get_flac_tags(flac))
-        )
+        tracknumber, artist, title = itemgetter('tracknumber', 'artist', 'title')(dict(
+            get_flac_tags(flac)))
         new_fn = path / re.sub(
             r'-+',
             '-',
-            (
-                f'{int(tracknumber):02d}-{sanitize_for_filename(artist)}-'
-                f'{sanitize_for_filename(title)}.flac'.lower()
-            ),
+            (f'{int(tracknumber):02d}-{sanitize_for_filename(artist)}-'
+             f'{sanitize_for_filename(title)}.flac'.lower()),
         )
         new_flac_files.append(new_fn)
         flac.rename(new_fn)

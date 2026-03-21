@@ -21,9 +21,8 @@ def mock_rmtree(mocker: MockerFixture) -> Mock:
     return mocker.patch('deltona.gentoo.rmtree')
 
 
-def test_clean_old_kernels_and_modules_success(
-    mock_path: Mock, mock_rmtree: Mock, mocker: MockerFixture
-) -> None:
+def test_clean_old_kernels_and_modules_success(mock_path: Mock, mock_rmtree: Mock,
+                                               mocker: MockerFixture) -> None:
     mock_loc = mock_path.return_value.__truediv__.return_value
     mock_loc.exists.return_value = True
     mock_loc.is_symlink.return_value = True

@@ -48,9 +48,9 @@ def is_ascii_main(file: TextIO) -> None:
     help='Error handling mode.',
 )
 @click.argument('file', type=click.File('r'), default=sys.stdin)
-def urldecode_main(
-    file: TextIO, encoding: str = 'utf-8', errors: DecodeErrorsOption = 'strict'
-) -> None:
+def urldecode_main(file: TextIO,
+                   encoding: str = 'utf-8',
+                   errors: DecodeErrorsOption = 'strict') -> None:
     """Decode a URL-encoded string."""
     ctx = click.get_current_context()
     is_netloc = ctx.info_name == 'netloc' or Path(sys.argv[0]).stem == 'netloc'
@@ -198,9 +198,11 @@ def title_fixer_main(
 @click.argument('file', type=click.File('r'), default=sys.stdin)
 @click.option('-d', '--debug', is_flag=True, help='Enable debug logging.')
 @click.option('--debug-selector', is_flag=True, help='Enable SoupSieve debug logging.')
-@click.option(
-    '-l', '--limit', default=0, type=click.IntRange(0, None), help='Limit number of results.'
-)
+@click.option('-l',
+              '--limit',
+              default=0,
+              type=click.IntRange(0, None),
+              help='Limit number of results.')
 @click.option('-j', '--json', 'json_lines', is_flag=True, help='Output as JSON lines.')
 @click.option('-s', '--strip', is_flag=True, help='Strip whitespace from text content.')
 @click.option('-t', '--text', is_flag=True, help='Output content within the HTML tags only.')
@@ -217,7 +219,10 @@ def cssq_main(
 ) -> None:
     """Filter HTML with CSS."""
     setup_logging(debug=debug, loggers={'bs4': {}, 'deltona': {}, 'soupsieve': {}})
-    for item in cssq(
-        selector, file, debug_selector=debug_selector, limit=limit, strip=strip, text=text
-    ):
+    for item in cssq(selector,
+                     file,
+                     debug_selector=debug_selector,
+                     limit=limit,
+                     strip=strip,
+                     text=text):
         click.echo(json.dumps(str(item)) if json_lines else str(item))

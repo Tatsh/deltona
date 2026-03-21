@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
-from typing import TYPE_CHECKING, TypedDict, cast, override
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING, TypedDict, cast
 
+from typing_extensions import override
 import requests
 
 from .string import strip_ansi_if_no_colors
@@ -52,11 +53,9 @@ class SalaryResponse:
     """Net pay amount."""
     state: float
     """State tax amount."""
-
     @override
     def __str__(self) -> str:
-        return strip_ansi_if_no_colors(
-            f"""Gross     \033[1;32m{self.gross:8.2f}\033[0m
+        return strip_ansi_if_no_colors(f"""Gross     \033[1;32m{self.gross:8.2f}\033[0m
 Federal   \033[1;32m{self.federal:8.2f}\033[0m
 FICA      \033[1;32m{self.fica:8.2f}\033[0m
 Medicare  \033[1;32m{self.medicare:8.2f}\033[0m
@@ -65,13 +64,13 @@ State     \033[1;32m{self.state:8.2f}\033[0m
 Net       \033[1;32m{self.net_pay:8.2f}\033[0m
 
 ------------------
-Fuckery   \033[1;31m{self.fuckery:8.2f}\033[0m"""
-        )
+Fuckery   \033[1;31m{self.fuckery:8.2f}\033[0m""")
 
 
-def calculate_salary(
-    *, hours: int = 70, pay_rate: float = 70.0, state: INCITS38Code = 'FL'
-) -> SalaryResponse:
+def calculate_salary(*,
+                     hours: int = 70,
+                     pay_rate: float = 70.0,
+                     state: INCITS38Code = 'FL') -> SalaryResponse:
     """
     Calculate a US salary using the Symmetry API.
 
@@ -89,7 +88,7 @@ def calculate_salary(
     SalaryResponse
         The response from the Symmetry API.
     """
-    check_date = int(datetime.now(tz=UTC).timestamp() * 1000)
+    check_date = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
     gross_pay = hours * pay_rate
     req = requests.post(
         POST_URI,
@@ -104,12 +103,10 @@ def calculate_salary(
         json={
             'checkDate': check_date,
             'state': state.upper(),
-            'rates': [
-                {
-                    'payRate': str(pay_rate),
-                    'hours': str(hours),
-                }
-            ],
+            'rates': [{
+                'payRate': str(pay_rate),
+                'hours': str(hours),
+            }],
             'grossPay': str(gross_pay),
             'grossPayType': 'PAY_PER_PERIOD',
             'grossPayYTD': '0',
@@ -142,13 +139,34 @@ def calculate_salary(
             'stockOptions': [],
             'stateInfo': {
                 'parms': [
-                    {'name': 'TOTALALLOWANCES', 'value': '0'},
-                    {'name': 'additionalStateWithholding', 'value': '0'},
-                    {'name': 'SPOUSEBLINDNESS', 'value': 'false'},
-                    {'name': 'stateExemption', 'value': 'false'},
-                    {'name': 'PERSONALBLINDNESS', 'value': 'false'},
-                    {'name': 'HEADOFHOUSEHOLD', 'value': 'false'},
-                    {'name': 'FULLTIMESTUDENT', 'value': 'false'},
+                    {
+                        'name': 'TOTALALLOWANCES',
+                        'value': '0'
+                    },
+                    {
+                        'name': 'additionalStateWithholding',
+                        'value': '0'
+                    },
+                    {
+                        'name': 'SPOUSEBLINDNESS',
+                        'value': 'false'
+                    },
+                    {
+                        'name': 'stateExemption',
+                        'value': 'false'
+                    },
+                    {
+                        'name': 'PERSONALBLINDNESS',
+                        'value': 'false'
+                    },
+                    {
+                        'name': 'HEADOFHOUSEHOLD',
+                        'value': 'false'
+                    },
+                    {
+                        'name': 'FULLTIMESTUDENT',
+                        'value': 'false'
+                    },
                 ]
             },
             'voluntaryDeductions': [],

@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from enum import IntEnum
 from os import PathLike
-from typing import TYPE_CHECKING, Annotated, Literal, NotRequired, TypedDict
+from typing import TYPE_CHECKING, Annotated, Literal, TypeAlias, TypeVar, TypedDict
 import os
 import typing
+
+from typing_extensions import NotRequired
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -26,13 +28,13 @@ __all__ = (
     'contains_type_path_like_str',
 )
 
-DecodeErrorsOption = Literal['ignore', 'replace', 'strict']
+DecodeErrorsOption: TypeAlias = Literal['ignore', 'replace', 'strict']
 """
 Decode errors option for string decoding functions.
 
 :meta hide-value:
 """
-INCITS38Code = Literal[
+INCITS38Code: TypeAlias = Literal[
     'AK',
     'AL',
     'AR',
@@ -99,31 +101,31 @@ Two-letter state code according to INCITS 38-2009.
 
 :meta hide-value:
 """
-StrOrBytesPath = str | bytes | PathLike[str] | PathLike[bytes]
+StrOrBytesPath: TypeAlias = str | bytes | PathLike[str] | PathLike[bytes]
 """
 String, bytes, ``PathLike[str]`` or ``PathLike[bytes]``.
 
 :meta hide-value:
 """
-StrPath = str | PathLike[str]
+StrPath: TypeAlias = str | PathLike[str]
 """
 String or ``PathLike[str]``.
 
 :meta hide-value:
 """
-FileDescriptorOrPath = int | StrOrBytesPath
+FileDescriptorOrPath: TypeAlias = int | StrOrBytesPath
 """
 File descriptor or path.
 
 :meta hide-value:
 """
-UNIXStrPath = Annotated[StrPath, 'unix']
+UNIXStrPath: TypeAlias = Annotated[StrPath, 'unix']
 """
 String or ``PathLike[str]`` that is a UNIX path.
 
 :meta hide-value:
 """
-StrPathMustExist = Annotated[StrPath, 'must_exist']
+StrPathMustExist: TypeAlias = Annotated[StrPath, 'must_exist']
 
 
 class CDStatus(IntEnum):
@@ -158,7 +160,10 @@ def contains_type_path_like_str(type_hints: object) -> bool:
     return os.PathLike[str] in typing.get_args(type_hints)
 
 
-def assert_not_none[T](var: T | None) -> T:
+_T = TypeVar('_T')
+
+
+def assert_not_none(var: _T | None) -> _T:
     """
     Assert the ``var`` is not None and return it.
 

@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from binascii import crc32
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING
 from zipfile import ZipFile
 import contextlib
 import io
@@ -15,6 +15,8 @@ import os
 import re
 import shutil
 import subprocess as sp
+
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -40,9 +42,11 @@ log = logging.getLogger(__name__)
 
 
 @contextlib.contextmanager
-def context_os_open(
-    path: StrPath, flags: int, mode: int = 511, *, dir_fd: int | None = None
-) -> Iterator[int]:
+def context_os_open(path: StrPath,
+                    flags: int,
+                    mode: int = 511,
+                    *,
+                    dir_fd: int | None = None) -> Iterator[int]:
     """
     Context-managed file descriptor opener.
 
@@ -79,7 +83,9 @@ def unpack_0day(path: StrPath, *, remove_diz: bool = True) -> None:
         Remove any files matching ``*.diz`` glob (not case-sensitive). Defaults to ``True``.
     """
     path = Path(path)
-    with contextlib.chdir(path):
+    saved = Path.cwd()
+    os.chdir(path)
+    try:
         for zip_file in path.glob('*.zip'):
             with ZipFile(zip_file) as z:
                 z.extractall()
@@ -88,22 +94,15 @@ def unpack_0day(path: StrPath, *, remove_diz: bool = True) -> None:
             for diz in path.glob('*.[Dd][Ii][Zz]'):
                 diz.unlink()
         rars = list(path.glob('*.rar'))
-        with Path(
-            re.sub(r'(?:\.part\d+)?\.r(?:[0-9][0-9]|ar)$', '.sfv', rars[0].name.lower())
-        ).open('w+', encoding='utf-8') as f:
-            f.write(f'; {datetime.now(tz=UTC).astimezone()}\n')
-            f.writelines(
-                f'{rar.name} {crc32(rar.read_bytes()):08X}\n'
-                for rar in sorted(
-                    path.glob(
-                        '*.part*.rar'
-                        if any(
-                            re.search(r'\.part[0-9]{,3}\.rar$', str(r), re.IGNORECASE) for r in rars
-                        )
-                        else '*.[rstuvwxyz][0-9a][0-9r]'
-                    )
-                )
-            )
+        with Path(re.sub(r'(?:\.part\d+)?\.r(?:[0-9][0-9]|ar)$', '.sfv',
+                         rars[0].name.lower())).open('w+', encoding='utf-8') as f:
+            f.write(f'; {datetime.now(tz=timezone.utc).astimezone()}\n')
+            f.writelines(f'{rar.name} {crc32(rar.read_bytes()):08X}\n' for rar in sorted(
+                path.glob('*.part*.rar' if any(
+                    re.search(r'\.part[0-9]{,3}\.rar$', str(r), re.IGNORECASE)
+                    for r in rars) else '*.[rstuvwxyz][0-9a][0-9r]')))
+    finally:
+        os.chdir(saved)
 
 
 def extract_rar_from_zip(zip_file: ZipFile) -> Iterator[str]:
@@ -143,13 +142,14 @@ def unpack_ebook(path: StrPath) -> None:
     FileExistsError
         If no zip files are found.
     """
-
     def unrar_x(rar: StrPath) -> None:
         sp.run(('unrar', 'x', '-y', str(rar)), capture_output=True, check=True)
 
     if not (path := Path(path)).is_dir():
         raise NotADirectoryError
-    with contextlib.chdir(path):
+    saved = Path.cwd()
+    os.chdir(path)
+    try:
         zip_listing = frozenset(ZipFile(x) for x in path.iterdir() if x.name.endswith('.zip'))
         if len(zip_listing) == 0:
             raise FileExistsError
@@ -185,6 +185,8 @@ def unpack_ebook(path: StrPath) -> None:
             zip_file.close()
         for x in extracted:
             x.unlink()
+    finally:
+        os.chdir(saved)
 
 
 GOG_FILESIZE_RE = re.compile(r'filesizes="(\d+?)"')
@@ -271,17 +273,15 @@ class RARInfo:
 class UnRAR:
     """Simple front-end to an ``unrar`` command."""
 
-    LIST_RE = (
-        r'^\s+'
-        r'(?P<attributes>[A-Z\.]{7})\s+'
-        r'(?P<size>\d+)\s+'
-        r'(?P<date>(?P<year>\d{4})-'
-        r'(?P<month>\d{2})-'
-        r'(?P<day>\d{2})\s+'
-        r'(?P<hour>\d{1,2}):'
-        r'(?P<minute>\d{2}))\s+'
-        r'(?P<filename>.*)'
-    )
+    LIST_RE = (r'^\s+'
+               r'(?P<attributes>[A-Z\.]{7})\s+'
+               r'(?P<size>\d+)\s+'
+               r'(?P<date>(?P<year>\d{4})-'
+               r'(?P<month>\d{2})-'
+               r'(?P<day>\d{2})\s+'
+               r'(?P<hour>\d{1,2}):'
+               r'(?P<minute>\d{2}))\s+'
+               r'(?P<filename>.*)')
 
     def __init__(self, unrar_path: StrPath = 'unrar') -> None:
         self.unrar_path = str(unrar_path)
@@ -305,8 +305,8 @@ class UnRAR:
         """
         with sp.Popen(
             (self.unrar_path, 'p', '-y', '-inul', str(rar), inner_filename),
-            stdout=sp.PIPE,
-            close_fds=True,
+                stdout=sp.PIPE,
+                close_fds=True,
         ) as p:
             yield p
 
@@ -355,16 +355,13 @@ class UnRAR:
         RARInfo
             Information about a file in the RAR archive.
         """
-        for mm in (
-            m
-            for line in sp.run(
-                (self.unrar_path, 'l', '-y', rar), text=True, check=True, capture_output=True
-            ).stdout.splitlines()
-            if (m := re.match(self.LIST_RE, line))
-        ):
+        for mm in (m for line in sp.run(
+            (self.unrar_path, 'l', '-y',
+             rar), text=True, check=True, capture_output=True).stdout.splitlines()
+                   if (m := re.match(self.LIST_RE, line))):
             yield RARInfo(
                 attributes_str=mm['attributes'],
-                date=datetime.strptime(mm['date'], '%Y-%m-%d %H:%M').replace(tzinfo=UTC),
+                date=datetime.strptime(mm['date'], '%Y-%m-%d %H:%M').replace(tzinfo=timezone.utc),
                 name=mm['filename'],
                 size=int(mm['size']),
             )
@@ -372,7 +369,6 @@ class UnRAR:
 
 class SFVVerificationError(Exception):
     """Raised when SFV fails verification."""
-
     @override
     def __init__(self, filename: StrPath, expected_crc: int, actual_crc: int) -> None:
         super().__init__(f'{filename}: Expected {expected_crc:08X}. Actual: {actual_crc:08X}.')
@@ -394,13 +390,9 @@ def verify_sfv(sfv_file: StrPath) -> None:
     """
     sfv_file = Path(sfv_file)
     with sfv_file.open(encoding='utf-8') as f:
-        for line in (
-            lj
-            for lj in (
-                li.split(';', 1)[0].split('#', 1)[0].strip() for li in f if li[0] not in {';', '#'}
-            )
-            if re.search(r'[a-z0-9]{08}$', lj, re.IGNORECASE)
-        ):
+        for line in (lj for lj in (li.split(';', 1)[0].split('#', 1)[0].strip() for li in f
+                                   if li[0] not in {';', '#'})
+                     if re.search(r'[a-z0-9]{08}$', lj, re.IGNORECASE)):
             filename, recorded_crc_s = line.rsplit(' ', 1)
             log.debug('Checking "%s".', filename)
             recorded_crc = int(recorded_crc_s, 16)
@@ -424,10 +416,10 @@ def make_sfv(sfv_file: StrPath, files: Iterable[StrPath], *, header: bool = True
     file_paths = sorted([Path(file) for file in files])
     with Path(sfv_file).open('w+', encoding='utf-8') as f:
         if header:
-            f.write(f'; Generated on {datetime.now(tz=UTC).isoformat(" ")}\n')
+            f.write(f'; Generated on {datetime.now(tz=timezone.utc).isoformat(" ")}\n')
             for file in file_paths:
                 stat = file.stat()
-                dt = datetime.fromtimestamp(stat.st_mtime, tz=UTC).isoformat(' ')
+                dt = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(' ')
                 f.write(f'; {stat.st_size:-10d} {dt} {file.stem}\n')
         for file in file_paths:
             f.write(f'{file.name} {crc32(file.read_bytes()):08X}\n')

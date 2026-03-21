@@ -40,7 +40,8 @@ def test_context_os_open(mocker: MockerFixture) -> None:
 
 def test_unpack_0day(mocker: MockerFixture) -> None:
     mock_path = mocker.patch('deltona.io.Path')
-    mocker.patch('deltona.io.contextlib.chdir')
+    mocker.patch('os.chdir')
+    mocker.patch('os.getcwd', return_value='/fake')
     mocker.patch('deltona.io.ZipFile')
     mocker.patch('deltona.io.crc32').return_value = 0
     mock_zip = mocker.Mock()
@@ -53,13 +54,13 @@ def test_unpack_0day(mocker: MockerFixture) -> None:
     mock_path.return_value.glob.assert_any_call('*.rar')
     mock_path.return_value.glob.assert_any_call('*.[rstuvwxyz][0-9a][0-9r]')
     mock_path.return_value.open.return_value.__enter__.return_value.writelines.assert_any_call(
-        mocker.ANY
-    )
+        mocker.ANY)
 
 
 def test_unpack_0day_no_diz(mocker: MockerFixture) -> None:
     mock_path = mocker.patch('deltona.io.Path')
-    mocker.patch('deltona.io.contextlib.chdir')
+    mocker.patch('os.chdir')
+    mocker.patch('os.getcwd', return_value='/fake')
     mocker.patch('deltona.io.ZipFile')
     mocker.patch('deltona.io.crc32').return_value = 0
     mock_zip = mocker.Mock()
@@ -70,8 +71,7 @@ def test_unpack_0day_no_diz(mocker: MockerFixture) -> None:
     mock_path.return_value.glob.assert_any_call('*.rar')
     mock_path.return_value.glob.assert_any_call('*.[rstuvwxyz][0-9a][0-9r]')
     mock_path.return_value.open.return_value.__enter__.return_value.writelines.assert_any_call(
-        mocker.ANY
-    )
+        mocker.ANY)
 
 
 def test_extract_rar_from_zip_extracts_rar_files(mocker: MockerFixture) -> None:
@@ -98,7 +98,8 @@ def test_extract_rar_from_zip_no_rar_files(mocker: MockerFixture) -> None:
 
 def test_unpack_ebook_success_pdf(mocker: MockerFixture) -> None:
     mock_path = mocker.patch('deltona.io.Path')
-    mocker.patch('deltona.io.contextlib.chdir')
+    mocker.patch('os.chdir')
+    mocker.patch('os.getcwd', return_value='/fake')
     mock_zipfile_cls = mocker.patch('deltona.io.ZipFile')
     mock_extract_rar_from_zip = mocker.patch('deltona.io.extract_rar_from_zip')
     mock_sp_run = mocker.patch('deltona.io.sp.run')
@@ -134,7 +135,8 @@ def test_unpack_ebook_success_pdf(mocker: MockerFixture) -> None:
 
 def test_unpack_ebook_success_epub(mocker: MockerFixture) -> None:
     mock_path = mocker.patch('deltona.io.Path')
-    mocker.patch('deltona.io.contextlib.chdir')
+    mocker.patch('os.chdir')
+    mocker.patch('os.getcwd', return_value='/fake')
     mock_zipfile_cls = mocker.patch('deltona.io.ZipFile')
     mock_extract_rar_from_zip = mocker.patch('deltona.io.extract_rar_from_zip')
     mock_sp_run = mocker.patch('deltona.io.sp.run')
@@ -176,7 +178,8 @@ def test_unpack_ebook_not_a_directory(mocker: MockerFixture) -> None:
 
 def test_unpack_ebook_no_zip_files(mocker: MockerFixture) -> None:
     mock_path = mocker.patch('deltona.io.Path')
-    mocker.patch('deltona.io.contextlib.chdir')
+    mocker.patch('os.chdir')
+    mocker.patch('os.getcwd', return_value='/fake')
     mock_dir = mocker.Mock()
     mock_path.return_value = mock_dir
     mock_dir.is_dir.return_value = True
@@ -187,7 +190,8 @@ def test_unpack_ebook_no_zip_files(mocker: MockerFixture) -> None:
 
 def test_unpack_ebook_no_rar_found(mocker: MockerFixture) -> None:
     mock_path = mocker.patch('deltona.io.Path')
-    mocker.patch('deltona.io.contextlib.chdir')
+    mocker.patch('os.chdir')
+    mocker.patch('os.getcwd', return_value='/fake')
     mock_zipfile_cls = mocker.patch('deltona.io.ZipFile')
     mock_extract_rar_from_zip = mocker.patch('deltona.io.extract_rar_from_zip')
     mock_dir = mocker.Mock()
@@ -203,7 +207,8 @@ def test_unpack_ebook_no_rar_found(mocker: MockerFixture) -> None:
 
 def test_unpack_ebook_no_pdf_or_epub(mocker: MockerFixture) -> None:
     mock_path = mocker.patch('deltona.io.Path')
-    mocker.patch('deltona.io.contextlib.chdir')
+    mocker.patch('os.chdir')
+    mocker.patch('os.getcwd', return_value='/fake')
     mock_zipfile_cls = mocker.patch('deltona.io.ZipFile')
     mock_extract_rar_from_zip = mocker.patch('deltona.io.extract_rar_from_zip')
     mocker.patch('deltona.io.sp.run')
@@ -227,7 +232,8 @@ def test_unpack_ebook_no_pdf_or_epub(mocker: MockerFixture) -> None:
 
 def test_unpack_ebook_more_than_1_pdf(mocker: MockerFixture) -> None:
     mock_path = mocker.patch('deltona.io.Path')
-    mocker.patch('deltona.io.contextlib.chdir')
+    mocker.patch('os.chdir')
+    mocker.patch('os.getcwd', return_value='/fake')
     mock_zipfile_cls = mocker.patch('deltona.io.ZipFile')
     mock_extract_rar_from_zip = mocker.patch('deltona.io.extract_rar_from_zip')
     mocker.patch('deltona.io.sp.run')
@@ -260,7 +266,8 @@ def test_unpack_ebook_more_than_1_pdf(mocker: MockerFixture) -> None:
 
 def test_unpack_ebook_more_than_1_epub(mocker: MockerFixture) -> None:
     mock_path = mocker.patch('deltona.io.Path')
-    mocker.patch('deltona.io.contextlib.chdir')
+    mocker.patch('os.chdir')
+    mocker.patch('os.getcwd', return_value='/fake')
     mock_zipfile_cls = mocker.patch('deltona.io.ZipFile')
     mock_extract_rar_from_zip = mocker.patch('deltona.io.extract_rar_from_zip')
     mocker.patch('deltona.io.sp.run')
@@ -293,7 +300,8 @@ def test_unpack_ebook_more_than_1_epub(mocker: MockerFixture) -> None:
 
 def test_unpack_ebook_pdf_not_pdf(mocker: MockerFixture) -> None:
     mock_path = mocker.patch('deltona.io.Path')
-    mocker.patch('deltona.io.contextlib.chdir')
+    mocker.patch('os.chdir')
+    mocker.patch('os.getcwd', return_value='/fake')
     mock_zipfile_cls = mocker.patch('deltona.io.ZipFile')
     mock_extract_rar_from_zip = mocker.patch('deltona.io.extract_rar_from_zip')
     mocker.patch('deltona.io.sp.run')
@@ -452,9 +460,8 @@ def test_verify_sfv_handles_multiple_files(mocker: MockerFixture) -> None:
         return 0
 
     parent = mock_file.parent
-    parent.__truediv__.side_effect = lambda fname: mocker.Mock(
-        read_bytes=mocker.Mock(return_value=b'data1' if fname == 'file1.bin' else b'data2')
-    )
+    parent.__truediv__.side_effect = lambda fname: mocker.Mock(read_bytes=mocker.Mock(
+        return_value=b'data1' if fname == 'file1.bin' else b'data2'))
     mocker.patch('deltona.io.crc32', side_effect=crc32_side_effect)
     verify_sfv('test.sfv')
 
@@ -523,7 +530,7 @@ Details: RAR 1.5
     assert files[1].name == 'xy/file1.txt'
     assert files[0].name == 'xy/file2.bin'
     assert files[0].size == 137536
-    assert files[0].date == datetime.datetime(2011, 6, 7, 21, 54, tzinfo=datetime.UTC)
+    assert files[0].date == datetime.datetime(2011, 6, 7, 21, 54, tzinfo=datetime.timezone.utc)
 
 
 def test_unrar_test_extraction_success(mocker: MockerFixture) -> None:
@@ -531,9 +538,8 @@ def test_unrar_test_extraction_success(mocker: MockerFixture) -> None:
     unrar = UnRAR('unrar')
     # Should not raise
     unrar.test_extraction('archive.rar', 'file.txt')
-    mock_sp_run.assert_called_once_with(
-        ('unrar', 't', '-y', '-inul', 'archive.rar', 'file.txt'), check=True
-    )
+    mock_sp_run.assert_called_once_with(('unrar', 't', '-y', '-inul', 'archive.rar', 'file.txt'),
+                                        check=True)
 
 
 def test_unrar_test_extraction_failure(mocker: MockerFixture) -> None:
@@ -550,6 +556,6 @@ def test_unrar_pipe_context_manager(mocker: MockerFixture) -> None:
     unrar = UnRAR('unrar')
     with unrar.pipe('archive.rar', 'file.txt') as proc:
         assert proc is mock_proc
-    mock_popen.assert_called_once_with(
-        ('unrar', 'p', '-y', '-inul', 'archive.rar', 'file.txt'), stdout=mocker.ANY, close_fds=True
-    )
+    mock_popen.assert_called_once_with(('unrar', 'p', '-y', '-inul', 'archive.rar', 'file.txt'),
+                                       stdout=mocker.ANY,
+                                       close_fds=True)

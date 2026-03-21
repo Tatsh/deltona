@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from shlex import quote
 from time import sleep
-from typing import TYPE_CHECKING, Any, cast, override
+from typing import TYPE_CHECKING, Any, cast
 import configparser
 import json
 import logging
@@ -16,6 +16,7 @@ import subprocess as sp
 import sys
 
 from binaryornot.helpers import is_binary_string
+from typing_extensions import override
 
 from .io import context_os_open
 from .string import slugify
@@ -126,9 +127,8 @@ def inhibit_notifications(name: str = __name__, reason: str = 'No reason specifi
     except (ImportError, ModuleNotFoundError):  # pragma: no cover
         log.exception('Cannot import pydbus.', stack_info=False)
         return False
-    notifications = SessionBus().get(
-        'org.freedesktop.Notifications', '/org/freedesktop/Notifications'
-    )
+    notifications = SessionBus().get('org.freedesktop.Notifications',
+                                     '/org/freedesktop/Notifications')
     if notifications.Inhibited:
         return False
     log.debug('Disabling notifications.')
@@ -157,9 +157,8 @@ def uninhibit_notifications() -> None:
     except (ImportError, ModuleNotFoundError):  # pragma: no cover
         log.exception('Cannot import pydbus.', stack_info=False)
         return
-    notifications = SessionBus().get(
-        'org.freedesktop.Notifications', '/org/freedesktop/Notifications'
-    )
+    notifications = SessionBus().get('org.freedesktop.Notifications',
+                                     '/org/freedesktop/Notifications')
     if not notifications:
         raise ConnectionError
     if not notifications.Inhibited:
@@ -209,11 +208,8 @@ def find_bluetooth_device_info_by_name(name: str) -> tuple[str, OrgBluezDevice1D
 
     bluez = SystemBus().get('org.bluez', '/')
     for k, v in bluez['org.freedesktop.DBus.ObjectManager'].GetManagedObjects().items():
-        if (
-            'org.bluez.Device1' in v
-            and 'Name' in v['org.bluez.Device1']
-            and v['org.bluez.Device1']['Name'] == name
-        ):
+        if ('org.bluez.Device1' in v and 'Name' in v['org.bluez.Device1']
+                and v['org.bluez.Device1']['Name'] == name):
             return k, v['org.bluez.Device1']
     raise KeyError(name)
 
@@ -312,11 +308,8 @@ def kill_gamescope() -> None:
     """Kill all running Gamescope and gamescopereaper processes."""
     import psutil  # noqa: PLC0415
 
-    for proc in (
-        x
-        for x in psutil.process_iter(('pid', 'name', 'username'))
-        if x.info['name'] in {'gamescope', 'gamescopereaper'}
-    ):
+    for proc in (x for x in psutil.process_iter(('pid', 'name', 'username'))
+                 if x.info['name'] in {'gamescope', 'gamescopereaper'}):
         proc.kill()
 
 
@@ -324,18 +317,14 @@ def kill_wine() -> None:
     """Kill all running Wine processes including wineserver and Wine-wrapped executables."""
     import psutil  # noqa: PLC0415
 
-    for proc in (
-        x
-        for x in psutil.process_iter(('pid', 'name', 'username'))
-        if x.info['name'] in {'wineserver', 'wine-preloader', 'wine64-preloader'}
-        or (x.info['name'].lower().endswith('.exe'))
-    ):
+    for proc in (x for x in psutil.process_iter(('pid', 'name', 'username'))
+                 if x.info['name'] in {'wineserver', 'wine-preloader', 'wine64-preloader'} or (
+                     x.info['name'].lower().endswith('.exe'))):
         proc.kill()
 
 
 class MultipleKeySlots(Exception):
     """Raised when a LUKS device has more than one keyslot."""
-
     @override
     def __init__(self, dev: str) -> None:
         super().__init__(f'Device {dev} has more than one keyslot. This is not supported.')
@@ -404,8 +393,7 @@ POSITION_RE = (
     r'((e?DP-[0-9]+|HDMI-[0-9]+(-[0-9]+)?|VNC-[0-9]+)$)|'
     r'((e?DP-[0-9]+|HDMI-[0-9]+(-[0-9]+)?|VNC-[0-9]+) (Height|Width|(X|Y)Position|Window-Maximized))|'  # noqa: E501
     r'([0-9]+x[0-9]+ screen: (Height|Width|(X|Y)Position)$)|'
-    r'([0-9] screens: (Height|Width|(X|Y)Position)$)'
-)
+    r'([0-9] screens: (Height|Width|(X|Y)Position)$)')
 STATE_RE = r'^AAAA/'
 
 

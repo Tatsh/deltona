@@ -102,9 +102,10 @@ def _excluded() -> frozenset[str]:
 
 
 class _LazyGroup(click.Group):
-    def __init__(
-        self, *args: Any, lazy_subcommands: dict[str, str] | None = None, **kwargs: Any
-    ) -> None:
+    def __init__(self,
+                 *args: Any,
+                 lazy_subcommands: dict[str, str] | None = None,
+                 **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._lazy_subcommands = lazy_subcommands or {}
 
@@ -112,7 +113,10 @@ class _LazyGroup(click.Group):
         excluded = _excluded()
         return sorted(k for k in self._lazy_subcommands if k not in excluded)
 
-    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:  # noqa: ARG002
+    def get_command(
+            self,
+            ctx: click.Context,  # noqa: ARG002
+            cmd_name: str) -> click.Command | None:
         if cmd_name not in self._lazy_subcommands or cmd_name in _excluded():
             return None
         module_path, func_name = self._lazy_subcommands[cmd_name].rsplit(':', 1)

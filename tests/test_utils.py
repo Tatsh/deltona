@@ -114,7 +114,7 @@ def test_unregister_wine_file_associations_basic(mocker: MockerFixture) -> None:
             mock_file7,
             mock_file8,
         ],
-        start=1,
+            start=1,
     ):
         f.unlink.assert_called()
     mimeinfo_mock.unlink.assert_called()
@@ -396,9 +396,9 @@ def test_kill_processes_by_name_windows_basic(mocker: MockerFixture) -> None:
     mocker.patch('deltona.utils.IS_WINDOWS', True)
     run_mock = mocker.patch('deltona.utils.sp.run')
     result = kill_processes_by_name('notepad')
-    run_mock.assert_any_call(
-        ('taskkill.exe', '/im', 'notepad.exe'), check=False, capture_output=True
-    )
+    run_mock.assert_any_call(('taskkill.exe', '/im', 'notepad.exe'),
+                             check=False,
+                             capture_output=True)
     assert result is None
 
 
@@ -416,8 +416,7 @@ def test_kill_processes_by_name_windows_with_wait_timeout(mocker: MockerFixture)
     run_mock.side_effect = [
         mocker.Mock(),  # taskkill
         mocker.Mock(
-            stdout='"Image Name","PID"\n"notepad.exe","1234"\n"notepad.exe","5678"\n'
-        ),  # tasklist
+            stdout='"Image Name","PID"\n"notepad.exe","1234"\n"notepad.exe","5678"\n'),  # tasklist
     ]
     sleep_mock = mocker.patch('deltona.utils.time.sleep')
     result = kill_processes_by_name('notepad', wait_timeout=0.1)
@@ -440,9 +439,8 @@ def test_kill_processes_by_name_unix_with_wait_timeout_and_force(mocker: MockerF
     sleep_mock.assert_called_once_with(0.2)
 
 
-def test_kill_processes_by_name_no_processes_left(
-    mocker: MockerFixture, monkeypatch: MonkeyPatch
-) -> None:
+def test_kill_processes_by_name_no_processes_left(mocker: MockerFixture,
+                                                  monkeypatch: MonkeyPatch) -> None:
     mocker.patch('deltona.utils.IS_WINDOWS', True)
     run_mock = mocker.patch('deltona.utils.sp.run')
     run_mock.side_effect = [

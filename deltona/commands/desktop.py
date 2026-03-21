@@ -129,9 +129,10 @@ def _get_gi_repository_glib() -> ModuleType:  # pragma: no cover
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
-@click.option(
-    '--device', 'device_name', default='hci0', help='Bluetooth device (defaults to hci0).'
-)
+@click.option('--device',
+              'device_name',
+              default='hci0',
+              help='Bluetooth device (defaults to hci0).')
 def connect_g603_main(device_name: str = 'hci0', *, debug: bool = False) -> None:
     """
     Connect a G603 Bluetooth mouse, disconnecting/removing first if necessary.
@@ -157,17 +158,15 @@ def connect_g603_main(device_name: str = 'hci0', *, debug: bool = False) -> None
     bus = system_bus()
     adapter = bus.get('org.bluez', f'/org/bluez/{device_name}')
 
-    def on_properties_changed(
-        _: Any, __: Any, object_path: str, ___: Any, ____: Any, props: GLib.Variant
-    ) -> None:
+    def on_properties_changed(_: Any, __: Any, object_path: str, ___: Any, ____: Any,
+                              props: GLib.Variant) -> None:
         unpacked = props.unpack()
         dev_iface = unpacked[0]
         values = unpacked[1]
         if dev_iface == 'org.bluez.Adapter1' and values.get('Discovering'):
             log.debug('Scan on.')
-        elif dev_iface == 'org.bluez.Device1' and (
-            m := re.match(rf'/org/bluez/{device_name}/dev_(.*)', object_path)
-        ):
+        elif dev_iface == 'org.bluez.Device1' and (m := re.match(
+                rf'/org/bluez/{device_name}/dev_(.*)', object_path)):
             mac = m.group(1).replace('_', ':')
             for k in ('ServicesResolved', 'Connected'):
                 if k in values and not values[k]:
@@ -210,7 +209,8 @@ def connect_g603_main(device_name: str = 'hci0', *, debug: bool = False) -> None
     with contextlib.suppress(KeyError):
         while res := find_bluetooth_device_info_by_name('G603'):
             object_path, info = res
-            log.debug('Removing device with MAC address %s.', info['Address'])  # type: ignore[typeddict-item]
+            log.debug('Removing device with MAC address %s.',
+                      info['Address'])  # type: ignore[typeddict-item]
             adapter.RemoveDevice(object_path)
     click.echo('Put the mouse in pairing mode and be very patient.')
     log.debug('Starting scan.')
@@ -235,17 +235,18 @@ def kill_gamescope_main() -> None:
 @click.option('--no-clipboard', is_flag=True, help='Do not copy URL to clipboard.')
 @click.option('--no-gui', is_flag=True, help='Disable GUI interactions.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
-@click.option(
-    '-t', '--timeout', type=float, default=5, help='Timeout in seconds.', metavar='TIMEOUT'
-)
+@click.option('-t',
+              '--timeout',
+              type=float,
+              default=5,
+              help='Timeout in seconds.',
+              metavar='TIMEOUT')
 @click.option(
     '--xdg-install',
     default=None,
     metavar='PATH',
-    help=(
-        'Install .desktop file. Argument is the installation prefix such as /usr. Use '
-        '- to install to user XDG directory.'
-    ),
+    help=('Install .desktop file. Argument is the installation prefix such as /usr. Use '
+          '- to install to user XDG directory.'),
 )
 def upload_to_imgbb_main(
     filenames: Sequence[Path],
@@ -293,9 +294,10 @@ Version=1.0
     show_gui = not no_gui and len(filenames) == 1 and kdialog
     try:
         for name in filenames:
-            r = upload_to_imgbb(
-                name, api_key=api_key, keyring_username=keyring_username, timeout=timeout
-            )
+            r = upload_to_imgbb(name,
+                                api_key=api_key,
+                                keyring_username=keyring_username,
+                                timeout=timeout)
             if not show_gui:
                 click.echo(r.json()['data']['url'])
     except HTTPError as e:
@@ -328,26 +330,22 @@ def mpv_sbs_main(
     debug: bool = False,
 ) -> None:
     """Display two videos side by side in mpv."""
-
     @overload
-    def get_prop(
-        prop: Literal['codec_type'], info: ProbeDict
-    ) -> Literal['audio', 'video']:  # pragma: no cover
+    def get_prop(prop: Literal['codec_type'],
+                 info: ProbeDict) -> Literal['audio', 'video']:  # pragma: no cover
         ...
 
     @overload
-    def get_prop(
-        prop: Literal['disposition'], info: ProbeDict
-    ) -> StreamDispositionDict:  # pragma: no cover
+    def get_prop(prop: Literal['disposition'],
+                 info: ProbeDict) -> StreamDispositionDict:  # pragma: no cover
         ...
 
     @overload
     def get_prop(prop: Literal['height', 'width'], info: ProbeDict) -> int:  # pragma: no cover
         ...
 
-    def get_prop(
-        prop: Literal['codec_type', 'disposition', 'height', 'width'], info: ProbeDict
-    ) -> Literal['audio', 'video'] | StreamDispositionDict | int:
+    def get_prop(prop: Literal['codec_type', 'disposition', 'height', 'width'],
+                 info: ProbeDict) -> Literal['audio', 'video'] | StreamDispositionDict | int:
         return max(
             (x for x in info['streams'] if x['codec_type'] == 'video'),
             key=lambda x: x['disposition'].get('default', 0),
@@ -355,11 +353,8 @@ def mpv_sbs_main(
 
     def get_default_video_index(info: ProbeDict) -> int:
         return next(
-            (
-                i
-                for i, x in enumerate(info['streams'])
-                if x.get('disposition', {}).get('default', 0)
-            ),
+            (i
+             for i, x in enumerate(info['streams']) if x.get('disposition', {}).get('default', 0)),
             next((i for i, x in enumerate(info['streams']) if x['codec_type'] == 'video'), 0),
         )
 
@@ -375,15 +370,12 @@ def mpv_sbs_main(
     assert width2 <= max_width, 'Video 2 is too wide'
     assert width2 > min_width, 'Invalid width in video 2'
     scale_w = max(width1, width2)
-    scale_h = (
-        int(get_prop('height', info1)) if scale_w == width1 else int(get_prop('height', info2))
-    )
+    scale_h = (int(get_prop('height', info1)) if scale_w == width1 else int(
+        get_prop('height', info2)))
     scale = '' if width1 == width2 and height1 == height2 else f'scale={scale_w}x{scale_h}'
     scale1, scale2 = scale if scale_h != height1 else '', scale if scale_h == height1 else ''
-    second_stream_index = (
-        len([x for x in info1['streams'] if x['codec_type'] == 'video'])
-        + get_default_video_index(info2)
-    ) + 1
+    second_stream_index = (len([x for x in info1['streams'] if x['codec_type'] == 'video']) +
+                           get_default_video_index(info2)) + 1
     if not scale1 and not scale2:
         filter_chain = '[vid1][vid2] hstack [vo]'
     else:

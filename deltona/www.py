@@ -9,14 +9,15 @@ from http import HTTPStatus
 from itertools import chain
 from os import scandir
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, NotRequired, TypedDict, cast
-import contextlib
+from typing import TYPE_CHECKING, Literal, TypeAlias, TypedDict, cast
 import logging
+import os
 import plistlib
 import re
 import urllib.parse
 
 from bs4 import BeautifulSoup as Soup, Tag
+from typing_extensions import NotRequired
 import keyring
 import requests
 
@@ -47,9 +48,10 @@ KEY_ORIGIN_URL = 'user.xdg.origin.url'
 KEY_WHERE_FROMS = 'com.apple.metadata:kMDItemWhereFroms'
 
 
-def _getxattr(
-    file: FileDescriptorOrPath, name: str, *, follow_symlinks: bool = False
-) -> bytes:  # pragma: no cover
+def _getxattr(file: FileDescriptorOrPath,
+              name: str,
+              *,
+              follow_symlinks: bool = False) -> bytes:  # pragma: no cover
     from os import getxattr  # noqa: PLC0415
 
     return getxattr(file, name, follow_symlinks=follow_symlinks)
@@ -78,11 +80,12 @@ def where_from(file: FileDescriptorOrPath, *, webpage: bool = False) -> str | No
     return attr_value
 
 
-def generate_html_dir_tree(
-    start_dir: StrPath, *, follow_symlinks: bool = False, depth: int = 2
-) -> str:
+def generate_html_dir_tree(start_dir: StrPath,
+                           *,
+                           follow_symlinks: bool = False,
+                           depth: int = 2) -> str:
     """
-    Generate a HTML directory listing.
+    Generate an HTML directory listing.
 
     Parameters
     ----------
@@ -98,17 +101,14 @@ def generate_html_dir_tree(
     str
         Complete HTML document string.
     """
-
     def recurse_cwd(path: Path, _cur_depth: int = 0) -> Iterator[str]:
         for entry in sorted(
-            sorted(scandir(path), key=lambda x: x.name),
-            key=lambda x: not x.is_dir(follow_symlinks=follow_symlinks),
+                sorted(scandir(path), key=lambda x: x.name),
+                key=lambda x: not x.is_dir(follow_symlinks=follow_symlinks),
         ):
             if entry.is_dir(follow_symlinks=follow_symlinks) and _cur_depth < depth:
-                yield (
-                    '<li class="dir mui--text-dark mui--text-body2"><details><summary>'
-                    f'<code>{escape(entry.name)}/</code></summary><ul>'
-                )
+                yield ('<li class="dir mui--text-dark mui--text-body2"><details><summary>'
+                       f'<code>{escape(entry.name)}/</code></summary><ul>')
                 yield from recurse_cwd(Path(entry), _cur_depth=_cur_depth + 1)
                 yield '</ul></details></li>'
             else:
@@ -117,11 +117,12 @@ def generate_html_dir_tree(
                 slash = '' if not isd else '/'
                 yield (
                     f'<li class="{class_} mui--text-dark mui--text-body1"><a class="mui--text-dark"'
-                    f' href="./{entry.path}"><code>{escape(entry.name)}{slash}</code></a></li>'
-                )
+                    f' href="./{entry.path}"><code>{escape(entry.name)}{slash}</code></a></li>')
 
     start_dir = Path(start_dir).resolve(strict=True)
-    with contextlib.chdir(start_dir):
+    saved = Path.cwd()
+    os.chdir(start_dir)
+    try:
         title = start_dir.name
         files = ''.join(chain.from_iterable(recurse_cwd(start_dir)))
         return f"""<!DOCTYPE html>
@@ -157,6 +158,8 @@ ul {{
 </div>
 </body>
 </html>"""
+    finally:
+        os.chdir(saved)
 
 
 def upload_to_imgbb(
@@ -247,16 +250,15 @@ class BookmarksHTMLFolder(TypedDict):
     """Type discriminator."""
 
 
-BookmarksDataset = list[BookmarksHTMLFolder | BookmarksHTMLLink]
+BookmarksDataset: TypeAlias = list[BookmarksHTMLFolder | BookmarksHTMLLink]
 """
 Bookmark top structure.
 
 :meta hide-value:
 """
 
-RecurseBookmarksHTMLCallback = Callable[
-    [BookmarksHTMLAnchorAttributes, str, Sequence[tuple[str, BookmarksHTMLFolderAttributes]]], None
-]
+RecurseBookmarksHTMLCallback: TypeAlias = Callable[
+    [BookmarksHTMLAnchorAttributes, str, Sequence[tuple[str, BookmarksHTMLFolderAttributes]]], None]
 """
 Callback for :py:func:`recurse_bookmarks_html` to call for each link.
 
@@ -299,15 +301,15 @@ def recurse_bookmarks_html(soup: Tag, callback: RecurseBookmarksHTMLCallback) ->
 
 
 def create_parsed_tree_structure(
-    folder_path: Sequence[tuple[str, BookmarksHTMLFolderAttributes]], data: BookmarksDataset
-) -> list[BookmarksHTMLFolder | BookmarksHTMLLink]:
+        folder_path: Sequence[tuple[str, BookmarksHTMLFolderAttributes]],
+        data: BookmarksDataset) -> list[BookmarksHTMLFolder | BookmarksHTMLLink]:
     keys = [f[0] for f in folder_path]
     ref = data
     # This breaks for folders that are named the same at the same depth
     for i, key in enumerate(keys):
         try:
             next(x for x in ref if x['type'] == 'folder' and x['name'] == key)
-        except StopIteration:
+        except StopIteration:  # noqa: PERF203
             new_level: BookmarksHTMLFolder = {
                 'attrs': folder_path[i][1],
                 'children': [],
@@ -350,8 +352,7 @@ def parse_bookmarks_html(html_content: str) -> BookmarksDataset:
 
 
 def check_bookmarks_html_urls(
-    html_content: str,
-) -> tuple[BookmarksDataset, BookmarksDataset, BookmarksDataset]:
+        html_content: str) -> tuple[BookmarksDataset, BookmarksDataset, BookmarksDataset]:
     """
     Check a browser's exported bookmarks.html's URLs.
 

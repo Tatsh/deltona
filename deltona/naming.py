@@ -224,21 +224,18 @@ def adjust_title(
                 continue
             # Detect an upper-case new_word not to change.
             # First detect I and ignore it, then detect uppercase letters and numbers.
-            if (
-                original_words[index] == new_word.upper() and not re.match(r'[^\w]', new_word)
-            ) and (
-                not (mode == Mode.English and new_word == 'I')
-                and (index == last_index and re.match(r'[A-Z0-9]+', original_words[index]))
-            ):
+            if (original_words[index] == new_word.upper() and not re.match(r'[^\w]', new_word)
+                ) and (not (mode == Mode.English and new_word == 'I') and
+                       (index == last_index and re.match(r'[A-Z0-9]+', original_words[index]))):
                 title.append(original_words[index])
                 continue
             begin = end = ''
             if begin_match := re.match(r'^(\W+)', new_word):
                 begin = begin_match.group(0)
-                new_word = new_word[len(begin) :]
+                new_word = new_word[len(begin):]
             if end_match := re.search(r'(\W+)$', new_word):
                 end = end_match.group(0)
-                new_word = new_word[0 : -len(end)]
+                new_word = new_word[0:-len(end)]
             if new_word.lower() in to_lower_case_array:
                 new_word = word_list[index] = new_word.lower()
             new_word = fix_apostrophes(new_word)

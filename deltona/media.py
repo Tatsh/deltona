@@ -179,9 +179,10 @@ def is_audio_input_format_supported(
     return bool(supported_audio_input_formats(input_device, formats=(format,), rates=(rate,)))
 
 
-def add_info_json_to_media_file(
-    path: StrPath, info_json: StrPath | None = None, *, debug: bool = False
-) -> None:
+def add_info_json_to_media_file(path: StrPath,
+                                info_json: StrPath | None = None,
+                                *,
+                                debug: bool = False) -> None:
     """
     Add yt-dlp ``info.json`` file to media file at ``path``.
 
@@ -225,17 +226,14 @@ def add_info_json_to_media_file(
 
     def mkvpropedit_add_json() -> None:
         if any(
-            re.match(
-                (
-                    r"^Attachment ID \d+: type 'application/json', size \d+ bytes, "
-                    r"file name 'info.json'"
-                ),
-                line,
-            )
-            for line in sp.run(
-                ('mkvmerge', '--identify', str(path)), capture_output=True, check=True, text=True
-            ).stdout.splitlines()
-        ):
+                re.match(
+                    (r"^Attachment ID \d+: type 'application/json', size \d+ bytes, "
+                     r"file name 'info.json'"),
+                    line,
+                ) for line in sp.run(('mkvmerge', '--identify', str(path)),
+                                     capture_output=True,
+                                     check=True,
+                                     text=True).stdout.splitlines()):
             log.warning('Attachment named info.json already exists. Not modifying file.')
             return
         log.debug('Attaching info.json to MKV.')
@@ -256,10 +254,12 @@ def add_info_json_to_media_file(
     def flac_mp3_add_json() -> None:
         log.debug('Attaching info.json.')
         with (
-            tempfile.NamedTemporaryFile(suffix=path.suffix, delete=False, dir=path.parent) as tf,
-            tempfile.NamedTemporaryFile(
-                suffix='.ffmetadata', encoding='utf-8', dir=path.parent, mode='w+'
-            ) as ffm,
+                tempfile.NamedTemporaryFile(suffix=path.suffix, delete=False, dir=path.parent) as
+                tf,
+                tempfile.NamedTemporaryFile(suffix='.ffmetadata',
+                                            encoding='utf-8',
+                                            dir=path.parent,
+                                            mode='w+') as ffm,
         ):
             sp.run(
                 (
@@ -282,9 +282,11 @@ def add_info_json_to_media_file(
             is_mp3 = path.suffix == '.mp3'
             key = r'TXXX=info_json\=' if is_mp3 else 'info_json='
             lines.insert(1, f'{key}{escaped}\n')
-            with tempfile.NamedTemporaryFile(
-                suffix='.ffmetadata', encoding='utf-8', dir=path.parent, delete=False, mode='w+'
-            ) as nfw:
+            with tempfile.NamedTemporaryFile(suffix='.ffmetadata',
+                                             encoding='utf-8',
+                                             dir=path.parent,
+                                             delete=False,
+                                             mode='w+') as nfw:
                 nfw.writelines(lines)
             sp.run(
                 (
@@ -319,10 +321,8 @@ def add_info_json_to_media_file(
             (
                 'MP4Box',
                 '-add-item',
-                (
-                    f'{info_json_path}:replace:name=youtube-dl metadata:mime=application/json:'
-                    'encoding=utf8'
-                ),
+                (f'{info_json_path}:replace:name=youtube-dl metadata:mime=application/json:'
+                 'encoding=utf8'),
                 str(path),
             ),
             check=True,
@@ -377,8 +377,7 @@ def ffprobe(path: StrPath) -> ProbeDict:
                 check=True,
                 capture_output=True,
                 text=True,
-            ).stdout.strip()
-        ),
+            ).stdout.strip()),
     )
 
 
@@ -410,17 +409,12 @@ def get_info_json(path: StrPath, *, raw: bool = False) -> Any:
                 text=True,
             ).stdout.strip()
         case 'mkv':
-            out = (
-                sp
-                .run(
-                    ('mkvextract', str(path), 'attachments', '1:/dev/stdout'),
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                )
-                .stdout.strip()
-                .splitlines()[1]
-            )
+            out = (sp.run(
+                ('mkvextract', str(path), 'attachments', '1:/dev/stdout'),
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip().splitlines()[1])
         case 'mp3':
             out = ffprobe(path)['format']['tags']['TXXX'].replace('info_json=', '', 1)
         case 'opus':
@@ -474,11 +468,8 @@ def create_static_text_video(
         msg = 'nvenc and videotoolbox parameters are exclusive. Only one can be set to True.'
         raise ValueError(msg)
     audio_file = Path(audio_file)
-    out = (
-        Path(output_file)
-        if output_file
-        else (Path(audio_file.parent) / f'{audio_file.stem}-video.mkv')
-    )
+    out = (Path(output_file) if output_file else
+           (Path(audio_file.parent) / f'{audio_file.stem}-video.mkv'))
     with tempfile.NamedTemporaryFile(suffix='.png', delete=False, dir=Path.cwd()) as tf:
         try:
             sp.run(
@@ -669,15 +660,12 @@ def get_cd_disc_id(drive: StrPath) -> str:
     for entry in toc_entries[:-1]:
         checksum += cddb_sum((entry.cdte_addr.lba + CD_MSF_OFFSET) // CD_FRAMES)
     total_time: int = ((toc_entries[-1].cdte_addr.lba + CD_MSF_OFFSET) // CD_FRAMES) - (
-        (toc_entries[0].cdte_addr.lba + CD_MSF_OFFSET) // CD_FRAMES
-    )
+        (toc_entries[0].cdte_addr.lba + CD_MSF_OFFSET) // CD_FRAMES)
     # This expression inside f'{}' causes a Yapf parsing error
     entries = ' '.join(f'{x.cdte_addr.lba + CD_MSF_OFFSET}' for x in toc_entries[:-1])
-    return (
-        f'{(checksum % 0xFF) << 24 | total_time << 8 | last:08x} {last} '
-        f'{entries} '
-        f'{(toc_entries[-1].cdte_addr.lba + CD_MSF_OFFSET) // CD_FRAMES}'
-    )
+    return (f'{(checksum % 0xFF) << 24 | total_time << 8 | last:08x} {last} '
+            f'{entries} '
+            f'{(toc_entries[-1].cdte_addr.lba + CD_MSF_OFFSET) // CD_FRAMES}')
 
 
 class CDDBQueryResult(NamedTuple):
@@ -753,7 +741,10 @@ def cddb_query(
     server = f'http://{host}/~cddb/cddb.cgi'
     r = requests.get(
         server,
-        params={'cmd': f'cddb query {disc_id}', **hello},
+        params={
+            'cmd': f'cddb query {disc_id}',
+            **hello
+        },
         timeout=timeout,
         headers={'user-agent': hello['hello']},
     )
@@ -774,7 +765,10 @@ def cddb_query(
     artist, disc_title = artist_title.split(' / ', 1)
     r = requests.get(
         server,
-        params={'cmd': f'cddb read {category} {disc_id.split(" ")[0]}', **hello},
+        params={
+            'cmd': f'cddb read {category} {disc_id.split(" ")[0]}',
+            **hello
+        },
         timeout=timeout,
     )
     r.raise_for_status()
@@ -784,9 +778,8 @@ def cddb_query(
     disc_year = None
     log.debug('Artist: %s', artist)
     log.debug('Album: %s', disc_title)
-    for line in (
-        x.strip() for x in r.text.splitlines()[1:] if x.strip() and x[0] not in {'.', '#'}
-    ):
+    for line in (x.strip() for x in r.text.splitlines()[1:]
+                 if x.strip() and x[0] not in {'.', '#'}):
         field_name, value = line.split('=', 1)
         match field_name:
             case 'DTITLE':
@@ -822,11 +815,11 @@ def group_files(
     for item in items_sorted[1:]:
         p = Path(item).resolve(strict=True)
         this_dt = datetime.strptime(  # noqa: DTZ007
-            assert_not_none(re.match(match_re, Path(item).name)).group(1), time_format
-        )
+            assert_not_none(re.match(match_re,
+                                     Path(item).name)).group(1), time_format)
         last_dt = datetime.strptime(  # noqa: DTZ007
-            assert_not_none(re.match(match_re, Path(group[-1]).name)).group(1), time_format
-        )
+            assert_not_none(re.match(match_re,
+                                     Path(group[-1]).name)).group(1), time_format)
         diff = (this_dt - last_dt).total_seconds() // 60
         log.debug('Difference for current file %s vs last file %s: %d minutes', p, group[-1], diff)
         if diff > clip_length:
@@ -964,74 +957,47 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     output_dir.mkdir(parents=True, exist_ok=True)
     # Do not sort the dicts
     input_options: list[str] = list(
-        chain(
-            *(
-                (k, *((str(v),) if not isinstance(v, bool) and v is not None else ()))
-                for k, v in (
-                    {
-                        '-y': overwrite,
-                        '-hwaccel': hwaccel,
-                    }
-                    | ({'-c:v': video_decoder} if hwaccel else {})
-                ).items()
-                if v
-            )
-        )
-    )
+        chain(*((k, *((str(v),) if not isinstance(v, bool) and v is not None else ()))
+                for k, v in ({
+                    '-y': overwrite,
+                    '-hwaccel': hwaccel,
+                }
+                             | ({
+                                 '-c:v': video_decoder
+                             } if hwaccel else {})).items() if v)))
     crop_str = f'crop={rear_crop},' if rear_crop else ''
     setpts_str = f'setpts={setpts}' if setpts else ''
-    hevc_nvenc_options = (
-        {
-            '-cq': '29',
-            '-level': level,
-            '-rc-lookahead': '32',
-            '-spatial_aq': '1',
-            '-tier': tier,
-            '-tune': 'uhq',
-        }
-        if video_encoder == 'hevc_nvenc'
-        else {}
-    )
+    hevc_nvenc_options = ({
+        '-cq': '29',
+        '-level': level,
+        '-rc-lookahead': '32',
+        '-spatial_aq': '1',
+        '-tier': tier,
+        '-tune': 'uhq',
+    } if video_encoder == 'hevc_nvenc' else {})
     main_options = {'-an': not keep_audio, '-vcodec': video_encoder, '-f': container}
     libx264_options = {'-crf': str(crf)} if crf and video_encoder == 'libx264' else {}
     libx265_options = {'-crf': str(crf)} if crf and video_encoder == 'libx265' else {}
     video_bitrate_option = {'-b:v': video_bitrate} if video_bitrate else {}
     video_max_bitrate_option = {'-maxrate:v': video_max_bitrate} if video_max_bitrate else {}
-    scale_filter = (
-        (
-            f'[0]{crop_str}'
-            f'scale=iw/{rear_view_scale_divisor}:ih/{rear_view_scale_divisor} [pip]; '
-            f'[1][pip]overlay=main_w-overlay_w:main_h-overlay_h'
-        )
-        if crop_str and rear_view_scale_divisor
-        else ''
-    )
-    filter_complex_option = (
-        {
-            '-filter_complex': f'{scale_filter},{setpts_str}'  # Trailing comma is acceptable.
-        }
-        if scale_filter or setpts_str
-        else {}
-    )
+    scale_filter = ((f'[0]{crop_str}'
+                     f'scale=iw/{rear_view_scale_divisor}:ih/{rear_view_scale_divisor} [pip]; '
+                     f'[1][pip]overlay=main_w-overlay_w:main_h-overlay_h')
+                    if crop_str and rear_view_scale_divisor else '')
+    filter_complex_option = ({
+        '-filter_complex': f'{scale_filter},{setpts_str}'  # Trailing comma is acceptable.
+    } if scale_filter or setpts_str else {})
     preset_option = {'-preset': preset} if preset else {}
     output_options = list(
-        chain(
-            *(
-                (k, *((str(v),) if not isinstance(v, bool) and v is not None else ()))
-                for k, v in (
-                    main_options
-                    | preset_option
-                    | filter_complex_option
-                    | video_bitrate_option
-                    | video_max_bitrate_option
-                    | hevc_nvenc_options
-                    | libx265_options
-                    | libx264_options
-                ).items()
-                if v
-            )
-        )
-    )
+        chain(*((k, *((str(v),) if not isinstance(v, bool) and v is not None else ()))
+                for k, v in (main_options
+                             | preset_option
+                             | filter_complex_option
+                             | video_bitrate_option
+                             | video_max_bitrate_option
+                             | hevc_nvenc_options
+                             | libx265_options
+                             | libx264_options).items() if v)))
     back_groups = group_files(
         (str(x) for x in Path(rear_dir).iterdir() if not x.name.startswith('.')),
         clip_length,
@@ -1059,9 +1025,11 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
         log.info('Possibly resolved length issue by ignoring single item rear videos.')
     # Call list(zip(...)) so strictness can be checked before looping.
     for back_group, front_group in list(zip(back_groups, front_groups, strict=True)):
-        with tempfile.NamedTemporaryFile(
-            'w', dir=temp_dir, encoding='utf-8', prefix='concat-', suffix='.txt'
-        ) as temp_concat:
+        with tempfile.NamedTemporaryFile('w',
+                                         dir=temp_dir,
+                                         encoding='utf-8',
+                                         prefix='concat-',
+                                         suffix='.txt') as temp_concat:
             fg_len = len(front_group)
             bg_len = len(back_group)
             log.debug('Back group length: %d', bg_len)
@@ -1093,8 +1061,7 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
             to_be_merged: list[Path] = []
             send_to_waste: list[Path] = []
             for i, (back_file, front_file) in enumerate(
-                list(zip(back_group, front_group, strict=False))
-            ):
+                    list(zip(back_group, front_group, strict=False))):
                 log.debug('Back file: %s, front file: %s', back_file, front_file)
                 assert back_file != front_file
                 cmd = (
@@ -1110,9 +1077,10 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
                 )
                 send_to_waste += [front_file, back_file]
                 log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
-                with tempfile.NamedTemporaryFile(
-                    delete=False, dir=temp_dir, prefix=f'{i:04d}-', suffix=f'.{extension}'
-                ) as tf:
+                with tempfile.NamedTemporaryFile(delete=False,
+                                                 dir=temp_dir,
+                                                 prefix=f'{i:04d}-',
+                                                 suffix=f'.{extension}') as tf:
                     try:
                         sp.run(cmd, stdout=tf, check=True, stderr=sp.PIPE)
                     except sp.CalledProcessError as e:
@@ -1130,9 +1098,8 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
                 while full_output_path.exists():
                     offset = 5 if suffix > 1 else 0
                     full_output_path = (
-                        full_output_path.parent
-                        / f'{full_output_path.stem[:-offset]}-{suffix:04d}{full_output_path.suffix}'
-                    )
+                        full_output_path.parent /
+                        f'{full_output_path.stem[:-offset]}-{suffix:04d}{full_output_path.suffix}')
                     suffix += 1
             cmd = (
                 'ffmpeg',
@@ -1192,32 +1159,24 @@ def hlg_to_sdr(
         If ``True``, use fewer filters for faster but lower quality conversion.
     """
     input_file = Path(input_file)
-    vf = (
-        (
-            'zscale=t=linear:npl=100,'
-            'format=gbrpf32le,'
-            'zscale=p=bt709,'
-            'tonemap=tonemap=hable:desat=0,'
-            'zscale=t=bt709:m=bt709:r=tv,'
-            'format=yuv420p'
-        )
-        if fast
-        else (
-            'zscale=tin=arib-std-b67:min=bt2020nc:pin=bt2020:rin=tv:t=arib-std-b67:m=bt2020nc:p=bt2020:'
-            'r=tv,'
-            'zscale=t=linear:npl=100,'
-            'format=gbrpf32le,'
-            'zscale=p=bt709,'
-            'tonemap=tonemap=hable:desat=0,'
-            'zscale=t=bt709:m=bt709:r=tv,'
-            'format=yuv420p'
-        )
-    )
-    output_file = (
-        str(output_file)
-        if output_file
-        else str(input_file.parent / f'{input_file.stem}-sdr{input_file.suffix}')
-    )
+    vf = ((
+        'zscale=t=linear:npl=100,'
+        'format=gbrpf32le,'
+        'zscale=p=bt709,'
+        'tonemap=tonemap=hable:desat=0,'
+        'zscale=t=bt709:m=bt709:r=tv,'
+        'format=yuv420p'
+    ) if fast else (
+        'zscale=tin=arib-std-b67:min=bt2020nc:pin=bt2020:rin=tv:t=arib-std-b67:m=bt2020nc:p=bt2020:'
+        'r=tv,'
+        'zscale=t=linear:npl=100,'
+        'format=gbrpf32le,'
+        'zscale=p=bt709,'
+        'tonemap=tonemap=hable:desat=0,'
+        'zscale=t=bt709:m=bt709:r=tv,'
+        'format=yuv420p'))
+    output_file = (str(output_file) if output_file else str(
+        input_file.parent / f'{input_file.stem}-sdr{input_file.suffix}'))
     cmd = (
         'ffmpeg',
         '-hide_banner',

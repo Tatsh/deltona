@@ -5,10 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 from shlex import quote
 from shutil import copyfile
-from typing import TYPE_CHECKING, Literal, override
+from typing import TYPE_CHECKING, Literal
 import logging
 import os
 import subprocess as sp
+
+from typing_extensions import override
 
 from .string import unix_path_to_wine as base_unix_path_to_wine
 from .system import IS_WINDOWS
@@ -161,7 +163,7 @@ def run_ultraiso(  # noqa: PLR0913
     hide : str | None
         Set hidden attribute of a file or folder (full path should be specified).
     pn : Literal[1, 2, 3, 4, 5, 6, 7, 8, 9] | None
-        Set priority of a file or folder(full path should be specified).
+        Set priority of a file or folder (full path should be specified).
     bin2iso : StrPathMustExist | None
         Convert input CD/DVD image to ISO format.
     dmg2iso : StrPathMustExist | None
@@ -200,8 +202,7 @@ def run_ultraiso(  # noqa: PLR0913
         if 'DISPLAY' not in os.environ or 'XAUTHORITY' not in os.environ:  # pragma: no cover
             log.warning(
                 'UltraISO.exe will likely fail to run since DISPLAY or XAUTHORITY are not in the '
-                'environment.'
-            )
+                'environment.')
         env['DISPLAY'] = os.environ.get('DISPLAY', '')
         env['XAUTHORITY'] = os.environ.get('XAUTHORITY', '')
         env['WINEDEBUG'] = 'fixme-all'
@@ -217,9 +218,7 @@ def run_ultraiso(  # noqa: PLR0913
             sp_args += ['-file', unix_path_to_wine(file)]
         for dir_ in add_dirs or []:
             sp_args += ['-directory', str(dir_)]
-        for k in (
-            k
-            for k, v in {
+        for k in (k for k, v in {
                 'bootinfotable': bootinfotable,
                 'hfs': hfs,
                 'ilong': ilong,
@@ -232,24 +231,16 @@ def run_ultraiso(  # noqa: PLR0913
                 'udf': udf,
                 'udfdvd': udfdvd,
                 'vernum': vernum,
-            }.items()
-            if v
-        ):
+        }.items() if v):
             sp_args += [f'-{k}']
-        for k, v in (
-            (k, v)
-            for k, v in {
+        for k, v in ((k, v) for k, v in {
                 'bootfile': bootfile,
                 'bin2iso': bin2iso,
                 'dmg2iso': dmg2iso,
                 'bin2isz': bin2isz,
-            }.items()
-            if v is not None
-        ):
+        }.items() if v is not None):
             sp_args += [f'-{k}', unix_path_to_wine(v)]
-        for k, v in (
-            (k, v)
-            for k, v in {
+        for k, v in ((k, v) for k, v in {
                 'appid': appid,
                 'preparer': preparer,
                 'publisher': publisher,
@@ -264,21 +255,15 @@ def run_ultraiso(  # noqa: PLR0913
                 'extract': extract,
                 'get': get,
                 'list': list_,
-            }.items()
-            if v is not None
-        ):
+        }.items() if v is not None):
             sp_args += [f'-{k}', str(v)]
-        for k, i in (
-            (k, i)
-            for k, i in {
+        for k, i in ((k, i) for k, i in {
                 'volset': volset,
                 'compress': compress,
                 'encrypt': encrypt,
                 'split': split,
                 'pn': pn,
-            }.items()
-            if i is not None
-        ):
+        }.items() if i is not None):
             sp_args += [f'-{k}', str(i)]
     if len(sp_args) < MIN_ARGUMENTS:
         raise InsufficientArguments
@@ -293,11 +278,8 @@ def run_ultraiso(  # noqa: PLR0913
         if stderr := e.stderr.strip():
             log.exception('stderr output:')
             for line in stderr.splitlines():
-                if not IS_WINDOWS and (
-                    'winemenubuilder.exe' in line
-                    or 'fixme:' in line
-                    or 'wine: using fast synchronization.' in line
-                ):
+                if not IS_WINDOWS and ('winemenubuilder.exe' in line or 'fixme:' in line
+                                       or 'wine: using fast synchronization.' in line):
                     continue
                 log.exception(' -> %s', line)
         raise
@@ -308,7 +290,6 @@ ULTRAISO_FONT_REPLACEMENT_MAX_LENGTH = 13
 
 class InvalidExec(Exception):
     """Raised when the UltraISO executable does not contain the expected font string."""
-
     @override
     def __init__(self) -> None:
         super().__init__('Font not found in file. This is not the original UltraISO executable.')

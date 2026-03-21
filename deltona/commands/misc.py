@@ -29,12 +29,18 @@ log = logging.getLogger(__name__)
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
-@click.option(
-    '-H', '--hours', default=160, type=int, help='Hours worked in a month.', metavar='HOURS'
-)
-@click.option(
-    '-r', '--pay-rate', default=70.0, type=float, help='Dollars per hour.', metavar='DOLLARS'
-)
+@click.option('-H',
+              '--hours',
+              default=160,
+              type=int,
+              help='Hours worked in a month.',
+              metavar='HOURS')
+@click.option('-r',
+              '--pay-rate',
+              default=70.0,
+              type=float,
+              help='Dollars per hour.',
+              metavar='DOLLARS')
 @click.option(
     '-s',
     '--state',
@@ -43,9 +49,11 @@ log = logging.getLogger(__name__)
     type=click.Choice(INCITS38Code.__args__),  # type: ignore[attr-defined]
     help='US state abbreviation.',
 )
-def adp_main(
-    hours: int = 160, pay_rate: float = 70.0, state: INCITS38Code = 'FL', *, debug: bool = False
-) -> None:
+def adp_main(hours: int = 160,
+             pay_rate: float = 70.0,
+             state: INCITS38Code = 'FL',
+             *,
+             debug: bool = False) -> None:
     """Calculate US salary."""
     setup_logging(debug=debug, loggers={'deltona': {}, 'urllib3': {}})
     click.echo(str(calculate_salary(hours=hours, pay_rate=pay_rate, state=state)))
@@ -92,9 +100,9 @@ def gogextract_main(filename: Path, output_dir: Path, *, debug: bool = False) ->
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
 )
 @click.option('-s', '--speed', type=int, help='Disc write speed.', default=8)
-@click.option(
-    '--sfv', help='SFV file.', type=click.Path(exists=True, dir_okay=False, path_type=Path)
-)
+@click.option('--sfv',
+              help='SFV file.',
+              type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option('--cdrecord-path', help='Path to cdrecord.', default='cdrecord')
 @click.option('--unrar-path', help='Path to unrar.', default='unrar')
 def burnrariso_main(
@@ -120,9 +128,8 @@ def burnrariso_main(
     if not iso.size:
         raise click.Abort
     if not no_crc_check:
-        sfv_file_expected = (
-            Path(sfv) if sfv else rar_path.parent / f'{rar_path.name.split(".", 1)}.sfv'
-        )
+        sfv_file_expected = (Path(sfv) if sfv else rar_path.parent /
+                             f'{rar_path.name.split(".", 1)}.sfv')
         assert sfv_file_expected.exists()
         try:
             verify_sfv(sfv_file_expected)
@@ -137,18 +144,18 @@ def burnrariso_main(
             click.echo('RAR extraction test failed.', err=True)
             raise click.Abort from e
     with (
-        unrar.pipe(rar_filename, iso.name) as u,
-        sp.Popen(
-            (
-                cdrecord_path,
-                *((f'dev={device_name}',) if device_name else ()),
-                f'speed={speed}',
-                'driveropts=burnfree',
-                f'tsize={iso.size}',
-            ),
-            stdin=u.stdout,
-            close_fds=True,
-        ) as cdrecord,
+            unrar.pipe(rar_filename, iso.name) as u,
+            sp.Popen(
+                (
+                    cdrecord_path,
+                    *((f'dev={device_name}',) if device_name else ()),
+                    f'speed={speed}',
+                    'driveropts=burnfree',
+                    f'tsize={iso.size}',
+                ),
+                stdin=u.stdout,
+                close_fds=True,
+            ) as cdrecord,
     ):
         assert u.stdout is not None
         u.stdout.close()

@@ -29,9 +29,8 @@ def test_adjust_title_with_names_disabled() -> None:
 
 def test_adjust_title_ampersands() -> None:
     assert adjust_title('rock and roll', ampersands=True) == 'Rock & Roll'
-    assert (
-        adjust_title('love and peace and happiness', ampersands=True) == 'Love & Peace & Happiness'
-    )
+    assert (adjust_title('love and peace and happiness',
+                         ampersands=True) == 'Love & Peace & Happiness')
 
 
 def test_adjust_title_roman_numerals() -> None:
@@ -73,7 +72,5 @@ def test_adjust_title_roman_numeral_at_beginning() -> None:
 
 
 def test_adjust_title_abbreviations() -> None:
-    assert (
-        adjust_title('Song Name Of The Year (Feat. Artist Name)')
-        == 'Song Name of the Year (feat Artist Name)'
-    )
+    assert (adjust_title('Song Name Of The Year (Feat. Artist Name)') ==
+            'Song Name of the Year (feat Artist Name)')
