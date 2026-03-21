@@ -273,6 +273,7 @@ sphinxcontrib
 spouseblindness
 strptime
 suppressmsgboxes
+syft
 tahoma
 taskkill
 tasklist
