@@ -27,4 +27,4 @@ platforms:
   arm64:
     build-on: 'arm64'
 summary: 'A lot of uncategorised utilities.'
-version: '0.1.0'
+version: '0.1.1'
