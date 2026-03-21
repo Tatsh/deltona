@@ -111,19 +111,14 @@ jobs:
           path: 'dist/'
           output-file: 'sbom.spdx.json'
           upload-artifact: false
-      - name: 'Zip files'
-        run: |
-          rm -fR _out
-          mkdir _out
-          zip -j _out/deltona-${{ github.ref_name }}.zip dist/*
       - name: 'Attest'
-        uses: 'actions/attest-build-provenance@v4'
+        uses: 'actions/attest@v4'
         with:
-          subject-path: '_out/*.zip'
+          subject-path: 'dist/*.AppImage'
       - name: 'Attest SBOM'
-        uses: 'actions/attest-sbom@v4'
+        uses: 'actions/attest@v4'
         with:
-          subject-path: '_out/*.zip'
+          subject-path: 'dist/*.AppImage'
           sbom-path: 'sbom.spdx.json'
       - if: github.ref_type == 'tag'
         name: Upload package
@@ -132,7 +127,7 @@ jobs:
           draft: true
           fail_on_unmatched_files: true
           files: |
-            _out/*.zip
+            dist/*.AppImage
     strategy:
       matrix:
         system:
