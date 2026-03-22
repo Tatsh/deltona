@@ -7,8 +7,12 @@ apps:
       - 'network-bind'
 base: 'core24'
 confinement: 'strict'
+contact: 'https://github.com/Tatsh/deltona/issues'
 description: 'A lot of uncategorised utilities.'
+donation: 'https://buymeacoffee.com/Tatsh'
 grade: 'stable'
+issues: 'https://github.com/Tatsh/deltona/issues'
+license: 'MIT'
 name: 'deltona'
 parts:
   deltona:
@@ -26,5 +30,8 @@ platforms:
     build-on: 'amd64'
   arm64:
     build-on: 'arm64'
+source-code: 'https://github.com/Tatsh/deltona'
 summary: 'A lot of uncategorised utilities.'
+title: 'deltona'
 version: '0.1.4'
+website: 'https://tatsh.github.io/deltona/'
