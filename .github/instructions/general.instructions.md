@@ -1,6 +1,6 @@
 # Copilot Instructions
 
-Deltona is a collection of miscellaneous utilities (command line and libraries) written in Python.
+Deltona is a collection of uncategorised CLI utilities and Python modules.
 
 ## General
 

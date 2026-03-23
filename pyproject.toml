@@ -99,7 +99,7 @@ desktop = [
   "pygobject>=3.56.1; sys_platform == 'linux'",
   "pyperclip>=1.11.0",
 ]
-git = ["gitpython>=3.1.46", "keyring>=25.7.0", "pygithub>=2.8.1"]
+git = ["gitpython>=3.1.46", "keyring>=25.7.0", "pygithub>=2.9.0"]
 media = ["keyring>=25.7.0", "mutagen>=1.47.0", "platformdirs>=4.9.4", "send2trash>=2.1.0"]
 string = ["pyyaml>=6.0.3", "unidecode>=1.4.0", "yt-dlp>=2026.3.17"]
 wine = ["pexpect>=4.9.0", "platformdirs>=4.9.4", "psutil>=7.2.2", "python-xz>=0.6.0"]

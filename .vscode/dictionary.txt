@@ -71,6 +71,7 @@ dgenre
 docstrings
 doctrees
 dontcare
+dorny
 driveropts
 dtitle
 dunder
