@@ -5,18 +5,18 @@ jobs:
       APPLE_SIGNING_CERT: ${{ secrets.APPLE_SIGNING_CERTIFICATE }}
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: 'actions/checkout@v6'
+      - uses: 'actions/checkout@v6.0.2'
       - name: 'Install yq'
         run: 'pipx install yq'
       - name: 'Install uv'
         uses: 'astral-sh/setup-uv@v8.0.0'
       - name: 'Set up Python'
-        uses: 'actions/setup-python@v6'
+        uses: 'actions/setup-python@v6.2.0'
         with:
           python-version: '3.13'
       - if: matrix.os == 'windows-11-arm'
         name: 'Cache vcpkg installed packages'
-        uses: 'actions/cache@v5'
+        uses: 'actions/cache@v5.0.4'
         with:
           key: vcpkg-arm64-windows-openssl-${{ hashFiles('.github/workflows/pyinstaller.yml') }}
           path: '~/vcpkg/installed'
@@ -208,18 +208,18 @@ jobs:
               "./${file}" add-cdda-times --help
           done
       - name: 'Upload Artifacts'
-        uses: 'actions/upload-artifact@v7'
+        uses: 'actions/upload-artifact@v7.0.0'
         with:
           if-no-files-found: error
           name: deltona-binaries-${{ matrix.suffix }}
           path: |
             ${{ matrix.dist_path }}
       - name: 'Attest'
-        uses: 'actions/attest@v4'
+        uses: 'actions/attest@v4.1.0'
         with:
           subject-path: '${{ matrix.dist_path }}'
       - name: 'Generate SBOM'
-        uses: 'anchore/sbom-action@v0'
+        uses: 'anchore/sbom-action@v0.24.0'
         env:
           SYFT_SOURCE_NAME: 'deltona'
           SYFT_SOURCE_VERSION: ${{ github.ref_name }}
@@ -228,7 +228,7 @@ jobs:
           output-file: 'sbom.spdx.json'
           upload-artifact: false
       - name: 'Attest SBOM'
-        uses: 'actions/attest@v4'
+        uses: 'actions/attest@v4.1.0'
         with:
           subject-path: '${{ matrix.dist_path }}'
           sbom-path: 'sbom.spdx.json'
@@ -247,18 +247,18 @@ jobs:
         shell: pwsh
       - if: github.ref_type == 'tag'
         name: 'Attest'
-        uses: 'actions/attest@v4'
+        uses: 'actions/attest@v4.1.0'
         with:
           subject-path: '_out/*.zip'
       - if: github.ref_type == 'tag'
         name: 'Attest SBOM'
-        uses: 'actions/attest@v4'
+        uses: 'actions/attest@v4.1.0'
         with:
           subject-path: '_out/*.zip'
           sbom-path: 'sbom.spdx.json'
       - if: github.ref_type == 'tag'
         name: Upload package
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.6.1
         with:
           draft: true
           fail_on_unmatched_files: true
@@ -276,9 +276,6 @@ jobs:
           - os: 'windows-latest'
             dist_path: 'dist/*.exe'
             suffix: 'win-x86_64'
-          - os: 'windows-11-arm'
-            dist_path: 'dist/*.exe'
-            suffix: 'win-arm64'
 name: 'PyInstaller'
 'on':
   push:

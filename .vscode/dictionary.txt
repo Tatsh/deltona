@@ -167,7 +167,6 @@ libc
 libcairo
 libera
 libgirepository
-libjsonnet
 libsonnet
 libx
 linters
@@ -200,10 +199,10 @@ monkeypatch
 movflags
 msgbox
 mvid
-niquests
 myproject
 mypy
 namedtuples
+niquests
 nocancel
 nonantialiased
 nonblock

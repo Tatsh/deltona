@@ -880,7 +880,7 @@ requires-dist = [
     { name = "keyring", marker = "extra == 'media'", specifier = ">=25.7.0" },
     { name = "keyring", marker = "extra == 'www'", specifier = ">=25.7.0" },
     { name = "mutagen", marker = "extra == 'media'", specifier = ">=1.47.0" },
-    { name = "niquests", specifier = ">=3.18.0" },
+    { name = "niquests", specifier = ">=3.18.2" },
     { name = "paramiko", marker = "extra == 'admin'", specifier = ">=4.0.0" },
     { name = "pexpect", marker = "extra == 'wine'", specifier = ">=4.9.0" },
     { name = "pillow", marker = "extra == 'www'", specifier = ">=12.1.1" },

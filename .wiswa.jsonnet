@@ -181,7 +181,7 @@ local utils = import 'utils.libsonnet';
             optional: true,
             version: utils.latestPypiPackageVersionCaret('pyyaml'),
           },
-          requests: utils.latestPypiPackageVersionCaret('requests'),
+          niquests: utils.latestPypiPackageVersionCaret('niquests'),
           send2trash: {
             optional: true,
             version: utils.latestPypiPackageVersionCaret('send2trash'),
@@ -220,7 +220,6 @@ local utils = import 'utils.libsonnet';
               'types-psutil': utils.latestPypiPackageVersionCaret('types-psutil'),
               'types-pyperclip': utils.latestPypiPackageVersionCaret('types-pyperclip'),
               'types-pyyaml': utils.latestPypiPackageVersionCaret('types-pyyaml'),
-              'types-requests': utils.latestPypiPackageVersionCaret('types-requests'),
               'types-send2trash': utils.latestPypiPackageVersionCaret('types-send2trash'),
               'types-yt-dlp': utils.latestPypiPackageVersionCaret('types-yt-dlp'),
             },
@@ -228,11 +227,6 @@ local utils = import 'utils.libsonnet';
           docs+: {
             dependencies+: {
               'sphinx-click': utils.latestPypiPackageVersionCaret('sphinx-click'),
-            },
-          },
-          tests+: {
-            dependencies+: {
-              'requests-mock': utils.latestPypiPackageVersionCaret('requests-mock'),
             },
           },
         },
