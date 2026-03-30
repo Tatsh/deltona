@@ -200,6 +200,7 @@ monkeypatch
 movflags
 msgbox
 mvid
+niquests
 myproject
 mypy
 namedtuples
