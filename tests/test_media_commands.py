@@ -319,6 +319,17 @@ def test_encode_dashcam_main_max_offset(mocker: MockerFixture, runner: CliRunner
     assert mock_archive.call_args[1]['max_offset'] == 5
 
 
+def test_encode_dashcam_main_no_rear_dir(mocker: MockerFixture, runner: CliRunner,
+                                         tmp_path: Path) -> None:
+    f = tmp_path / 'front'
+    f.mkdir()
+    mock_archive = mocker.patch('deltona.commands.media.archive_dashcam_footage')
+    result = runner.invoke(encode_dashcam_main, [str(f)])
+    assert result.exit_code == 0
+    assert mock_archive.call_args[1]['pair_fn'] is None
+    assert mock_archive.call_args[0][1] is None
+
+
 def test_encode_dashcam_main_no_delete(mocker: MockerFixture, runner: CliRunner,
                                        tmp_path: Path) -> None:
     f = tmp_path / 'front'

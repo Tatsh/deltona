@@ -22,6 +22,7 @@ from deltona.media import (
     create_static_text_video,
     get_info_json,
     hlg_to_sdr,
+    pair_redtiger_dashcam_files,
     supported_audio_input_formats,
 )
 from deltona.string import underscorize
@@ -95,13 +96,13 @@ def wait_for_disc_main(drive_path: Path, wait_time: float = 1.0) -> None:
 @click.option('--bootinfotable', is_flag=True, help='Generate boot information table in boot file.')
 @click.option('--optimize',
               is_flag=True,
-              help='Optimise file systems by coding same files only once.')
+              help='Optimise file systems by coding the same files only once.')
 @click.option(
     '-f',
     '--file',
     'files',
     metavar='FILENAME',
-    help='Add one file or folder (include folder name and all files and folders under it).',
+    help='Add one file or folder (includes folder name and all files and folders under it).',
     multiple=True,
     type=click.Path(exists=True, path_type=Path),
 )
@@ -110,7 +111,8 @@ def wait_for_disc_main(drive_path: Path, wait_time: float = 1.0) -> None:
     'dirs',
     metavar='DIRNAME',
     multiple=True,
-    help='Add all files and folders under given directory (not include directory name itself).',
+    help=('Add all files and folders under a given directory (does not include the directory name '
+          'itself).'),
     type=click.Path(exists=True, path_type=Path),
 )
 @click.option('--newdir', metavar='DIRNAME', help='Create a new directory.')
@@ -447,7 +449,10 @@ def ke_ebook_ex_main(paths: Sequence[Path],
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('front_dir', type=click.Path(exists=True, file_okay=False, path_type=Path))
-@click.argument('rear_dir', type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.argument('rear_dir',
+                type=click.Path(exists=True, file_okay=False, path_type=Path),
+                default=None,
+                required=False)
 @click.argument('output_dir', type=click.Path(file_okay=False, path_type=Path), default=Path())
 @click.option('--clip-length', help='Clip length in minutes.', type=int, default=3)
 @click.option('--crf', type=int, default=26, help='Constant rate factor.')
@@ -505,7 +510,7 @@ def ke_ebook_ex_main(paths: Sequence[Path],
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 def encode_dashcam_main(  # noqa: PLR0913, PLR0917
     front_dir: Path,
-    rear_dir: Path,
+    rear_dir: Path | None,
     output_dir: Path,
     clip_length: int = 3,
     crf: int = 26,
@@ -558,7 +563,8 @@ def encode_dashcam_main(  # noqa: PLR0913, PLR0917
         encode-dashcam Movie_F/ Movie_R/ ~/output_dir
     """  # noqa: DOC501
     setup_logging(debug=debug, loggers={'deltona': {}})
-    if Path(front_dir).resolve(strict=True) == Path(rear_dir).resolve(strict=True):
+    if rear_dir is not None and (Path(front_dir).resolve(strict=True)
+                                 == Path(rear_dir).resolve(strict=True)):
         click.echo('Front and rear directories are the same.', err=True)
         raise click.Abort
     archive_dashcam_footage(
@@ -574,6 +580,7 @@ def encode_dashcam_main(  # noqa: PLR0913, PLR0917
         max_offset=max_offset,
         no_delete=no_delete,
         overwrite=overwrite,
+        pair_fn=None if rear_dir is None else pair_redtiger_dashcam_files,
         preset=preset,
         rear_crop=None if no_rear_crop else rear_crop,
         rear_view_scale_divisor=rear_view_scale_divisor,

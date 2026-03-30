@@ -15,7 +15,7 @@ from deltona.media import (
     group_pairs,
     hlg_to_sdr,
     is_audio_input_format_supported,
-    pair_dashcam_files,
+    pair_redtiger_dashcam_files,
     parse_timestamp,
     supported_audio_input_formats,
 )
@@ -593,7 +593,7 @@ def test_group_files_multiple_groups(tmp_path: Path) -> None:
     assert len(result[1]) == 1
 
 
-def test_pair_dashcam_files_basic(tmp_path: Path) -> None:
+def test_pair_redtiger_dashcam_files_basic(tmp_path: Path) -> None:
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     front_dir.mkdir()
@@ -602,7 +602,7 @@ def test_pair_dashcam_files_basic(tmp_path: Path) -> None:
     (front_dir / '20240512164700_000003A.MP4').write_bytes(b'front')
     (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
     (rear_dir / '20240512164701_000004B.MP4').write_bytes(b'rear')
-    pairs = pair_dashcam_files(front_dir, rear_dir)
+    pairs = pair_redtiger_dashcam_files(front_dir, rear_dir)
     assert len(pairs) == 2
     assert pairs[0][1].name == '20240512164400_000001A.MP4'
     assert pairs[0][0].name == '20240512164401_000002B.MP4'
@@ -610,7 +610,7 @@ def test_pair_dashcam_files_basic(tmp_path: Path) -> None:
     assert pairs[1][0].name == '20240512164701_000004B.MP4'
 
 
-def test_pair_dashcam_files_unmatched_front(tmp_path: Path) -> None:
+def test_pair_redtiger_dashcam_files_unmatched_front(tmp_path: Path) -> None:
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     front_dir.mkdir()
@@ -618,12 +618,12 @@ def test_pair_dashcam_files_unmatched_front(tmp_path: Path) -> None:
     (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
     (front_dir / '20240512170000_000003A.MP4').write_bytes(b'front')
     (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
-    pairs = pair_dashcam_files(front_dir, rear_dir)
+    pairs = pair_redtiger_dashcam_files(front_dir, rear_dir)
     assert len(pairs) == 1
     assert pairs[0][1].name == '20240512164400_000001A.MP4'
 
 
-def test_pair_dashcam_files_unmatched_rear(tmp_path: Path) -> None:
+def test_pair_redtiger_dashcam_files_unmatched_rear(tmp_path: Path) -> None:
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     front_dir.mkdir()
@@ -631,12 +631,12 @@ def test_pair_dashcam_files_unmatched_rear(tmp_path: Path) -> None:
     (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
     (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
     (rear_dir / '20240512170000_000004B.MP4').write_bytes(b'rear')
-    pairs = pair_dashcam_files(front_dir, rear_dir)
+    pairs = pair_redtiger_dashcam_files(front_dir, rear_dir)
     assert len(pairs) == 1
     assert pairs[0][0].name == '20240512164401_000002B.MP4'
 
 
-def test_pair_dashcam_files_skips_hidden(tmp_path: Path) -> None:
+def test_pair_redtiger_dashcam_files_skips_hidden(tmp_path: Path) -> None:
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     front_dir.mkdir()
@@ -645,18 +645,18 @@ def test_pair_dashcam_files_skips_hidden(tmp_path: Path) -> None:
     (rear_dir / '.hidden.MP4').write_bytes(b'rear')
     (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
     (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
-    pairs = pair_dashcam_files(front_dir, rear_dir)
+    pairs = pair_redtiger_dashcam_files(front_dir, rear_dir)
     assert len(pairs) == 1
 
 
-def test_pair_dashcam_files_zero_offset(tmp_path: Path) -> None:
+def test_pair_redtiger_dashcam_files_zero_offset(tmp_path: Path) -> None:
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     front_dir.mkdir()
     rear_dir.mkdir()
     (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
     (rear_dir / '20240512164400_000002B.MP4').write_bytes(b'rear')
-    pairs = pair_dashcam_files(front_dir, rear_dir)
+    pairs = pair_redtiger_dashcam_files(front_dir, rear_dir)
     assert len(pairs) == 1
 
 
@@ -995,6 +995,99 @@ def test_archive_dashcam_footage_no_chapters(mocker: MockerFixture, tmp_path: Pa
     assert mock_send2trash.call_count == 2
 
 
+def test_archive_dashcam_footage_single_camera(mocker: MockerFixture, tmp_path: Path) -> None:
+    front_dir = tmp_path / 'front'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    output_dir.mkdir()
+    for i in range(3):
+        (front_dir / f'2024051216440{i}_00000{i}A.MP4').write_bytes(b'front')
+    mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
+    mock_send2trash = mocker.patch('send2trash.send2trash')
+    archive_dashcam_footage(front_dir, None, output_dir)
+    # 3 encodes + 1 concat = 4 sp.run calls
+    assert mock_run.call_count == 4
+    # Only front files trashed (3)
+    assert mock_send2trash.call_count == 3
+    # Single-camera: no -filter_complex, use -vf for setpts
+    first_encode_args = mock_run.call_args_list[0].args[0]
+    assert '-filter_complex' not in first_encode_args
+    assert '-vf' in first_encode_args
+
+
+def test_archive_dashcam_footage_single_camera_pair_fn_none_rear_dir_set(
+        mocker: MockerFixture, tmp_path: Path) -> None:
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
+    mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
+    mocker.patch('send2trash.send2trash')
+    archive_dashcam_footage(front_dir, rear_dir, output_dir, pair_fn=None)
+    first_encode_args = mock_run.call_args_list[0].args[0]
+    assert '-filter_complex' not in first_encode_args
+
+
+def test_archive_dashcam_footage_custom_pair_fn(mocker: MockerFixture, tmp_path: Path) -> None:
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    f1 = front_dir / '20240512164400_000001A.MP4'
+    r1 = rear_dir / '20240512164401_000002B.MP4'
+    f1.write_bytes(b'front')
+    r1.write_bytes(b'rear')
+    custom_pair = mocker.Mock(return_value=[(r1.resolve(), f1.resolve())])
+    mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
+    mocker.patch('send2trash.send2trash')
+    archive_dashcam_footage(front_dir, rear_dir, output_dir, pair_fn=custom_pair)
+    custom_pair.assert_called_once()
+
+
+def test_archive_dashcam_footage_custom_group_fn(mocker: MockerFixture, tmp_path: Path) -> None:
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    f1 = front_dir / '20240512164400_000001A.MP4'
+    r1 = rear_dir / '20240512164401_000002B.MP4'
+    f1.write_bytes(b'front')
+    r1.write_bytes(b'rear')
+    pairs = [(r1.resolve(), f1.resolve())]
+    custom_group = mocker.Mock(return_value=[pairs])
+    mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
+    mocker.patch('send2trash.send2trash')
+    archive_dashcam_footage(front_dir, rear_dir, output_dir, group_fn=custom_group)
+    custom_group.assert_called_once()
+
+
+def test_archive_dashcam_footage_single_camera_no_setpts(mocker: MockerFixture,
+                                                         tmp_path: Path) -> None:
+    front_dir = tmp_path / 'front'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    output_dir.mkdir()
+    (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
+    mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
+    mocker.patch('send2trash.send2trash')
+    archive_dashcam_footage(front_dir, None, output_dir, setpts=None)
+    first_encode_args = mock_run.call_args_list[0].args[0]
+    assert '-filter_complex' not in first_encode_args
+    assert '-vf' not in first_encode_args
+
+
 @pytest.mark.parametrize('ext', ['flac', 'mp3', 'opus'])
 def test_add_info_json_to_media_file_flac_mp3_opus(mocker: MockerFixture, tmp_path: Path,
                                                    ext: str) -> None:
@@ -1138,16 +1231,16 @@ def test_parse_timestamp_custom_format() -> None:
     assert result.day == 12
 
 
-def test_pair_dashcam_files_empty_dirs(tmp_path: Path) -> None:
+def test_pair_redtiger_dashcam_files_empty_dirs(tmp_path: Path) -> None:
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     front_dir.mkdir()
     rear_dir.mkdir()
-    pairs = pair_dashcam_files(front_dir, rear_dir)
+    pairs = pair_redtiger_dashcam_files(front_dir, rear_dir)
     assert pairs == []
 
 
-def test_pair_dashcam_files_max_offset_larger(tmp_path: Path) -> None:
+def test_pair_redtiger_dashcam_files_max_offset_larger(tmp_path: Path) -> None:
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     front_dir.mkdir()
@@ -1155,14 +1248,14 @@ def test_pair_dashcam_files_max_offset_larger(tmp_path: Path) -> None:
     (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
     (rear_dir / '20240512164403_000002B.MP4').write_bytes(b'rear')
     # Default max_offset=1 should not pair these (3 second gap)
-    pairs_default = pair_dashcam_files(front_dir, rear_dir, max_offset=1)
+    pairs_default = pair_redtiger_dashcam_files(front_dir, rear_dir, max_offset=1)
     assert len(pairs_default) == 0
     # max_offset=5 should pair them
-    pairs_wide = pair_dashcam_files(front_dir, rear_dir, max_offset=5)
+    pairs_wide = pair_redtiger_dashcam_files(front_dir, rear_dir, max_offset=5)
     assert len(pairs_wide) == 1
 
 
-def test_pair_dashcam_files_picks_closest_rear(tmp_path: Path) -> None:
+def test_pair_redtiger_dashcam_files_picks_closest_rear(tmp_path: Path) -> None:
     front_dir = tmp_path / 'front'
     rear_dir = tmp_path / 'rear'
     front_dir.mkdir()
@@ -1170,7 +1263,7 @@ def test_pair_dashcam_files_picks_closest_rear(tmp_path: Path) -> None:
     (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
     (rear_dir / '20240512164358_000002B.MP4').write_bytes(b'rear')
     (rear_dir / '20240512164400_000003B.MP4').write_bytes(b'rear')
-    pairs = pair_dashcam_files(front_dir, rear_dir, max_offset=3)
+    pairs = pair_redtiger_dashcam_files(front_dir, rear_dir, max_offset=3)
     assert len(pairs) == 1
     assert pairs[0][0].name == '20240512164400_000003B.MP4'
 

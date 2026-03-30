@@ -29,7 +29,7 @@ from .system import IS_LINUX
 from .typing import ProbeDict, StrPath, assert_not_none
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Callable, Iterable, Sequence
 
 __all__ = (
     'CDDBQueryResult',
@@ -43,7 +43,7 @@ __all__ = (
     'group_pairs',
     'hlg_to_sdr',
     'is_audio_input_format_supported',
-    'pair_dashcam_files',
+    'pair_redtiger_dashcam_files',
     'parse_timestamp',
     'supported_audio_input_formats',
 )
@@ -864,7 +864,7 @@ def parse_timestamp(name: str, match_re: re.Pattern[str] | str, time_format: str
         assert_not_none(re.match(match_re, name)).group(1), time_format)
 
 
-def pair_dashcam_files(
+def pair_redtiger_dashcam_files(
     front_dir: StrPath,
     rear_dir: StrPath,
     match_re: re.Pattern[str] | str = r'^(\d+)_.*',
@@ -929,7 +929,7 @@ def pair_dashcam_files(
 
 
 def group_pairs(
-    pairs: list[tuple[Path, Path]],
+    pairs: Sequence[tuple[Path, Path]],
     clip_length: int = 3,
     match_re: re.Pattern[str] | str = r'^(\d+)_.*',
     time_format: str = '%Y%m%d%H%M%S',
@@ -942,7 +942,7 @@ def group_pairs(
 
     Parameters
     ----------
-    pairs : list[tuple[Path, Path]]
+    pairs : Sequence[tuple[Path, Path]]
         Pairs of ``(rear_file, front_file)`` sorted by front file timestamp.
     clip_length : int
         Maximum gap in minutes between consecutive pairs in a group.
@@ -979,7 +979,7 @@ def group_pairs(
 
 def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     front_dir: StrPath,
-    rear_dir: StrPath,
+    rear_dir: StrPath | None,
     output_dir: StrPath,
     *,
     chapters: bool = True,
@@ -990,10 +990,14 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     hwaccel: str | None = 'auto',
     keep_audio: bool = False,
     level: int | str | None = 'auto',
+    group_fn: Callable[[Sequence[tuple[Path, Path]], int, re.Pattern[str] | str, str],
+                       list[list[tuple[Path, Path]]]] = group_pairs,
     max_offset: int = 1,
     no_delete: bool = False,
     overwrite: bool = False,
     match_re: re.Pattern[str] | str = r'^(\d+)_.*',
+    pair_fn: Callable[[StrPath, StrPath, re.Pattern[str] | str, str, int], list[tuple[Path, Path]]]
+    | None = pair_redtiger_dashcam_files,
     preset: str | None = 'slow',
     rear_crop: str | None = '1920:1020:0:0',
     rear_view_scale_divisor: float | None = 2.5,
@@ -1038,8 +1042,8 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     ----------
     front_dir : StrPath
         Directory containing front footage.
-    rear_dir : StrPath
-        Directory containing rear footage.
+    rear_dir : StrPath | None
+        Directory containing rear footage. If ``None``, single-camera mode is used.
     output_dir : StrPath
         Will be created if it does not exist including parents.
     chapters : bool
@@ -1063,12 +1067,19 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     match_re : re.Pattern[str] | str
         Regular expression used for finding the timestamp in a filename. Must contain at least one
         group and only the first group is considered.
+    group_fn : Callable[[Sequence[tuple[Path, Path]], int, re.Pattern[str] | str, str],
+                        list[list[tuple[Path, Path]]]]
+        Function to group pairs into recording sessions. Defaults to :py:func:`group_pairs`.
     max_offset : int
         Maximum seconds between front and rear timestamps for pairing.
     no_delete : bool
         Do not delete original files after successful conversion.
     overwrite : bool
         Overwrite existing files.
+    pair_fn : Callable[[StrPath, StrPath, re.Pattern[str] | str, str, int],
+                       list[tuple[Path, Path]]] | None
+        Function to pair front and rear files. Defaults to
+        :py:func:`pair_redtiger_dashcam_files`. If ``None``, single-camera mode is used.
     preset : str | None
         Preset (various codecs).
     rear_crop : str | None
@@ -1137,19 +1148,38 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     filter_complex_option = ({
         '-filter_complex': f'{scale_filter},{setpts_str}'  # Trailing comma is acceptable.
     } if scale_filter or setpts_str else {})
+    single_vf_option = {'-vf': setpts_str} if setpts_str else {}
     preset_option = {'-preset': preset} if preset else {}
-    output_options = list(
+    codec_options = (video_bitrate_option
+                     | video_max_bitrate_option
+                     | hevc_nvenc_options
+                     | libx265_options
+                     | libx264_options)
+    dual_output_options = list(
         chain(*((k, *((str(v),) if not isinstance(v, bool) and v is not None else ()))
                 for k, v in (main_options
                              | preset_option
                              | filter_complex_option
-                             | video_bitrate_option
-                             | video_max_bitrate_option
-                             | hevc_nvenc_options
-                             | libx265_options
-                             | libx264_options).items() if v)))
-    pairs = pair_dashcam_files(front_dir, rear_dir, match_re, time_format, max_offset)
-    pair_groups = group_pairs(pairs, clip_length, match_re, time_format)
+                             | codec_options).items() if v)))
+    single_output_options = list(
+        chain(*((k, *((str(v),) if not isinstance(v, bool) and v is not None else ()))
+                for k, v in (main_options
+                             | preset_option
+                             | single_vf_option
+                             | codec_options).items() if v)))
+    pair_groups: list[list[tuple[Path | None, Path]]]
+    if pair_fn is not None and rear_dir is not None:
+        pairs = pair_fn(front_dir, rear_dir, match_re, time_format, max_offset)
+        pair_groups = cast('list[list[tuple[Path | None, Path]]]',
+                           group_fn(pairs, clip_length, match_re, time_format))
+    else:
+        file_groups = group_files(
+            (str(x) for x in Path(front_dir).iterdir() if not x.name.startswith('.')),
+            clip_length,
+            match_re,
+            time_format,
+        )
+        pair_groups = [[(None, f) for f in grp] for grp in file_groups]
     log.debug('Pair group count: %d', len(pair_groups))
     for pair_group in pair_groups:
         with tempfile.NamedTemporaryFile('w',
@@ -1164,18 +1194,30 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
             try:
                 for i, (back_file, front_file) in enumerate(pair_group):
                     log.debug('Back file: %s, front file: %s', back_file, front_file)
-                    cmd = (
-                        'ffmpeg',
-                        '-hide_banner',
-                        *input_options,
-                        '-i',
-                        str(back_file),
-                        '-i',
-                        str(front_file),
-                        *output_options,
-                        '-',
-                    )
-                    send_to_waste += [front_file, back_file]
+                    if back_file is not None:
+                        cmd = (
+                            'ffmpeg',
+                            '-hide_banner',
+                            *input_options,
+                            '-i',
+                            str(back_file),
+                            '-i',
+                            str(front_file),
+                            *dual_output_options,
+                            '-',
+                        )
+                        send_to_waste += [front_file, back_file]
+                    else:
+                        cmd = (
+                            'ffmpeg',
+                            '-hide_banner',
+                            *input_options,
+                            '-i',
+                            str(front_file),
+                            *single_output_options,
+                            '-',
+                        )
+                        send_to_waste.append(front_file)
                     log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
                     with tempfile.NamedTemporaryFile(delete=False,
                                                      dir=temp_dir,

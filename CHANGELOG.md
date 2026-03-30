@@ -11,8 +11,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- `pair_dashcam_files()` and `group_pairs()` public utility functions for timestamp-proximity
-  pairing of front/rear dashcam files.
+- `pair_redtiger_dashcam_files()` and `group_pairs()` public utility functions for
+  timestamp-proximity pairing of front/rear dashcam files.
 - `max_offset` parameter on `media.archive_dashcam_footage` (default 1 second) for controlling
   front/rear file pairing tolerance.
 - `--max-offset` CLI option on `encode-dashcam`.
@@ -31,6 +31,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `-b_ref_mode middle`.
 - CLI defaults for `encode-dashcam` now match intended NVENC usage: `hevc_nvenc` encoder, `p7`
   preset, `20M` max bitrate.
+- Renamed `pair_dashcam_files` to `pair_redtiger_dashcam_files` to clarify Red Tiger specificity.
+- `media.archive_dashcam_footage` now accepts `pair_fn` and `group_fn` parameters for custom
+  pairing and grouping logic.
+- `media.archive_dashcam_footage` `rear_dir` parameter is now optional (`None` for single-camera
+  mode). When `rear_dir` is `None` or `pair_fn` is `None`, front files are encoded without overlay.
+- `group_pairs` now accepts `Sequence` instead of `list` for the `pairs` parameter.
+- `encode-dashcam` CLI: `rear_dir` argument is now optional.
 
 ### Removed
 
