@@ -288,7 +288,10 @@ Version=1.0
         icons_dir = Path(f'{prefix}/share/icons/hicolor/300x300/apps')
         icons_dir.mkdir(parents=True, exist_ok=True)
         (icons_dir / 'imgbb.png').write_bytes(r.content)
-        sp.run(('update-desktop-database', '-v', str(apps)), check=True, capture_output=not debug)
+        sp.run(
+            ('update-desktop-database', '-v', str(apps)),  # noqa: S607
+            check=True,
+            capture_output=not debug)
         return
     kdialog = which('kdialog')
     show_gui = not no_gui and len(filenames) == 1 and kdialog
