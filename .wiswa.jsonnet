@@ -213,7 +213,7 @@ local utils = import 'utils.libsonnet';
         group+: {
           dev+: {
             dependencies+: {
-              'pydbus-stubs': '^0',
+              'pydbus-stubs': { platform: 'linux', version: '^0' },
               'types-beautifulsoup4': utils.latestPypiPackageVersionCaret('types-beautifulsoup4'),
               'types-binaryornot': utils.latestPypiPackageVersionCaret('types-binaryornot'),
               'types-paramiko': utils.latestPypiPackageVersionCaret('types-paramiko'),
