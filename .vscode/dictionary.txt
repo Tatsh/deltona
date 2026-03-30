@@ -244,6 +244,7 @@ pytest
 pyyaml
 rars
 rdonly
+redtiger
 referer
 regedit
 regen
