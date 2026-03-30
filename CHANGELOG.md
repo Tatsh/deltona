@@ -17,12 +17,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   front/rear file pairing tolerance.
 - `--max-offset` CLI option on `encode-dashcam`.
 - `parse_timestamp()` public utility function.
+- Chapter markers in `encode-dashcam` output; each clip pair becomes a chapter named after the front
+  file stem. Disable with `--no-chapters`.
+- `duration` field to `FormatDict` and `StreamsDict` typed dictionaries.
 
 ### Changed
 
 - `media.archive_dashcam_footage` now uses timestamp-proximity pairing instead of positional file
   matching.
 - Unmatched dashcam files are now logged and skipped instead of being deleted.
+- Chapter durations are derived from source file duration with the setpts factor applied.
+- Improved NVENC quality defaults: `-cq 25` (was 29), added `-rc vbr`, `-temporal_aq 1`,
+  `-b_ref_mode middle`.
+- CLI defaults for `encode-dashcam` now match intended NVENC usage: `hevc_nvenc` encoder, `p7`
+  preset, `20M` max bitrate.
 
 ### Removed
 
@@ -34,6 +42,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Click option default mismatches in `encode_dashcam_main` for `preset`, `video_encoder`, and
   `video_max_bitrate`.
 - `click.Path` constraints now correctly use `file_okay=False` for directory arguments.
+- `--temp-dir` option now uses `click.Path` type.
 
 ## [0.1.4] - 2026-03-21
 

@@ -17,6 +17,7 @@ __all__ = (
     'CDStatus',
     'DecodeErrorsOption',
     'FileDescriptorOrPath',
+    'FormatDict',
     'INCITS38Code',
     'ProbeDict',
     'StrOrBytesPath',
@@ -211,6 +212,8 @@ class StreamsDict(TypedDict):
     """Codec type."""
     disposition: StreamDispositionDict
     """Stream disposition dictionary."""
+    duration: NotRequired[str]
+    """Duration of the stream in seconds."""
     height: int
     """Height of the video stream."""
     tags: TagsDict
@@ -220,7 +223,12 @@ class StreamsDict(TypedDict):
 
 
 class FormatDict(TypedDict):
+    """FFmpeg format dictionary."""
+
+    duration: NotRequired[str]
+    """Duration of the media in seconds."""
     tags: TagsDict
+    """Tags dictionary."""
 
 
 class ProbeDict(TypedDict):

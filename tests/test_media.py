@@ -710,6 +710,7 @@ def test_archive_dashcam_footage_basic_merge(mocker: MockerFixture, tmp_path: Pa
         (front_dir / f'2024051216440{i}_00000{2 * i}A.MP4').write_bytes(b'front')
         (rear_dir / f'2024051216440{i}_00000{2 * i + 1}B.MP4').write_bytes(b'rear')
     mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
     mock_send2trash = mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir, rear_dir, output_dir, max_offset=1)
     assert mock_run.call_count == 4
@@ -728,6 +729,7 @@ def test_archive_dashcam_footage_unmatched_rear_skipped(mocker: MockerFixture,
     (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
     (rear_dir / '20240512170000_000004B.MP4').write_bytes(b'rear')  # unmatched
     mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
     mock_send2trash = mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir, rear_dir, output_dir)
     # 1 encode + 1 concat = 2 sp.run calls
@@ -748,6 +750,7 @@ def test_archive_dashcam_footage_unmatched_front_skipped(mocker: MockerFixture,
     (front_dir / '20240512170000_000003A.MP4').write_bytes(b'front')  # unmatched
     (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
     mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
     mock_send2trash = mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir, rear_dir, output_dir)
     assert mock_run.call_count == 2
@@ -764,6 +767,7 @@ def test_archive_dashcam_footage_no_delete(mocker: MockerFixture, tmp_path: Path
     (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
     (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
     mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
     mock_send2trash = mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir, rear_dir, output_dir, no_delete=True)
     assert mock_run.call_count == 2
@@ -774,6 +778,7 @@ def test_archive_dashcam_footage_crash_deletes_unfinished_files(tmp_path: Path,
                                                                 mocker: MockerFixture) -> None:
     mocker.patch('deltona.media.sp.run',
                  side_effect=[None, sp.CalledProcessError(1, 'ffmpeg', stderr=b'')])
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
     mocker.patch('send2trash.send2trash')
     mock_unlink = mocker.patch('deltona.media.Path.unlink')
     front_dir = tmp_path / 'front'
@@ -802,6 +807,7 @@ def test_archive_dashcam_footage_calls_with_correct_args(mocker: MockerFixture,
     (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
     (rear_dir / '20240512164400_000002B.MP4').write_bytes(b'rear')
     mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
     mock_send2trash = mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir,
                             rear_dir,
@@ -826,6 +832,7 @@ def test_archive_dashcam_footage_calls_with_correct_args_no_delete(mocker: Mocke
     (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
     (rear_dir / '20240512164400_000002B.MP4').write_bytes(b'rear')
     mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
     mock_send2trash = mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(
         front_dir,
@@ -854,6 +861,7 @@ def test_archive_dashcam_footage_skips_hidden_files(mocker: MockerFixture, tmp_p
     (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
     (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
     mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
     mock_send2trash = mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir, rear_dir, output_dir)
     assert mock_run.call_count == 2
@@ -878,12 +886,113 @@ def test_archive_dashcam_footage_multiple_groups(mocker: MockerFixture, tmp_path
     # Unmatched rear
     (rear_dir / '20240513100000_000008B.MP4').write_bytes(b'rear')
     mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
     mock_send2trash = mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir, rear_dir, output_dir)
     # Group 1: 2 encodes + 1 concat = 3; Group 2: 1 encode + 1 concat = 2; total = 5
     assert mock_run.call_count == 5
     # 3 matched pairs = 6 files trashed
     assert mock_send2trash.call_count == 6
+
+
+def test_archive_dashcam_footage_chapters_in_concat_args(mocker: MockerFixture,
+                                                         tmp_path: Path) -> None:
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
+    (front_dir / '20240512164700_000003A.MP4').write_bytes(b'front')
+    (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
+    (rear_dir / '20240512164701_000004B.MP4').write_bytes(b'rear')
+    mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
+    mock_send2trash = mocker.patch('send2trash.send2trash')
+    archive_dashcam_footage(front_dir, rear_dir, output_dir)
+    # Concat command is the last sp.run call
+    concat_args = mock_run.call_args_list[-1].args[0]
+    assert '-map_metadata' in concat_args
+    assert '1' in concat_args
+    assert mock_send2trash.call_count == 4
+
+
+def test_archive_dashcam_footage_chapters_duration_fallback_to_stream(mocker: MockerFixture,
+                                                                      tmp_path: Path) -> None:
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
+    (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
+    mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe',
+                 return_value={
+                     'format': {},
+                     'streams': [{
+                         'duration': '120.5'
+                     }]
+                 })
+    mocker.patch('send2trash.send2trash')
+    archive_dashcam_footage(front_dir, rear_dir, output_dir)
+    concat_args = mock_run.call_args_list[-1].args[0]
+    assert '-map_metadata' in concat_args
+
+
+def test_archive_dashcam_footage_chapters_no_setpts(mocker: MockerFixture, tmp_path: Path) -> None:
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
+    (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
+    mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
+    mocker.patch('send2trash.send2trash')
+    archive_dashcam_footage(front_dir, rear_dir, output_dir, setpts=None)
+    concat_args = mock_run.call_args_list[-1].args[0]
+    assert '-map_metadata' in concat_args
+
+
+def test_archive_dashcam_footage_chapters_no_duration(mocker: MockerFixture,
+                                                      tmp_path: Path) -> None:
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
+    (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
+    mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {}, 'streams': [{}]})
+    mocker.patch('send2trash.send2trash')
+    archive_dashcam_footage(front_dir, rear_dir, output_dir)
+    concat_args = mock_run.call_args_list[-1].args[0]
+    assert '-map_metadata' in concat_args
+
+
+def test_archive_dashcam_footage_no_chapters(mocker: MockerFixture, tmp_path: Path) -> None:
+    front_dir = tmp_path / 'front'
+    rear_dir = tmp_path / 'rear'
+    output_dir = tmp_path / 'output'
+    front_dir.mkdir()
+    rear_dir.mkdir()
+    output_dir.mkdir()
+    (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
+    (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
+    mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
+    mock_send2trash = mocker.patch('send2trash.send2trash')
+    archive_dashcam_footage(front_dir, rear_dir, output_dir, chapters=False)
+    concat_args = mock_run.call_args_list[-1].args[0]
+    assert '-map_metadata' not in concat_args
+    assert mock_send2trash.call_count == 2
 
 
 @pytest.mark.parametrize('ext', ['flac', 'mp3', 'opus'])
@@ -1125,6 +1234,7 @@ def test_archive_dashcam_footage_overwrite_flag(mocker: MockerFixture, tmp_path:
     (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
     (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
     mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
     mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir, rear_dir, output_dir, overwrite=True)
     first_call_args = mock_run.call_args_list[0].args[0]
@@ -1141,6 +1251,7 @@ def test_archive_dashcam_footage_no_hwaccel(mocker: MockerFixture, tmp_path: Pat
     (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
     (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
     mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
     mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir, rear_dir, output_dir, hwaccel=None, video_decoder=None)
     first_call_args = mock_run.call_args_list[0].args[0]
@@ -1157,6 +1268,7 @@ def test_archive_dashcam_footage_no_setpts(mocker: MockerFixture, tmp_path: Path
     (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
     (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
     mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
     mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir, rear_dir, output_dir, setpts=None)
     first_call_args = mock_run.call_args_list[0].args[0]
@@ -1173,6 +1285,7 @@ def test_archive_dashcam_footage_no_rear_crop(mocker: MockerFixture, tmp_path: P
     (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
     (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
     mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
     mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir, rear_dir, output_dir, rear_crop=None)
     first_call_args = mock_run.call_args_list[0].args[0]
@@ -1192,6 +1305,7 @@ def test_archive_dashcam_footage_output_file_rename_on_conflict(mocker: MockerFi
     # Pre-create the output file so the rename logic triggers
     (output_dir / '20240512164400_000001A.mkv').write_bytes(b'existing')
     mock_run = mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
     mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir, rear_dir, output_dir, overwrite=False)
     # The concat command should use a renamed output path
@@ -1209,6 +1323,7 @@ def test_archive_dashcam_footage_creates_output_dir(mocker: MockerFixture, tmp_p
     (front_dir / '20240512164400_000001A.MP4').write_bytes(b'front')
     (rear_dir / '20240512164401_000002B.MP4').write_bytes(b'rear')
     mocker.patch('deltona.media.sp.run')
+    mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
     mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir, rear_dir, output_dir)
     assert output_dir.exists()

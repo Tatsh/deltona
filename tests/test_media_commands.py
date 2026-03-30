@@ -220,6 +220,52 @@ def test_encode_dashcam_main_same_dirs(runner: CliRunner, tmp_path: Path) -> Non
     assert result.exit_code != 0
 
 
+def test_encode_dashcam_main_defaults(mocker: MockerFixture, runner: CliRunner,
+                                      tmp_path: Path) -> None:
+    f = tmp_path / 'front'
+    r = tmp_path / 'rear'
+    o = tmp_path / 'out'
+    f.mkdir()
+    r.mkdir()
+    mock_archive = mocker.patch('deltona.commands.media.archive_dashcam_footage')
+    result = runner.invoke(encode_dashcam_main, [str(f), str(r), str(o)])
+    assert result.exit_code == 0
+    kwargs = mock_archive.call_args[1]
+    assert kwargs['video_encoder'] == 'hevc_nvenc'
+    assert kwargs['preset'] == 'p7'
+    assert kwargs['video_max_bitrate'] == '20M'
+    assert kwargs['crf'] == 26
+    assert kwargs['chapters'] is True
+
+
+def test_encode_dashcam_main_no_chapters(mocker: MockerFixture, runner: CliRunner,
+                                         tmp_path: Path) -> None:
+    f = tmp_path / 'front'
+    r = tmp_path / 'rear'
+    o = tmp_path / 'out'
+    f.mkdir()
+    r.mkdir()
+    mock_archive = mocker.patch('deltona.commands.media.archive_dashcam_footage')
+    result = runner.invoke(encode_dashcam_main, [str(f), str(r), str(o), '--no-chapters'])
+    assert result.exit_code == 0
+    assert mock_archive.call_args[1]['chapters'] is False
+
+
+def test_encode_dashcam_main_temp_dir(mocker: MockerFixture, runner: CliRunner,
+                                      tmp_path: Path) -> None:
+    f = tmp_path / 'front'
+    r = tmp_path / 'rear'
+    o = tmp_path / 'out'
+    t = tmp_path / 'temp'
+    f.mkdir()
+    r.mkdir()
+    t.mkdir()
+    mock_archive = mocker.patch('deltona.commands.media.archive_dashcam_footage')
+    result = runner.invoke(encode_dashcam_main, [str(f), str(r), str(o), '-T', str(t)])
+    assert result.exit_code == 0
+    assert mock_archive.call_args[1]['temp_dir'] == t
+
+
 def test_encode_dashcam_main_no_hwaccel(mocker: MockerFixture, runner: CliRunner,
                                         tmp_path: Path) -> None:
     f = tmp_path / 'front'

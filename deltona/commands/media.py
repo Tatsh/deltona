@@ -457,10 +457,11 @@ def ke_ebook_ex_main(paths: Sequence[Path],
               default=1,
               type=int,
               help='Maximum seconds between front and rear timestamps for pairing.')
+@click.option('--no-chapters', is_flag=True, help='Disable chapter markers in output.')
 @click.option('--no-hwaccel', help='Disable hardware decoding.', is_flag=True)
 @click.option('--no-rear-crop', is_flag=True, help='Disable rear video cropping.')
 @click.option('--no-setpts', is_flag=True, help='Disable use of setpts.')
-@click.option('--preset', help='Output preset (various codecs).', default='slow')
+@click.option('--preset', help='Output preset (various codecs).', default='p7')
 @click.option('--rear-crop', default='1920:1020:0:0', help='Crop string for the rear camera view.')
 @click.option('--rear-view-scale-divisor',
               default=2.5,
@@ -483,9 +484,9 @@ def ke_ebook_ex_main(paths: Sequence[Path],
     help='Video decoder (for hardware decoding only).',
     metavar='DECODER',
 )
-@click.option('--video-encoder', default='libx265', help='Video encoder.', metavar='ENCODER')
+@click.option('--video-encoder', default='hevc_nvenc', help='Video encoder.', metavar='ENCODER')
 @click.option('--video-max-bitrate',
-              default='30M',
+              default='20M',
               help='Maximum video bitrate.',
               metavar='BITRATE')
 @click.option('-D', '--no-delete', is_flag=True, help='Do not delete original files.')
@@ -497,7 +498,10 @@ def ke_ebook_ex_main(paths: Sequence[Path],
     metavar='RE',
 )
 @click.option('-O', '--overwrite', is_flag=True, help='Overwrite existing files.')
-@click.option('-T', '--temp-dir', help='Temporary directory for processing.')
+@click.option('-T',
+              '--temp-dir',
+              help='Temporary directory for processing.',
+              type=click.Path(file_okay=False, path_type=Path))
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 def encode_dashcam_main(  # noqa: PLR0913, PLR0917
     front_dir: Path,
@@ -509,19 +513,20 @@ def encode_dashcam_main(  # noqa: PLR0913, PLR0917
     level: str = 'auto',
     match_regexp: str = r'^(\d+)_.*',
     max_offset: int = 1,
-    preset: str = 'slow',
+    preset: str = 'p7',
     rear_crop: str = '1920:1020:0:0',
     rear_view_scale_divisor: float = 2.5,
     setpts: str = '0.25*PTS',
-    temp_dir: str | None = None,
+    temp_dir: Path | None = None,
     tier: str = 'high',
     time_format: str = '%Y%m%d%H%M%S',
     video_bitrate: str = '0k',
     video_decoder: str = 'hevc_cuvid',
-    video_encoder: str = 'libx265',
-    video_max_bitrate: str = '30M',
+    video_encoder: str = 'hevc_nvenc',
+    video_max_bitrate: str = '20M',
     *,
     debug: bool = False,
+    no_chapters: bool = False,
     no_delete: bool = False,
     no_hwaccel: bool = False,
     no_rear_crop: bool = False,
@@ -560,6 +565,7 @@ def encode_dashcam_main(  # noqa: PLR0913, PLR0917
         front_dir,
         rear_dir,
         output_dir,
+        chapters=not no_chapters,
         clip_length=clip_length,
         crf=crf,
         hwaccel=None if no_hwaccel else hwaccel,
@@ -603,7 +609,7 @@ def hlg2sdr_main(
     delete_after: bool = False,
     fast: bool = False,
 ) -> None:
-    """Convert a HLG video to SDR."""
+    """Convert an HLG video to SDR."""
     setup_logging(debug=debug, loggers={'deltona': {}})
     hlg_to_sdr(filename, crf, codec, output, fast=fast, delete_after=delete_after)
 
@@ -664,12 +670,14 @@ def flac_dir_finalize_main(directory: Path, *, debug: bool = False) -> None:
                 return y[0].lower(), y[1]
             return None
 
-        return (y for y in (_split_eq(x) for x in sp.run(
-            ('metaflac', '--export-tags-to=-', str(flac_path)),
-            stdout=sp.PIPE,
-            text=True,
-            check=False,
-        ).stdout.splitlines()) if y is not None)
+        return (
+            y for y in (
+                _split_eq(x) for x in sp.run(
+                    ('metaflac', '--export-tags-to=-', str(flac_path)),  # noqa: S607
+                    stdout=sp.PIPE,
+                    text=True,
+                    check=False,
+                ).stdout.splitlines()) if y is not None)
 
     def remove_accents(s: str) -> str:
         return ''.join(c for c in unicodedata.normalize('NFD', re.sub(r'[Øø]', 'o', s))

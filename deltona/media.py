@@ -127,7 +127,7 @@ def supported_audio_input_formats(
         for rate in rates:
             log.debug('Checking pcm_%s @ %d.', format_, rate)
             p = sp.run(
-                (
+                (  # noqa: S607
                     'ffmpeg',
                     '-hide_banner',
                     '-loglevel',
@@ -231,15 +231,16 @@ def add_info_json_to_media_file(path: StrPath,
                     (r"^Attachment ID \d+: type 'application/json', size \d+ bytes, "
                      r"file name 'info.json'"),
                     line,
-                ) for line in sp.run(('mkvmerge', '--identify', str(path)),
-                                     capture_output=True,
-                                     check=True,
-                                     text=True).stdout.splitlines()):
+                ) for line in sp.run(
+                    ('mkvmerge', '--identify', str(path)),  # noqa: S607
+                    capture_output=True,
+                    check=True,
+                    text=True).stdout.splitlines()):
             log.warning('Attachment named info.json already exists. Not modifying file.')
             return
         log.debug('Attaching info.json to MKV.')
         sp.run(
-            (
+            (  # noqa: S607
                 'mkvpropedit',
                 str(path),
                 '--attachment-name',
@@ -263,7 +264,7 @@ def add_info_json_to_media_file(path: StrPath,
                                             mode='w+') as ffm,
         ):
             sp.run(
-                (
+                (  # noqa: S607
                     'ffmpeg',
                     '-hide_banner',
                     '-loglevel',
@@ -290,7 +291,7 @@ def add_info_json_to_media_file(path: StrPath,
                                              mode='w+') as nfw:
                 nfw.writelines(lines)
             sp.run(
-                (
+                (  # noqa: S607
                     'ffmpeg',
                     '-y',
                     '-i',
@@ -313,13 +314,19 @@ def add_info_json_to_media_file(path: StrPath,
 
     def mp4box_add_json() -> None:
         with contextlib.suppress(sp.CalledProcessError):
-            sp.run(('MP4Box', '-rem-item', '1', str(path)), capture_output=not debug, check=True)
-        sp.run(('MP4Box', '-set-meta', 'mp21', str(path)), capture_output=not debug, check=True)
+            sp.run(
+                ('MP4Box', '-rem-item', '1', str(path)),  # noqa: S607
+                capture_output=not debug,
+                check=True)
+        sp.run(
+            ('MP4Box', '-set-meta', 'mp21', str(path)),  # noqa: S607
+            capture_output=not debug,
+            check=True)
         info_json_path = Path('info.json')
         copyfile(json_path, info_json_path)
         log.debug('Attaching info.json to MP4.')
         sp.run(
-            (
+            (  # noqa: S607
                 'MP4Box',
                 '-add-item',
                 (f'{info_json_path}:replace:name=youtube-dl metadata:mime=application/json:'
@@ -365,7 +372,7 @@ def ffprobe(path: StrPath) -> ProbeDict:
         'ProbeDict',
         json.loads(
             sp.run(
-                (
+                (  # noqa: S607
                     'ffprobe',
                     '-v',
                     'quiet',
@@ -404,18 +411,19 @@ def get_info_json(path: StrPath, *, raw: bool = False) -> Any:
             out = ffprobe(path)['format']['tags']['info_json']
         case 'm4a' | 'm4b' | 'm4p' | 'm4r' | 'm4v' | 'mp4':
             out = sp.run(
-                ('MP4Box', '-dump-item', '1:path=/dev/stdout', str(path)),
+                ('MP4Box', '-dump-item', '1:path=/dev/stdout', str(path)),  # noqa: S607
                 check=True,
                 capture_output=True,
                 text=True,
             ).stdout.strip()
         case 'mkv':
-            out = (sp.run(
-                ('mkvextract', str(path), 'attachments', '1:/dev/stdout'),
-                check=True,
-                capture_output=True,
-                text=True,
-            ).stdout.strip().splitlines()[1])
+            out = (
+                sp.run(
+                    ('mkvextract', str(path), 'attachments', '1:/dev/stdout'),  # noqa: S607
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                ).stdout.strip().splitlines()[1])
         case 'mp3':
             out = ffprobe(path)['format']['tags']['TXXX'].replace('info_json=', '', 1)
         case 'opus':
@@ -474,7 +482,7 @@ def create_static_text_video(
     with tempfile.NamedTemporaryFile(suffix='.png', delete=False, dir=Path.cwd()) as tf:
         try:
             sp.run(
-                (
+                (  # noqa: S607
                     'magick',
                     '-font',
                     font,
@@ -974,6 +982,7 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     rear_dir: StrPath,
     output_dir: StrPath,
     *,
+    chapters: bool = True,
     clip_length: int = 3,
     container: str = 'matroska',
     crf: int | None = 28,
@@ -1033,6 +1042,9 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
         Directory containing rear footage.
     output_dir : StrPath
         Will be created if it does not exist including parents.
+    chapters : bool
+        Embed chapter markers in the output file. Each clip pair becomes a chapter named after the
+        front file stem without the trailing letter suffix (e.g. ``20260318101701_025194``).
     clip_length : int
         Clip length in minutes.
     container : str
@@ -1085,7 +1097,7 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     ------
     subprocess.CalledProcessError
         If an FFmpeg invocation fails.
-    """
+    """  # noqa: DOC502
     from send2trash import send2trash  # noqa: PLC0415
 
     output_dir = Path(output_dir)
@@ -1103,10 +1115,13 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     crop_str = f'crop={rear_crop},' if rear_crop else ''
     setpts_str = f'setpts={setpts}' if setpts else ''
     hevc_nvenc_options = ({
-        '-cq': '29',
+        '-b_ref_mode': 'middle',
+        '-cq': '25',
         '-level': level,
+        '-rc': 'vbr',
         '-rc-lookahead': '32',
         '-spatial_aq': '1',
+        '-temporal_aq': '1',
         '-tier': tier,
         '-tune': 'uhq',
     } if video_encoder == 'hevc_nvenc' else {})
@@ -1145,68 +1160,97 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
             log.debug('Group size: %d pairs', len(pair_group))
             to_be_merged: list[Path] = []
             send_to_waste: list[Path] = []
-            for i, (back_file, front_file) in enumerate(pair_group):
-                log.debug('Back file: %s, front file: %s', back_file, front_file)
+            metadata_path: str | None = None
+            try:
+                for i, (back_file, front_file) in enumerate(pair_group):
+                    log.debug('Back file: %s, front file: %s', back_file, front_file)
+                    cmd = (
+                        'ffmpeg',
+                        '-hide_banner',
+                        *input_options,
+                        '-i',
+                        str(back_file),
+                        '-i',
+                        str(front_file),
+                        *output_options,
+                        '-',
+                    )
+                    send_to_waste += [front_file, back_file]
+                    log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
+                    with tempfile.NamedTemporaryFile(delete=False,
+                                                     dir=temp_dir,
+                                                     prefix=f'{i:04d}-',
+                                                     suffix=f'.{extension}') as tf:
+                        sp.run(cmd, stdout=tf, check=True, stderr=sp.PIPE)
+                        tf_fixed = Path(tf.name).resolve(strict=True)
+                        to_be_merged.append(tf_fixed)
+                        temp_concat.write(f"file '{tf_fixed}'\n")
+                temp_concat.flush()
+                first_front = pair_group[0][1]
+                full_output_path = output_dir / first_front.with_suffix(f'.{extension}').name
+                if not overwrite:
+                    suffix = 1
+                    while full_output_path.exists():
+                        offset = 5 if suffix > 1 else 0
+                        full_output_path = (full_output_path.parent /
+                                            f'{full_output_path.stem[:-offset]}-{suffix:04d}'
+                                            f'{full_output_path.suffix}')
+                        suffix += 1
+                metadata_args: tuple[str, ...] = ()
+                if chapters and len(to_be_merged) > 0:
+                    with tempfile.NamedTemporaryFile('w',
+                                                     dir=temp_dir,
+                                                     encoding='utf-8',
+                                                     prefix='metadata-',
+                                                     suffix='.txt',
+                                                     delete=False) as metadata_file:
+                        metadata_file.write(';FFMETADATA1\n')
+                        chapter_start = 0
+                        for _merged_file, (_, front_file) in zip(to_be_merged,
+                                                                 pair_group,
+                                                                 strict=True):
+                            source_duration = float(
+                                ffprobe(front_file)['format'].get('duration')
+                                or ffprobe(front_file)['streams'][0].get('duration', '0'))
+                            pts_match = (re.match(r'^([\d.]+)\*PTS$', setpts) if setpts else None)
+                            duration_s = (source_duration * float(pts_match.group(1))
+                                          if pts_match else source_duration)
+                            duration_ms = int(duration_s * 1000)
+                            chapter_title = front_file.stem[:-1]
+                            metadata_file.write(f'\n[CHAPTER]\nTIMEBASE=1/1000\n'
+                                                f'START={chapter_start}\n'
+                                                f'END={chapter_start + duration_ms}\n'
+                                                f'title={chapter_title}\n')
+                            chapter_start += duration_ms
+                        metadata_path = metadata_file.name
+                    metadata_args = ('-i', metadata_path, '-map_metadata', '1')
+                    log.debug('Chapter metadata file: %s', metadata_path)
                 cmd = (
                     'ffmpeg',
                     '-hide_banner',
-                    *input_options,
+                    '-y',
+                    '-f',
+                    'concat',
+                    '-safe',
+                    '0',
                     '-i',
-                    str(back_file),
-                    '-i',
-                    str(front_file),
-                    *output_options,
-                    '-',
+                    temp_concat.name,
+                    *metadata_args,
+                    '-c',
+                    'copy',
+                    str(full_output_path),
                 )
-                send_to_waste += [front_file, back_file]
-                log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
-                with tempfile.NamedTemporaryFile(delete=False,
-                                                 dir=temp_dir,
-                                                 prefix=f'{i:04d}-',
-                                                 suffix=f'.{extension}') as tf:
-                    try:
-                        sp.run(cmd, stdout=tf, check=True, stderr=sp.PIPE)
-                    except sp.CalledProcessError as e:
-                        log.exception('STDERR: %s', e.stderr.decode())
-                        for path in to_be_merged:
-                            path.unlink()
-                        raise
-                    tf_fixed = Path(tf.name).resolve(strict=True)
-                    to_be_merged.append(tf_fixed)
-                    temp_concat.write(f"file '{tf_fixed}'\n")
-            temp_concat.flush()
-            first_front = pair_group[0][1]
-            full_output_path = output_dir / first_front.with_suffix(f'.{extension}').name
-            if not overwrite:
-                suffix = 1
-                while full_output_path.exists():
-                    offset = 5 if suffix > 1 else 0
-                    full_output_path = (
-                        full_output_path.parent /
-                        f'{full_output_path.stem[:-offset]}-{suffix:04d}{full_output_path.suffix}')
-                    suffix += 1
-            cmd = (
-                'ffmpeg',
-                '-hide_banner',
-                '-y',
-                '-f',
-                'concat',
-                '-safe',
-                '0',
-                '-i',
-                temp_concat.name,
-                '-c',
-                'copy',
-                str(full_output_path),
-            )
-            log.debug('Concatenating with: %s', ' '.join(quote(x) for x in cmd))
-            sp.run(cmd, check=True, capture_output=True)
-            for path in to_be_merged:
-                path.unlink()
-            if not no_delete:
-                for path in send_to_waste:
-                    send2trash(path)
-                    log.debug('Sent to wastebin: %s', path)
+                log.debug('Concatenating with: %s', ' '.join(quote(x) for x in cmd))
+                sp.run(cmd, check=True, capture_output=True)
+                if not no_delete:
+                    for path in send_to_waste:
+                        send2trash(path)
+                        log.debug('Sent to wastebin: %s', path)
+            finally:
+                for path in to_be_merged:
+                    path.unlink(missing_ok=True)
+                if metadata_path is not None:
+                    Path(metadata_path).unlink(missing_ok=True)
 
 
 def hlg_to_sdr(
