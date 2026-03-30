@@ -40,8 +40,11 @@ __all__ = (
     'ffprobe',
     'get_cd_disc_id',
     'get_info_json',
+    'group_pairs',
     'hlg_to_sdr',
     'is_audio_input_format_supported',
+    'pair_dashcam_files',
+    'parse_timestamp',
     'supported_audio_input_formats',
 )
 
@@ -831,12 +834,146 @@ def group_files(
     return groups
 
 
+def parse_timestamp(name: str, match_re: re.Pattern[str] | str, time_format: str) -> datetime:
+    """
+    Extract and parse a timestamp from a filename.
+
+    Parameters
+    ----------
+    name : str
+        Filename to extract the timestamp from.
+    match_re : re.Pattern[str] | str
+        Regular expression with at least one group capturing the timestamp portion.
+    time_format : str
+        Format string for :py:func:`~datetime.datetime.strptime`.
+
+    Returns
+    -------
+    datetime
+        Parsed datetime object.
+    """
+    return datetime.strptime(  # noqa: DTZ007
+        assert_not_none(re.match(match_re, name)).group(1), time_format)
+
+
+def pair_dashcam_files(
+    front_dir: StrPath,
+    rear_dir: StrPath,
+    match_re: re.Pattern[str] | str = r'^(\d+)_.*',
+    time_format: str = '%Y%m%d%H%M%S',
+    max_offset: int = 1,
+) -> list[tuple[Path, Path]]:
+    """
+    Pair front and rear dashcam files by timestamp proximity.
+
+    For each front file, finds the closest rear file whose timestamp is within ``max_offset``
+    seconds. Files without a match are logged and skipped.
+
+    Parameters
+    ----------
+    front_dir : StrPath
+        Directory containing front footage.
+    rear_dir : StrPath
+        Directory containing rear footage.
+    match_re : re.Pattern[str] | str
+        Regular expression to extract the timestamp from filenames.
+    time_format : str
+        Format string for parsing the extracted timestamp.
+    max_offset : int
+        Maximum seconds between front and rear timestamps for pairing.
+
+    Returns
+    -------
+    list[tuple[Path, Path]]
+        Pairs of ``(rear_file, front_file)`` sorted by front file timestamp.
+    """
+    front_files = sorted(
+        ((f.resolve(strict=True), parse_timestamp(f.name, match_re, time_format))
+         for f in Path(front_dir).iterdir() if not f.name.startswith('.')),
+        key=operator.itemgetter(1),
+    )
+    rear_files = sorted(
+        ((f.resolve(strict=True), parse_timestamp(f.name, match_re, time_format))
+         for f in Path(rear_dir).iterdir() if not f.name.startswith('.')),
+        key=operator.itemgetter(1),
+    )
+    pairs: list[tuple[Path, Path]] = []
+    used_rear: set[Path] = set()
+    for front_file, front_dt in front_files:
+        best_match: Path | None = None
+        best_diff = float('inf')
+        for rear_file, rear_dt in rear_files:
+            if rear_file in used_rear:
+                continue
+            diff = abs((front_dt - rear_dt).total_seconds())
+            if diff <= max_offset and diff < best_diff:
+                best_match = rear_file
+                best_diff = diff
+        if best_match is not None:
+            pairs.append((best_match, front_file))
+            used_rear.add(best_match)
+        else:
+            log.info('No matching rear video for %s, skipping.', front_file.name)
+    for rear_file, _ in rear_files:
+        if rear_file not in used_rear:
+            log.info('No matching front video for %s, skipping.', rear_file.name)
+    return pairs
+
+
+def group_pairs(
+    pairs: list[tuple[Path, Path]],
+    clip_length: int = 3,
+    match_re: re.Pattern[str] | str = r'^(\d+)_.*',
+    time_format: str = '%Y%m%d%H%M%S',
+) -> list[list[tuple[Path, Path]]]:
+    """
+    Group paired dashcam files into recording sessions by timestamp proximity.
+
+    Consecutive pairs whose front file timestamps are within ``clip_length`` minutes of each other
+    are placed in the same group. A gap exceeding ``clip_length`` starts a new group.
+
+    Parameters
+    ----------
+    pairs : list[tuple[Path, Path]]
+        Pairs of ``(rear_file, front_file)`` sorted by front file timestamp.
+    clip_length : int
+        Maximum gap in minutes between consecutive pairs in a group.
+    match_re : re.Pattern[str] | str
+        Regular expression to extract the timestamp from filenames.
+    time_format : str
+        Format string for parsing the extracted timestamp.
+
+    Returns
+    -------
+    list[list[tuple[Path, Path]]]
+        Groups of pairs, each group representing a recording session.
+    """
+    if not pairs:
+        return []
+    groups: list[list[tuple[Path, Path]]] = []
+    group: list[tuple[Path, Path]] = [pairs[0]]
+    groups.append(group)
+    for pair in pairs[1:]:
+        _, front_file = pair
+        _, last_front = group[-1]
+        this_dt = parse_timestamp(front_file.name, match_re, time_format)
+        last_dt = parse_timestamp(last_front.name, match_re, time_format)
+        diff = (this_dt - last_dt).total_seconds() // 60
+        log.debug('Pair gap: %s vs %s: %d minutes', front_file.name, last_front.name, diff)
+        if diff > clip_length:
+            log.debug('New group started with %s.', front_file.name)
+            group = [pair]
+            groups.append(group)
+        else:
+            group.append(pair)
+    return groups
+
+
 def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     front_dir: StrPath,
     rear_dir: StrPath,
     output_dir: StrPath,
     *,
-    allow_group_discrepancy_resolution: bool = True,
     clip_length: int = 3,
     container: str = 'matroska',
     crf: int | None = 28,
@@ -844,6 +981,7 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     hwaccel: str | None = 'auto',
     keep_audio: bool = False,
     level: int | str | None = 'auto',
+    max_offset: int = 1,
     no_delete: bool = False,
     overwrite: bool = False,
     match_re: re.Pattern[str] | str = r'^(\d+)_.*',
@@ -874,9 +1012,8 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     the time format specified with ``time_format`` (see strptime documentation at
     https://docs.python.org/3/library/datetime.html#datetime.datetime.strptime).
 
-    In many cases, the camera leaves behind stray rear camera files (usually no more than one per
-    group and always a video without a matching front video file the end). These are automatically
-    ignored if possible.
+    Front and rear files are paired by timestamp proximity (within ``max_offset`` seconds). Files
+    without a corresponding partner are logged and skipped without deletion.
 
     Original files whose content is successfully converted are sent to the wastebin.
 
@@ -896,8 +1033,6 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
         Directory containing rear footage.
     output_dir : StrPath
         Will be created if it does not exist including parents.
-    allow_group_discrepancy_resolution : bool
-        Attempt to solve grouping discrepancies (count of files) automatically.
     clip_length : int
         Clip length in minutes.
     container : str
@@ -916,6 +1051,8 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     match_re : re.Pattern[str] | str
         Regular expression used for finding the timestamp in a filename. Must contain at least one
         group and only the first group is considered.
+    max_offset : int
+        Maximum seconds between front and rear timestamps for pairing.
     no_delete : bool
         Do not delete original files after successful conversion.
     overwrite : bool
@@ -924,7 +1061,7 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
         Preset (various codecs).
     rear_crop : str | None
         Crop string for the rear video. See `ffmpeg crop filter`_ for more information.
-    rear_view_scale_divisor : float
+    rear_view_scale_divisor : float | None
         Scaling divisor for rear view.
     setpts : str | None
         Change the PTS. See `ffmpeg setpts filter`_ for more information. The default is to increase
@@ -946,15 +1083,11 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
 
     Raises
     ------
-    ValueError
-        ``zip()`` is used to group pairs of file groups and the front and rear videos. Strict mode
-        is used and as such length counts must always match, unless a workaround is known. If a
-        workaround cannot be used, this exception will be raised from ``zip()``.
-    """  # noqa: DOC501
+    subprocess.CalledProcessError
+        If an FFmpeg invocation fails.
+    """
     from send2trash import send2trash  # noqa: PLC0415
 
-    front_dir = Path(front_dir)
-    rear_dir = Path(rear_dir)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     # Do not sort the dicts
@@ -1000,72 +1133,20 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
                              | hevc_nvenc_options
                              | libx265_options
                              | libx264_options).items() if v)))
-    back_groups = group_files(
-        (str(x) for x in Path(rear_dir).iterdir() if not x.name.startswith('.')),
-        clip_length,
-        match_re,
-        time_format,
-    )
-    front_groups = group_files(
-        (str(x) for x in Path(front_dir).iterdir() if not x.name.startswith('.')),
-        clip_length,
-        match_re,
-        time_format,
-    )
-    back_groups_len = len(back_groups)
-    front_groups_len = len(front_groups)
-    log.debug('Back group count: %d', back_groups_len)
-    log.debug('Front group count: %d', front_groups_len)
-    if back_groups_len != front_groups_len:
-        if not allow_group_discrepancy_resolution:
-            raise ValueError(back_groups_len)
-        log.warning('Length of front and back groups do not match. Attempting resolution.')
-        back_groups = [x for x in back_groups if len(x) > 1]
-        back_groups_len = len(back_groups)
-        if back_groups_len != front_groups_len:
-            raise ValueError(back_groups_len)
-        log.info('Possibly resolved length issue by ignoring single item rear videos.')
-    # Call list(zip(...)) so strictness can be checked before looping.
-    for back_group, front_group in list(zip(back_groups, front_groups, strict=True)):
+    pairs = pair_dashcam_files(front_dir, rear_dir, match_re, time_format, max_offset)
+    pair_groups = group_pairs(pairs, clip_length, match_re, time_format)
+    log.debug('Pair group count: %d', len(pair_groups))
+    for pair_group in pair_groups:
         with tempfile.NamedTemporaryFile('w',
                                          dir=temp_dir,
                                          encoding='utf-8',
                                          prefix='concat-',
                                          suffix='.txt') as temp_concat:
-            fg_len = len(front_group)
-            bg_len = len(back_group)
-            log.debug('Back group length: %d', bg_len)
-            log.debug('Front group length: %d', fg_len)
-            for i, item in enumerate(back_group):
-                log.debug(
-                    'Front: %-40s Back: %s',
-                    front_group[i].name if i < fg_len else 'NOTHING',
-                    item.name,
-                )
-            if fg_len != bg_len:
-                if not allow_group_discrepancy_resolution:
-                    raise ValueError(bg_len)
-                log.warning('List lengths of front and back videos do not match.')
-                if bg_len - fg_len == 1:
-                    last = back_group.pop()
-                    if not no_delete:
-                        send2trash(last)
-                        log.debug('Sent to wastebin: %s', last)
-                    log.info('Possibly resolved length issue by ignoring last rear video in set.')
-                elif fg_len - bg_len == 1:
-                    last = front_group.pop()
-                    if not no_delete:
-                        send2trash(last)
-                        log.debug('Sent to wastebin: %s', last)
-                    log.info('Possibly resolved length issue by ignoring last front video in set.')
-                else:
-                    log.error('Cannot resolve automatically.')
+            log.debug('Group size: %d pairs', len(pair_group))
             to_be_merged: list[Path] = []
             send_to_waste: list[Path] = []
-            for i, (back_file, front_file) in enumerate(
-                    list(zip(back_group, front_group, strict=False))):
+            for i, (back_file, front_file) in enumerate(pair_group):
                 log.debug('Back file: %s, front file: %s', back_file, front_file)
-                assert back_file != front_file
                 cmd = (
                     'ffmpeg',
                     '-hide_banner',
@@ -1094,7 +1175,8 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
                     to_be_merged.append(tf_fixed)
                     temp_concat.write(f"file '{tf_fixed}'\n")
             temp_concat.flush()
-            full_output_path = output_dir / front_group[0].with_suffix(f'.{extension}').name
+            first_front = pair_group[0][1]
+            full_output_path = output_dir / first_front.with_suffix(f'.{extension}').name
             if not overwrite:
                 suffix = 1
                 while full_output_path.exists():

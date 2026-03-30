@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 import enum
 import subprocess as sp
 
-from click.testing import CliRunner
 from deltona.commands.media import (
     add_cdda_times_main,
     add_info_json_main,
@@ -22,7 +21,6 @@ from deltona.commands.media import (
     wait_for_disc_main,
 )
 from deltona.ultraiso import InsufficientArguments
-from pytest_mock import MockerFixture
 import pytest
 
 if TYPE_CHECKING:
@@ -220,6 +218,72 @@ def test_encode_dashcam_main_same_dirs(runner: CliRunner, tmp_path: Path) -> Non
     d.mkdir()
     result = runner.invoke(encode_dashcam_main, [str(d), str(d), str(tmp_path / 'out')])
     assert result.exit_code != 0
+
+
+def test_encode_dashcam_main_no_hwaccel(mocker: MockerFixture, runner: CliRunner,
+                                        tmp_path: Path) -> None:
+    f = tmp_path / 'front'
+    r = tmp_path / 'rear'
+    o = tmp_path / 'out'
+    f.mkdir()
+    r.mkdir()
+    mock_archive = mocker.patch('deltona.commands.media.archive_dashcam_footage')
+    result = runner.invoke(encode_dashcam_main, [str(f), str(r), str(o), '--no-hwaccel'])
+    assert result.exit_code == 0
+    mock_archive.assert_called_once()
+    assert mock_archive.call_args[1]['hwaccel'] is None
+
+
+def test_encode_dashcam_main_no_rear_crop(mocker: MockerFixture, runner: CliRunner,
+                                          tmp_path: Path) -> None:
+    f = tmp_path / 'front'
+    r = tmp_path / 'rear'
+    o = tmp_path / 'out'
+    f.mkdir()
+    r.mkdir()
+    mock_archive = mocker.patch('deltona.commands.media.archive_dashcam_footage')
+    result = runner.invoke(encode_dashcam_main, [str(f), str(r), str(o), '--no-rear-crop'])
+    assert result.exit_code == 0
+    assert mock_archive.call_args[1]['rear_crop'] is None
+
+
+def test_encode_dashcam_main_no_setpts(mocker: MockerFixture, runner: CliRunner,
+                                       tmp_path: Path) -> None:
+    f = tmp_path / 'front'
+    r = tmp_path / 'rear'
+    o = tmp_path / 'out'
+    f.mkdir()
+    r.mkdir()
+    mock_archive = mocker.patch('deltona.commands.media.archive_dashcam_footage')
+    result = runner.invoke(encode_dashcam_main, [str(f), str(r), str(o), '--no-setpts'])
+    assert result.exit_code == 0
+    assert mock_archive.call_args[1]['setpts'] is None
+
+
+def test_encode_dashcam_main_max_offset(mocker: MockerFixture, runner: CliRunner,
+                                        tmp_path: Path) -> None:
+    f = tmp_path / 'front'
+    r = tmp_path / 'rear'
+    o = tmp_path / 'out'
+    f.mkdir()
+    r.mkdir()
+    mock_archive = mocker.patch('deltona.commands.media.archive_dashcam_footage')
+    result = runner.invoke(encode_dashcam_main, [str(f), str(r), str(o), '--max-offset', '5'])
+    assert result.exit_code == 0
+    assert mock_archive.call_args[1]['max_offset'] == 5
+
+
+def test_encode_dashcam_main_no_delete(mocker: MockerFixture, runner: CliRunner,
+                                       tmp_path: Path) -> None:
+    f = tmp_path / 'front'
+    r = tmp_path / 'rear'
+    o = tmp_path / 'out'
+    f.mkdir()
+    r.mkdir()
+    mock_archive = mocker.patch('deltona.commands.media.archive_dashcam_footage')
+    result = runner.invoke(encode_dashcam_main, [str(f), str(r), str(o), '-D'])
+    assert result.exit_code == 0
+    assert mock_archive.call_args[1]['no_delete'] is True
 
 
 def test_hlg2sdr_main(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:

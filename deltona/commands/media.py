@@ -446,14 +446,17 @@ def ke_ebook_ex_main(paths: Sequence[Path],
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('front_dir', type=click.Path(exists=True, dir_okay=True, path_type=Path))
-@click.argument('rear_dir', type=click.Path(exists=True, dir_okay=True, path_type=Path))
-@click.argument('output_dir', type=click.Path(dir_okay=True, path_type=Path), default=Path())
+@click.argument('front_dir', type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.argument('rear_dir', type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.argument('output_dir', type=click.Path(file_okay=False, path_type=Path), default=Path())
 @click.option('--clip-length', help='Clip length in minutes.', type=int, default=3)
 @click.option('--crf', type=int, default=26, help='Constant rate factor.')
 @click.option('--hwaccel', help='-hwaccel string for ffmpeg.', default='auto')
 @click.option('--level', help='Level (HEVC).', default='auto')
-@click.option('--no-fix-groups', help='Disable group discrepancy resolution.', is_flag=True)
+@click.option('--max-offset',
+              default=1,
+              type=int,
+              help='Maximum seconds between front and rear timestamps for pairing.')
 @click.option('--no-hwaccel', help='Disable hardware decoding.', is_flag=True)
 @click.option('--no-rear-crop', is_flag=True, help='Disable rear video cropping.')
 @click.option('--no-setpts', is_flag=True, help='Disable use of setpts.')
@@ -505,7 +508,8 @@ def encode_dashcam_main(  # noqa: PLR0913, PLR0917
     hwaccel: str = 'auto',
     level: str = 'auto',
     match_regexp: str = r'^(\d+)_.*',
-    preset: str = 'p7',
+    max_offset: int = 1,
+    preset: str = 'slow',
     rear_crop: str = '1920:1020:0:0',
     rear_view_scale_divisor: float = 2.5,
     setpts: str = '0.25*PTS',
@@ -514,12 +518,11 @@ def encode_dashcam_main(  # noqa: PLR0913, PLR0917
     time_format: str = '%Y%m%d%H%M%S',
     video_bitrate: str = '0k',
     video_decoder: str = 'hevc_cuvid',
-    video_encoder: str = 'hevc_nvenc',
-    video_max_bitrate: str = '15M',
+    video_encoder: str = 'libx265',
+    video_max_bitrate: str = '30M',
     *,
     debug: bool = False,
     no_delete: bool = False,
-    no_fix_groups: bool = False,
     no_hwaccel: bool = False,
     no_rear_crop: bool = False,
     no_setpts: bool = False,
@@ -540,9 +543,8 @@ def encode_dashcam_main(  # noqa: PLR0913, PLR0917
     the time format specified with --time-format (see strptime documentation at
     https://docs.python.org/3/library/datetime.html#datetime.datetime.strptime).
 
-    In many cases, the camera leaves behind stray rear camera files (usually no more than one per
-    group and always a video without a matching front video file the end). These are automatically
-    ignored if possible. This behaviour can be disabled by passing --no-fix-groups.
+    Front and rear files are paired by timestamp proximity (within --max-offset seconds). Files
+    without a corresponding partner are logged and skipped without deletion.
 
     Original files whose content is successfully converted are sent to the wastebin.
 
@@ -558,12 +560,12 @@ def encode_dashcam_main(  # noqa: PLR0913, PLR0917
         front_dir,
         rear_dir,
         output_dir,
-        allow_group_discrepancy_resolution=not no_fix_groups,
         clip_length=clip_length,
         crf=crf,
         hwaccel=None if no_hwaccel else hwaccel,
         level=level,
         match_re=match_regexp,
+        max_offset=max_offset,
         no_delete=no_delete,
         overwrite=overwrite,
         preset=preset,

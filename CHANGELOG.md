@@ -9,6 +9,32 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+### Added
+
+- `pair_dashcam_files()` and `group_pairs()` public utility functions for timestamp-proximity
+  pairing of front/rear dashcam files.
+- `max_offset` parameter on `media.archive_dashcam_footage` (default 1 second) for controlling
+  front/rear file pairing tolerance.
+- `--max-offset` CLI option on `encode-dashcam`.
+- `parse_timestamp()` public utility function.
+
+### Changed
+
+- `media.archive_dashcam_footage` now uses timestamp-proximity pairing instead of positional file
+  matching.
+- Unmatched dashcam files are now logged and skipped instead of being deleted.
+
+### Removed
+
+- `allow_group_discrepancy_resolution` parameter from `media.archive_dashcam_footage`.
+- `--no-fix-groups` CLI option from `encode-dashcam`.
+
+### Fixed
+
+- Click option default mismatches in `encode_dashcam_main` for `preset`, `video_encoder`, and
+  `video_max_bitrate`.
+- `click.Path` constraints now correctly use `file_okay=False` for directory arguments.
+
 ## [0.1.4] - 2026-03-21
 
 ### Changed
