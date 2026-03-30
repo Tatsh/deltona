@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from functools import cache
 from itertools import chain
 from os import utime
 from pathlib import Path
@@ -22,7 +21,8 @@ import socket
 import subprocess as sp
 import tempfile
 
-import niquests
+from async_lru import alru_cache
+from niquests import AsyncSession
 
 from .io import context_os_open
 from .system import IS_LINUX
@@ -404,6 +404,11 @@ def get_info_json(path: StrPath, *, raw: bool = False) -> Any:
     -------
     Any
         The JSON data decoded. Currently not typed.
+
+    Raises
+    ------
+    NotImplementedError
+        If the file type is not supported.
     """
     path = Path(path)
     match path.suffix.lower()[1:]:
@@ -638,7 +643,7 @@ def get_cd_disc_id(drive: StrPath) -> str:
         raise NotImplementedError
 
     def cddb_sum(n: int) -> int:
-        # a number like 2344 becomes 2+3+4+4 (13)
+        # A number like 2344 becomes 2+3+4+4 (13).
         ret = 0
         while n > 0:
             ret += n % 10
@@ -670,7 +675,7 @@ def get_cd_disc_id(drive: StrPath) -> str:
         checksum += cddb_sum((entry.cdte_addr.lba + CD_MSF_OFFSET) // CD_FRAMES)
     total_time: int = ((toc_entries[-1].cdte_addr.lba + CD_MSF_OFFSET) // CD_FRAMES) - (
         (toc_entries[0].cdte_addr.lba + CD_MSF_OFFSET) // CD_FRAMES)
-    # This expression inside f'{}' causes a Yapf parsing error
+    # This expression inside f'{}' causes a Yapf parsing error.
     entries = ' '.join(f'{x.cdte_addr.lba + CD_MSF_OFFSET}' for x in toc_entries[:-1])
     return (f'{(checksum % 0xFF) << 24 | total_time << 8 | last:08x} {last} '
             f'{entries} '
@@ -692,8 +697,8 @@ class CDDBQueryResult(NamedTuple):
     """Track titles."""
 
 
-@cache
-def cddb_query(
+@alru_cache
+async def cddb_query(
     disc_id: str,
     *,
     accept_first_match: bool = False,
@@ -709,7 +714,7 @@ def cddb_query(
     Defaults to host in Keyring under the ``gnudb`` key and current user name.
 
     It is advised to ``except`` typical
-    `Requests exceptions <https://requests.readthedocs.io/en/latest/>`_ when calling this.
+    `niquests exceptions <https://niquests.readthedocs.io/en/latest/>`_ when calling this.
 
     Parameters
     ----------
@@ -736,8 +741,9 @@ def cddb_query(
     Raises
     ------
     ValueError
-        If the server response code is not ``'200'`` or ``'210'`` (these are CDDB codes **not**
-        HTTP status codes.)
+        If the username or host is empty, if the server returns multiple matches and
+        ``accept_first_match`` is ``False``, or if the server response code is not ``'200'`` or
+        ``'210'`` (these are CDDB codes **not** HTTP status codes).
     """
     username = username or getpass.getuser()
     if not username:
@@ -750,39 +756,40 @@ def cddb_query(
     this_host = socket.gethostname()
     hello = {'hello': f'{username} {this_host} {app} {version}', 'proto': '6'}
     server = f'http://{host}/~cddb/cddb.cgi'
-    r = niquests.get(
-        server,
-        params={
-            'cmd': f'cddb query {disc_id}',
-            **hello
-        },
-        timeout=timeout,
-        headers={'user-agent': hello['hello']},
-    )
-    r.raise_for_status()
-    assert r.text is not None
-    log.debug('Response:\n%s', r.text.strip())
-    lines = r.text.splitlines()
-    first_line = lines[0].split(' ', 3)
-    disc_genre = disc_year = None
-    if len(lines) == 1 and first_line[0] == '200':
-        _, category, disc_id, artist_title = first_line
-    elif first_line[0] == '210':
-        if not accept_first_match:
-            log.debug('Results:\n%s', '\n'.join(lines).strip())
-            raise ValueError(len(lines[1:-1]))
-        category, disc_id, artist_title = lines[1].split(' ', 2)
-    else:
-        raise ValueError(first_line[0])
-    artist, disc_title = artist_title.split(' / ', 1)
-    r = niquests.get(
-        server,
-        params={
-            'cmd': f'cddb read {category} {disc_id.split(" ")[0]}',
-            **hello
-        },
-        timeout=timeout,
-    )
+    async with AsyncSession() as session:
+        r = await session.get(
+            server,
+            params={
+                'cmd': f'cddb query {disc_id}',
+                **hello
+            },
+            timeout=timeout,
+            headers={'user-agent': hello['hello']},
+        )
+        r.raise_for_status()
+        assert r.text is not None
+        log.debug('Response:\n%s', r.text.strip())
+        lines = r.text.splitlines()
+        first_line = lines[0].split(' ', 3)
+        disc_genre = disc_year = None
+        if len(lines) == 1 and first_line[0] == '200':
+            _, category, disc_id, artist_title = first_line
+        elif first_line[0] == '210':
+            if not accept_first_match:
+                log.debug('Results:\n%s', '\n'.join(lines).strip())
+                raise ValueError(len(lines[1:-1]))
+            category, disc_id, artist_title = lines[1].split(' ', 2)
+        else:
+            raise ValueError(first_line[0])
+        artist, disc_title = artist_title.split(' / ', 1)
+        r = await session.get(
+            server,
+            params={
+                'cmd': f'cddb read {category} {disc_id.split(" ")[0]}',
+                **hello
+            },
+            timeout=timeout,
+        )
     r.raise_for_status()
     assert r.text is not None
     log.debug('Response: %s', r.text)
@@ -1024,7 +1031,7 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     Files are automatically grouped using the regular expression passed with ``match_re``. This
     RE must contain at least one group and only the first group will be considered. Make dubious use
     of non-capturing groups if necessary. The captured group string is expected to be usable with
-    the time format specified with ``time_format`` (see strptime documentation at
+    the time format specified with ``time_format`` (see ``strptime`` documentation at
     https://docs.python.org/3/library/datetime.html#datetime.datetime.strptime).
 
     Front and rear files are paired by timestamp proximity (within ``max_offset`` seconds). Files
@@ -1115,7 +1122,7 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    # Do not sort the dicts
+    # Do not sort the dicts.
     input_options: list[str] = list(
         chain(*((k, *((str(v),) if not isinstance(v, bool) and v is not None else ()))
                 for k, v in ({

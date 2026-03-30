@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, TypedDict, cast
 
+from niquests import AsyncSession
 from typing_extensions import override
-import niquests
 
 from .string import strip_ansi_if_no_colors
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 __all__ = ('SalaryResponse', 'calculate_salary')
 
-# Find the API key by looking at requests on this page
+# Find the API key by looking at requests on this page:
 # http://www.symmetry.com/try-it-for-free/calculators
 API_KEY = 'RnFqNFA0NVlRTExEenRwWjNiRnJrTXY4WkZHZEpkcENEeFFzQ3F0Nnh5VT0='
 POST_URI = 'https://calculators.symmetry.com/api/calculators/hourly?report=none'
@@ -67,10 +67,10 @@ Net       \033[1;32m{self.net_pay:8.2f}\033[0m
 Fuckery   \033[1;31m{self.fuckery:8.2f}\033[0m""")
 
 
-def calculate_salary(*,
-                     hours: int = 70,
-                     pay_rate: float = 70.0,
-                     state: INCITS38Code = 'FL') -> SalaryResponse:
+async def calculate_salary(*,
+                           hours: int = 70,
+                           pay_rate: float = 70.0,
+                           state: INCITS38Code = 'FL') -> SalaryResponse:
     """
     Calculate a US salary using the Symmetry API.
 
@@ -90,90 +90,91 @@ def calculate_salary(*,
     """
     check_date = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
     gross_pay = hours * pay_rate
-    req = niquests.post(
-        POST_URI,
-        headers={
-            'accept': 'application/json, text/javascript, */*; q=0.01',
-            'cache-control': 'no-cache',
-            'dnt': '1',
-            'origin': 'https://www.symmetry.com',
-            'pcc-api-key': API_KEY,
-            'referer': REFERER,
-        },
-        json={
-            'checkDate': check_date,
-            'state': state.upper(),
-            'rates': [{
-                'payRate': str(pay_rate),
-                'hours': str(hours),
-            }],
-            'grossPay': str(gross_pay),
-            'grossPayType': 'PAY_PER_PERIOD',
-            'grossPayYTD': '0',
-            'payFrequency': 'MONTHLY',
-            'exemptFederal': 'false',
-            'exemptFica': 'false',
-            'exemptMedicare': 'false',
-            'federalFilingStatusType': 'SINGLE',
-            'federalAllowances': '0',
-            'additionalFederalWithholding': '0',
-            'roundFederalWithholding': 'false',
-            'print': {
+    async with AsyncSession() as session:
+        req = await session.post(
+            POST_URI,
+            headers={
+                'accept': 'application/json, text/javascript, */*; q=0.01',
+                'cache-control': 'no-cache',
+                'dnt': '1',
+                'origin': 'https://www.symmetry.com',
+                'pcc-api-key': API_KEY,
+                'referer': REFERER,
+            },
+            json={
                 'checkDate': check_date,
-                'checkNumber': '',
-                'checkNumberOnCheck': 'false',
-                'companyAddressLine1': '',
-                'companyAddressLine2': '',
-                'companyAddressLine3': '',
-                'companyName': '',
-                'companyNameOnCheck': 'false',
-                'employeeAddressLine1': '',
-                'employeeAddressLine2': '',
-                'employeeAddressLine3': '',
-                'employeeName': '',
-                'id': '',
-                'remarks': '',
+                'state': state.upper(),
+                'rates': [{
+                    'payRate': str(pay_rate),
+                    'hours': str(hours),
+                }],
+                'grossPay': str(gross_pay),
+                'grossPayType': 'PAY_PER_PERIOD',
+                'grossPayYTD': '0',
+                'payFrequency': 'MONTHLY',
+                'exemptFederal': 'false',
+                'exemptFica': 'false',
+                'exemptMedicare': 'false',
+                'federalFilingStatusType': 'SINGLE',
+                'federalAllowances': '0',
+                'additionalFederalWithholding': '0',
+                'roundFederalWithholding': 'false',
+                'print': {
+                    'checkDate': check_date,
+                    'checkNumber': '',
+                    'checkNumberOnCheck': 'false',
+                    'companyAddressLine1': '',
+                    'companyAddressLine2': '',
+                    'companyAddressLine3': '',
+                    'companyName': '',
+                    'companyNameOnCheck': 'false',
+                    'employeeAddressLine1': '',
+                    'employeeAddressLine2': '',
+                    'employeeAddressLine3': '',
+                    'employeeName': '',
+                    'id': '',
+                    'remarks': '',
+                },
+                'otherIncome': [],
+                'payCodes': [],
+                'stockOptions': [],
+                'stateInfo': {
+                    'parms': [
+                        {
+                            'name': 'TOTALALLOWANCES',
+                            'value': '0'
+                        },
+                        {
+                            'name': 'additionalStateWithholding',
+                            'value': '0'
+                        },
+                        {
+                            'name': 'SPOUSEBLINDNESS',
+                            'value': 'false'
+                        },
+                        {
+                            'name': 'stateExemption',
+                            'value': 'false'
+                        },
+                        {
+                            'name': 'PERSONALBLINDNESS',
+                            'value': 'false'
+                        },
+                        {
+                            'name': 'HEADOFHOUSEHOLD',
+                            'value': 'false'
+                        },
+                        {
+                            'name': 'FULLTIMESTUDENT',
+                            'value': 'false'
+                        },
+                    ]
+                },
+                'voluntaryDeductions': [],
+                'presetDeductions': [],
             },
-            'otherIncome': [],
-            'payCodes': [],
-            'stockOptions': [],
-            'stateInfo': {
-                'parms': [
-                    {
-                        'name': 'TOTALALLOWANCES',
-                        'value': '0'
-                    },
-                    {
-                        'name': 'additionalStateWithholding',
-                        'value': '0'
-                    },
-                    {
-                        'name': 'SPOUSEBLINDNESS',
-                        'value': 'false'
-                    },
-                    {
-                        'name': 'stateExemption',
-                        'value': 'false'
-                    },
-                    {
-                        'name': 'PERSONALBLINDNESS',
-                        'value': 'false'
-                    },
-                    {
-                        'name': 'HEADOFHOUSEHOLD',
-                        'value': 'false'
-                    },
-                    {
-                        'name': 'FULLTIMESTUDENT',
-                        'value': 'false'
-                    },
-                ]
-            },
-            'voluntaryDeductions': [],
-            'presetDeductions': [],
-        },
-        timeout=30,
-    )
+            timeout=30,
+        )
     req.raise_for_status()
     data = cast('ResponseDict', req.json())['content']
     return SalaryResponse(

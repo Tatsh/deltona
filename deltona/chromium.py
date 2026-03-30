@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from functools import cache
 from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-import niquests
+from async_lru import alru_cache
+from niquests import AsyncSession
+import anyio
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -28,7 +29,7 @@ def _get_pil_image_module() -> ModuleType:  # pragma: no cover
     return Image
 
 
-def fix_chromium_pwa_icon(
+async def fix_chromium_pwa_icon(
     config_path: StrPath,
     app_id: str,
     icon_src_uri: str,
@@ -66,7 +67,8 @@ def fix_chromium_pwa_icon(
     """
     image_mod = _get_pil_image_module()
     config_path = Path(config_path) / profile / 'Web Applications' / app_id
-    r = niquests.get(icon_src_uri, timeout=15)
+    async with AsyncSession() as session:
+        r = await session.get(icon_src_uri, timeout=15)
     r.raise_for_status()
     assert r.content is not None
     img = image_mod.open(BytesIO(r.content))
@@ -87,8 +89,8 @@ def fix_chromium_pwa_icon(
                        image_mod.LANCZOS).save(config_path / 'Icons Monochrome' / f'{size}.png')
 
 
-@cache
-def get_last_chrome_major_version() -> str:
+@alru_cache
+async def get_last_chrome_major_version() -> str:
     """
     Get last major Chrome version from the profile directory.
 
@@ -118,13 +120,14 @@ def get_last_chrome_major_version() -> str:
             '~/AppData/Local/Google/Chromium/User Data',
             '~/Library/Application Support/Google/Chromium',
     ):
-        if (p := (Path(location).expanduser() / 'Last Version')).exists():
-            return p.read_text().split('.', 1)[0]
+        p = await anyio.Path(location).expanduser() / 'Last Version'
+        if await p.exists():
+            return (await p.read_text()).split('.', 1)[0]
     return ''
 
 
-@cache
-def get_latest_chrome_major_version() -> str:
+@alru_cache
+async def get_latest_chrome_major_version() -> str:
     """
     Get the latest Chrome major version.
 
@@ -133,18 +136,17 @@ def get_latest_chrome_major_version() -> str:
     str
         The latest major version number as a string.
     """
-    return cast(
-        'str',
-        niquests.get(
+    async with AsyncSession() as session:
+        r = await session.get(
             ('https://versionhistory.googleapis.com/v1/chrome/platforms/win/channels/stable/'
              'versions'),
             timeout=5,
-        ).json()['versions'][0]['version'].split('.')[0],
-    )
+        )
+    return cast('str', r.json()['versions'][0]['version'].split('.')[0])
 
 
-@cache
-def generate_chrome_user_agent(os: str = 'Windows NT 10.0; Win64; x64') -> str:
+@alru_cache
+async def generate_chrome_user_agent(os: str = 'Windows NT 10.0; Win64; x64') -> str:
     """
     Get a Chrome user agent.
 
@@ -158,6 +160,6 @@ def generate_chrome_user_agent(os: str = 'Windows NT 10.0; Win64; x64') -> str:
     str
         A Chrome user agent string.
     """
-    last_major = get_last_chrome_major_version() or get_latest_chrome_major_version()
+    last_major = await get_last_chrome_major_version() or await get_latest_chrome_major_version()
     return (f'Mozilla/5.0 ({os}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{last_major}.0.0.0'
             ' Safari/537.36')

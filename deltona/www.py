@@ -16,8 +16,9 @@ import plistlib
 import re
 import urllib.parse
 
+from niquests import AsyncSession, Response
 from typing_extensions import NotRequired
-import niquests
+import anyio
 
 from .chromium import generate_chrome_user_agent
 from .string import hexstr2bytes
@@ -162,13 +163,13 @@ ul {{
         os.chdir(saved)
 
 
-def upload_to_imgbb(
+async def upload_to_imgbb(
     path: StrPath,
     *,
     api_key: str | None = None,
     keyring_username: str | None = None,
-    timeout: float = 5,
-) -> niquests.Response:
+    http_timeout: float = 5,
+) -> Response:
     """
     Upload an image to ImgBB.
 
@@ -182,22 +183,24 @@ def upload_to_imgbb(
         API key. If ``None``, the key is retrieved from the keyring.
     keyring_username : str | None
         Username for the keyring lookup. Defaults to the current user.
-    timeout : float
+    http_timeout : float
         HTTP timeout in seconds.
 
     Returns
     -------
-    niquests.Response
+    Response
         The response from the ImgBB API.
     """
     import keyring  # noqa: PLC0415
 
-    r = niquests.post(
-        'https://api.imgbb.com/1/upload',
-        files={'image': Path(path).resolve(strict=True).read_bytes()},
-        params={'key': api_key or keyring.get_password('imgbb', keyring_username or getuser())},
-        timeout=timeout,
-    )
+    image_data = await (await anyio.Path(path).resolve(strict=True)).read_bytes()
+    async with AsyncSession() as session:
+        r = await session.post(
+            'https://api.imgbb.com/1/upload',
+            files={'image': image_data},
+            params={'key': api_key or keyring.get_password('imgbb', keyring_username or getuser())},
+            timeout=http_timeout,
+        )
     r.raise_for_status()
     return r
 
@@ -310,7 +313,7 @@ def create_parsed_tree_structure(
         data: BookmarksDataset) -> list[BookmarksHTMLFolder | BookmarksHTMLLink]:
     keys = [f[0] for f in folder_path]
     ref = data
-    # This breaks for folders that are named the same at the same depth
+    # This breaks for folders that are named the same at the same depth.
     for i, key in enumerate(keys):
         try:
             next(x for x in ref if x['type'] == 'folder' and x['name'] == key)
@@ -356,13 +359,13 @@ def parse_bookmarks_html(html_content: str) -> BookmarksDataset:
     return data
 
 
-def check_bookmarks_html_urls(
+async def check_bookmarks_html_urls(
         html_content: str) -> tuple[BookmarksDataset, BookmarksDataset, BookmarksDataset]:
     """
-    Check a browser's exported bookmarks.html's URLs.
+    Check a browser's exported ``bookmarks.html`` URLs.
 
     Checks for URLs that are not valid any more (status ``404``) or have changed (statuses ``301``
-    and ``302``).
+    and ``302``). URLs are checked concurrently.
 
     Parameters
     ----------
@@ -374,33 +377,41 @@ def check_bookmarks_html_urls(
     tuple[BookmarksDataset, BookmarksDataset, BookmarksDataset]
         A tuple of ``(all_data, changed, not_found)`` bookmark datasets.
     """
+    from bs4 import BeautifulSoup  # noqa: PLC0415
+
     # After html5lib fixes it, the structure is:
     # DL -> many p -> many DT -> H3 (folder), DL then
     #   p or DT -> A or H3 (folder where structure repeats), DL
     data: BookmarksDataset = []
     changed: BookmarksDataset = []
     not_found: BookmarksDataset = []
-    session = niquests.Session()
-    session.headers.update({
-        'cache-control': 'no-cache',
-        'dnt': '1',
-        'pragma': 'no-cache',
-        'referer': 'https://www.google.com/',
-        'upgrade-insecure-requests': '1',
-        'user_agent': generate_chrome_user_agent(),
-    })
+    # Collect all bookmarks first (sync parsing).
+    bookmarks: list[tuple[BookmarksHTMLAnchorAttributes, str,
+                          Sequence[tuple[str, BookmarksHTMLFolderAttributes]]]] = []
 
-    def callback(
+    def collect_callback(
         attrs: BookmarksHTMLAnchorAttributes,
         title: str,
         folder_path: Sequence[tuple[str, BookmarksHTMLFolderAttributes]],
     ) -> None:
         ref = create_parsed_tree_structure(folder_path, data)
         new_data: BookmarksHTMLLink = {'type': 'link', 'title': title, 'attrs': attrs}
+        ref.append(new_data)
         if 'href' in attrs and re.match(r'^https?://', attrs['href']):
+            bookmarks.append((attrs, title, folder_path))
+
+    recurse_bookmarks_html(BeautifulSoup(html_content, 'html5lib'), collect_callback)
+    # Check URLs concurrently.
+    limiter = anyio.CapacityLimiter(10)
+
+    async def check_url(session: AsyncSession, attrs: BookmarksHTMLAnchorAttributes, title: str,
+                        folder_path: Sequence[tuple[str, BookmarksHTMLFolderAttributes]]) -> None:
+        async with limiter:
             log.debug('HEAD %s', attrs['href'])
-            r = session.head(attrs['href'])
-            if r.status_code in {HTTPStatus.MOVED_PERMANENTLY, HTTPStatus.FOUND}:
+            r = await session.head(attrs['href'])
+        new_data: BookmarksHTMLLink = {'type': 'link', 'title': title, 'attrs': attrs}
+        match r.status_code:
+            case HTTPStatus.MOVED_PERMANENTLY | HTTPStatus.FOUND:
                 new_location = str(r.headers['location'])
                 if not re.match(r'^https://', new_location):
                     parsed = urllib.parse.urlparse(attrs['href'])
@@ -415,7 +426,7 @@ def check_bookmarks_html_urls(
                 )
                 attrs['href'] = new_location
                 changed.append(new_data)
-            elif r.status_code == HTTPStatus.NOT_FOUND:
+            case HTTPStatus.NOT_FOUND:
                 log.error(
                     '%d: "%s" @ "%s"',
                     r.status_code,
@@ -423,9 +434,17 @@ def check_bookmarks_html_urls(
                     attrs['href'],
                 )
                 not_found.append(new_data)
-        ref.append(new_data)
 
-    from bs4 import BeautifulSoup  # noqa: PLC0415
-
-    recurse_bookmarks_html(BeautifulSoup(html_content, 'html5lib'), callback)
+    async with AsyncSession() as session:
+        session.headers.update({
+            'cache-control': 'no-cache',
+            'dnt': '1',
+            'pragma': 'no-cache',
+            'referer': 'https://www.google.com/',
+            'upgrade-insecure-requests': '1',
+            'user_agent': await generate_chrome_user_agent(),
+        })
+        async with anyio.create_task_group() as tg:
+            for attrs, title, folder_path in bookmarks:
+                tg.start_soon(check_url, session, attrs, title, folder_path)
     return data, changed, not_found

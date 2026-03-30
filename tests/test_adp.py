@@ -40,7 +40,8 @@ STATE = 0
 FUCKERY = 175.0
 
 
-def test_calculate_salary_success(mocker: MockerFixture) -> None:
+@pytest.mark.asyncio
+async def test_calculate_salary_success(mocker: MockerFixture) -> None:
     mock_response = mocker.Mock()
     mock_response.json.return_value = {
         'content': {
@@ -52,8 +53,12 @@ def test_calculate_salary_success(mocker: MockerFixture) -> None:
         }
     }
     mock_response.raise_for_status = mocker.Mock()
-    mocker.patch('deltona.adp.niquests.post', return_value=mock_response)
-    result = calculate_salary(hours=70, pay_rate=70.0, state='FL')
+    mock_session = mocker.MagicMock()
+    mock_session.post = mocker.AsyncMock(return_value=mock_response)
+    mock_async_session = mocker.patch('deltona.adp.AsyncSession')
+    mock_async_session.return_value.__aenter__ = mocker.AsyncMock(return_value=mock_session)
+    mock_async_session.return_value.__aexit__ = mocker.AsyncMock(return_value=False)
+    result = await calculate_salary(hours=70, pay_rate=70.0, state='FL')
 
     assert result.federal == FEDERAL_TAX
     assert result.fica == FICA_TAX
@@ -63,9 +68,14 @@ def test_calculate_salary_success(mocker: MockerFixture) -> None:
     assert result.gross == GROSS_PAY
 
 
-def test_calculate_salary_http_error(mocker: MockerFixture) -> None:
+@pytest.mark.asyncio
+async def test_calculate_salary_http_error(mocker: MockerFixture) -> None:
     mock_response = mocker.Mock()
     mock_response.raise_for_status.side_effect = HTTPError
-    mocker.patch('deltona.adp.niquests.post', return_value=mock_response)
+    mock_session = mocker.MagicMock()
+    mock_session.post = mocker.AsyncMock(return_value=mock_response)
+    mock_async_session = mocker.patch('deltona.adp.AsyncSession')
+    mock_async_session.return_value.__aenter__ = mocker.AsyncMock(return_value=mock_session)
+    mock_async_session.return_value.__aexit__ = mocker.AsyncMock(return_value=False)
     with pytest.raises(HTTPError):
-        calculate_salary(hours=70, pay_rate=70.0, state='FL')
+        await calculate_salary(hours=70, pay_rate=70.0, state='FL')

@@ -20,6 +20,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Chapter markers in `encode-dashcam` output; each clip pair becomes a chapter named after the front
   file stem. Disable with `--no-chapters`.
 - `duration` field to `FormatDict` and `StreamsDict` typed dictionaries.
+- `anyio`, `async-lru`, and `pytest-asyncio` dependencies.
 
 ### Changed
 
@@ -40,6 +41,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   mode). When `rear_dir` is `None` or `pair_fn` is `None`, front files are encoded without overlay.
 - `group_pairs` now accepts `Sequence` instead of `list` for the `pairs` parameter.
 - `encode-dashcam` CLI: `rear_dir` argument is now optional.
+- All HTTP-calling functions converted from synchronous to async using `niquests.AsyncSession`.
+  Affected modules: `deltona.adp`, `deltona.chromium`, `deltona.media`, `deltona.www`.
+- Click commands that make HTTP requests now use `asyncio.run()` to invoke async implementations.
+- `check_bookmarks_html_urls` now checks URLs concurrently using anyio task groups.
+- `@cache` on async functions replaced with `@alru_cache` from async-lru.
+- File I/O in async functions uses anyio for non-blocking access.
 
 ### Removed
 

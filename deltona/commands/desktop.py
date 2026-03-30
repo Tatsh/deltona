@@ -7,6 +7,7 @@ from shlex import quote, split
 from shutil import which
 from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, overload
+import asyncio
 import contextlib
 import errno
 import logging
@@ -26,9 +27,9 @@ from deltona.system import (
     kill_gamescope,
 )
 from deltona.www import upload_to_imgbb
-from niquests import HTTPError
+from niquests import AsyncSession, HTTPError, Response
+import anyio
 import click
-import niquests
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -50,7 +51,7 @@ log = logging.getLogger(__name__)
     type=int,
     help='Sleep time in seconds to inhibit notifications for.',
 )
-def inhibit_notifications_main(sleep_time: int = 60, *, debug: bool = False) -> None:
+def inhibit_notifications_main(sleep_time: int = 0, *, debug: bool = False) -> None:
     """
     Disable notifications state for a time.
 
@@ -102,7 +103,7 @@ def umpv_main(files: Sequence[Path], mpv_command: str = 'mpv', *, debug: bool = 
             sock.send(f'raw loadfile "{g}"\n'.encode())
     else:
         log.debug('Starting new mpv instance')
-        # Let mpv recreate socket if it does not already exist
+        # Let mpv recreate socket if it does not already exist.
         args = (
             *split(mpv_command),
             *(() if debug else ('--no-terminal',)),
@@ -163,39 +164,40 @@ def connect_g603_main(device_name: str = 'hci0', *, debug: bool = False) -> None
         unpacked = props.unpack()
         dev_iface = unpacked[0]
         values = unpacked[1]
-        if dev_iface == 'org.bluez.Adapter1' and values.get('Discovering'):
-            log.debug('Scan on.')
-        elif dev_iface == 'org.bluez.Device1' and (m := re.match(
-                rf'/org/bluez/{device_name}/dev_(.*)', object_path)):
-            mac = m.group(1).replace('_', ':')
-            for k in ('ServicesResolved', 'Connected'):
-                if k in values and not values[k]:
-                    log.debug('Device %s was disconnected.', mac)
+        match dev_iface:
+            case 'org.bluez.Adapter1' if values.get('Discovering'):
+                log.debug('Scan on.')
+            case 'org.bluez.Device1' if (m := re.match(rf'/org/bluez/{device_name}/dev_(.*)',
+                                                       object_path)):
+                mac = m.group(1).replace('_', ':')
+                for k in ('ServicesResolved', 'Connected'):
+                    if k in values and not values[k]:
+                        log.debug('Device %s was disconnected.', mac)
+                        return
+                try:
+                    device = bus.get('org.bluez', object_path)
+                    if device.Name != 'G603':
+                        log.debug('Ignoring device %s (MAC: %s).', device.Name, mac)
+                        return
+                except (KeyError, RuntimeError) as e:
+                    log.debug('Caught error with device %s: %s', mac, e)
                     return
-            try:
-                device = bus.get('org.bluez', object_path)
-                if device.Name != 'G603':
-                    log.debug('Ignoring device %s (MAC: %s).', device.Name, mac)
+                if values.get('Paired'):
+                    log.debug('Quitting.')
+                    loop.quit()
                     return
-            except (KeyError, RuntimeError) as e:
-                log.debug('Caught error with device %s: %s', mac, e)
-                return
-            if values.get('Paired'):
-                log.debug('Quitting.')
-                loop.quit()
-                return
-            if 'RSSI' in values:
-                click.echo(f'Pairing with {mac}.')
-                device['org.bluez.Device1'].Pair()
-            else:
-                log.debug(
-                    'Unhandled property changes: interface=%s, values=%s, mac=%s',
-                    dev_iface,
-                    values,
-                    mac,
-                )
+                if 'RSSI' in values:
+                    click.echo(f'Pairing with {mac}.')
+                    device['org.bluez.Device1'].Pair()
+                else:
+                    log.debug(
+                        'Unhandled property changes: interface=%s, values=%s, mac=%s',
+                        dev_iface,
+                        values,
+                        mac,
+                    )
 
-    # PropertiesChanged.connect()/.PropertiesChanged = ... will not catch the device node events
+    # PropertiesChanged.connect()/.PropertiesChanged = ... will not catch the device node events.
     bus.con.signal_subscribe(
         None,
         'org.freedesktop.DBus.Properties',
@@ -263,15 +265,18 @@ def upload_to_imgbb_main(
     """
     Upload image to ImgBB.
 
-    Get an API key at https://api.imgbb.com/ and set it with `keyring set imgbb "${USER}"`.
-    """  # noqa: DOC501
+    Get an API key at https://api.imgbb.com/ and set it with ``keyring set imgbb "${USER}"``.
+    """
     setup_logging(debug=debug, loggers={'deltona': {}, 'urllib3': {}})
-    r: niquests.Response | None = None
-    if xdg_install:
-        prefix = str(Path('~/.local').expanduser()) if xdg_install == '-' else xdg_install
-        apps = Path(f'{prefix}/share/applications')
-        apps.mkdir(parents=True, exist_ok=True)
-        (apps / 'upload-to-imgbb.desktop').write_text("""[Desktop Entry]
+
+    async def _run() -> None:
+        r: Response | None = None
+        if xdg_install:
+            prefix = (str(await anyio.Path('~/.local').expanduser())
+                      if xdg_install == '-' else xdg_install)
+            apps = anyio.Path(f'{prefix}/share/applications')
+            await apps.mkdir(parents=True, exist_ok=True)
+            await (apps / 'upload-to-imgbb.desktop').write_text("""[Desktop Entry]
 Categories=Graphics;2DGraphics;RasterGraphics;
 Exec=upload-to-imgbb %U
 Icon=imgbb
@@ -284,44 +289,47 @@ TryExec=upload-to-imgbb
 Type=Application
 Version=1.0
     """)
-        r = niquests.get('https://simgbb.com/images/favicon.png', timeout=5)
-        icons_dir = Path(f'{prefix}/share/icons/hicolor/300x300/apps')
-        icons_dir.mkdir(parents=True, exist_ok=True)
-        assert r.content is not None
-        (icons_dir / 'imgbb.png').write_bytes(r.content)
-        sp.run(
-            ('update-desktop-database', '-v', str(apps)),  # noqa: S607
-            check=True,
-            capture_output=not debug)
-        return
-    kdialog = which('kdialog')
-    show_gui = not no_gui and len(filenames) == 1 and kdialog
-    try:
-        for name in filenames:
-            r = upload_to_imgbb(name,
-                                api_key=api_key,
-                                keyring_username=keyring_username,
-                                timeout=timeout)
-            if not show_gui:
-                click.echo(r.json()['data']['url'])
-    except HTTPError as e:
-        if show_gui:
-            assert kdialog is not None
-            sp.run((kdialog, '--sorry', 'Failed to upload!'), check=False)
-        click.echo('Failed to upload. Check API key!', err=True)
-        raise click.Abort from e
-    if r:
-        url: str = r.json()['data']['url']
-        if not no_clipboard:
-            import pyperclip  # noqa: PLC0415
+            async with AsyncSession() as session:
+                response = await session.get('https://simgbb.com/images/favicon.png', timeout=5)
+            icons_dir = anyio.Path(f'{prefix}/share/icons/hicolor/300x300/apps')
+            await icons_dir.mkdir(parents=True, exist_ok=True)
+            assert response.content is not None
+            await (icons_dir / 'imgbb.png').write_bytes(response.content)
+            await anyio.run_process(('update-desktop-database', '-v', str(apps)),
+                                    stdout=None if debug else sp.DEVNULL,
+                                    stderr=None if debug else sp.DEVNULL)
+            return
+        kdialog = which('kdialog')
+        show_gui = not no_gui and len(filenames) == 1 and kdialog
+        try:
+            for name in filenames:
+                r = await upload_to_imgbb(name,
+                                          api_key=api_key,
+                                          keyring_username=keyring_username,
+                                          http_timeout=timeout)
+                if not show_gui:
+                    click.echo(r.json()['data']['url'])
+        except HTTPError as e:
+            if show_gui:
+                assert kdialog is not None
+                await anyio.run_process((kdialog, '--sorry', 'Failed to upload!'), check=False)
+            click.echo('Failed to upload. Check API key!', err=True)
+            raise click.Abort from e
+        if r:
+            url: str = r.json()['data']['url']
+            if not no_clipboard:
+                import pyperclip  # noqa: PLC0415
 
-            pyperclip.copy(url)
-        if show_gui:
-            click.echo(url)
-            assert kdialog is not None
-            sp.run((kdialog, '--title', 'Successfully uploaded', '--msgbox', url), check=False)
-        elif not no_browser:
-            webbrowser.open(url)
+                pyperclip.copy(url)
+            if show_gui:
+                click.echo(url)
+                assert kdialog is not None
+                await anyio.run_process(
+                    (kdialog, '--title', 'Successfully uploaded', '--msgbox', url), check=False)
+            elif not no_browser:
+                webbrowser.open(url)
+
+    asyncio.run(_run())
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

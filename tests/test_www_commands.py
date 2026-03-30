@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from unittest.mock import AsyncMock
 import json
 
 from deltona.commands.www import (
@@ -42,7 +43,7 @@ def test_where_from_multiple(mocker: MockerFixture, runner: CliRunner, tmp_path:
 
 def test_fix_chromium_pwa_icon_main(mocker: MockerFixture, runner: CliRunner,
                                     tmp_path: Path) -> None:
-    mock_fix_icon = mocker.patch('deltona.commands.www.fix_chromium_pwa_icon')
+    mock_fix_icon = mocker.patch('deltona.commands.www.fix_chromium_pwa_icon', new=AsyncMock())
     result = runner.invoke(fix_chromium_pwa_icon_main, ['app_id', 'src_uri', '-c', str(tmp_path)])
     assert result.exit_code == 0
     mock_fix_icon.assert_called_once_with(mocker.ANY,
@@ -57,7 +58,7 @@ def test_check_bookmarks_html_main(mocker: MockerFixture, runner: CliRunner,
                                    tmp_path: Path) -> None:
     mock_check_urls = mocker.patch(
         'deltona.commands.www.check_bookmarks_html_urls',
-        return_value=[None, ['a', 'b'], ['c', 'd']],
+        new=AsyncMock(return_value=[None, ['a', 'b'], ['c', 'd']]),
     )
     mock_file = tmp_path / 'bookmarks.html'
     mock_file.write_text('<html><body>Bookmarks</body></html>')
@@ -87,7 +88,7 @@ def test_chrome_bisect_flags_main_3_flags(mocker: MockerFixture, runner: CliRunn
         }}))
     result = runner.invoke(chrome_bisect_flags_main, [str(mock_local_state)], input='\n\ny\nn\ny\n')
     assert result.exit_code == 0
-    assert 'Saved "Local State" with "a" removed.' in result.output
+    assert "Saved 'Local State' with 'a' removed." in result.output
 
 
 def test_chrome_bisect_flags_main_4_flags(mocker: MockerFixture, runner: CliRunner,
@@ -101,7 +102,7 @@ def test_chrome_bisect_flags_main_4_flags(mocker: MockerFixture, runner: CliRunn
     result = runner.invoke(chrome_bisect_flags_main, [str(mock_local_state)],
                            input=('\n\nn\n\ny\n\nn\n\ny\n'))
     assert result.exit_code == 0
-    assert 'Saved "Local State" with "d" removed.' in result.output
+    assert "Saved 'Local State' with 'd' removed." in result.output
 
 
 def test_chrome_bisect_flags_main_invalid_response(mocker: MockerFixture, runner: CliRunner,
@@ -115,7 +116,7 @@ def test_chrome_bisect_flags_main_invalid_response(mocker: MockerFixture, runner
     result = runner.invoke(chrome_bisect_flags_main, [str(mock_local_state)],
                            input=('\n\nn\n\ny\n\nn\n\n\n'))  # Invalid response here.
     assert result.exit_code == 0
-    assert 'Restored original "Local State".' in result.output
+    assert "Restored original 'Local State'." in result.output
 
 
 def test_chrome_bisect_flags_main_single_flag(mocker: MockerFixture, runner: CliRunner,
@@ -125,4 +126,4 @@ def test_chrome_bisect_flags_main_single_flag(mocker: MockerFixture, runner: Cli
     mock_local_state.write_text(json.dumps({'browser': {'enabled_labs_experiments': ['a']}}))
     result = runner.invoke(chrome_bisect_flags_main, [str(mock_local_state)], input='\n\nn\n')
     assert result.exit_code == 0
-    assert 'Saved "Local State" with "a" removed.' in result.output
+    assert "Saved 'Local State' with 'a' removed." in result.output

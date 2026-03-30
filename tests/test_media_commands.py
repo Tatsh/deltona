@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from unittest.mock import AsyncMock
 import enum
 import subprocess as sp
 
@@ -176,7 +177,7 @@ def test_mvid_rename_main(mocker: MockerFixture, runner: CliRunner, tmp_path: Pa
 
 def test_cddb_query_main(mocker: MockerFixture, runner: CliRunner) -> None:
     mock_result = mocker.MagicMock(_asdict=lambda: {'foo': 'bar'})
-    mocker.patch('deltona.commands.media.cddb_query', return_value=mock_result)
+    mocker.patch('deltona.commands.media.cddb_query', new=AsyncMock(return_value=mock_result))
     result = runner.invoke(cddb_query_main, ['arg1', 'arg2'])
     assert result.exit_code == 0
     assert '"foo": "bar"' in result.output

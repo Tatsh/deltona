@@ -19,7 +19,7 @@ from deltona.media import (
     parse_timestamp,
     supported_audio_input_formats,
 )
-import niquests
+from niquests import HTTPError
 import pytest
 
 if TYPE_CHECKING:
@@ -343,25 +343,31 @@ def test_get_cd_disc_id_ioctl_header_error(mocker: MockerFixture) -> None:
         get_cd_disc_id('/dev/cdrom')
 
 
-def test_cddb_query_no_username(mocker: MockerFixture) -> None:
+@pytest.mark.asyncio
+async def test_cddb_query_no_username(mocker: MockerFixture) -> None:
+    cddb_query.cache_clear()
     disc_id = '12345678 1 123 456 789'
     mocker.patch('deltona.media.socket.gethostname', return_value='host')
     mocker.patch('deltona.media.getpass.getuser', return_value=None)
     mocker.patch('keyring.get_password', return_value='host')
     with pytest.raises(ValueError):  # noqa: PT011
-        cddb_query(disc_id)
+        await cddb_query(disc_id)
 
 
-def test_cddb_query_no_host(mocker: MockerFixture) -> None:
+@pytest.mark.asyncio
+async def test_cddb_query_no_host(mocker: MockerFixture) -> None:
+    cddb_query.cache_clear()
     disc_id = '12345678 1 123 456 789'
     mocker.patch('deltona.media.socket.gethostname', return_value='host')
     mocker.patch('deltona.media.getpass.getuser', return_value='username')
     mocker.patch('keyring.get_password', return_value=None)
     with pytest.raises(ValueError):  # noqa: PT011
-        cddb_query(disc_id)
+        await cddb_query(disc_id)
 
 
-def test_cddb_query_success_single_match(mocker: MockerFixture) -> None:
+@pytest.mark.asyncio
+async def test_cddb_query_success_single_match(mocker: MockerFixture) -> None:
+    cddb_query.cache_clear()
     disc_id = '12345678 2 123 456 789'
     query_response = '200 rock 12345678 Artist / Album / 2020 / 2\n'
     read_response = ("210 Found exact matches, list follows (until terminating `.')\n"
@@ -395,8 +401,12 @@ def test_cddb_query_success_single_match(mocker: MockerFixture) -> None:
         msg = 'Unexpected URL'
         raise RuntimeError(msg)
 
-    mocker.patch('deltona.media.niquests.get', side_effect=fake_requests_get)
-    result = cddb_query(disc_id)
+    mock_session = mocker.MagicMock()
+    mock_session.get = mocker.AsyncMock(side_effect=fake_requests_get)
+    mock_async_session = mocker.patch('deltona.media.AsyncSession')
+    mock_async_session.return_value.__aenter__ = mocker.AsyncMock(return_value=mock_session)
+    mock_async_session.return_value.__aexit__ = mocker.AsyncMock(return_value=False)
+    result = await cddb_query(disc_id)
     assert result.artist == 'Artist'
     assert result.album == 'Album'
     assert result.year == 2020
@@ -404,7 +414,9 @@ def test_cddb_query_success_single_match(mocker: MockerFixture) -> None:
     assert result.tracks == ('Track One', 'Track Two')
 
 
-def test_cddb_query_multiple_matches_accept_first(mocker: MockerFixture) -> None:
+@pytest.mark.asyncio
+async def test_cddb_query_multiple_matches_accept_first(mocker: MockerFixture) -> None:
+    cddb_query.cache_clear()
     disc_id = '87654321 3 111 222 333'
     query_response = ("210 Found exact matches, list follows (until terminating `.')\n"
                       'rock 87654321 Artist / Album / 2021 / 3\n'
@@ -443,8 +455,12 @@ def test_cddb_query_multiple_matches_accept_first(mocker: MockerFixture) -> None
         msg = 'Unexpected URL'
         raise RuntimeError(msg)
 
-    mocker.patch('deltona.media.niquests.get', side_effect=fake_requests_get)
-    result = cddb_query(disc_id, accept_first_match=True)
+    mock_session = mocker.MagicMock()
+    mock_session.get = mocker.AsyncMock(side_effect=fake_requests_get)
+    mock_async_session = mocker.patch('deltona.media.AsyncSession')
+    mock_async_session.return_value.__aenter__ = mocker.AsyncMock(return_value=mock_session)
+    mock_async_session.return_value.__aexit__ = mocker.AsyncMock(return_value=False)
+    result = await cddb_query(disc_id, accept_first_match=True)
     assert result.artist == 'Artist'
     assert result.album == 'Album'
     assert result.year == 2021
@@ -452,7 +468,9 @@ def test_cddb_query_multiple_matches_accept_first(mocker: MockerFixture) -> None
     assert result.tracks == ('Track A', 'Track B', 'Track C')
 
 
-def test_cddb_query_multiple_matches_not_accept_first(mocker: MockerFixture) -> None:
+@pytest.mark.asyncio
+async def test_cddb_query_multiple_matches_not_accept_first(mocker: MockerFixture) -> None:
+    cddb_query.cache_clear()
     disc_id = '87654321 3 111 222 333'
     query_response = ("210 Found exact matches, list follows (until terminating `.')\n"
                       'rock 87654321 Artist / Album / 2021 / 3\n'
@@ -490,32 +508,49 @@ def test_cddb_query_multiple_matches_not_accept_first(mocker: MockerFixture) -> 
         msg = 'Unexpected URL'
         raise RuntimeError(msg)
 
-    mocker.patch('deltona.media.niquests.get', side_effect=fake_requests_get)
+    mock_session = mocker.MagicMock()
+    mock_session.get = mocker.AsyncMock(side_effect=fake_requests_get)
+    mock_async_session = mocker.patch('deltona.media.AsyncSession')
+    mock_async_session.return_value.__aenter__ = mocker.AsyncMock(return_value=mock_session)
+    mock_async_session.return_value.__aexit__ = mocker.AsyncMock(return_value=False)
     with pytest.raises(ValueError, match=r'^\d+'):
-        cddb_query(disc_id)
+        await cddb_query(disc_id)
 
 
-def test_cddb_query_no_match_raises(mocker: MockerFixture) -> None:
+@pytest.mark.asyncio
+async def test_cddb_query_no_match_raises(mocker: MockerFixture) -> None:
+    cddb_query.cache_clear()
     disc_id = '00000000 1 0'
     query_response = '202 No match found\n'
     mocker.patch('deltona.media.socket.gethostname', return_value='host')
     mocker.patch('deltona.media.getpass.getuser', return_value='user')
     mocker.patch('keyring.get_password', return_value='host')
     mock_req = mocker.Mock(text=query_response)
-    mocker.patch('deltona.media.niquests.get', return_value=mock_req)
+    mock_session = mocker.MagicMock()
+    mock_session.get = mocker.AsyncMock(return_value=mock_req)
+    mock_async_session = mocker.patch('deltona.media.AsyncSession')
+    mock_async_session.return_value.__aenter__ = mocker.AsyncMock(return_value=mock_session)
+    mock_async_session.return_value.__aexit__ = mocker.AsyncMock(return_value=False)
     with pytest.raises(ValueError, match='202'):
-        cddb_query(disc_id)
+        await cddb_query(disc_id)
 
 
-def test_cddb_query_http_error(mocker: MockerFixture) -> None:
+@pytest.mark.asyncio
+async def test_cddb_query_http_error(mocker: MockerFixture) -> None:
+    cddb_query.cache_clear()
     disc_id = '99999999 1 0'
     mocker.patch('deltona.media.socket.gethostname', return_value='host')
     mocker.patch('deltona.media.getpass.getuser', return_value='user')
     mocker.patch('keyring.get_password', return_value='host')
-    mock_get = mocker.patch('deltona.media.niquests.get')
-    mock_get.return_value.raise_for_status.side_effect = niquests.HTTPError
-    with pytest.raises(niquests.HTTPError):
-        cddb_query(disc_id)
+    mock_response = mocker.Mock()
+    mock_response.raise_for_status.side_effect = HTTPError
+    mock_session = mocker.MagicMock()
+    mock_session.get = mocker.AsyncMock(return_value=mock_response)
+    mock_async_session = mocker.patch('deltona.media.AsyncSession')
+    mock_async_session.return_value.__aenter__ = mocker.AsyncMock(return_value=mock_session)
+    mock_async_session.return_value.__aexit__ = mocker.AsyncMock(return_value=False)
+    with pytest.raises(HTTPError):
+        await cddb_query(disc_id)
 
 
 def test_hlg_to_sdr_default_args(mocker: MockerFixture, tmp_path: Path) -> None:

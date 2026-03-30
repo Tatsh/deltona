@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
+from unittest.mock import AsyncMock
 
 from deltona.chromium import (
     fix_chromium_pwa_icon,
@@ -30,10 +31,14 @@ def mock_pil_image_module(mocker: MockerFixture) -> tuple[Mock, Mock]:
 
 
 @pytest.fixture
-def mock_requests_get(mocker: MockerFixture) -> Mock:
+def mock_async_session_get(mocker: MockerFixture) -> Mock:
     mock_response = mocker.Mock()
     mock_response.content = b'fake-image'
-    mocker.patch('niquests.get', return_value=mock_response)
+    mock_session = mocker.MagicMock()
+    mock_session.get = AsyncMock(return_value=mock_response)
+    mock_async_session = mocker.patch('deltona.chromium.AsyncSession')
+    mock_async_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_async_session.return_value.__aexit__ = AsyncMock(return_value=False)
     return cast('Mock', mock_response)
 
 
@@ -45,10 +50,11 @@ def mock_get_pil_image_module(mocker: MockerFixture, mock_pil_image_module: tupl
     return mock_image_mod
 
 
-def test_fix_chromium_pwa_icon_basic(
+@pytest.mark.asyncio
+async def test_fix_chromium_pwa_icon_basic(
     tmp_path: Path,
     mock_get_pil_image_module: Mock,
-    mock_requests_get: Mock,
+    mock_async_session_get: Mock,
     mock_pil_image_module: tuple[Mock, Mock],
 ) -> None:
     app_id = 'test_app_id'
@@ -57,10 +63,10 @@ def test_fix_chromium_pwa_icon_basic(
     profile = 'Default'
     mock_img = mock_pil_image_module[1]
 
-    fix_chromium_pwa_icon(config_path, app_id, icon_src_uri, profile)
+    await fix_chromium_pwa_icon(config_path, app_id, icon_src_uri, profile)
 
-    # Check that requests.get was called
-    mock_requests_get.raise_for_status.assert_called_once()
+    # Check that raise_for_status was called
+    mock_async_session_get.raise_for_status.assert_called_once()
     # Check that PIL.Image.open was called
     mock_get_pil_image_module.open.assert_called_once()
     # Check that save was called for each size
@@ -71,10 +77,11 @@ def test_fix_chromium_pwa_icon_basic(
         assert 'Icons' in str(file_path)
 
 
-def test_fix_chromium_pwa_icon_masked(
+@pytest.mark.asyncio
+async def test_fix_chromium_pwa_icon_masked(
     tmp_path: Path,
     mock_get_pil_image_module: Mock,
-    mock_requests_get: Mock,
+    mock_async_session_get: Mock,
     mock_pil_image_module: tuple[Mock, Mock],
 ) -> None:
     app_id = 'test_app_id'
@@ -83,7 +90,7 @@ def test_fix_chromium_pwa_icon_masked(
     profile = 'Default'
     mock_img = mock_pil_image_module[1]
 
-    fix_chromium_pwa_icon(config_path, app_id, icon_src_uri, profile, masked=True)
+    await fix_chromium_pwa_icon(config_path, app_id, icon_src_uri, profile, masked=True)
 
     # Should save to both Icons and Icons Maskable
     paths = [call.args[0] for call in mock_img.save.call_args_list]
@@ -91,10 +98,11 @@ def test_fix_chromium_pwa_icon_masked(
     assert any('Icons' in str(p) for p in paths)
 
 
-def test_fix_chromium_pwa_icon_monochrome(
+@pytest.mark.asyncio
+async def test_fix_chromium_pwa_icon_monochrome(
     mocker: MockerFixture,
     mock_get_pil_image_module: Mock,
-    mock_requests_get: Mock,
+    mock_async_session_get: Mock,
     mock_pil_image_module: tuple[Mock, Mock],
 ) -> None:
     mock_path = mocker.patch('deltona.chromium.Path').return_value
@@ -105,7 +113,7 @@ def test_fix_chromium_pwa_icon_monochrome(
     profile = 'Default'
     mock_img = mock_pil_image_module[1]
 
-    fix_chromium_pwa_icon(config_path, app_id, icon_src_uri, profile, monochrome=True)
+    await fix_chromium_pwa_icon(config_path, app_id, icon_src_uri, profile, monochrome=True)
 
     # Should save to both Icons and Icons Monochrome
     assert any(x.args[0] for x in mock_path.mock_calls if x.args[0] == 'Icons Monochrome')
@@ -113,10 +121,11 @@ def test_fix_chromium_pwa_icon_monochrome(
     assert mock_img.save.call_count == 8
 
 
-def test_fix_chromium_pwa_icon_not_square(
+@pytest.mark.asyncio
+async def test_fix_chromium_pwa_icon_not_square(
     tmp_path: Path,
     mock_get_pil_image_module: Mock,
-    mock_requests_get: Mock,
+    mock_async_session_get: Mock,
     mock_pil_image_module: tuple[Mock, Mock],
 ) -> None:
     app_id = 'test_app_id'
@@ -126,85 +135,114 @@ def test_fix_chromium_pwa_icon_not_square(
     mock_img = mock_pil_image_module[1]
     mock_img.size = (128, 64)  # Not square
     with pytest.raises(ValueError, match='Icon is not square'):
-        fix_chromium_pwa_icon(config_path, app_id, icon_src_uri, profile)
+        await fix_chromium_pwa_icon(config_path, app_id, icon_src_uri, profile)
 
 
-def test_get_last_chrome_major_version_found(mocker: MockerFixture) -> None:
-    mock_path = mocker.patch('deltona.chromium.Path')
-    mock_instance = mock_path.return_value.expanduser.return_value
-    mock_instance.__truediv__.return_value.exists.return_value = True
-    mock_instance.__truediv__.return_value.read_text.return_value = '123.0.0.0'
-    # Clear cache in case of previous calls
+@pytest.mark.asyncio
+async def test_get_last_chrome_major_version_found(mocker: MockerFixture) -> None:
+    mock_path = mocker.patch('deltona.chromium.anyio.Path')
+    mock_expanded = mocker.MagicMock()
+    mock_version_path = mocker.MagicMock()
+    mock_version_path.exists = AsyncMock(return_value=True)
+    mock_version_path.read_text = AsyncMock(return_value='123.0.0.0')
+    mock_expanded.__truediv__ = mocker.Mock(return_value=mock_version_path)
+    mock_path.return_value.expanduser = AsyncMock(return_value=mock_expanded)
     get_last_chrome_major_version.cache_clear()
-    result = get_last_chrome_major_version()
+    result = await get_last_chrome_major_version()
     assert result == '123'
 
 
-def test_get_last_chrome_major_version_not_found(mocker: MockerFixture) -> None:
-    mock_path = mocker.patch('deltona.chromium.Path')
-    mock_instance = mock_path.return_value.expanduser.return_value
-    mock_instance.__truediv__.return_value.exists.return_value = False
+@pytest.mark.asyncio
+async def test_get_last_chrome_major_version_not_found(mocker: MockerFixture) -> None:
+    mock_path = mocker.patch('deltona.chromium.anyio.Path')
+    mock_expanded = mocker.MagicMock()
+    mock_version_path = mocker.MagicMock()
+    mock_version_path.exists = AsyncMock(return_value=False)
+    mock_expanded.__truediv__ = mocker.Mock(return_value=mock_version_path)
+    mock_path.return_value.expanduser = AsyncMock(return_value=mock_expanded)
     get_last_chrome_major_version.cache_clear()
-    result = get_last_chrome_major_version()
+    result = await get_last_chrome_major_version()
     assert not result
 
 
-def test_get_latest_chrome_major_version_success(mocker: MockerFixture) -> None:
-    # Mock requests.get to return a fake version JSON
+@pytest.mark.asyncio
+async def test_get_latest_chrome_major_version_success(mocker: MockerFixture) -> None:
     mock_response = mocker.Mock()
     mock_response.json.return_value = {'versions': [{'version': '124.0.6367.60'}]}
-    mocker.patch('niquests.get', return_value=mock_response)
+    mock_session = mocker.MagicMock()
+    mock_session.get = AsyncMock(return_value=mock_response)
+    mock_async_session = mocker.patch('deltona.chromium.AsyncSession')
+    mock_async_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_async_session.return_value.__aexit__ = AsyncMock(return_value=False)
     get_latest_chrome_major_version.cache_clear()
-    result = get_latest_chrome_major_version()
+    result = await get_latest_chrome_major_version()
     assert result == '124'
 
 
-def test_get_latest_chrome_major_version_alt(mocker: MockerFixture) -> None:
+@pytest.mark.asyncio
+async def test_get_latest_chrome_major_version_alt(mocker: MockerFixture) -> None:
     mock_response = mocker.Mock()
     mock_response.json.return_value = {'versions': [{'version': '125.0.6422.60'}]}
-    mocker.patch('niquests.get', return_value=mock_response)
+    mock_session = mocker.MagicMock()
+    mock_session.get = AsyncMock(return_value=mock_response)
+    mock_async_session = mocker.patch('deltona.chromium.AsyncSession')
+    mock_async_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_async_session.return_value.__aexit__ = AsyncMock(return_value=False)
     get_latest_chrome_major_version.cache_clear()
-    result = get_latest_chrome_major_version()
+    result = await get_latest_chrome_major_version()
     assert result == '125'
 
 
-def test_get_latest_chrome_major_version_network_error(mocker: MockerFixture) -> None:
-    # Simulate a network error
-    mocker.patch('niquests.get', side_effect=Exception('Network error'))
+@pytest.mark.asyncio
+async def test_get_latest_chrome_major_version_network_error(mocker: MockerFixture) -> None:
+    mock_session = mocker.MagicMock()
+    mock_session.get = AsyncMock(side_effect=Exception('Network error'))
+    mock_async_session = mocker.patch('deltona.chromium.AsyncSession')
+    mock_async_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_async_session.return_value.__aexit__ = AsyncMock(return_value=False)
     get_latest_chrome_major_version.cache_clear()
     with pytest.raises(Exception, match='Network error'):
-        get_latest_chrome_major_version()
+        await get_latest_chrome_major_version()
 
 
-def test_generate_chrome_user_agent_with_last_major(mocker: MockerFixture) -> None:
-    mocker.patch('deltona.chromium.get_last_chrome_major_version', return_value='123')
-    mocker.patch('deltona.chromium.get_latest_chrome_major_version', return_value='999')
+@pytest.mark.asyncio
+async def test_generate_chrome_user_agent_with_last_major(mocker: MockerFixture) -> None:
+    mocker.patch('deltona.chromium.get_last_chrome_major_version',
+                 new=AsyncMock(return_value='123'))
+    mocker.patch('deltona.chromium.get_latest_chrome_major_version',
+                 new=AsyncMock(return_value='999'))
     generate_chrome_user_agent.cache_clear()
-    ua = generate_chrome_user_agent()
+    ua = await generate_chrome_user_agent()
     assert 'Chrome/123.0.0.0' in ua
     assert ua.startswith('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
 
 
-def test_generate_chrome_user_agent_with_latest_major(mocker: MockerFixture) -> None:
-    mocker.patch('deltona.chromium.get_last_chrome_major_version', return_value='')
-    mocker.patch('deltona.chromium.get_latest_chrome_major_version', return_value='456')
+@pytest.mark.asyncio
+async def test_generate_chrome_user_agent_with_latest_major(mocker: MockerFixture) -> None:
+    mocker.patch('deltona.chromium.get_last_chrome_major_version', new=AsyncMock(return_value=''))
+    mocker.patch('deltona.chromium.get_latest_chrome_major_version',
+                 new=AsyncMock(return_value='456'))
     generate_chrome_user_agent.cache_clear()
-    ua = generate_chrome_user_agent()
+    ua = await generate_chrome_user_agent()
     assert 'Chrome/456.0.0.0' in ua
 
 
-def test_generate_chrome_user_agent_custom_os(mocker: MockerFixture) -> None:
-    mocker.patch('deltona.chromium.get_last_chrome_major_version', return_value='789')
+@pytest.mark.asyncio
+async def test_generate_chrome_user_agent_custom_os(mocker: MockerFixture) -> None:
+    mocker.patch('deltona.chromium.get_last_chrome_major_version',
+                 new=AsyncMock(return_value='789'))
     generate_chrome_user_agent.cache_clear()
-    ua = generate_chrome_user_agent('Linux x86_64')
+    ua = await generate_chrome_user_agent('Linux x86_64')
     assert ua.startswith('Mozilla/5.0 (Linux x86_64)')
     assert 'Chrome/789.0.0.0' in ua
 
 
-def test_generate_chrome_user_agent_cache(mocker: MockerFixture) -> None:
-    get_last = mocker.patch('deltona.chromium.get_last_chrome_major_version', return_value='321')
+@pytest.mark.asyncio
+async def test_generate_chrome_user_agent_cache(mocker: MockerFixture) -> None:
+    get_last = mocker.patch('deltona.chromium.get_last_chrome_major_version',
+                            new=AsyncMock(return_value='321'))
     generate_chrome_user_agent.cache_clear()
-    ua1 = generate_chrome_user_agent()
-    ua2 = generate_chrome_user_agent()
+    ua1 = await generate_chrome_user_agent()
+    ua2 = await generate_chrome_user_agent()
     assert ua1 == ua2
     get_last.assert_called_once()

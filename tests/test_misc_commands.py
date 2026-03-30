@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from deltona.commands.misc import adp_main, burnrariso_main, gogextract_main, unpack_0day_main
 from deltona.io import SFVVerificationError, UnRARExtractionTestFailed
@@ -22,7 +22,8 @@ def fake_path(tmp_path: Path) -> Path:
 
 
 def test_adp_main(runner: CliRunner, mocker: MockerFixture) -> None:
-    mock_calc = mocker.patch('deltona.commands.misc.calculate_salary', return_value=12345)
+    mock_calc = mocker.patch('deltona.commands.misc.calculate_salary',
+                             new=AsyncMock(return_value=12345))
     result = runner.invoke(adp_main, ['--hours', '100', '--pay-rate', '50', '--state', 'FL'])
     assert result.exit_code == 0
     assert '12345' in result.output

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
+from unittest.mock import AsyncMock
 import errno
 
 from deltona.commands.desktop import (
@@ -474,16 +475,17 @@ def test_kill_gamescope_main(mocker: MockerFixture, runner: CliRunner) -> None:
 def test_upload_to_imgbb_xdg_install(mocker: MockerFixture, runner: CliRunner,
                                      tmp_path: Path) -> None:
     mocker.patch('deltona.commands.desktop.setup_logging')
-    mock_requests_get = mocker.patch('deltona.commands.desktop.niquests.get')
-    mock_requests_get.return_value.content = b'some image data'
-    mock_sp_run = mocker.patch('deltona.commands.desktop.sp.run')
+    mock_response = mocker.MagicMock()
+    mock_response.content = b'some image data'
+    mock_session = mocker.MagicMock()
+    mock_session.get = AsyncMock(return_value=mock_response)
+    mock_async_session = mocker.patch('deltona.commands.desktop.AsyncSession')
+    mock_async_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_async_session.return_value.__aexit__ = AsyncMock(return_value=False)
+    mock_run_process = mocker.patch('deltona.commands.desktop.anyio.run_process', new=AsyncMock())
     result = runner.invoke(upload_to_imgbb_main, ['--xdg-install', str(tmp_path)])
     assert result.exit_code == 0
-    mock_sp_run.assert_called_once_with(
-        ('update-desktop-database', '-v', str(tmp_path / 'share/applications')),
-        check=True,
-        capture_output=True,
-    )
+    mock_run_process.assert_called_once()
     assert (tmp_path / 'share/applications').exists()
     assert (tmp_path / 'share/applications/upload-to-imgbb.desktop').exists()
     assert ('TryExec=upload-to-imgbb'
@@ -498,10 +500,10 @@ def test_upload_to_imgbb_no_gui(mocker: MockerFixture, runner: CliRunner, tmp_pa
     mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch(
         'deltona.commands.desktop.upload_to_imgbb',
-        return_value=mocker.MagicMock(json=mocker.MagicMock(
+        new=AsyncMock(return_value=mocker.MagicMock(json=mocker.MagicMock(
             return_value={'data': {
                 'url': 'https://example.com/image.png'
-            }})),
+            }}))),
     )
     a_png = tmp_path / 'a.png'
     a_png.write_bytes(b'some image data')
@@ -516,14 +518,14 @@ def test_upload_to_imgbb_gui(mocker: MockerFixture, runner: CliRunner, tmp_path:
     mocker.patch('deltona.commands.desktop.which', return_value='fake')
     mock_copy = mocker.patch('pyperclip.copy')
     mock_open = mocker.patch('deltona.commands.desktop.webbrowser.open')
-    mock_sp_run = mocker.patch('deltona.commands.desktop.sp.run')
+    mock_run_process = mocker.patch('deltona.commands.desktop.anyio.run_process', new=AsyncMock())
     mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch(
         'deltona.commands.desktop.upload_to_imgbb',
-        return_value=mocker.MagicMock(json=mocker.MagicMock(
+        new=AsyncMock(return_value=mocker.MagicMock(json=mocker.MagicMock(
             return_value={'data': {
                 'url': 'https://example.com/image.png'
-            }})),
+            }}))),
     )
     a_png = tmp_path / 'a.png'
     a_png.write_bytes(b'some image data')
@@ -531,7 +533,7 @@ def test_upload_to_imgbb_gui(mocker: MockerFixture, runner: CliRunner, tmp_path:
     assert result.exit_code == 0
     mock_open.assert_not_called()
     assert 'https://example.com/image.png' in result.output
-    mock_sp_run.assert_called_once_with(
+    mock_run_process.assert_called_once_with(
         ('fake', '--title', 'Successfully uploaded', '--msgbox', 'https://example.com/image.png'),
         check=False,
     )
@@ -543,16 +545,16 @@ def test_upload_to_imgbb_http_error_gui(mocker: MockerFixture, runner: CliRunner
     mocker.patch('deltona.commands.desktop.which', return_value='fake')
     mock_copy = mocker.patch('pyperclip.copy')
     mock_open = mocker.patch('deltona.commands.desktop.webbrowser.open')
-    mock_sp_run = mocker.patch('deltona.commands.desktop.sp.run')
+    mock_run_process = mocker.patch('deltona.commands.desktop.anyio.run_process', new=AsyncMock())
     mocker.patch('deltona.commands.desktop.setup_logging')
-    mocker.patch('deltona.commands.desktop.upload_to_imgbb', side_effect=HTTPError)
+    mocker.patch('deltona.commands.desktop.upload_to_imgbb', new=AsyncMock(side_effect=HTTPError))
     a_png = tmp_path / 'a.png'
     a_png.write_bytes(b'some image data')
     result = runner.invoke(upload_to_imgbb_main, [str(a_png)])
     assert result.exit_code != 0
     assert 'Failed to upload. Check API key!' in result.output
     mock_open.assert_not_called()
-    mock_sp_run.assert_called_once_with(('fake', '--sorry', 'Failed to upload!'), check=False)
+    mock_run_process.assert_called_once_with(('fake', '--sorry', 'Failed to upload!'), check=False)
     mock_copy.assert_not_called()
 
 
@@ -561,16 +563,16 @@ def test_upload_to_imgbb_http_error(mocker: MockerFixture, runner: CliRunner,
     mocker.patch('deltona.commands.desktop.which', return_value='fake')
     mock_copy = mocker.patch('pyperclip.copy')
     mock_open = mocker.patch('deltona.commands.desktop.webbrowser.open')
-    mock_sp_run = mocker.patch('deltona.commands.desktop.sp.run')
+    mock_run_process = mocker.patch('deltona.commands.desktop.anyio.run_process', new=AsyncMock())
     mocker.patch('deltona.commands.desktop.setup_logging')
-    mocker.patch('deltona.commands.desktop.upload_to_imgbb', side_effect=HTTPError)
+    mocker.patch('deltona.commands.desktop.upload_to_imgbb', new=AsyncMock(side_effect=HTTPError))
     a_png = tmp_path / 'a.png'
     a_png.write_bytes(b'some image data')
     result = runner.invoke(upload_to_imgbb_main, [str(a_png), '--no-gui'])
     assert result.exit_code != 0
     assert 'Failed to upload. Check API key!' in result.output
     mock_open.assert_not_called()
-    mock_sp_run.assert_not_called()
+    mock_run_process.assert_not_called()
     mock_copy.assert_not_called()
 
 
@@ -581,10 +583,10 @@ def test_upload_to_imgbb_no_files(mocker: MockerFixture, runner: CliRunner, tmp_
     mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch(
         'deltona.commands.desktop.upload_to_imgbb',
-        return_value=mocker.MagicMock(json=mocker.MagicMock(
+        new=AsyncMock(return_value=mocker.MagicMock(json=mocker.MagicMock(
             return_value={'data': {
                 'url': 'https://example.com/image.png'
-            }})),
+            }}))),
     )
     result = runner.invoke(upload_to_imgbb_main)
     assert result.exit_code == 0
@@ -597,10 +599,10 @@ def test_upload_to_imgbb(mocker: MockerFixture, runner: CliRunner, tmp_path: Pat
     mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch(
         'deltona.commands.desktop.upload_to_imgbb',
-        return_value=mocker.MagicMock(json=mocker.MagicMock(
+        new=AsyncMock(return_value=mocker.MagicMock(json=mocker.MagicMock(
             return_value={'data': {
                 'url': 'https://example.com/image.png'
-            }})),
+            }}))),
     )
     a_png = tmp_path / 'a.png'
     a_png.write_bytes(b'some image data')

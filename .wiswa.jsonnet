@@ -112,6 +112,8 @@ local utils = import 'utils.libsonnet';
     tool+: {
       poetry+: {
         dependencies+: {
+          anyio: utils.latestPypiPackageVersionCaret('anyio'),
+          'async-lru': utils.latestPypiPackageVersionCaret('async-lru'),
           bascom: utils.latestPypiPackageVersionCaret('bascom'),
           beautifulsoup4: {
             optional: true,
@@ -229,10 +231,18 @@ local utils = import 'utils.libsonnet';
               'sphinx-click': utils.latestPypiPackageVersionCaret('sphinx-click'),
             },
           },
+          tests+: {
+            dependencies+: {
+              'pytest-asyncio': utils.latestPypiPackageVersionCaret('pytest-asyncio'),
+            },
+          },
         },
       },
       commitizen+: {
         version_files+: ['docs/badges.rst'],
+      },
+      'pytest.ini_options'+: {
+        filterwarnings+: ['ignore::async_lru.AlruCacheLoopResetWarning'],
       },
       ruff+: {
         lint+: {

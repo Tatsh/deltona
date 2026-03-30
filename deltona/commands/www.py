@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from pathlib import Path
 from typing import TYPE_CHECKING
+import asyncio
 import json
 
 from bascom import setup_logging
@@ -13,6 +14,7 @@ from deltona.constants import CONTEXT_SETTINGS
 from deltona.system import CHROME_DEFAULT_CONFIG_PATH, CHROME_DEFAULT_LOCAL_STATE_PATH, IS_WINDOWS
 from deltona.utils import kill_processes_by_name
 from deltona.www import check_bookmarks_html_urls, where_from
+import anyio
 import click
 
 if TYPE_CHECKING:
@@ -49,7 +51,7 @@ def where_from_main(files: Sequence[Path], *, webpage: bool = False) -> None:
     '-s',
     '--subprocess-name',
     default='chrome' if not IS_WINDOWS else 'chrome.exe',
-    help='Chromium-based browser subprocess name such as "chrome".',
+    help="Chromium-based browser subprocess name such as 'chrome'.",
 )
 @click.option(
     '--sleep-time',
@@ -71,7 +73,7 @@ def chrome_bisect_flags_main(local_state_path: Path,
         # Test apparatus. Returns True if:
         # - there are no more flags (problem flag not found)
         # - if there is only one flag left (problem flag possibly found)
-        # - if the problematic flag exists within the passed in flags
+        # - if the problematic flag exists within the passed-in flags.
         len_flags = len(flags)
         click.echo('Testing flags:')
         for flag in flags:
@@ -97,7 +99,7 @@ def chrome_bisect_flags_main(local_state_path: Path,
         return None
 
     p_ls = local_state_path.resolve(strict=True)
-    click.echo(f'Using "{local_state_path}".')
+    click.echo(f"Using '{local_state_path}'.")
     with p_ls.open(encoding='utf-8') as f:
         local_state_data = json.load(f)
         flags = local_state_data['browser']['enabled_labs_experiments']
@@ -119,9 +121,9 @@ def chrome_bisect_flags_main(local_state_path: Path,
         with p_ls.open('w+', encoding='utf-8') as f:
             json.dump(local_state_data, f, sort_keys=True, indent=2, allow_nan=False)
         if not bad_flag:
-            click.echo('Restored original "Local State".')
+            click.echo("Restored original 'Local State'.")
         else:
-            click.echo(f'Saved "Local State" with "{bad_flag}" removed.')
+            click.echo(f"Saved 'Local State' with '{bad_flag}' removed.")
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -154,12 +156,13 @@ def fix_chromium_pwa_icon_main(
     For more information see https://issues.chromium.org/issues/40595456.
     """
     setup_logging(debug=debug, loggers={'deltona': {}})
-    fix_chromium_pwa_icon(config_path,
-                          app_id,
-                          icon_src_uri,
-                          profile,
-                          masked=masked,
-                          monochrome=monochrome)
+    asyncio.run(
+        fix_chromium_pwa_icon(config_path,
+                              app_id,
+                              icon_src_uri,
+                              profile,
+                              masked=masked,
+                              monochrome=monochrome))
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -168,6 +171,12 @@ def fix_chromium_pwa_icon_main(
 def check_bookmarks_html_main(filename: Path, *, debug: bool = False) -> None:
     """Check for URLs that are not valid any more (status 404) and redirections."""
     setup_logging(debug=debug, loggers={'deltona': {}, 'urllib3': {}})
-    _, changed, not_found = check_bookmarks_html_urls(Path(filename).read_text(encoding='utf-8'))
-    click.echo(f'{len(changed)} URLs changed.')
-    click.echo(f'{len(not_found)} URLs resulted in 404 response.')
+
+    async def _run() -> tuple[int, int]:
+        html = await anyio.Path(filename).read_text(encoding='utf-8')
+        _, changed, not_found = await check_bookmarks_html_urls(html)
+        return len(changed), len(not_found)
+
+    n_changed, n_not_found = asyncio.run(_run())
+    click.echo(f'{n_changed} URLs changed.')
+    click.echo(f'{n_not_found} URLs resulted in 404 response.')

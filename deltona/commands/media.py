@@ -6,6 +6,7 @@ from operator import itemgetter
 from pathlib import Path
 from shlex import quote
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+import asyncio
 import json
 import logging
 import re
@@ -85,7 +86,7 @@ def wait_for_disc_main(drive_path: Path, wait_time: float = 1.0) -> None:
 @click.option('--preparer', metavar='STRING', help='Preparer.')
 @click.option('--publisher', metavar='STRING', help='Publisher.')
 @click.option('--sysid', metavar='STRING', help='System ID.')
-@click.option('--volset', metavar='STRING', help='Volume Set ID.', type=int)
+@click.option('--volset', metavar='ID', help='Volume Set ID.', type=int)
 @click.option('--volume', metavar='STRING', help='Volume label.')
 @click.option(
     '--bootfile',
@@ -424,8 +425,12 @@ def cddb_query_main(args: tuple[str, ...], host: str | None = None, *, debug: bo
     Does not handle if result is not an exact match.
     """
     setup_logging(debug=debug, loggers={'deltona': {}})
-    click.echo(json.dumps(cddb_query(' '.join(args), host=host)._asdict(), indent=2,
-                          sort_keys=True))
+    click.echo(
+        json.dumps(
+            asyncio.run(cddb_query(' '.join(args), host=host))._asdict(),
+            indent=2,
+            sort_keys=True,
+        ))
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -544,16 +549,17 @@ def encode_dashcam_main(  # noqa: PLR0913, PLR0917
     This command's defaults are intended for use with Red Tiger dashcam output and file structure.
 
     The rear camera view will be placed in the bottom right of the video scaled by dividing the
-    width and height by the --rear-view-scale-divisor value specified. It will also be cropped using
-    the --rear-crop value unless --no-rear-crop is passed.
+    width and height by the ``--rear-view-scale-divisor`` value specified. It will also be cropped
+    using the ``--rear-crop`` value unless ``--no-rear-crop`` is passed.
 
-    Files are automatically grouped using the regular expression passed with -M/--match-regexp. This
-    RE must contain at least one group and only the first group will be considered. Make dubious use
-    of non-capturing groups if necessary. The captured group string is expected to be usable with
-    the time format specified with --time-format (see strptime documentation at
+    Files are automatically grouped using the regular expression passed with
+    ``-M``/``--match-regexp``. This RE must contain at least one group and only the first group will
+    be considered. Make dubious use of non-capturing groups if necessary. The captured group string
+    is expected to be usable with the time format specified with ``--time-format`` (see
+    ``strptime`` documentation at
     https://docs.python.org/3/library/datetime.html#datetime.datetime.strptime).
 
-    Front and rear files are paired by timestamp proximity (within --max-offset seconds). Files
+    Front and rear files are paired by timestamp proximity (within ``--max-offset`` seconds). Files
     without a corresponding partner are logged and skipped without deletion.
 
     Original files whose content is successfully converted are sent to the wastebin.

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import TYPE_CHECKING
+import asyncio
 import logging
 import subprocess as sp
 
@@ -56,7 +57,7 @@ def adp_main(hours: int = 160,
              debug: bool = False) -> None:
     """Calculate US salary."""
     setup_logging(debug=debug, loggers={'deltona': {}, 'urllib3': {}})
-    click.echo(str(calculate_salary(hours=hours, pay_rate=pay_rate, state=state)))
+    click.echo(str(asyncio.run(calculate_salary(hours=hours, pay_rate=pay_rate, state=state))))
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
