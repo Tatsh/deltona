@@ -210,6 +210,7 @@ norecursedirs
 norestart
 notarytool
 noto
+npmjs
 numpy
 numpydoc
 nvenc
