@@ -17,7 +17,7 @@ import re
 import urllib.parse
 
 from typing_extensions import NotRequired
-import requests
+import niquests
 
 from .chromium import generate_chrome_user_agent
 from .string import hexstr2bytes
@@ -168,7 +168,7 @@ def upload_to_imgbb(
     api_key: str | None = None,
     keyring_username: str | None = None,
     timeout: float = 5,
-) -> requests.Response:
+) -> niquests.Response:
     """
     Upload an image to ImgBB.
 
@@ -187,12 +187,12 @@ def upload_to_imgbb(
 
     Returns
     -------
-    requests.Response
+    niquests.Response
         The response from the ImgBB API.
     """
     import keyring  # noqa: PLC0415
 
-    r = requests.post(
+    r = niquests.post(
         'https://api.imgbb.com/1/upload',
         files={'image': Path(path).resolve(strict=True).read_bytes()},
         params={'key': api_key or keyring.get_password('imgbb', keyring_username or getuser())},
@@ -380,7 +380,7 @@ def check_bookmarks_html_urls(
     data: BookmarksDataset = []
     changed: BookmarksDataset = []
     not_found: BookmarksDataset = []
-    session = requests.Session()
+    session = niquests.Session()
     session.headers.update({
         'cache-control': 'no-cache',
         'dnt': '1',
@@ -401,7 +401,7 @@ def check_bookmarks_html_urls(
             log.debug('HEAD %s', attrs['href'])
             r = session.head(attrs['href'])
             if r.status_code in {HTTPStatus.MOVED_PERMANENTLY, HTTPStatus.FOUND}:
-                new_location = r.headers['location']
+                new_location = str(r.headers['location'])
                 if not re.match(r'^https://', new_location):
                     parsed = urllib.parse.urlparse(attrs['href'])
                     port_str = f':{parsed.port}' if parsed.port else ''

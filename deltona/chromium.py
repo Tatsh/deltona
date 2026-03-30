@@ -7,7 +7,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-import requests
+import niquests
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -66,8 +66,9 @@ def fix_chromium_pwa_icon(
     """
     image_mod = _get_pil_image_module()
     config_path = Path(config_path) / profile / 'Web Applications' / app_id
-    r = requests.get(icon_src_uri, timeout=15)
+    r = niquests.get(icon_src_uri, timeout=15)
     r.raise_for_status()
+    assert r.content is not None
     img = image_mod.open(BytesIO(r.content))
     width, height = img.size
     if width != height:
@@ -134,7 +135,7 @@ def get_latest_chrome_major_version() -> str:
     """
     return cast(
         'str',
-        requests.get(
+        niquests.get(
             ('https://versionhistory.googleapis.com/v1/chrome/platforms/win/channels/stable/'
              'versions'),
             timeout=5,

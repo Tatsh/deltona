@@ -22,7 +22,7 @@ import socket
 import subprocess as sp
 import tempfile
 
-import requests
+import niquests
 
 from .io import context_os_open
 from .system import IS_LINUX
@@ -750,7 +750,7 @@ def cddb_query(
     this_host = socket.gethostname()
     hello = {'hello': f'{username} {this_host} {app} {version}', 'proto': '6'}
     server = f'http://{host}/~cddb/cddb.cgi'
-    r = requests.get(
+    r = niquests.get(
         server,
         params={
             'cmd': f'cddb query {disc_id}',
@@ -760,6 +760,7 @@ def cddb_query(
         headers={'user-agent': hello['hello']},
     )
     r.raise_for_status()
+    assert r.text is not None
     log.debug('Response:\n%s', r.text.strip())
     lines = r.text.splitlines()
     first_line = lines[0].split(' ', 3)
@@ -774,7 +775,7 @@ def cddb_query(
     else:
         raise ValueError(first_line[0])
     artist, disc_title = artist_title.split(' / ', 1)
-    r = requests.get(
+    r = niquests.get(
         server,
         params={
             'cmd': f'cddb read {category} {disc_id.split(" ")[0]}',
@@ -783,6 +784,7 @@ def cddb_query(
         timeout=timeout,
     )
     r.raise_for_status()
+    assert r.text is not None
     log.debug('Response: %s', r.text)
     tracks = {}
     disc_genre = None

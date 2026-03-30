@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from unittest.mock import Mock
 
     from pytest_mock import MockerFixture
-    from requests_mock import Mocker
 
 
 @pytest.fixture
@@ -34,7 +33,7 @@ def mock_pil_image_module(mocker: MockerFixture) -> tuple[Mock, Mock]:
 def mock_requests_get(mocker: MockerFixture) -> Mock:
     mock_response = mocker.Mock()
     mock_response.content = b'fake-image'
-    mocker.patch('requests.get', return_value=mock_response)
+    mocker.patch('niquests.get', return_value=mock_response)
     return cast('Mock', mock_response)
 
 
@@ -154,16 +153,16 @@ def test_get_latest_chrome_major_version_success(mocker: MockerFixture) -> None:
     # Mock requests.get to return a fake version JSON
     mock_response = mocker.Mock()
     mock_response.json.return_value = {'versions': [{'version': '124.0.6367.60'}]}
-    mocker.patch('requests.get', return_value=mock_response)
+    mocker.patch('niquests.get', return_value=mock_response)
     get_latest_chrome_major_version.cache_clear()
     result = get_latest_chrome_major_version()
     assert result == '124'
 
 
-def test_get_latest_chrome_major_version_requests_mock(requests_mock: Mocker) -> None:
-    # Use requests-mock to mock the API endpoint
-    url = 'https://versionhistory.googleapis.com/v1/chrome/platforms/win/channels/stable/versions'
-    requests_mock.get(url, json={'versions': [{'version': '125.0.6422.60'}]})
+def test_get_latest_chrome_major_version_alt(mocker: MockerFixture) -> None:
+    mock_response = mocker.Mock()
+    mock_response.json.return_value = {'versions': [{'version': '125.0.6422.60'}]}
+    mocker.patch('niquests.get', return_value=mock_response)
     get_latest_chrome_major_version.cache_clear()
     result = get_latest_chrome_major_version()
     assert result == '125'
@@ -171,7 +170,7 @@ def test_get_latest_chrome_major_version_requests_mock(requests_mock: Mocker) ->
 
 def test_get_latest_chrome_major_version_network_error(mocker: MockerFixture) -> None:
     # Simulate a network error
-    mocker.patch('requests.get', side_effect=Exception('Network error'))
+    mocker.patch('niquests.get', side_effect=Exception('Network error'))
     get_latest_chrome_major_version.cache_clear()
     with pytest.raises(Exception, match='Network error'):
         get_latest_chrome_major_version()

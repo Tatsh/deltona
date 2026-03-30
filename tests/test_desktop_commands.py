@@ -11,7 +11,7 @@ from deltona.commands.desktop import (
     umpv_main,
     upload_to_imgbb_main,
 )
-from requests import HTTPError
+from niquests import HTTPError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -474,7 +474,7 @@ def test_kill_gamescope_main(mocker: MockerFixture, runner: CliRunner) -> None:
 def test_upload_to_imgbb_xdg_install(mocker: MockerFixture, runner: CliRunner,
                                      tmp_path: Path) -> None:
     mocker.patch('deltona.commands.desktop.setup_logging')
-    mock_requests_get = mocker.patch('deltona.commands.desktop.requests.get')
+    mock_requests_get = mocker.patch('deltona.commands.desktop.niquests.get')
     mock_requests_get.return_value.content = b'some image data'
     mock_sp_run = mocker.patch('deltona.commands.desktop.sp.run')
     result = runner.invoke(upload_to_imgbb_main, ['--xdg-install', str(tmp_path)])

@@ -19,15 +19,14 @@ from deltona.media import (
     parse_timestamp,
     supported_audio_input_formats,
 )
+import niquests
 import pytest
-import requests
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from pathlib import Path
 
     from pytest_mock import MockerFixture
-    from requests_mock import Mocker
 
 
 def test_supported_audio_input_formats_success(mocker: MockerFixture) -> None:
@@ -396,7 +395,7 @@ def test_cddb_query_success_single_match(mocker: MockerFixture) -> None:
         msg = 'Unexpected URL'
         raise RuntimeError(msg)
 
-    mocker.patch('deltona.media.requests.get', side_effect=fake_requests_get)
+    mocker.patch('deltona.media.niquests.get', side_effect=fake_requests_get)
     result = cddb_query(disc_id)
     assert result.artist == 'Artist'
     assert result.album == 'Album'
@@ -405,8 +404,7 @@ def test_cddb_query_success_single_match(mocker: MockerFixture) -> None:
     assert result.tracks == ('Track One', 'Track Two')
 
 
-def test_cddb_query_multiple_matches_accept_first(mocker: MockerFixture,
-                                                  requests_mock: Mocker) -> None:
+def test_cddb_query_multiple_matches_accept_first(mocker: MockerFixture) -> None:
     disc_id = '87654321 3 111 222 333'
     query_response = ("210 Found exact matches, list follows (until terminating `.')\n"
                       'rock 87654321 Artist / Album / 2021 / 3\n'
@@ -445,7 +443,7 @@ def test_cddb_query_multiple_matches_accept_first(mocker: MockerFixture,
         msg = 'Unexpected URL'
         raise RuntimeError(msg)
 
-    mocker.patch('deltona.media.requests.get', side_effect=fake_requests_get)
+    mocker.patch('deltona.media.niquests.get', side_effect=fake_requests_get)
     result = cddb_query(disc_id, accept_first_match=True)
     assert result.artist == 'Artist'
     assert result.album == 'Album'
@@ -454,8 +452,7 @@ def test_cddb_query_multiple_matches_accept_first(mocker: MockerFixture,
     assert result.tracks == ('Track A', 'Track B', 'Track C')
 
 
-def test_cddb_query_multiple_matches_not_accept_first(mocker: MockerFixture,
-                                                      requests_mock: Mocker) -> None:
+def test_cddb_query_multiple_matches_not_accept_first(mocker: MockerFixture) -> None:
     disc_id = '87654321 3 111 222 333'
     query_response = ("210 Found exact matches, list follows (until terminating `.')\n"
                       'rock 87654321 Artist / Album / 2021 / 3\n'
@@ -493,7 +490,7 @@ def test_cddb_query_multiple_matches_not_accept_first(mocker: MockerFixture,
         msg = 'Unexpected URL'
         raise RuntimeError(msg)
 
-    mocker.patch('deltona.media.requests.get', side_effect=fake_requests_get)
+    mocker.patch('deltona.media.niquests.get', side_effect=fake_requests_get)
     with pytest.raises(ValueError, match=r'^\d+'):
         cddb_query(disc_id)
 
@@ -505,7 +502,7 @@ def test_cddb_query_no_match_raises(mocker: MockerFixture) -> None:
     mocker.patch('deltona.media.getpass.getuser', return_value='user')
     mocker.patch('keyring.get_password', return_value='host')
     mock_req = mocker.Mock(text=query_response)
-    mocker.patch('deltona.media.requests.get', return_value=mock_req)
+    mocker.patch('deltona.media.niquests.get', return_value=mock_req)
     with pytest.raises(ValueError, match='202'):
         cddb_query(disc_id)
 
@@ -515,9 +512,9 @@ def test_cddb_query_http_error(mocker: MockerFixture) -> None:
     mocker.patch('deltona.media.socket.gethostname', return_value='host')
     mocker.patch('deltona.media.getpass.getuser', return_value='user')
     mocker.patch('keyring.get_password', return_value='host')
-    mock_get = mocker.patch('deltona.media.requests.get')
-    mock_get.return_value.raise_for_status.side_effect = requests.HTTPError
-    with pytest.raises(requests.HTTPError):
+    mock_get = mocker.patch('deltona.media.niquests.get')
+    mock_get.return_value.raise_for_status.side_effect = niquests.HTTPError
+    with pytest.raises(niquests.HTTPError):
         cddb_query(disc_id)
 
 

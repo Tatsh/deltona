@@ -23,6 +23,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Replaced `requests` dependency with `niquests`, a drop-in replacement with HTTP/2, HTTP/3, and
+  built-in type annotations.
 - `media.archive_dashcam_footage` now uses timestamp-proximity pairing instead of positional file
   matching.
 - Unmatched dashcam files are now logged and skipped instead of being deleted.
@@ -41,6 +43,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Removed
 
+- `requests` and `types-requests` dependencies in favour of `niquests` (fully typed).
+- `requests-mock` test dependency; tests now use standard `mocker.patch`.
 - `allow_group_discrepancy_resolution` parameter from `media.archive_dashcam_footage`.
 - `--no-fix-groups` CLI option from `encode-dashcam`.
 
@@ -48,8 +52,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Click option default mismatches in `encode_dashcam_main` for `preset`, `video_encoder`, and
   `video_max_bitrate`.
-- `click.Path` constraints now correctly use `file_okay=False` for directory arguments.
-- `--temp-dir` option now uses `click.Path` type.
+- `encode-dashcam` `click.Path` constraints now correctly use `file_okay=False` for directory
+  arguments.
+- `encode-dashcam` `--temp-dir` option now uses `click.Path` type.
 
 ## [0.1.4] - 2026-03-21
 

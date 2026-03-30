@@ -26,9 +26,9 @@ from deltona.system import (
     kill_gamescope,
 )
 from deltona.www import upload_to_imgbb
-from requests import HTTPError
+from niquests import HTTPError
 import click
-import requests
+import niquests
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -266,7 +266,7 @@ def upload_to_imgbb_main(
     Get an API key at https://api.imgbb.com/ and set it with `keyring set imgbb "${USER}"`.
     """  # noqa: DOC501
     setup_logging(debug=debug, loggers={'deltona': {}, 'urllib3': {}})
-    r: requests.Response | None = None
+    r: niquests.Response | None = None
     if xdg_install:
         prefix = str(Path('~/.local').expanduser()) if xdg_install == '-' else xdg_install
         apps = Path(f'{prefix}/share/applications')
@@ -284,9 +284,10 @@ TryExec=upload-to-imgbb
 Type=Application
 Version=1.0
     """)
-        r = requests.get('https://simgbb.com/images/favicon.png', timeout=5)
+        r = niquests.get('https://simgbb.com/images/favicon.png', timeout=5)
         icons_dir = Path(f'{prefix}/share/icons/hicolor/300x300/apps')
         icons_dir.mkdir(parents=True, exist_ok=True)
+        assert r.content is not None
         (icons_dir / 'imgbb.png').write_bytes(r.content)
         sp.run(
             ('update-desktop-database', '-v', str(apps)),  # noqa: S607

@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, TypedDict, cast
 
 from typing_extensions import override
-import requests
+import niquests
 
 from .string import strip_ansi_if_no_colors
 
@@ -90,7 +90,7 @@ def calculate_salary(*,
     """
     check_date = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
     gross_pay = hours * pay_rate
-    req = requests.post(
+    req = niquests.post(
         POST_URI,
         headers={
             'accept': 'application/json, text/javascript, */*; q=0.01',

@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from deltona.adp import SalaryResponse, calculate_salary
-from requests.exceptions import HTTPError
+from niquests.exceptions import HTTPError
 import pytest
 
 if TYPE_CHECKING:
-    from requests_mock import Mocker
+    from pytest_mock import MockerFixture
 
 
 def test_salary_response_str() -> None:
@@ -40,8 +40,9 @@ STATE = 0
 FUCKERY = 175.0
 
 
-def test_calculate_salary_success(requests_mock: Mocker) -> None:
-    mock_response = {
+def test_calculate_salary_success(mocker: MockerFixture) -> None:
+    mock_response = mocker.Mock()
+    mock_response.json.return_value = {
         'content': {
             'federal': 100.0,
             'fica': 50.0,
@@ -50,8 +51,8 @@ def test_calculate_salary_success(requests_mock: Mocker) -> None:
             'state': 0
         }
     }
-    requests_mock.post('https://calculators.symmetry.com/api/calculators/hourly?report=none',
-                       json=mock_response)
+    mock_response.raise_for_status = mocker.Mock()
+    mocker.patch('deltona.adp.niquests.post', return_value=mock_response)
     result = calculate_salary(hours=70, pay_rate=70.0, state='FL')
 
     assert result.federal == FEDERAL_TAX
@@ -62,8 +63,9 @@ def test_calculate_salary_success(requests_mock: Mocker) -> None:
     assert result.gross == GROSS_PAY
 
 
-def test_calculate_salary_http_error(requests_mock: Mocker) -> None:
-    requests_mock.post('https://calculators.symmetry.com/api/calculators/hourly?report=none',
-                       status_code=500)
+def test_calculate_salary_http_error(mocker: MockerFixture) -> None:
+    mock_response = mocker.Mock()
+    mock_response.raise_for_status.side_effect = HTTPError
+    mocker.patch('deltona.adp.niquests.post', return_value=mock_response)
     with pytest.raises(HTTPError):
         calculate_salary(hours=70, pay_rate=70.0, state='FL')

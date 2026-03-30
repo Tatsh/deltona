@@ -16,7 +16,7 @@ from deltona.www import (
     upload_to_imgbb,
     where_from,
 )
-from requests import HTTPError
+from niquests import HTTPError
 import pytest
 
 if TYPE_CHECKING:
@@ -25,119 +25,119 @@ if TYPE_CHECKING:
 
     from bs4 import BeautifulSoup
     from pytest_mock import MockerFixture
-    from requests_mock import Mocker
 
 
-def test_upload_to_imgbb_with_api_key(tmp_path: Path, mocker: MockerFixture,
-                                      requests_mock: Mocker) -> None:
-    # Create a dummy image file
+def test_upload_to_imgbb_with_api_key(tmp_path: Path, mocker: MockerFixture) -> None:
     img_path = tmp_path / 'test.png'
     img_path.write_bytes(b'fake-image-data')
-
-    # Mock requests.post
-    url = 'https://api.imgbb.com/1/upload'
     expected_response = {'data': {'url': 'https://imgbb.com/test.png'}}
-    requests_mock.post(url, json=expected_response, status_code=200)
-
-    # Call function
+    mock_response = mocker.Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = expected_response
+    mocker.patch('deltona.www.niquests.post', return_value=mock_response)
     r = upload_to_imgbb(str(img_path), api_key='dummy-key', timeout=1)
     assert r.status_code == 200
     assert r.json() == expected_response
 
 
-def test_upload_to_imgbb_with_keyring(tmp_path: Path, mocker: MockerFixture,
-                                      requests_mock: Mocker) -> None:
-    # Create a dummy image file
+def test_upload_to_imgbb_with_keyring(tmp_path: Path, mocker: MockerFixture) -> None:
     img_path = tmp_path / 'test2.png'
     img_path.write_bytes(b'another-fake-image-data')
-
-    # Mock keyring.get_password
     mocker.patch('keyring.get_password', return_value='keyring-key')
-    # Mock getuser
     mocker.patch('deltona.www.getuser', return_value='testuser')
-
-    # Mock requests.post
-    url = 'https://api.imgbb.com/1/upload'
     expected_response = {'data': {'url': 'https://imgbb.com/test2.png'}}
-    requests_mock.post(url, json=expected_response, status_code=200)
-
-    # Call function without api_key, but with keyring_username
+    mock_response = mocker.Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = expected_response
+    mocker.patch('deltona.www.niquests.post', return_value=mock_response)
     r = upload_to_imgbb(str(img_path), keyring_username='testuser', timeout=1)
     assert r.status_code == 200
     assert r.json() == expected_response
 
 
-def test_upload_to_imgbb_raises_for_status(tmp_path: Path, mocker: MockerFixture,
-                                           requests_mock: Mocker) -> None:
+def test_upload_to_imgbb_raises_for_status(tmp_path: Path, mocker: MockerFixture) -> None:
     img_path = tmp_path / 'fail.png'
     img_path.write_bytes(b'fail-data')
-
-    requests_mock.post('https://api.imgbb.com/1/upload',
-                       status_code=400,
-                       json={'error': 'bad request'})
+    mock_response = mocker.Mock()
+    mock_response.raise_for_status.side_effect = HTTPError
+    mocker.patch('deltona.www.niquests.post', return_value=mock_response)
     with pytest.raises(HTTPError):
         upload_to_imgbb(str(img_path), api_key='bad-key', timeout=1)
 
 
-def test_check_bookmarks_html_urls_basic(mocker: MockerFixture, requests_mock: Mocker) -> None:
-    # Minimal bookmarks.html with two links: one valid, one 404
+def _make_head_side_effect(mocker: MockerFixture,
+                           responses: dict[str, tuple[int, dict[str, str]]]) -> Any:
+    def side_effect(url: str, **_: Any) -> Any:
+        status_code, headers = responses.get(url, (200, {}))
+        result = mocker.Mock()
+        result.status_code = status_code
+        result.headers = headers
+        return result
+
+    return side_effect
+
+
+def test_check_bookmarks_html_urls_basic(mocker: MockerFixture) -> None:
     html = """
     <DL>
         <DT><A HREF="https://example.com" ADD_DATE="123">Example</A>
         <DT><A HREF="https://notfound.com" ADD_DATE="456">NotFound</A>
     </DL>
     """
-    # Mock HEAD requests
-    requests_mock.head('https://example.com', status_code=200)
-    requests_mock.head('https://notfound.com', status_code=404)
-
-    # Patch user agent generator to avoid dependency
+    mock_session = mocker.Mock()
+    mock_session.head.side_effect = _make_head_side_effect(mocker, {
+        'https://example.com': (200, {}),
+        'https://notfound.com': (404, {}),
+    })
+    mock_session.headers = {}
+    mocker.patch('deltona.www.niquests.Session', return_value=mock_session)
     mocker.patch('deltona.www.generate_chrome_user_agent', return_value='UA')
-
     data, changed, not_found = check_bookmarks_html_urls(html)
-    # Should have both links in data
     assert len(data) == 2
-    # No changed links
     assert changed == []
-    # One not found
     assert len(not_found) == 1
     assert not_found[0]['attrs']['href'] == 'https://notfound.com'  # type: ignore[typeddict-item]
     assert not_found[0]['title'] == 'NotFound'  # type: ignore[typeddict-item]
 
 
-def test_check_bookmarks_html_urls_redirect(mocker: MockerFixture, requests_mock: Mocker) -> None:
+def test_check_bookmarks_html_urls_redirect(mocker: MockerFixture) -> None:
     html = """
     <DL>
         <DT><A HREF="https://redirect.com" ADD_DATE="789">Redirected</A>
         <DT><A>Invalid</A>
     </DL>
     """
-    requests_mock.head('https://redirect.com', status_code=301, headers={'location': '/new-loc'})
-    # Patch user agent generator
+    mock_session = mocker.Mock()
+    mock_session.head.side_effect = _make_head_side_effect(mocker, {
+        'https://redirect.com': (301, {
+            'location': '/new-loc'
+        }),
+    })
+    mock_session.headers = {}
+    mocker.patch('deltona.www.niquests.Session', return_value=mock_session)
     mocker.patch('deltona.www.generate_chrome_user_agent', return_value='UA')
-
     data, changed, not_found = check_bookmarks_html_urls(html)
-    # Should have one link in data
     assert len(data) == 2
-    # Should have one changed link
     assert len(changed) == 1
-    # The href should be rewritten to absolute
     assert changed[0]['attrs']['href'].endswith('/new-loc')  # type: ignore[typeddict-item]
     assert changed[0]['title'] == 'Redirected'  # type: ignore[typeddict-item]
-    # No not found
     assert not_found == []
 
 
-def test_check_bookmarks_html_urls_full_redirect(mocker: MockerFixture,
-                                                 requests_mock: Mocker) -> None:
+def test_check_bookmarks_html_urls_full_redirect(mocker: MockerFixture) -> None:
     html = """
     <DL>
         <DT><A HREF="https://redirect.com" ADD_DATE="789">Redirected</A>
     </DL>
     """
-    requests_mock.head('https://redirect.com',
-                       status_code=301,
-                       headers={'location': 'https://new-host/new-loc'})
+    mock_session = mocker.Mock()
+    mock_session.head.side_effect = _make_head_side_effect(mocker, {
+        'https://redirect.com': (301, {
+            'location': 'https://new-host/new-loc'
+        }),
+    })
+    mock_session.headers = {}
+    mocker.patch('deltona.www.niquests.Session', return_value=mock_session)
     mocker.patch('deltona.www.generate_chrome_user_agent', return_value='UA')
     data, changed, not_found = check_bookmarks_html_urls(html)
     assert len(data) == 1
@@ -184,7 +184,7 @@ def test_check_bookmarks_html_urls_exhaustive_check(mocker: MockerFixture) -> No
 </DL><p>
     """
     mocker.patch('deltona.www.generate_chrome_user_agent', return_value='UA')
-    mock_session = mocker.patch('deltona.www.requests.Session')
+    mock_session = mocker.patch('deltona.www.niquests.Session')
     n = 0
 
     def mock_head(url: str, **kwargs: Any) -> Any:

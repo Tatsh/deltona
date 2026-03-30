@@ -8,7 +8,7 @@ from pathlib import Path
 from shlex import quote
 from shutil import rmtree
 from signal import SIGTERM
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Any, overload
 import csv
 import logging
 import os
@@ -16,15 +16,15 @@ import re
 import subprocess as sp
 import time
 
-from requests.adapters import BaseAdapter
+from niquests.adapters import BaseAdapter
 from typing_extensions import override
-import requests
+import niquests
 
 from .media import CD_FRAMES
 from .system import IS_WINDOWS, kill_wine
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Iterable
 
     from paramiko import SFTPClient, SSHClient
 
@@ -292,39 +292,24 @@ def kill_processes_by_name(name: str,
 class DataAdapter(BaseAdapter):
     """Requests adapter that returns the URL content (after ``data:``) as the response body."""
     @override
-    def send(
-        self,
-        request: requests.PreparedRequest,
-        stream: bool = False,
-        timeout: float | tuple[float, float] | tuple[float, None] | None = None,
-        verify: bool | str = True,
-        cert: bytes | str | tuple[bytes | str, bytes | str] | None = None,
-        proxies: Mapping[str, str] | None = None,
-    ) -> requests.Response:
+    def send(  # type: ignore[override]
+            self, request: niquests.PreparedRequest, **kwargs: Any) -> niquests.Response:
         """
         Send a request and return the URL content as the response body.
 
         Parameters
         ----------
-        request : requests.PreparedRequest
+        request : niquests.PreparedRequest
             The prepared request.
-        stream : bool
-            Unused.
-        timeout : float | tuple[float, float] | tuple[float, None] | None
-            Unused.
-        verify : bool | str
-            Unused.
-        cert : bytes | str | tuple[bytes | str, bytes | str] | None
-            Unused.
-        proxies : Mapping[str, str] | None
-            Unused.
+        **kwargs : Any
+            Additional keyword arguments (unused, accepted for compatibility).
 
         Returns
         -------
-        requests.Response
+        niquests.Response
             A response with the URL content (after ``data:``) as the body.
         """
-        r = requests.Response()
+        r = niquests.Response()
         assert request.url is not None
         r._content = request.url[5:].encode()  # noqa: SLF001
         r.status_code = HTTPStatus.OK

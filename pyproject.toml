@@ -17,7 +17,6 @@ dev = [
   "types-psutil>=7.2.2.20260130",
   "types-pyperclip>=1.11.0.20260216",
   "types-pyyaml>=6.0.12.20250915",
-  "types-requests>=2.33.0.20260327",
   "types-send2trash>=2.1.0.20260117",
   "types-yt-dlp>=2026.3.17.20260318",
   "yapf>=0.43.0",
@@ -42,7 +41,6 @@ tests = [
   "pytest-cov>=7.1.0",
   "pytest-mock>=3.15.1",
   "pytest>=9.0.2",
-  "requests-mock>=1.12.1",
 ]
 
 [project]
@@ -77,7 +75,7 @@ dependencies = [
   "bascom>=0.1.2",
   "binaryornot>=0.6.0",
   "click>=8.3.1",
-  "requests>=2.33.0",
+  "niquests>=3.18.0",
   "typing-extensions>=4.15.0",
 ]
 description = "A lot of uncategorised utilities."

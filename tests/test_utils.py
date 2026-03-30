@@ -11,8 +11,8 @@ from deltona.utils import (
     secure_move_path,
     unregister_wine_file_associations,
 )
+import niquests
 import pytest
-import requests
 
 if TYPE_CHECKING:
     from _pytest.monkeypatch import MonkeyPatch
@@ -455,9 +455,9 @@ def test_kill_processes_by_name_no_processes_left(mocker: MockerFixture,
 
 def test_data_adapter_send_basic(mocker: MockerFixture) -> None:
     adapter = DataAdapter()
-    session = requests.Session()
+    session = niquests.Session()
     session.mount('data:', adapter)
-    req = requests.Request('GET', 'data:,HelloWorld').prepare()
+    req = niquests.Request('GET', 'data:,HelloWorld').prepare()
     response = adapter.send(req)
     assert response.status_code == 200
     assert response.content == b',HelloWorld'
@@ -465,7 +465,7 @@ def test_data_adapter_send_basic(mocker: MockerFixture) -> None:
 
 def test_data_adapter_send_with_stream_and_timeout(mocker: MockerFixture) -> None:
     adapter = DataAdapter()
-    req = requests.Request('GET', 'data:,TestData').prepare()
+    req = niquests.Request('GET', 'data:,TestData').prepare()
     response = adapter.send(req, stream=True, timeout=5)
     assert response.status_code == 200
     assert response.content == b',TestData'
@@ -473,7 +473,7 @@ def test_data_adapter_send_with_stream_and_timeout(mocker: MockerFixture) -> Non
 
 def test_data_adapter_send_with_cert_and_proxies(mocker: MockerFixture) -> None:
     adapter = DataAdapter()
-    req = requests.Request('GET', 'data:,CertTest').prepare()
+    req = niquests.Request('GET', 'data:,CertTest').prepare()
     response = adapter.send(req, cert='dummy', proxies={'http': 'proxy'})
     assert response.status_code == 200
     assert response.content == b',CertTest'
