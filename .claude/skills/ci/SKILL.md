@@ -150,13 +150,14 @@ Run commands separately. Do not chain commands with `&&` or `;`. Do not use scri
 
 1. Stage files for each logical commit using `git add` with specific file paths.
 2. If `CHANGELOG.md` was updated by the changelog agent, stage it with the relevant commit.
-3. Create the directory if it does not exist: `mkdir -p /tmp/claude-ci`.
-4. Create a unique temp file with `mktemp /tmp/claude-ci/message-XXXXXXXX`. Write the commit message
-   there using the **Write** tool (not Bash `echo` or `cat`), then commit with
-   `git commit -S -s -F <tempfile>`.
-5. If a pre-commit hook fails, fix the issue, re-stage (use appropriate agent if there is one), and
+3. Create the directory if it does not exist: `mkdir -p .wiswa-ci`. Skip if it already exists.
+4. Create a unique temp file with `mktemp .wiswa-ci/message-XXXXXXXX`. Write the commit message
+   there using the **Write** tool (not Bash `echo` or `cat`)
+5. Commit with `git commit -S -s -F <tempfile>` without using the
+   sandbox.
+6. If a pre-commit hook fails, fix the issue, re-stage (use appropriate agent if there is one), and
    try to commit again.
-6. After all commits, run `git status` to verify clean state.
+7. After all commits, run `git status` to verify clean state.
 
 ## Rules
 
