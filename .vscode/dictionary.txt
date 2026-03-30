@@ -46,6 +46,7 @@ chinesebig
 cleartype
 closeapplications
 codepoint
+codesign
 colorlog
 commitizen
 conftest
@@ -71,7 +72,6 @@ dgenre
 docstrings
 doctrees
 dontcare
-dorny
 driveropts
 dtitle
 dunder
@@ -158,6 +158,7 @@ kwriteconfig
 lahu
 laka
 lanczos
+lastexitcode
 launchable
 lavfi
 leadout
@@ -207,6 +208,7 @@ nonantialiased
 nonblock
 norecursedirs
 norestart
+notarytool
 noto
 numpy
 numpydoc
@@ -263,6 +265,7 @@ setwinsize
 shellcheck
 shellformat
 shiftjis
+signtool
 sigwinch
 siri
 sirikit
@@ -332,6 +335,7 @@ wiswa
 wkwebview
 wwdc
 xauthority
+xcrun
 yapf
 yapfignore
 yarnrc
