@@ -12,7 +12,7 @@ jobs:
       - name: 'Install dependencies (Yarn)'
         run: 'yarn'
       - name: 'Check formatting (Prettier)'
-        run: 'yarn prettier -c .'
+        run: 'yarn prettier --check .'
 name: 'Prettier'
 'on':
   pull_request:

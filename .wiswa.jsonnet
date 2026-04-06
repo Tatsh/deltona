@@ -1,6 +1,7 @@
 local utils = import 'utils.libsonnet';
 
 {
+  uses_user_defaults: true,
   // Project-specific
   local settings = self,
   description: 'A lot of uncategorised utilities.',
@@ -253,9 +254,6 @@ local utils = import 'utils.libsonnet';
         },
       },
     },
-  },
-  copilot: {
-    intro: 'Deltona is a collection of uncategorised CLI utilities and Python modules.',
   },
   pyinstaller+: {
     include_only: ['deltona'],

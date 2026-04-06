@@ -142,8 +142,7 @@ name: 'AppImage'
     branches:
       - 'master'
     paths:
-      - '**/*.py'
-      - '**/*.pyi'
+      - 'deltona/**'
       - '.github/workflows/appimage.yml'
       - 'pyproject.toml'
       - 'uv.lock'

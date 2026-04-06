@@ -39,8 +39,7 @@ name: 'Snap'
     branches:
       - 'master'
     paths:
-      - '**/*.py'
-      - '**/*.pyi'
+      - 'deltona/**'
       - '.github/workflows/snap.yml'
       - 'pyproject.toml'
       - 'snapcraft.yaml'

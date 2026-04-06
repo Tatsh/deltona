@@ -6,6 +6,7 @@ alayya
 alru
 alsa
 anchore
+Ångström
 anhu
 anni
 anyio
@@ -53,6 +54,7 @@ colorlog
 commitizen
 conftest
 consolas
+cooldown
 coveragerc
 coverallsapp
 cryptenroll
@@ -72,6 +74,7 @@ demibold
 desat
 dgenre
 docstrings
+doctree
 doctrees
 dontcare
 driveropts
@@ -102,7 +105,6 @@ filterwarnings
 fiya
 flacted
 followlinks
-fontawesome
 forcecloseapplications
 foxundermoon
 froms
@@ -145,6 +147,7 @@ ioctl
 iselect
 isort
 itertools
+jinja
 jlong
 jsonnet
 jsonschema
@@ -242,6 +245,7 @@ pygithub
 pygobject
 pyinstaller
 pylint
+pylock
 pypa
 pyperclip
 pypi
@@ -312,7 +316,6 @@ underscorised
 underscorize
 unidecode
 uninhibit
-unrar
 urldecode
 userprofile
 vcodec
@@ -336,6 +339,7 @@ wineserver
 wineshell
 wingdi
 wiswa
+wiswa's
 wkwebview
 wwdc
 xauthority
@@ -344,4 +348,3 @@ yapf
 yapfignore
 yarnrc
 zscale
-ångström
