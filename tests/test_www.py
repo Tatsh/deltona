@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
+from urllib.parse import urlparse
 import asyncio
 import plistlib
 
@@ -227,7 +228,8 @@ async def test_check_bookmarks_html_urls_exhaustive_check(mocker: MockerFixture)
 
     async def mock_head(url: str, **kwargs: Any) -> Any:
         nonlocal n
-        if url.startswith('https://deltona.dev'):
+        parsed = urlparse(url)
+        if parsed.scheme == 'https' and parsed.hostname == 'deltona.dev':
             return mocker.MagicMock(status_code=HTTPStatus.OK)
         async with lock:
             n += 1
