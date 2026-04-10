@@ -99,7 +99,7 @@ jobs:
               "./${file}" add-cdda-times --help
           done
       - name: 'Upload Artifacts'
-        uses: 'actions/upload-artifact@v7.0.0'
+        uses: 'actions/upload-artifact@v7.0.1'
         with:
           if-no-files-found: error
           name: deltona-binaries-linux-${{ matrix.system.arch }}
