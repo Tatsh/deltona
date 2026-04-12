@@ -120,6 +120,21 @@ def test_burnrariso_main_iso_no_size(runner: CliRunner, mocker: MockerFixture,
     assert result.exit_code != 0
 
 
+def test_burnrariso_main_missing_sfv_file(runner: CliRunner, mocker: MockerFixture,
+                                          tmp_path: Path) -> None:
+    rar_file = tmp_path / 'test.rar'
+    rar_file.write_text('data')
+    iso_file = MagicMock()
+    iso_file.name = 'test.iso'
+    iso_file.size = 123
+    mock_unrar = mocker.patch('deltona.commands.misc.UnRAR')
+    unrar_instance = mock_unrar.return_value
+    unrar_instance.list_files.return_value = [iso_file]
+    result = runner.invoke(burnrariso_main, [str(rar_file)])
+    assert result.exit_code != 0
+    assert isinstance(result.exception, FileNotFoundError)
+
+
 def test_burnrariso_main_sfv_fail(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:
     rar_file = tmp_path / 'test.rar'
     rar_file.write_text('data')

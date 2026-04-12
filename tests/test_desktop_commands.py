@@ -13,6 +13,7 @@ from deltona.commands.desktop import (
     upload_to_imgbb_main,
 )
 from niquests import HTTPError
+import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -20,6 +21,27 @@ if TYPE_CHECKING:
 
     from click.testing import CliRunner
     from pytest_mock import MockerFixture
+
+
+def _mpv_sbs_probe(width: int, height: int) -> dict[str, Any]:
+    return {
+        'streams': [
+            {
+                'codec_type': 'other',
+                'disposition': {
+                    'default': 0
+                }
+            },
+            {
+                'codec_type': 'video',
+                'width': width,
+                'height': height,
+                'disposition': {
+                    'default': 1
+                },
+            },
+        ]
+    }
 
 
 def test_inhibit_notifications_main_success(mocker: MockerFixture, runner: CliRunner) -> None:
@@ -715,3 +737,31 @@ def test_mpv_sbs_main_non_matching_height(mocker: MockerFixture, runner: CliRunn
         ),
         check=True,
     )
+
+
+@pytest.mark.parametrize(
+    ('w1', 'h1', 'w2', 'h2', 'msg'),
+    [
+        (1920, 30, 1920, 1080, 'Invalid height in video 1'),
+        (1920, 1080, 1920, 30, 'Invalid height in video 2'),
+        (4000, 1080, 1920, 1080, 'Video 1 is too wide'),
+        (30, 1080, 1920, 1080, 'Invalid width in video 1'),
+        (1920, 1080, 4000, 1080, 'Video 2 is too wide'),
+        (1920, 1080, 30, 1080, 'Invalid width in video 2'),
+    ],
+)
+def test_mpv_sbs_main_invalid_dimensions(mocker: MockerFixture, runner: CliRunner, tmp_path: Path,
+                                         w1: int, h1: int, w2: int, h2: int, msg: str) -> None:
+    mocker.patch('deltona.commands.desktop.setup_logging')
+    mocker.patch(
+        'deltona.commands.desktop.ffprobe',
+        side_effect=[_mpv_sbs_probe(w1, h1), _mpv_sbs_probe(w2, h2)],
+    )
+    out_mp4 = tmp_path / 'file1.mp4'
+    out_mp4.write_bytes(b'file1')
+    out_mp4_right = tmp_path / 'file1_right.mp4'
+    out_mp4_right.write_bytes(b'file1_right')
+    result = runner.invoke(mpv_sbs_main, [str(out_mp4), str(out_mp4_right)])
+    assert result.exit_code != 0
+    assert isinstance(result.exception, ValueError)
+    assert msg in str(result.exception)

@@ -347,6 +347,22 @@ def test_add_unidecode_custom_replacement_handles_existing_tuple(mocker: MockerF
     assert fake_cache[section][position] == replace  # type: ignore[index]
 
 
+def test_add_unidecode_custom_replacement_raises_when_section_too_short(
+        mocker: MockerFixture) -> None:
+    fake_cache: dict[int, Sequence[str | None] | None] = {}
+    fake_unidecode = mocker.Mock()
+    mocker.patch(
+        'deltona.string._get_unidecode_cache_and_unidecode',
+        return_value=(fake_cache, fake_unidecode),
+    )
+    mocker.patch('deltona.string.assert_not_none', side_effect=lambda x: x)
+    find = 'ø'
+    section = ord(find) >> 8
+    fake_cache[section] = []
+    with pytest.raises(ValueError, match='Section length is too small'):
+        string.add_unidecode_custom_replacement(find, 'oe')
+
+
 def test_add_unidecode_custom_replacement_calls_unidecode(mocker: MockerFixture) -> None:
     fake_cache: dict[int, Sequence[str | None] | None] = {}
     fake_unidecode = mocker.Mock()

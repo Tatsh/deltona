@@ -15,6 +15,7 @@ from deltona.www import (
     create_parsed_tree_structure,
     generate_html_dir_tree,
     parse_bookmarks_html,
+    recurse_bookmarks_html,
     upload_to_imgbb,
     where_from,
 )
@@ -350,6 +351,28 @@ def test_generate_html_dir_tree_symlink(tmp_path: Path) -> None:
     # Should include both the real file and the symlink
     assert 'real.txt' in html
     assert 'link.txt' in html
+
+
+def test_recurse_bookmarks_html_skips_non_tag_h3_sibling(mocker: MockerFixture) -> None:
+    from bs4 import BeautifulSoup
+
+    html = ('<html><body><dl><dt><a href="http://example.com">Link</a></dt></dl></body></html>')
+    soup = BeautifulSoup(html, 'html5lib')
+    callback = mocker.Mock()
+    dl = soup.find('dl')
+    assert dl is not None
+
+    def fake_find_previous_sibling(name: str) -> object:
+        if name == 'h3':
+            return object()
+        raise AssertionError(name)
+
+    dl.find_previous_sibling = fake_find_previous_sibling  # type: ignore[assignment, method-assign]
+
+    recurse_bookmarks_html(soup, callback)
+    callback.assert_called_once()
+    _attrs, _title, folder_path = callback.call_args[0]
+    assert folder_path == []
 
 
 def test_parse_bookmarks_html(mocker: MockerFixture) -> None:
