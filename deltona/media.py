@@ -697,8 +697,81 @@ class CDDBQueryResult(NamedTuple):
     """Track titles."""
 
 
+def _parse_cddb_query_response(
+    lines: list[str],
+    *,
+    accept_first_match: bool,
+) -> tuple[str, str, str, str]:
+    """
+    Parse the first CDDB HTTP response (``cddb query``).
+
+    Returns
+    -------
+    tuple[str, str, str, str]
+        ``category``, ``disc_id``, ``artist``, and ``disc_title`` from the server.
+
+    Raises
+    ------
+    ValueError
+        If the server returns multiple matches and ``accept_first_match`` is ``False``, or if the
+        response code is not ``'200'`` or ``'210'``.
+    """
+    first_line = lines[0].split(' ', 3)
+    if len(lines) == 1 and first_line[0] == '200':
+        _, category, disc_id, artist_title = first_line
+    elif first_line[0] == '210':
+        if not accept_first_match:
+            log.debug('Results:\n%s', '\n'.join(lines).strip())
+            raise ValueError(len(lines[1:-1]))
+        category, disc_id, artist_title = lines[1].split(' ', 2)
+    else:
+        raise ValueError(first_line[0])
+    artist, disc_title = artist_title.split(' / ', 1)
+    return category, disc_id, artist, disc_title
+
+
+def _cddb_result_from_read_response(
+    read_text: str,
+    artist: str,
+    disc_title: str,
+) -> CDDBQueryResult:
+    """
+    Build a :class:`CDDBQueryResult` from the ``cddb read`` response body.
+
+    Returns
+    -------
+    CDDBQueryResult
+        Parsed metadata and track titles.
+    """
+    tracks: dict[str, str] = {}
+    disc_genre: str | None = None
+    disc_year: int | None = None
+    log.debug('Artist: %s', artist)
+    log.debug('Album: %s', disc_title)
+    for line in (x.strip() for x in read_text.splitlines()[1:]
+                 if x.strip() and x[0] not in {'.', '#'}):
+        field_name, value = line.split('=', 1)
+        match field_name:
+            case 'DTITLE':
+                artist, disc_title = value.split(' / ', 1)
+            case 'DYEAR':
+                disc_year = int(value)
+            case 'DGENRE':
+                disc_genre = value
+            case key:
+                if key.startswith('TTITLE'):
+                    tracks[assert_not_none(re.match(r'^TTITLE([^=]+).*', key)).group(1)] = value
+    return CDDBQueryResult(
+        artist,
+        disc_title,
+        assert_not_none(disc_year),
+        assert_not_none(disc_genre),
+        tuple(x[1] for x in sorted(tracks.items(), key=operator.itemgetter(0))),
+    )
+
+
 @alru_cache
-async def cddb_query(  # noqa: PLR0914
+async def cddb_query(
     disc_id: str,
     *,
     accept_first_match: bool = False,
@@ -770,18 +843,8 @@ async def cddb_query(  # noqa: PLR0914
         text = assert_not_none(r.text)
         log.debug('Response:\n%s', text.strip())
         lines = text.splitlines()
-        first_line = lines[0].split(' ', 3)
-        disc_genre = disc_year = None
-        if len(lines) == 1 and first_line[0] == '200':
-            _, category, disc_id, artist_title = first_line
-        elif first_line[0] == '210':
-            if not accept_first_match:
-                log.debug('Results:\n%s', '\n'.join(lines).strip())
-                raise ValueError(len(lines[1:-1]))
-            category, disc_id, artist_title = lines[1].split(' ', 2)
-        else:
-            raise ValueError(first_line[0])
-        artist, disc_title = artist_title.split(' / ', 1)
+        category, disc_id, artist, disc_title = _parse_cddb_query_response(
+            lines, accept_first_match=accept_first_match)
         r = await session.get(
             server,
             params={
@@ -793,33 +856,7 @@ async def cddb_query(  # noqa: PLR0914
     r.raise_for_status()
     read_text = assert_not_none(r.text)
     log.debug('Response: %s', read_text)
-    tracks = {}
-    disc_genre = None
-    disc_year = None
-    log.debug('Artist: %s', artist)
-    log.debug('Album: %s', disc_title)
-    for line in (x.strip() for x in read_text.splitlines()[1:]
-                 if x.strip() and x[0] not in {'.', '#'}):
-        field_name, value = line.split('=', 1)
-        match field_name:
-            case 'DTITLE':
-                artist, disc_title = value.split(' / ', 1)
-            case 'DYEAR':
-                disc_year = int(value)
-            case 'DGENRE':
-                disc_genre = value
-            case key:
-                if key.startswith('TTITLE'):
-                    tracks[assert_not_none(re.match(r'^TTITLE([^=]+).*', key)).group(1)] = value
-    genre = assert_not_none(disc_genre)
-    year = assert_not_none(disc_year)
-    return CDDBQueryResult(
-        artist,
-        disc_title,
-        year,
-        genre,
-        tuple(x[1] for x in sorted(tracks.items(), key=operator.itemgetter(0))),
-    )
+    return _cddb_result_from_read_response(read_text, artist, disc_title)
 
 
 def group_files(
