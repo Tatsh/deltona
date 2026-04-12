@@ -104,6 +104,7 @@ filevers
 filterwarnings
 fiya
 flacted
+flathub
 followlinks
 forcecloseapplications
 foxundermoon
