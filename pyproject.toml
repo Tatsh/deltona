@@ -6,19 +6,20 @@ requires = ["hatchling"]
 dev = [
   "commitizen>=4.13.9",
   "cz-path>=0.0.6",
-  "mypy>=1.19.1",
+  "mypy>=1.20.0",
   "pydbus-stubs>=0; sys_platform == 'linux'",
-  "ruff>=0.15.8",
+  "ruff>=0.15.9",
+  "ty>=0.0.28",
   "types-beautifulsoup4>=4.12.0.20250516",
   "types-binaryornot>=0.4.0.20260309",
-  "types-paramiko>=4.0.0.20260322",
+  "types-paramiko>=4.0.0.20260402",
   "types-pexpect>=4.9.0.20260127",
   "types-pillow>=10.2.0.20240822",
-  "types-psutil>=7.2.2.20260130",
+  "types-psutil>=7.2.2.20260402",
   "types-pyperclip>=1.11.0.20260216",
   "types-pyyaml>=6.0.12.20250915",
   "types-send2trash>=2.1.0.20260117",
-  "types-yt-dlp>=2026.3.17.20260318",
+  "types-yt-dlp>=2026.3.17.20260402",
   "yapf>=0.43.0",
 ]
 docs = [
@@ -77,8 +78,8 @@ dependencies = [
   "async-lru>=2.3.0",
   "bascom>=0.1.2",
   "binaryornot>=0.6.0",
-  "click>=8.3.1",
-  "niquests>=3.18.3",
+  "click>=8.3.2",
+  "niquests>=3.18.4",
   "typing-extensions>=4.15.0",
 ]
 description = "A lot of uncategorised utilities."
@@ -104,7 +105,7 @@ git = ["gitpython>=3.1.46", "keyring>=25.7.0", "pygithub>=2.9.0"]
 media = ["keyring>=25.7.0", "mutagen>=1.47.0", "platformdirs>=4.9.4", "send2trash>=2.1.0"]
 string = ["pyyaml>=6.0.3", "unidecode>=1.4.0", "yt-dlp>=2026.3.17"]
 wine = ["pexpect>=4.9.0", "platformdirs>=4.9.4", "psutil>=7.2.2", "python-xz>=0.6.0"]
-www = ["beautifulsoup4>=4.14.3", "html5lib>=1.1", "keyring>=25.7.0", "pillow>=12.1.1"]
+www = ["beautifulsoup4>=4.14.3", "html5lib>=1.1", "keyring>=25.7.0", "pillow>=12.2.0"]
 
 [project.scripts]
 add-cdda-times = "deltona.commands.media:add_cdda_times_main"
@@ -209,6 +210,12 @@ omit = ["conftest.py", "tests.py", "tests/*/test_*.py", "tests/test_*.py"]
 [tool.doc8]
 max-line-length = 100
 
+[tool.hatch.build.targets.sdist]
+include = ["deltona", "tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["deltona"]
+
 [tool.mypy]
 cache_dir = "~/.cache/mypy"
 explicit_package_bases = true
@@ -261,23 +268,7 @@ quote-style = "single"
 
 [tool.ruff.lint]
 extend-select = ["ALL"]
-ignore = [
-  "ANN401",
-  "COM812",
-  "CPY001",
-  "D201",
-  "D203",
-  "D204",
-  "D212",
-  "DOC201",
-  "N818",
-  "S101",
-  "S404",
-  "S603",
-  "TD002",
-  "UP046",
-  "UP047",
-]
+ignore = ["ANN401", "COM812", "CPY001", "D203", "D204", "D212", "N818", "S404", "S603", "TD002"]
 preview = true
 
 [tool.ruff.lint.flake8-builtins]

@@ -265,6 +265,7 @@ rssi
 rstcheck
 rstuvwxyz
 schemafile
+sdist
 segoe
 sendline
 setattr

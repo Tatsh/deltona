@@ -23,22 +23,14 @@ jobs:
         uses: 'astral-sh/setup-uv@v8.0.0'
       - name: 'Install dependencies'
         run: 'sudo apt-get update && sudo apt-get install -y libcairo2-dev libgirepository-2.0-dev'
-      - name: 'Set up Python ${{ matrix.python-version }}'
+      - name: 'Set up Python'
         uses: 'actions/setup-python@v6.2.0'
         with:
-          python-version: '${{ matrix.python-version }}'
+          python-version: '3.14'
       - name: 'Install dependencies (uv)'
         run: 'uv sync --group dev --group tests --all-extras'
       - name: 'Lint with mypy'
         run: 'uv run mypy .'
-    strategy:
-      matrix:
-        python-version:
-          - '3.10'
-          - '3.11'
-          - '3.12'
-          - '3.13'
-          - '3.14'
   ruff:
     runs-on: 'ubuntu-latest'
     steps:
