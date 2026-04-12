@@ -10,6 +10,8 @@ local utils = import 'utils.libsonnet';
   version: '0.1.4',
   want_claude: true,
   want_main: false,  // Multiple entry points.
+  want_flatpak: true,
+  publishing+: { flathub: 'sh.tat.deltona' },
   want_man: true,
   want_snap: true,
   has_multiple_entry_points: true,
