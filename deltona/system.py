@@ -24,8 +24,6 @@ from .typing import CDStatus, StrPath, StrPathMustExist
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from pydbus.bus import OrgBluezDict as OrgBluezDevice1Dict
-
 __all__ = (
     'CHROME_DEFAULT_CONFIG_PATH',
     'CHROME_DEFAULT_LOCAL_STATE_PATH',
@@ -177,7 +175,7 @@ def get_inhibitor(what: str, who: str, why: str, mode: str) -> int:
     return cast('int', login1['org.freedesktop.login1.Manager'].Inhibit(what, who, why, mode))
 
 
-def find_bluetooth_device_info_by_name(name: str) -> tuple[str, OrgBluezDevice1Dict]:
+def find_bluetooth_device_info_by_name(name: str) -> tuple[str, dict[str, Any]]:
     """
     Get Bluetooth device information from D-Bus (bluez) by name.
 
@@ -190,7 +188,7 @@ def find_bluetooth_device_info_by_name(name: str) -> tuple[str, OrgBluezDevice1D
 
     Returns
     -------
-    tuple[str, OrgBluezDevice1Dict]
+    tuple[str, dict[str, Any]]
         Returns the D-Bus object path and a dictionary representing the ``org.bluez.Device1``
         properties.
 

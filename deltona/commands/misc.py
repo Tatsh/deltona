@@ -19,7 +19,7 @@ from deltona.io import (
     unpack_0day,
     verify_sfv,
 )
-from deltona.typing import INCITS38Code
+from deltona.typing import INCITS38Code, assert_not_none
 import click
 
 if TYPE_CHECKING:
@@ -131,7 +131,9 @@ def burnrariso_main(
     if not no_crc_check:
         sfv_file_expected = (Path(sfv) if sfv else rar_path.parent /
                              f'{rar_path.name.split(".", 1)}.sfv')
-        assert sfv_file_expected.exists()
+        if not sfv_file_expected.exists():
+            msg = 'Expected SFV file is missing.'
+            raise FileNotFoundError(msg)
         try:
             verify_sfv(sfv_file_expected)
         except SFVVerificationError as e:
@@ -158,8 +160,8 @@ def burnrariso_main(
                 close_fds=True,
             ) as cdrecord,
     ):
-        assert u.stdout is not None
-        u.stdout.close()
+        stdout = assert_not_none(u.stdout)
+        stdout.close()
         cdrecord.wait()
         u.wait()
         if not (u.returncode == 0 and cdrecord.returncode == 0):

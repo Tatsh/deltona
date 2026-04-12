@@ -179,8 +179,15 @@ def assert_not_none(var: _T | None) -> _T:
     -------
     T
         The variable, guaranteed to be not None.
+
+    Raises
+    ------
+    AssertionError
+        If ``var`` is ``None``.
     """
-    assert var is not None
+    if var is None:
+        msg = 'Expected non-None value.'
+        raise AssertionError(msg)
     return var
 
 

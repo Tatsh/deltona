@@ -26,6 +26,7 @@ from deltona.system import (
     inhibit_notifications,
     kill_gamescope,
 )
+from deltona.typing import assert_not_none
 from deltona.www import upload_to_imgbb
 from niquests import AsyncSession, HTTPError, Response
 import anyio
@@ -211,8 +212,7 @@ def connect_g603_main(device_name: str = 'hci0', *, debug: bool = False) -> None
     with contextlib.suppress(KeyError):
         while res := find_bluetooth_device_info_by_name('G603'):
             object_path, info = res
-            log.debug('Removing device with MAC address %s.',
-                      info['Address'])  # type: ignore[typeddict-item]
+            log.debug('Removing device with MAC address %s.', info['Address'])
             adapter.RemoveDevice(object_path)
     click.echo('Put the mouse in pairing mode and be very patient.')
     log.debug('Starting scan.')
@@ -293,8 +293,8 @@ Version=1.0
                 response = await session.get('https://simgbb.com/images/favicon.png', timeout=5)
             icons_dir = anyio.Path(f'{prefix}/share/icons/hicolor/300x300/apps')
             await icons_dir.mkdir(parents=True, exist_ok=True)
-            assert response.content is not None
-            await (icons_dir / 'imgbb.png').write_bytes(response.content)
+            favicon = assert_not_none(response.content)
+            await (icons_dir / 'imgbb.png').write_bytes(favicon)
             await anyio.run_process(('update-desktop-database', '-v', str(apps)),
                                     stdout=None if debug else sp.DEVNULL,
                                     stderr=None if debug else sp.DEVNULL)
@@ -311,8 +311,8 @@ Version=1.0
                     click.echo(r.json()['data']['url'])
         except HTTPError as e:
             if show_gui:
-                assert kdialog is not None
-                await anyio.run_process((kdialog, '--sorry', 'Failed to upload!'), check=False)
+                kd = assert_not_none(kdialog)
+                await anyio.run_process((kd, '--sorry', 'Failed to upload!'), check=False)
             click.echo('Failed to upload. Check API key!', err=True)
             raise click.Abort from e
         if r:
@@ -323,9 +323,9 @@ Version=1.0
                 pyperclip.copy(url)
             if show_gui:
                 click.echo(url)
-                assert kdialog is not None
-                await anyio.run_process(
-                    (kdialog, '--title', 'Successfully uploaded', '--msgbox', url), check=False)
+                kd = assert_not_none(kdialog)
+                await anyio.run_process((kd, '--title', 'Successfully uploaded', '--msgbox', url),
+                                        check=False)
             elif not no_browser:
                 webbrowser.open(url)
 
@@ -343,7 +343,14 @@ def mpv_sbs_main(
     *,
     debug: bool = False,
 ) -> None:
-    """Display two videos side by side in mpv."""
+    """
+    Display two videos side by side in mpv.
+
+    Raises
+    ------
+    ValueError
+        If either video's width or height is outside the allowed bounds.
+    """
     @overload
     def get_prop(prop: Literal['codec_type'],
                  info: ProbeDict) -> Literal['audio', 'video']:  # pragma: no cover
@@ -377,12 +384,24 @@ def mpv_sbs_main(
     info1, info2 = ffprobe(filename1), ffprobe(filename2)
     width1, width2 = (int(get_prop('width', info1)), int(get_prop('width', info2)))
     height1, height2 = (int(get_prop('height', info1)), int(get_prop('height', info2)))
-    assert height1 > min_height, 'Invalid height in video 1'
-    assert height2 > min_height, 'Invalid height in video 2'
-    assert width1 <= max_width, 'Video 1 is too wide'
-    assert width1 > min_width, 'Invalid width in video 1'
-    assert width2 <= max_width, 'Video 2 is too wide'
-    assert width2 > min_width, 'Invalid width in video 2'
+    if height1 <= min_height:
+        msg = 'Invalid height in video 1'
+        raise ValueError(msg)
+    if height2 <= min_height:
+        msg = 'Invalid height in video 2'
+        raise ValueError(msg)
+    if width1 > max_width:
+        msg = 'Video 1 is too wide'
+        raise ValueError(msg)
+    if width1 <= min_width:
+        msg = 'Invalid width in video 1'
+        raise ValueError(msg)
+    if width2 > max_width:
+        msg = 'Video 2 is too wide'
+        raise ValueError(msg)
+    if width2 <= min_width:
+        msg = 'Invalid width in video 2'
+        raise ValueError(msg)
     scale_w = max(width1, width2)
     scale_h = (int(get_prop('height', info1)) if scale_w == width1 else int(
         get_prop('height', info2)))

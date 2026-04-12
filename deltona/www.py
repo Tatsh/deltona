@@ -206,7 +206,14 @@ async def upload_to_imgbb(
 
 
 def stripped_strings_fixed(child: Tag) -> str:
-    """Join a tag's stripped strings into a single space-separated string."""
+    """
+    Join a tag's stripped strings into a single space-separated string.
+
+    Returns
+    -------
+    str
+        Normalised text with runs of whitespace collapsed to single spaces.
+    """
     return re.sub(r'\s+', ' ', ' '.join(child.stripped_strings))
 
 
@@ -295,7 +302,8 @@ def recurse_bookmarks_html(soup: Tag, callback: RecurseBookmarksHTMLCallback) ->
                 folder_path: list[tuple[str, BookmarksHTMLFolderAttributes]] = []
                 for parent in child.parents:
                     if parent.name == 'dl' and (h3 := parent.find_previous_sibling('h3')):
-                        assert isinstance(h3, Tag_)
+                        if not isinstance(h3, Tag_):
+                            continue
                         folder_path.append((
                             stripped_strings_fixed(h3),
                             cast('BookmarksHTMLFolderAttributes', h3.attrs),

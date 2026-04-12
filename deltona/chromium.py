@@ -10,6 +10,8 @@ from async_lru import alru_cache
 from niquests import AsyncSession
 import anyio
 
+from .typing import assert_not_none
+
 if TYPE_CHECKING:
     from types import ModuleType
 
@@ -70,8 +72,8 @@ async def fix_chromium_pwa_icon(
     async with AsyncSession() as session:
         r = await session.get(icon_src_uri, timeout=15)
     r.raise_for_status()
-    assert r.content is not None
-    img = image_mod.open(BytesIO(r.content))
+    content = assert_not_none(r.content)
+    img = image_mod.open(BytesIO(content))
     width, height = img.size
     if width != height:
         msg = 'Icon is not square.'

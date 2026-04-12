@@ -22,6 +22,7 @@ import niquests
 
 from .media import CD_FRAMES
 from .system import IS_WINDOWS, kill_wine
+from .typing import assert_not_none
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -310,8 +311,8 @@ class DataAdapter(BaseAdapter):
             A response with the URL content (after ``data:``) as the body.
         """
         r = niquests.Response()
-        assert request.url is not None
-        r._content = request.url[5:].encode()  # noqa: SLF001
+        url = assert_not_none(request.url)
+        r._content = url[5:].encode()  # noqa: SLF001
         r.status_code = HTTPStatus.OK
         return r
 

@@ -178,7 +178,7 @@ def test_find_bluetooth_device_info_by_name_success(monkeypatch: pytest.MonkeyPa
     }
     monkeypatch.setattr('pydbus.SystemBus', fsb)
     result = find_bluetooth_device_info_by_name('TestDevice')
-    assert result == (  # type: ignore[comparison-overlap]
+    assert result == (
         '/org/bluez/hci0/dev_00_11_22_33_44_55',
         {
             'Name': 'TestDevice'

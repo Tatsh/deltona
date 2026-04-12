@@ -263,6 +263,11 @@ def add_unidecode_custom_replacement(find: str, replace: str) -> None:
         Single character to find.
     replace : str
         Replacement string.
+
+    Raises
+    ------
+    ValueError
+        If the Unidecode cache section is too short for the codepoint.
     """
     cache, unidecode = _get_unidecode_cache_and_unidecode()
     unidecode(find)  # Force it to load the module
@@ -275,7 +280,9 @@ def add_unidecode_custom_replacement(find: str, replace: str) -> None:
          (list(assert_not_none(cache[section]))
           if cache[section] is not None else [None for _ in range(position + 1)])),
     )  # convert to mutable type
-    assert len(new_section) > position
+    if len(new_section) <= position:
+        msg = 'Section length is too small for the codepoint.'
+        raise ValueError(msg)
     new_section[position] = replace
     cache[section] = new_section
 
