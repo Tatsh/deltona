@@ -242,8 +242,10 @@ local utils = import 'utils.libsonnet';
       commitizen+: {
         version_files+: ['docs/badges.rst'],
       },
-      'pytest.ini_options'+: {
-        filterwarnings+: ['ignore::async_lru.AlruCacheLoopResetWarning'],
+      pytest+: {
+        ini_options+: {
+          filterwarnings+: ['ignore::async_lru.AlruCacheLoopResetWarning'],
+        },
       },
       ruff+: {
         lint+: {
