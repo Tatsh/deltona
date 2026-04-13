@@ -207,9 +207,10 @@ class StreamDispositionDict(TypedDict):
     """Default stream."""
 
 
-class TagsDict(TypedDict):
-    info_json: NotRequired[str]
-    TXXX: NotRequired[str]
+class TagsDict(TypedDict, total=False):
+    info_json: str
+    title: str
+    TXXX: str
 
 
 class StreamsDict(TypedDict):

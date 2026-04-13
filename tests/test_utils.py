@@ -41,7 +41,8 @@ def test_add_cdda_times_valid_single() -> None:
 
 def test_add_cdda_times_valid_multiple() -> None:
     result = add_cdda_times(['00:01:00', '00:01:00'])
-    assert result.startswith('00:02:')  # type: ignore[union-attr]
+    assert result is not None
+    assert result.startswith('00:02:')
 
 
 def test_add_cdda_times_overflow_minutes() -> None:
@@ -74,7 +75,8 @@ def test_add_cdda_times_exact_maximum() -> None:
 def test_add_cdda_times_leading_zeros() -> None:
     # Should handle leading zeros
     result = add_cdda_times(['00:00:01', '00:00:01'])
-    assert result.startswith('00:00:')  # type: ignore[union-attr]
+    assert result is not None
+    assert result.startswith('00:00:')
 
 
 def test_unregister_wine_file_associations_basic(mocker: MockerFixture) -> None:

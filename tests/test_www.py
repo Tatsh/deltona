@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urlparse
 import asyncio
 import plistlib
@@ -10,7 +10,10 @@ from deltona.www import (
     KEY_ORIGIN_URL,
     KEY_WHERE_FROMS,
     BookmarksDataset,
+    BookmarksHTMLAnchorAttributes,
+    BookmarksHTMLFolder,
     BookmarksHTMLFolderAttributes,
+    BookmarksHTMLLink,
     check_bookmarks_html_urls,
     create_parsed_tree_structure,
     generate_html_dir_tree,
@@ -120,8 +123,9 @@ async def test_check_bookmarks_html_urls_basic(mocker: MockerFixture) -> None:
     assert len(data) == 2
     assert changed == []
     assert len(not_found) == 1
-    assert not_found[0]['attrs']['href'] == 'https://notfound.com'  # type: ignore[typeddict-item]
-    assert not_found[0]['title'] == 'NotFound'  # type: ignore[typeddict-item]
+    assert cast('BookmarksHTMLAnchorAttributes',
+                not_found[0]['attrs'])['href'] == 'https://notfound.com'
+    assert cast('BookmarksHTMLLink', not_found[0])['title'] == 'NotFound'
 
 
 @pytest.mark.asyncio
@@ -149,8 +153,8 @@ async def test_check_bookmarks_html_urls_redirect(mocker: MockerFixture) -> None
     data, changed, not_found = await check_bookmarks_html_urls(html)
     assert len(data) == 2
     assert len(changed) == 1
-    assert changed[0]['attrs']['href'].endswith('/new-loc')  # type: ignore[typeddict-item]
-    assert changed[0]['title'] == 'Redirected'  # type: ignore[typeddict-item]
+    assert cast('BookmarksHTMLAnchorAttributes', changed[0]['attrs'])['href'].endswith('/new-loc')
+    assert cast('BookmarksHTMLLink', changed[0])['title'] == 'Redirected'
     assert not_found == []
 
 
@@ -178,8 +182,8 @@ async def test_check_bookmarks_html_urls_full_redirect(mocker: MockerFixture) ->
     data, changed, not_found = await check_bookmarks_html_urls(html)
     assert len(data) == 1
     assert len(changed) == 1
-    assert changed[0]['attrs']['href'].endswith('/new-loc')  # type: ignore[typeddict-item]
-    assert changed[0]['title'] == 'Redirected'  # type: ignore[typeddict-item]
+    assert cast('BookmarksHTMLAnchorAttributes', changed[0]['attrs'])['href'].endswith('/new-loc')
+    assert cast('BookmarksHTMLLink', changed[0])['title'] == 'Redirected'
     assert not_found == []
 
 
@@ -367,7 +371,7 @@ def test_recurse_bookmarks_html_skips_non_tag_h3_sibling(mocker: MockerFixture) 
             return object()
         raise AssertionError(name)
 
-    dl.find_previous_sibling = fake_find_previous_sibling  # type: ignore[assignment, method-assign]
+    dl.find_previous_sibling = fake_find_previous_sibling  # type: ignore[assignment, method-assign] # ty: ignore[invalid-assignment]
 
     recurse_bookmarks_html(soup, callback)
     callback.assert_called_once()
@@ -400,9 +404,9 @@ def test_create_parsed_tree_structure_creates_new_folders(mocker: MockerFixture)
     result = create_parsed_tree_structure(folder_path, data)
     assert isinstance(result, list)
     assert len(data) == 1
-    assert data[0]['name'] == 'Folder1'  # type: ignore[typeddict-item]
+    assert cast('BookmarksHTMLFolder', data[0])['name'] == 'Folder1'
     assert data[0]['type'] == 'folder'
     assert 'children' in data[0]
-    assert data[0]['children'][0]['name'] == 'Folder2'  # type: ignore[typeddict-item]
+    assert cast('BookmarksHTMLFolder', data[0]['children'][0])['name'] == 'Folder2'
     assert data[0]['children'][0]['type'] == 'folder'
     assert result is data[0]['children'][0]['children']

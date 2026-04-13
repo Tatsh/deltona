@@ -80,7 +80,7 @@ def test_ffprobe_success(mocker: MockerFixture) -> None:
     mocker.patch('deltona.media.sp.run', return_value=fake_proc)
     result = ffprobe('test.flac')
     assert isinstance(result, dict)
-    assert result['format']['tags']['title'] == 'Test'  # type: ignore[typeddict-item]
+    assert result['format']['tags']['title'] == 'Test'
 
 
 def test_get_info_json_flac(mocker: MockerFixture) -> None:

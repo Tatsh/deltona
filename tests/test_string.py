@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from deltona import string
 import pytest
@@ -304,7 +304,7 @@ def test_add_unidecode_custom_replacement_adds_to_cache(mocker: MockerFixture) -
     fake_cache[section] = None
     string.add_unidecode_custom_replacement(find, replace)
     assert isinstance(fake_cache[section], list)
-    assert fake_cache[section][position] == replace  # type: ignore[index]
+    assert cast('Sequence[str | None]', fake_cache[section])[position] == replace
 
 
 def test_add_unidecode_custom_replacement_overwrites_existing(mocker: MockerFixture) -> None:
@@ -322,9 +322,9 @@ def test_add_unidecode_custom_replacement_overwrites_existing(mocker: MockerFixt
     position = codepoint % 256
     # Simulate cache section as a list with a previous value
     fake_cache[section] = [None] * (position + 1)
-    fake_cache[section][position] = 'old'  # type: ignore[index]
+    cast('list[str | None]', fake_cache[section])[position] = 'old'
     string.add_unidecode_custom_replacement(find, replace)
-    assert fake_cache[section][position] == replace  # type: ignore[index]
+    assert cast('Sequence[str | None]', fake_cache[section])[position] == replace
 
 
 def test_add_unidecode_custom_replacement_handles_existing_tuple(mocker: MockerFixture) -> None:
@@ -344,7 +344,7 @@ def test_add_unidecode_custom_replacement_handles_existing_tuple(mocker: MockerF
     fake_cache[section] = tuple([None] * (position + 1))
     string.add_unidecode_custom_replacement(find, replace)
     assert isinstance(fake_cache[section], list)
-    assert fake_cache[section][position] == replace  # type: ignore[index]
+    assert cast('Sequence[str | None]', fake_cache[section])[position] == replace
 
 
 def test_add_unidecode_custom_replacement_raises_when_section_too_short(
