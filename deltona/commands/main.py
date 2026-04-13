@@ -7,6 +7,7 @@ from typing import Any
 import sys
 
 from deltona.constants import CONTEXT_SETTINGS
+from typing_extensions import override
 import click
 
 _COMMANDS: dict[str, str] = {
@@ -109,14 +110,13 @@ class _LazyGroup(click.Group):
         super().__init__(*args, **kwargs)
         self._lazy_subcommands = lazy_subcommands or {}
 
-    def list_commands(self, ctx: click.Context) -> list[str]:  # noqa: ARG002
+    @override
+    def list_commands(self, ctx: click.Context) -> list[str]:
         excluded = _excluded()
         return sorted(k for k in self._lazy_subcommands if k not in excluded)
 
-    def get_command(
-            self,
-            ctx: click.Context,  # noqa: ARG002
-            cmd_name: str) -> click.Command | None:
+    @override
+    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
         if cmd_name not in self._lazy_subcommands or cmd_name in _excluded():
             return None
         module_path, func_name = self._lazy_subcommands[cmd_name].rsplit(':', 1)

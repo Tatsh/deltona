@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from deltona.typing import ProbeDict, StreamDispositionDict
-    from gi.repository import GLib
+    from gi.repository import GLib  # pyright: ignore[reportMissingModuleSource]
     from pydbus.bus import Bus
 
 log = logging.getLogger(__name__)
@@ -111,7 +111,7 @@ def umpv_main(files: Sequence[Path], mpv_command: str = 'mpv', *, debug: bool = 
             '--force-window',
             f'--input-ipc-server={socket_path}',
             '--',
-            *fixed_files,
+            *(str(x) for x in fixed_files),
         )
         log.debug('Command: %s', ' '.join(quote(x) for x in args))
         sp.run(args, check=True)
@@ -147,7 +147,7 @@ def connect_g603_main(device_name: str = 'hci0', *, debug: bool = False) -> None
     if not IS_LINUX:
         click.echo('Only Linux is supported.', err=True)
         raise click.Abort
-    from gi.repository import Gio  # noqa: PLC0415
+    from gi.repository import Gio  # pyright: ignore[reportMissingModuleSource] # noqa: PLC0415
 
     try:
         g_lib = _get_gi_repository_glib()
