@@ -396,7 +396,7 @@ STATE_RE = r'^AAAA/'
 
 def _iter_config_sections(file: StrPath) -> Iterator[tuple[str, str, str]]:
     config = configparser.ConfigParser(delimiters=('=',), interpolation=None)
-    config.optionxform = str  # type: ignore[assignment]
+    config.optionxform = str  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
     try:
         config.read(file)
     except (UnicodeDecodeError, configparser.MissingSectionHeaderError, configparser.ParsingError):

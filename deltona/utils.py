@@ -293,7 +293,7 @@ def kill_processes_by_name(name: str,
 class DataAdapter(BaseAdapter):
     """Requests adapter that returns the URL content (after ``data:``) as the response body."""
     @override
-    def send(  # type: ignore[override]
+    def send(  # type: ignore[override]  # ty: ignore[invalid-method-override]
             self, request: niquests.PreparedRequest, **kwargs: Any) -> niquests.Response:
         """
         Send a request and return the URL content as the response body.
