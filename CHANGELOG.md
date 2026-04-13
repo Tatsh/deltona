@@ -47,9 +47,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `check_bookmarks_html_urls` now checks URLs concurrently using anyio task groups.
 - `@cache` on async functions replaced with `@alru_cache` from async-lru.
 - File I/O in async functions uses anyio for non-blocking access.
+- `merge_dependabot_pull_requests` now lists repositories with `get_repos(sort='full_name')`
+  instead of filtering by `affiliation='owner'`.
 
 ### Removed
 
+- `-a`/`--affiliation` option from `merge-dependabot-prs` and the `affiliation` argument from
+  `merge_dependabot_pull_requests`.
 - `requests` and `types-requests` dependencies in favour of `niquests` (fully typed).
 - `requests-mock` test dependency; tests now use standard `mocker.patch`.
 - `allow_group_discrepancy_resolution` parameter from `media.archive_dashcam_footage`.

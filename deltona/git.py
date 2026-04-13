@@ -75,16 +75,14 @@ def get_github_default_branch(*,
         The default branch of the repository.
     """
     import github  # noqa: PLC0415
+    import github.Consts  # noqa: PLC0415
 
-    return (github.Github(token, base_url=base_url or github.Consts.DEFAULT_BASE_URL).get_repo(
+    return github.Github(token, base_url=base_url or github.Consts.DEFAULT_BASE_URL).get_repo(
         urlparse(convert_git_ssh_url_to_https(
-            repo.remote(origin_name).url)).path[1:]).default_branch)
+            repo.remote(origin_name).url)).path[1:]).default_branch
 
 
-def merge_dependabot_pull_requests(*,
-                                   token: str,
-                                   affiliation: str = 'owner',
-                                   base_url: str | None = None) -> None:
+def merge_dependabot_pull_requests(*, token: str, base_url: str | None = None) -> None:
     """
     Merge pull requests made by Dependabot on GitHub.
 
@@ -92,8 +90,6 @@ def merge_dependabot_pull_requests(*,
     ----------
     token : str
         The GitHub token.
-    affiliation : str
-        The affiliation to use. Default is 'owner'.
     base_url : str | None
         The base URL of the GitHub API (for enterprise).
 
@@ -103,6 +99,7 @@ def merge_dependabot_pull_requests(*,
         If any pull request could not be merged.
     """
     import github  # noqa: PLC0415
+    import github.Consts  # noqa: PLC0415
 
     def uses_dependabot(repo: Repository) -> bool:
         with contextlib.suppress(AttributeError, github.GithubException):
@@ -122,11 +119,10 @@ def merge_dependabot_pull_requests(*,
             return False
 
     should_raise = False
-    for repo in (
-            x for x in github.Github(
-                token, base_url=base_url or github.Consts.DEFAULT_BASE_URL, per_page=100).get_user(
-                ).get_repos(affiliation=affiliation, sort='full_name')  # type: ignore[call-arg]
-            if not x.archived and uses_dependabot(x)):
+    for repo in (x for x in github.Github(token,
+                                          base_url=base_url or github.Consts.DEFAULT_BASE_URL,
+                                          per_page=100).get_user().get_repos(sort='full_name')
+                 if not x.archived and uses_dependabot(x)):
         log.info('Repository: %s', repo.name)
         pull: PullRequest | None = None
         for num in (x.number for x in repo.get_pulls() if x.user.login == 'dependabot[bot]'):

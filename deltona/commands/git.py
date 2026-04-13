@@ -112,19 +112,12 @@ def git_open_main(name: str = 'origin') -> None:
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    '-a',
-    '--affiliation',
-    default='owner',
-    help='Affiliation. See REST API documentation for more information.',
-)
 @click.option('-b', '--base-url', help='Base URL for enterprise.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('--delay', type=float, default=120, help='Delay in seconds between attempts.')
 @click.option('-u', '--username', default=getpass.getuser(), help='Username.')
 def merge_dependabot_prs_main(
     username: str,
-    affiliation: str = 'owner',
     base_url: str | None = None,
     delay: float = 120,
     *,
@@ -139,7 +132,7 @@ def merge_dependabot_prs_main(
         raise click.Abort
     while True:
         try:
-            merge_dependabot_pull_requests(affiliation=affiliation, base_url=base_url, token=token)
+            merge_dependabot_pull_requests(base_url=base_url, token=token)
             break
         except RuntimeError:
             click.echo(f'Sleeping for {delay} seconds.')
