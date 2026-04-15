@@ -9,7 +9,6 @@ from deltona.media import (
     cddb_query,
     create_static_text_video,
     ffprobe,
-    get_cd_disc_id,
     get_info_json,
     group_files,
     group_pairs,
@@ -23,7 +22,7 @@ from niquests import HTTPError
 import pytest
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Sequence
     from pathlib import Path
 
     from pytest_mock import MockerFixture
@@ -221,126 +220,6 @@ def test_create_static_text_video_sp_run_raises(mocker: MockerFixture, tmp_path:
 
     with pytest.raises(sp.CalledProcessError):
         create_static_text_video(audio_file, text)
-
-
-def test_get_cd_disc_id_linux_success(mocker: MockerFixture) -> None:
-    mocker.patch('deltona.media.IS_LINUX', True)  # noqa: FBT003
-    fake_fd = 42
-    mocker.patch('deltona.media.ctypes.byref')
-    mock_context = mocker.patch('deltona.media.context_os_open')
-    mock_context.return_value.__enter__.return_value = fake_fd
-
-    fake_libc = mocker.Mock()
-    fake_libc.ioctl.side_effect = [0] + [0] * 4  # header + 3 tracks + leadout
-    mocker.patch('deltona.media.ctypes.CDLL', return_value=fake_libc)
-    header = mocker.patch('deltona.media.CDROMTOCHeader', autospec=True)
-    header_instance = header.return_value
-    header_instance.cdth_trk1 = 3
-    entry = mocker.patch('deltona.media.CDROMTOCEntry', autospec=True)
-
-    def lba_side_effect() -> Iterator[Any]:
-        for lba in (100, 200, 300):
-            e = mocker.Mock()
-            e.cdte_addr.lba = lba
-            yield e
-        e = mocker.Mock()
-        e.cdte_addr.lba = 400
-        yield e
-
-    lba_iter = lba_side_effect()
-    entry.side_effect = lambda: next(lba_iter)
-    mocker.patch('deltona.media.CDROM_LEADOUT', 0xAA)
-    mocker.patch('deltona.media.CDROM_LBA', 1)
-    mocker.patch('deltona.media.CD_MSF_OFFSET', 150)
-    mocker.patch('deltona.media.CD_FRAMES', 75)
-    disc_id = get_cd_disc_id('/dev/cdrom')
-    assert disc_id == '0d000403 3 250 350 450 7'
-
-
-def test_get_cd_disc_id_linux_toc_entry_fail_1(mocker: MockerFixture) -> None:
-    mocker.patch('deltona.media.IS_LINUX', True)  # noqa: FBT003
-    fake_fd = 42
-    mocker.patch('deltona.media.ctypes.byref')
-    mock_context = mocker.patch('deltona.media.context_os_open')
-    mock_context.return_value.__enter__.return_value = fake_fd
-
-    fake_libc = mocker.Mock()
-    fake_libc.ioctl.side_effect = [0, -1]
-    mocker.patch('deltona.media.ctypes.CDLL', return_value=fake_libc)
-    header = mocker.patch('deltona.media.CDROMTOCHeader', autospec=True)
-    header_instance = header.return_value
-    header_instance.cdth_trk1 = 3
-    entry = mocker.patch('deltona.media.CDROMTOCEntry', autospec=True)
-
-    def lba_side_effect() -> Iterator[Any]:
-        for lba in (100, 200, 300):
-            e = mocker.Mock()
-            e.cdte_addr.lba = lba
-            yield e
-        e = mocker.Mock()
-        e.cdte_addr.lba = 400
-        yield e
-
-    lba_iter = lba_side_effect()
-    entry.side_effect = lambda: next(lba_iter)
-    mocker.patch('deltona.media.CDROM_LEADOUT', 0xAA)
-    mocker.patch('deltona.media.CDROM_LBA', 1)
-    mocker.patch('deltona.media.CD_MSF_OFFSET', 150)
-    mocker.patch('deltona.media.CD_FRAMES', 75)
-    with pytest.raises(OSError, match=r'^\d+'):
-        get_cd_disc_id('/dev/cdrom')
-
-
-def test_get_cd_disc_id_linux_toc_entry_fail_2(mocker: MockerFixture) -> None:
-    mocker.patch('deltona.media.IS_LINUX', True)  # noqa: FBT003
-    fake_fd = 42
-    mocker.patch('deltona.media.ctypes.byref')
-    mock_context = mocker.patch('deltona.media.context_os_open')
-    mock_context.return_value.__enter__.return_value = fake_fd
-
-    fake_libc = mocker.Mock()
-    fake_libc.ioctl.side_effect = [0, 0, 0, 0, -1]
-    mocker.patch('deltona.media.ctypes.CDLL', return_value=fake_libc)
-    header = mocker.patch('deltona.media.CDROMTOCHeader', autospec=True)
-    header_instance = header.return_value
-    header_instance.cdth_trk1 = 3
-    entry = mocker.patch('deltona.media.CDROMTOCEntry', autospec=True)
-
-    def lba_side_effect() -> Iterator[Any]:
-        for lba in (100, 200, 300):
-            e = mocker.Mock()
-            e.cdte_addr.lba = lba
-            yield e
-        e = mocker.Mock()
-        e.cdte_addr.lba = 400
-        yield e
-
-    lba_iter = lba_side_effect()
-    entry.side_effect = lambda: next(lba_iter)
-    mocker.patch('deltona.media.CDROM_LEADOUT', 0xAA)
-    mocker.patch('deltona.media.CDROM_LBA', 1)
-    mocker.patch('deltona.media.CD_MSF_OFFSET', 150)
-    mocker.patch('deltona.media.CD_FRAMES', 75)
-    with pytest.raises(OSError, match=r'^\d+'):
-        get_cd_disc_id('/dev/cdrom')
-
-
-def test_get_cd_disc_id_not_linux(mocker: MockerFixture) -> None:
-    mocker.patch('deltona.media.IS_LINUX', False)  # noqa: FBT003
-    with pytest.raises(NotImplementedError):
-        get_cd_disc_id('/dev/cdrom')
-
-
-def test_get_cd_disc_id_ioctl_header_error(mocker: MockerFixture) -> None:
-    mocker.patch('deltona.media.ctypes.byref')
-    mocker.patch('deltona.media.IS_LINUX', True)  # noqa: FBT003
-    mocker.patch('deltona.media.context_os_open').return_value.__enter__.return_value = 42
-    fake_libc = mocker.Mock()
-    fake_libc.ioctl.side_effect = [-1]
-    mocker.patch('deltona.media.ctypes.CDLL', return_value=fake_libc)
-    mocker.patch('deltona.media.CDROMTOCHeader', autospec=True)
-    with pytest.raises(OSError, match=r'^\d+'):
-        get_cd_disc_id('/dev/cdrom')
 
 
 @pytest.mark.asyncio
@@ -697,10 +576,10 @@ def test_group_pairs_single_group(tmp_path: Path) -> None:
     rear_dir = tmp_path / 'rear'
     front_dir.mkdir()
     rear_dir.mkdir()
-    f1 = (front_dir / '20240512164400_000001A.MP4')
-    f2 = (front_dir / '20240512164700_000003A.MP4')
-    r1 = (rear_dir / '20240512164401_000002B.MP4')
-    r2 = (rear_dir / '20240512164701_000004B.MP4')
+    f1 = front_dir / '20240512164400_000001A.MP4'
+    f2 = front_dir / '20240512164700_000003A.MP4'
+    r1 = rear_dir / '20240512164401_000002B.MP4'
+    r2 = rear_dir / '20240512164701_000004B.MP4'
     for f in (f1, f2, r1, r2):
         f.write_bytes(b'data')
     pairs = [(r1.resolve(), f1.resolve()), (r2.resolve(), f2.resolve())]
@@ -714,10 +593,10 @@ def test_group_pairs_multiple_groups(tmp_path: Path) -> None:
     rear_dir = tmp_path / 'rear'
     front_dir.mkdir()
     rear_dir.mkdir()
-    f1 = (front_dir / '20240512164400_000001A.MP4')
-    f2 = (front_dir / '20240512174400_000003A.MP4')
-    r1 = (rear_dir / '20240512164401_000002B.MP4')
-    r2 = (rear_dir / '20240512174401_000004B.MP4')
+    f1 = front_dir / '20240512164400_000001A.MP4'
+    f2 = front_dir / '20240512174400_000003A.MP4'
+    r1 = rear_dir / '20240512164401_000002B.MP4'
+    r2 = rear_dir / '20240512174401_000004B.MP4'
     for f in (f1, f2, r1, r2):
         f.write_bytes(b'data')
     pairs = [(r1.resolve(), f1.resolve()), (r2.resolve(), f2.resolve())]

@@ -20,7 +20,6 @@ from niquests.adapters import BaseAdapter
 from typing_extensions import override
 import niquests
 
-from .media import CD_FRAMES
 from .system import IS_WINDOWS, kill_wine
 from .typing import assert_not_none
 
@@ -45,6 +44,7 @@ ZERO_TO_74 = '|'.join(f'{x:02d}' for x in range(75))
 TIMES_RE = re.compile(f'^({ZERO_TO_99}):({ZERO_TO_59}):({ZERO_TO_74})$')
 MAX_MINUTES = 99
 MAX_SECONDS = 60
+CD_FRAMES = 75
 log = logging.getLogger(__name__)
 
 
@@ -221,7 +221,7 @@ def secure_move_path(
 
 @overload
 def kill_processes_by_name(name: str) -> None:  # pragma: no cover
-    pass
+    ...
 
 
 @overload
@@ -230,7 +230,7 @@ def kill_processes_by_name(name: str,
                            signal: int = SIGTERM,
                            *,
                            force: bool = False) -> list[int]:  # pragma: no cover
-    pass
+    ...
 
 
 def kill_processes_by_name(name: str,
@@ -291,7 +291,7 @@ def kill_processes_by_name(name: str,
 
 
 class DataAdapter(BaseAdapter):
-    """Requests adapter that returns the URL content (after ``data:``) as the response body."""
+    """Niquests adapter that returns the URL content (after ``data:``) as the response body."""
     @override
     def send(  # type: ignore[override]  # ty: ignore[invalid-method-override]
             self, request: niquests.PreparedRequest, **kwargs: Any) -> niquests.Response:

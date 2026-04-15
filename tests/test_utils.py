@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from deltona.media import CD_FRAMES
 from deltona.utils import (
+    CD_FRAMES,
     DataAdapter,
     add_cdda_times,
     kill_processes_by_name,

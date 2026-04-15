@@ -26,6 +26,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Replaced `requests` dependency with `niquests`, a drop-in replacement with HTTP/2, HTTP/3, and
   built-in type annotations.
+- `CD_FRAMES` constant moved from `deltona.media` to `deltona.utils` to decouple CDDA utilities from
+  media disc-ID internals.
 - `media.archive_dashcam_footage` now uses timestamp-proximity pairing instead of positional file
   matching.
 - Unmatched dashcam files are now logged and skipped instead of being deleted.
@@ -52,6 +54,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Removed
 
+- `get_cd_disc_id()` and all CD-ROM ioctl/ctypes support code from `deltona.media`.
 - `-a`/`--affiliation` option from `merge-dependabot-prs` and the `affiliation` argument from
   `merge_dependabot_pull_requests`.
 - `requests` and `types-requests` dependencies in favour of `niquests` (fully typed).

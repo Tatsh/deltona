@@ -8,14 +8,12 @@ from os import utime
 from pathlib import Path
 from shlex import quote
 from shutil import copyfile
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, cast
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, cast
 import contextlib
-import ctypes
 import getpass
 import json
 import logging
 import operator
-import os
 import re
 import socket
 import subprocess as sp
@@ -24,8 +22,6 @@ import tempfile
 from async_lru import alru_cache
 from niquests import AsyncSession
 
-from .io import context_os_open
-from .system import IS_LINUX
 from .typing import ProbeDict, StrPath, assert_not_none
 
 if TYPE_CHECKING:
@@ -38,7 +34,6 @@ __all__ = (
     'cddb_query',
     'create_static_text_video',
     'ffprobe',
-    'get_cd_disc_id',
     'get_info_json',
     'group_pairs',
     'hlg_to_sdr',
@@ -104,7 +99,7 @@ def supported_audio_input_formats(
     Parameters
     ----------
     input_device : str
-        Device name. Platform specific. Examples: ``'hw:Audio'``, ``'hw:NVidia'``.
+        Device name (platform-specific). Examples: ``'hw:Audio'``, ``'hw:NVidia'``.
 
     formats : Sequence[str]
         Formats to check.
@@ -166,7 +161,7 @@ def is_audio_input_format_supported(
     Parameters
     ----------
     input_device : str
-        Device name. Platform specific.
+        Device name (platform-specific).
     format : str
         Audio format to check, such as ``'s16le'``.
     rate : int
@@ -189,7 +184,7 @@ def add_info_json_to_media_file(path: StrPath,
 
     On successful completion, the ``info.json`` file will be deleted.
 
-    This function will exist until yt-dlp embeds ``info.json`` in all formats it supports where
+    This function remains until yt-dlp embeds ``info.json`` in all formats it supports where
     possible.
 
     This function requires the following:
@@ -235,7 +230,8 @@ def add_info_json_to_media_file(path: StrPath,
                     ('mkvmerge', '--identify', str(path)),  # noqa: S607
                     capture_output=True,
                     check=True,
-                    text=True).stdout.splitlines()):
+                    text=True,
+                ).stdout.splitlines()):
             log.warning('Attachment named info.json already exists. Not modifying file.')
             return
         log.debug('Attaching info.json to MKV.')
@@ -317,11 +313,13 @@ def add_info_json_to_media_file(path: StrPath,
             sp.run(
                 ('MP4Box', '-rem-item', '1', str(path)),  # noqa: S607
                 capture_output=not debug,
-                check=True)
+                check=True,
+            )
         sp.run(
             ('MP4Box', '-set-meta', 'mp21', str(path)),  # noqa: S607
             capture_output=not debug,
-            check=True)
+            check=True,
+        )
         info_json_path = Path('info.json')
         copyfile(json_path, info_json_path)
         log.debug('Attaching info.json to MP4.')
@@ -561,127 +559,6 @@ def create_static_text_video(
     Path(tf.name).unlink()
 
 
-CDROMREADTOCHDR = 0x5305
-CDROMREADTOCENTRY = 0x5306
-CDROM_LBA = 1
-CD_MSF_OFFSET = 150
-CD_FRAMES = 75
-CDROM_LEADOUT = 0xAA
-
-
-class CDROMMSF0(ctypes.Structure):
-    if TYPE_CHECKING:
-        minute: int
-        second: int
-        frame: int
-    _fields_: ClassVar[list[tuple[str, Any]]] = [
-        ('minute', ctypes.c_ubyte),
-        ('second', ctypes.c_ubyte),
-        ('frame', ctypes.c_ubyte),
-    ]
-
-
-class CDROMAddress(ctypes.Union):
-    if TYPE_CHECKING:
-        msf: CDROMMSF0
-        lba: int
-    _fields_: ClassVar[list[tuple[str, Any]]] = [('msf', CDROMMSF0), ('lba', ctypes.c_int)]
-
-
-class CDROMTOCEntry(ctypes.Structure):
-    if TYPE_CHECKING:
-        cdte_addr: CDROMAddress
-        cdte_adr: int
-        cdte_ctrl: int
-        cdte_datamode: int
-        cdte_format: int
-        cdte_track: int
-    _fields_: ClassVar[list[tuple[str, Any] | tuple[str, Any, int]]] = [
-        ('cdte_track', ctypes.c_ubyte),
-        ('cdte_adr', ctypes.c_ubyte, 4),
-        ('cdte_ctrl', ctypes.c_ubyte, 4),
-        ('cdte_format', ctypes.c_ubyte),
-        ('cdte_addr', CDROMAddress),
-        ('cdte_datamode', ctypes.c_ubyte),
-    ]
-
-
-class CDROMTOCHeader(ctypes.Structure):
-    if TYPE_CHECKING:
-        cdth_trk0: int
-        cdth_trk1: int
-    _fields_: ClassVar[list[tuple[str, Any]]] = [
-        ('cdth_trk0', ctypes.c_ubyte),
-        ('cdth_trk1', ctypes.c_ubyte),
-    ]
-
-
-def get_cd_disc_id(drive: StrPath) -> str:
-    """
-    Calculate a CDDB disc ID.
-
-    For Linux only.
-
-    Parameters
-    ----------
-    drive : StrPath
-        Drive path.
-
-    Returns
-    -------
-    str
-        String for use with CDDB query.
-
-    Raises
-    ------
-    NotImplementedError
-        If not on Linux.
-    OSError
-        If an ioctl call fails.
-    """
-    if not IS_LINUX:
-        raise NotImplementedError
-
-    def cddb_sum(n: int) -> int:
-        # A number like 2344 becomes 2+3+4+4 (13).
-        ret = 0
-        while n > 0:
-            ret += n % 10
-            n //= 10
-        return ret
-
-    with context_os_open(drive, os.O_RDONLY | os.O_NONBLOCK) as fd:
-        libc = ctypes.CDLL('libc.so.6', use_errno=True)
-        toc_header = CDROMTOCHeader()
-        if libc.ioctl(fd, CDROMREADTOCHDR, ctypes.byref(toc_header)) < 0:
-            raise OSError(ctypes.get_errno())
-        last: int = toc_header.cdth_trk1
-        toc_entries: list[CDROMTOCEntry] = []
-        for i in range(last):
-            buf = CDROMTOCEntry()
-            buf.cdte_track = i + 1
-            buf.cdte_format = CDROM_LBA
-            toc_entries.append(buf)
-            if libc.ioctl(fd, CDROMREADTOCENTRY, ctypes.byref(buf)):
-                raise OSError(ctypes.get_errno())
-        buf = CDROMTOCEntry()
-        buf.cdte_track = CDROM_LEADOUT
-        buf.cdte_format = CDROM_LBA
-        toc_entries.append(buf)
-        if libc.ioctl(fd, CDROMREADTOCENTRY, ctypes.byref(buf)) < 0:
-            raise OSError(ctypes.get_errno())
-    checksum = 0
-    for entry in toc_entries[:-1]:
-        checksum += cddb_sum((entry.cdte_addr.lba + CD_MSF_OFFSET) // CD_FRAMES)
-    total_time: int = ((toc_entries[-1].cdte_addr.lba + CD_MSF_OFFSET) // CD_FRAMES) - (
-        (toc_entries[0].cdte_addr.lba + CD_MSF_OFFSET) // CD_FRAMES)
-    # This expression inside f'{}' causes a Yapf parsing error.
-    entries = ' '.join(f'{x.cdte_addr.lba + CD_MSF_OFFSET}' for x in toc_entries[:-1])
-    return (f'{(checksum % 0xFF) << 24 | total_time << 8 | last:08x} {last} '
-            f'{entries} '
-            f'{(toc_entries[-1].cdte_addr.lba + CD_MSF_OFFSET) // CD_FRAMES}')
-
-
 class CDDBQueryResult(NamedTuple):
     """CDDB query result."""
 
@@ -717,15 +594,16 @@ def _parse_cddb_query_response(
         response code is not ``'200'`` or ``'210'``.
     """
     first_line = lines[0].split(' ', 3)
-    if len(lines) == 1 and first_line[0] == '200':
-        _, category, disc_id, artist_title = first_line
-    elif first_line[0] == '210':
-        if not accept_first_match:
-            log.debug('Results:\n%s', '\n'.join(lines).strip())
-            raise ValueError(len(lines[1:-1]))
-        category, disc_id, artist_title = lines[1].split(' ', 2)
-    else:
-        raise ValueError(first_line[0])
+    match (len(lines) == 1, first_line[0]):
+        case (True, '200'):
+            _, category, disc_id, artist_title = first_line
+        case (_, '210'):
+            if not accept_first_match:
+                log.debug('Results:\n%s', '\n'.join(lines).strip())
+                raise ValueError(len(lines[1:-1]))
+            category, disc_id, artist_title = lines[1].split(' ', 2)
+        case _:
+            raise ValueError(first_line[0])
     artist, disc_title = artist_title.split(' / ', 1)
     return category, disc_id, artist, disc_title
 
@@ -784,7 +662,7 @@ async def cddb_query(
     """
     Run a query against a CDDB host.
 
-    Defaults to host in Keyring under the ``gnudb`` key and current user name.
+    Defaults to the host in the keyring under the ``gnudb`` key and the current user name.
 
     It is advised to ``except`` typical
     `niquests exceptions <https://niquests.readthedocs.io/en/latest/>`_ when calling this.
@@ -792,7 +670,7 @@ async def cddb_query(
     Parameters
     ----------
     disc_id : str
-        Disc ID string from :py:func:`get_cd_disc_id`.
+        Disc ID string in CDDB query format.
     accept_first_match : bool
         If ``True``, accept the first match when multiple results are returned.
     app : str
@@ -1036,8 +914,10 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     hwaccel: str | None = 'auto',
     keep_audio: bool = False,
     level: int | str | None = 'auto',
-    group_fn: Callable[[Sequence[tuple[Path, Path]], int, re.Pattern[str] | str, str],
-                       list[list[tuple[Path, Path]]]] = group_pairs,
+    group_fn: Callable[
+        [Sequence[tuple[Path, Path]], int, re.Pattern[str] | str, str],
+        list[list[tuple[Path, Path]]],
+    ] = group_pairs,
     max_offset: int = 1,
     no_delete: bool = False,
     overwrite: bool = False,
@@ -1065,8 +945,8 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     width and height by the ``rear_view_scale_divisor`` value specified. It will also be cropped
     using the ``rear_crop`` value unless it is ``None``.
 
-    Files are automatically grouped using the regular expression passed with ``match_re``. This
-    RE must contain at least one group and only the first group will be considered. Make dubious use
+    Files are automatically grouped using the regular expression passed with ``match_re``. The RE
+    must contain at least one group, and only the first group will be considered. Make dubious use
     of non-capturing groups if necessary. The captured group string is expected to be usable with
     the time format specified with ``time_format`` (see ``strptime`` documentation at
     https://docs.python.org/3/library/datetime.html#datetime.datetime.strptime).
@@ -1091,7 +971,7 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     rear_dir : StrPath | None
         Directory containing rear footage. If ``None``, single-camera mode is used.
     output_dir : StrPath
-        Will be created if it does not exist including parents.
+        Will be created if it does not exist, including parents.
     chapters : bool
         Embed chapter markers in the output file. Each clip pair becomes a chapter named after the
         front file stem without the trailing letter suffix (e.g. ``20260318101701_025194``).
@@ -1110,9 +990,6 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
         Keep audio in the output video. Defaults to ``False``.
     level : int | str | None
         Level (HEVC).
-    match_re : re.Pattern[str] | str
-        Regular expression used for finding the timestamp in a filename. Must contain at least one
-        group and only the first group is considered.
     group_fn : Callable[[Sequence[tuple[Path, Path]], int, re.Pattern[str] | str, str],
                         list[list[tuple[Path, Path]]]]
         Function to group pairs into recording sessions. Defaults to :py:func:`group_pairs`.
@@ -1122,6 +999,9 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
         Do not delete original files after successful conversion.
     overwrite : bool
         Overwrite existing files.
+    match_re : re.Pattern[str] | str
+        Regular expression used for finding the timestamp in a filename. Must contain at least one
+        group and only the first group is considered.
     pair_fn : Callable[[StrPath, StrPath, re.Pattern[str] | str, str, int],
                        list[tuple[Path, Path]]] | None
         Function to pair front and rear files. Defaults to
@@ -1133,8 +1013,8 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     rear_view_scale_divisor : float | None
         Scaling divisor for rear view.
     setpts : str | None
-        Change the PTS. See `ffmpeg setpts filter`_ for more information. The default is to increase
-        the speed of the video up by 4x.
+        Change the PTS. See `ffmpeg setpts filter`_ for more information. The default speeds the
+        video up by 4x.
     temp_dir : StrPath | None
         Temporary directory root.
     tier : str | None
@@ -1203,21 +1083,19 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
                      | libx264_options)
     dual_output_options = list(
         chain(*((k, *((str(v),) if not isinstance(v, bool) and v is not None else ()))
-                for k, v in (main_options
-                             | preset_option
-                             | filter_complex_option
+                for k, v in (main_options | preset_option | filter_complex_option
                              | codec_options).items() if v)))
     single_output_options = list(
         chain(*((k, *((str(v),) if not isinstance(v, bool) and v is not None else ()))
-                for k, v in (main_options
-                             | preset_option
-                             | single_vf_option
+                for k, v in (main_options | preset_option | single_vf_option
                              | codec_options).items() if v)))
     pair_groups: list[list[tuple[Path | None, Path]]]
     if pair_fn is not None and rear_dir is not None:
         pairs = pair_fn(front_dir, rear_dir, match_re, time_format, max_offset)
-        pair_groups = cast('list[list[tuple[Path | None, Path]]]',
-                           group_fn(pairs, clip_length, match_re, time_format))
+        pair_groups = cast(
+            'list[list[tuple[Path | None, Path]]]',
+            group_fn(pairs, clip_length, match_re, time_format),
+        )
     else:
         file_groups = group_files(
             (str(x) for x in Path(front_dir).iterdir() if not x.name.startswith('.')),
@@ -1286,12 +1164,14 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
                         suffix += 1
                 metadata_args: tuple[str, ...] = ()
                 if chapters and len(to_be_merged) > 0:
-                    with tempfile.NamedTemporaryFile('w',
-                                                     dir=temp_dir,
-                                                     encoding='utf-8',
-                                                     prefix='metadata-',
-                                                     suffix='.txt',
-                                                     delete=False) as metadata_file:
+                    with tempfile.NamedTemporaryFile(
+                            'w',
+                            dir=temp_dir,
+                            encoding='utf-8',
+                            prefix='metadata-',
+                            suffix='.txt',
+                            delete=False,
+                    ) as metadata_file:
                         metadata_file.write(';FFMETADATA1\n')
                         chapter_start = 0
                         for _merged_file, (_, front_file) in zip(to_be_merged,
@@ -1300,7 +1180,7 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
                             source_duration = float(
                                 ffprobe(front_file)['format'].get('duration')
                                 or ffprobe(front_file)['streams'][0].get('duration', '0'))
-                            pts_match = (re.match(r'^([\d.]+)\*PTS$', setpts) if setpts else None)
+                            pts_match = re.match(r'^([\d.]+)\*PTS$', setpts) if setpts else None
                             duration_s = (source_duration * float(pts_match.group(1))
                                           if pts_match else source_duration)
                             duration_ms = int(duration_s * 1000)
