@@ -40,11 +40,6 @@ cddb
 cdrecord
 cdrom
 cdrommsf
-cdromreadtocentry
-cdromreadtochdr
-cdromtoc
-cdte
-cdth
 chinesebig
 cleartype
 closeapplications
@@ -65,7 +60,6 @@ ctypes
 cuvid
 dashcam
 dataclasses
-datamode
 dataoffset
 datatable
 datatables
@@ -88,6 +82,7 @@ enoent
 enotblk
 enrollment
 enrollments
+esac
 esbenp
 esbonio
 excinfo
@@ -168,9 +163,7 @@ lanczos
 lastexitcode
 launchable
 lavfi
-leadout
 lextudio
-libc
 libcairo
 libera
 libgirepository
@@ -252,6 +245,7 @@ pyperclip
 pypi
 pyproject
 pytest
+pythonhosted
 pyyaml
 rars
 rdonly
@@ -260,6 +254,7 @@ referer
 regedit
 regen
 ripcd
+ripgreprc
 roboto
 rockridge
 rssi
@@ -300,6 +295,7 @@ tomllib
 tomlq
 tonemap
 tonumber
+tostring
 totalallowances
 tracknumber
 tryfirst
