@@ -52,46 +52,16 @@ STOP_WORDS = {
     'vs',
     'with',
     'within',
-    'without',
+    'without'
 }
 ENGLISH_ORDINAL_RE = r'(\d+)(st|nd|rd|th)'
 ENGLISH_ABBREV = {'feat', 'mr', 'mrs', 'ms', 'vs'}
 JAPANESE_PARTICLES = {'de', 'e', 'ga', 'ha', 'ka', 'kana', 'ne', 'ni', 'no', 'to', 'wa', 'wo'}
 CHINESE_PARTICLES = {'de', 'ge', 'he', 'le', 'ma'}
 ARABIC_STOPS = {
-    'al',
-    'ala',
-    'alayhi',
-    'alayka',
-    'alayya',
-    'an',
-    'anhu',
-    'anka',
-    'anni',
-    'bi',
-    'biha',
-    'bihi',
-    'bika',
-    'fi',
-    'fihi',
-    'fika',
-    'fiya',
-    'ila',
-    'ilayhi',
-    'ilayka',
-    'ilayya',
-    'lahu',
-    'laka',
-    'li',
-    'maa',
-    'maahu',
-    'maaka',
-    'mai',
-    'min',
-    'minhu',
-    'minka',
-    'minni',
-    'wa',
+    'al', 'ala', 'alayhi', 'alayka', 'alayya', 'an', 'anhu', 'anka', 'anni', 'bi', 'biha', 'bihi',
+    'bika', 'fi', 'fihi', 'fika', 'fiya', 'ila', 'ilayhi', 'ilayka', 'ilayya', 'lahu', 'laka', 'li',
+    'maa', 'maahu', 'maaka', 'mai', 'min', 'minhu', 'minka', 'minni', 'wa'
 }
 NAMES_TO_FIX = {
     "mcdonald's": "McDonald's",
@@ -111,7 +81,7 @@ NAMES_TO_FIX = {
     'Wkwebview': 'WKWebView',
     'Wwdc': 'WWDC',
     'mcdonald': 'McDonald',
-    'mcdonalds': "McDonald's",
+    'mcdonalds': "McDonald's"
 }
 
 
@@ -148,7 +118,7 @@ MODE_MAP = {
     Mode.Arabic: ARABIC_STOPS,
     Mode.Chinese: CHINESE_PARTICLES,
     Mode.English: STOP_WORDS,
-    Mode.Japanese: JAPANESE_PARTICLES,
+    Mode.Japanese: JAPANESE_PARTICLES
 }
 
 
@@ -160,14 +130,12 @@ def _get_name(word: str, names: dict[str, str] = NAMES_TO_FIX) -> str | None:
     return None
 
 
-def adjust_title(
-    words: str,
-    modes: Iterable[Mode] = (Mode.English,),
-    names: dict[str, str] = NAMES_TO_FIX,
-    *,
-    disable_names: bool = False,
-    ampersands: bool = False,
-) -> str:
+def adjust_title(words: str,
+                 modes: Iterable[Mode] = (Mode.English,),
+                 names: dict[str, str] = NAMES_TO_FIX,
+                 *,
+                 disable_names: bool = False,
+                 ampersands: bool = False) -> str:
     """
     Adjust a string that represents a title.
 

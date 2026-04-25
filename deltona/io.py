@@ -23,20 +23,9 @@ if TYPE_CHECKING:
 
     from .typing import StrPath
 
-__all__ = (
-    'RARInfo',
-    'SFVVerificationError',
-    'UnRAR',
-    'UnRARError',
-    'UnRARExtractionTestFailed',
-    'context_os_open',
-    'extract_gog',
-    'extract_rar_from_zip',
-    'make_sfv',
-    'unpack_0day',
-    'unpack_ebook',
-    'verify_sfv',
-)
+__all__ = ('RARInfo', 'SFVVerificationError', 'UnRAR', 'UnRARError', 'UnRARExtractionTestFailed',
+           'context_os_open', 'extract_gog', 'extract_rar_from_zip', 'make_sfv', 'unpack_0day',
+           'unpack_ebook', 'verify_sfv')
 
 log = logging.getLogger(__name__)
 
@@ -303,11 +292,9 @@ class UnRAR:
         subprocess.Popen[bytes]
             Handle to the ``unrar`` process.
         """
-        with sp.Popen(
-            (self.unrar_path, 'p', '-y', '-inul', str(rar), inner_filename),
-                stdout=sp.PIPE,
-                close_fds=True,
-        ) as p:
+        with sp.Popen((self.unrar_path, 'p', '-y', '-inul', str(rar), inner_filename),
+                      stdout=sp.PIPE,
+                      close_fds=True) as p:
             yield p
 
     def test_extraction(self, rar: StrPath, inner_filename: str | None = None) -> None:
@@ -327,17 +314,9 @@ class UnRAR:
             If the extraction test fails.
         """
         try:
-            sp.run(
-                (
-                    self.unrar_path,
-                    't',
-                    '-y',
-                    '-inul',
-                    rar,
-                    *((inner_filename,) if inner_filename else ()),
-                ),
-                check=True,
-            )
+            sp.run((self.unrar_path, 't', '-y', '-inul', rar,
+                    *((inner_filename,) if inner_filename else ())),
+                   check=True)
         except sp.CalledProcessError as e:
             raise UnRARExtractionTestFailed from e
 
@@ -359,12 +338,11 @@ class UnRAR:
             (self.unrar_path, 'l', '-y',
              rar), text=True, check=True, capture_output=True).stdout.splitlines()
                    if (m := re.match(self.LIST_RE, line))):
-            yield RARInfo(
-                attributes_str=mm['attributes'],
-                date=datetime.strptime(mm['date'], '%Y-%m-%d %H:%M').replace(tzinfo=timezone.utc),
-                name=mm['filename'],
-                size=int(mm['size']),
-            )
+            yield RARInfo(attributes_str=mm['attributes'],
+                          date=datetime.strptime(mm['date'],
+                                                 '%Y-%m-%d %H:%M').replace(tzinfo=timezone.utc),
+                          name=mm['filename'],
+                          size=int(mm['size']))
 
 
 class SFVVerificationError(Exception):

@@ -56,10 +56,8 @@ def test_fix_chromium_pwa_icon_main(mocker: MockerFixture, runner: CliRunner,
 
 def test_check_bookmarks_html_main(mocker: MockerFixture, runner: CliRunner,
                                    tmp_path: Path) -> None:
-    mock_check_urls = mocker.patch(
-        'deltona.commands.www.check_bookmarks_html_urls',
-        new=AsyncMock(return_value=[None, ['a', 'b'], ['c', 'd']]),
-    )
+    mock_check_urls = mocker.patch('deltona.commands.www.check_bookmarks_html_urls',
+                                   new=AsyncMock(return_value=[None, ['a', 'b'], ['c', 'd']]))
     mock_file = tmp_path / 'bookmarks.html'
     mock_file.write_text('<html><body>Bookmarks</body></html>')
     result = runner.invoke(check_bookmarks_html_main, [str(mock_file)])

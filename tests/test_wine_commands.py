@@ -72,13 +72,7 @@ def test_winegoginstall_main_logs_warning_about_missing_env_vars(mocker: MockerF
                                                                  runner: CliRunner,
                                                                  tmp_path: Path) -> None:
     mock_log_warning = mocker.patch('deltona.commands.wine.log.warning')
-    mocker.patch(
-        'deltona.commands.wine.os.environ',
-        {
-            'HOME': str(tmp_path),
-            'PATH': '',
-        },
-    )
+    mocker.patch('deltona.commands.wine.os.environ', {'HOME': str(tmp_path), 'PATH': ''})
     file = tmp_path / 'setup.exe'
     file.write_text('dummy')
     sp_run = mocker.patch('deltona.commands.wine.sp.run')
@@ -106,10 +100,8 @@ def test_winegoginstall_main_subprocess_error(mocker: MockerFixture, runner: Cli
                                               tmp_path: Path) -> None:
     file = tmp_path / 'setup.exe'
     file.write_text('dummy')
-    mocker.patch(
-        'deltona.commands.wine.sp.run',
-        side_effect=sp.CalledProcessError(1, 'cmd', stderr='err', output='out'),
-    )
+    mocker.patch('deltona.commands.wine.sp.run',
+                 side_effect=sp.CalledProcessError(1, 'cmd', stderr='err', output='out'))
     result = runner.invoke(winegoginstall_main, [str(file)])
     assert result.exit_code != 0
 
@@ -118,16 +110,13 @@ def test_set_wine_fonts_main(mocker: MockerFixture, runner: CliRunner, tmp_path:
     sp_run = mocker.patch('deltona.commands.wine.sp.run')
     mocker.patch('deltona.commands.wine.make_font_entry', return_value='FontEntry')
     mocker.patch('deltona.commands.wine.Field', ['foo'])
-    mocker.patch(
-        'deltona.commands.wine.os.environ',
-        {
-            'HOME': str(tmp_path),
-            'DISPLAY': 'x',
-            'XAUTHORITY': 'y',
-            'PATH': '',
-            'WINEPREFIX': 'a-prefix',
-        },
-    )
+    mocker.patch('deltona.commands.wine.os.environ', {
+        'HOME': str(tmp_path),
+        'DISPLAY': 'x',
+        'XAUTHORITY': 'y',
+        'PATH': '',
+        'WINEPREFIX': 'a-prefix'
+    })
     result = runner.invoke(set_wine_fonts_main,
                            ['--dpi', '120', '--font', 'Arial', '--font-size', '10'])
     assert result.exit_code == 0
@@ -141,13 +130,7 @@ def test_set_wine_fonts_main_logs_warning_about_missing_env_vars(mocker: MockerF
     mock_log_warning = mocker.patch('deltona.commands.wine.log.warning')
     mocker.patch('deltona.commands.wine.make_font_entry', return_value='FontEntry')
     mocker.patch('deltona.commands.wine.Field', ['foo'])
-    mocker.patch(
-        'deltona.commands.wine.os.environ',
-        {
-            'HOME': str(tmp_path),
-            'PATH': '',
-        },
-    )
+    mocker.patch('deltona.commands.wine.os.environ', {'HOME': str(tmp_path), 'PATH': ''})
     result = runner.invoke(set_wine_fonts_main,
                            ['--dpi', '120', '--font', 'Arial', '--font-size', '10'])
     assert result.exit_code == 0

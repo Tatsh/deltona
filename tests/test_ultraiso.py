@@ -25,10 +25,8 @@ def test_patch_ultraiso_font_success(mocker: MockerFixture, tmp_path: Path) -> N
     backup_path = tmp_path / 'UltraISO.exebak'
     original_data = b'headerMS Sans Serif\x00footer'
     exe_path.write_bytes(original_data)
-    mocker.patch(
-        'deltona.ultraiso.copyfile',
-        side_effect=lambda src, dst: Path(dst).write_bytes(Path(src).read_bytes()),
-    )
+    mocker.patch('deltona.ultraiso.copyfile',
+                 side_effect=lambda src, dst: Path(dst).write_bytes(Path(src).read_bytes()))
     patch_ultraiso_font(exe_path, font_name='Noto Sans')
     assert backup_path.exists()
     patched = exe_path.read_bytes()
@@ -158,48 +156,46 @@ def test_run_ultraiso_all_options(mocker: MockerFixture, tmp_path: Path) -> None
     mocker.patch('deltona.ultraiso.IS_WINDOWS', False)
     mock_run = mocker.patch('deltona.ultraiso.sp.run')
     mocker.patch('deltona.ultraiso.base_unix_path_to_wine', side_effect=lambda x: f'Z:\\{x}')
-    run_ultraiso(
-        input='/tmp/in.iso',
-        output='/tmp/out.iso',
-        add_dirs=['/tmp/dir1'],
-        add_files=['/tmp/file1'],
-        appid='appid',
-        preparer='prep',
-        publisher='pub',
-        sysid='sys',
-        volset=1,
-        volume='vol',
-        ilong=True,
-        imax=True,
-        lowercase=True,
-        vernum=True,
-        hfs=True,
-        jlong=True,
-        joliet=True,
-        rockridge=True,
-        udf=True,
-        udfdvd=True,
-        bootfile='/tmp/boot.img',
-        bootinfotable=True,
-        optimize=True,
-        chdir='chdir',
-        newdir='newdir',
-        rmdir='rmdir',
-        ahide='ahide',
-        hide='hide',
-        pn=2,
-        bin2iso='/tmp/bin2iso',
-        dmg2iso='/tmp/dmg2iso',
-        bin2isz='/tmp/bin2isz',
-        compress=3,
-        encrypt=2,
-        password='pw',
-        split=1024,
-        extract='/tmp/extract',
-        get='get',
-        list_='/tmp/list',
-        prefix=tmp_path,
-    )
+    run_ultraiso(input='/tmp/in.iso',
+                 output='/tmp/out.iso',
+                 add_dirs=['/tmp/dir1'],
+                 add_files=['/tmp/file1'],
+                 appid='appid',
+                 preparer='prep',
+                 publisher='pub',
+                 sysid='sys',
+                 volset=1,
+                 volume='vol',
+                 ilong=True,
+                 imax=True,
+                 lowercase=True,
+                 vernum=True,
+                 hfs=True,
+                 jlong=True,
+                 joliet=True,
+                 rockridge=True,
+                 udf=True,
+                 udfdvd=True,
+                 bootfile='/tmp/boot.img',
+                 bootinfotable=True,
+                 optimize=True,
+                 chdir='chdir',
+                 newdir='newdir',
+                 rmdir='rmdir',
+                 ahide='ahide',
+                 hide='hide',
+                 pn=2,
+                 bin2iso='/tmp/bin2iso',
+                 dmg2iso='/tmp/dmg2iso',
+                 bin2isz='/tmp/bin2isz',
+                 compress=3,
+                 encrypt=2,
+                 password='pw',
+                 split=1024,
+                 extract='/tmp/extract',
+                 get='get',
+                 list_='/tmp/list',
+                 prefix=tmp_path)
     args = ' '.join(mock_run.call_args[0][0])
     assert '-in' in args
     assert '-out' in args
@@ -263,12 +259,9 @@ def test_run_ultraiso_called_process_error_with_stderr(mocker: MockerFixture,
     mocker.patch('deltona.ultraiso.get_ultraiso_path', return_value=exe_path)
     mocker.patch('deltona.ultraiso.IS_WINDOWS', False)
     mocker.patch('deltona.ultraiso.base_unix_path_to_wine', side_effect=lambda x: f'Z:\\{x}')
-    error = sp.CalledProcessError(
-        1,
-        ['wine'],
-        stderr=('some error\nfixme: ignored\nwinemenubuilder.exe'
-                '\nwine: using fast synchronization.\nreal error'),
-    )
+    error = sp.CalledProcessError(1, ['wine'],
+                                  stderr=('some error\nfixme: ignored\nwinemenubuilder.exe'
+                                          '\nwine: using fast synchronization.\nreal error'))
     mocker.patch('deltona.ultraiso.sp.run', side_effect=error)
     mock_log = mocker.patch('deltona.ultraiso.log')
     with pytest.raises(sp.CalledProcessError):

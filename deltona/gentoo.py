@@ -16,13 +16,8 @@ if TYPE_CHECKING:
 
     from .typing import StrPath
 
-__all__ = (
-    'DEFAULT_ACTIVE_KERNEL_NAME',
-    'DEFAULT_KERNEL_LOCATION',
-    'DEFAULT_MODULES_PATH',
-    'InvalidActiveKernelSourcePath',
-    'clean_old_kernels_and_modules',
-)
+__all__ = ('DEFAULT_ACTIVE_KERNEL_NAME', 'DEFAULT_KERNEL_LOCATION', 'DEFAULT_MODULES_PATH',
+           'InvalidActiveKernelSourcePath', 'clean_old_kernels_and_modules')
 
 DEFAULT_ACTIVE_KERNEL_NAME = 'linux'
 """
@@ -53,10 +48,9 @@ class InvalidActiveKernelSourcePath(Exception):
 
 
 def clean_old_kernels_and_modules(
-    path: StrPath = DEFAULT_KERNEL_LOCATION,
-    modules_path: StrPath = DEFAULT_MODULES_PATH,
-    active_kernel_name: str = DEFAULT_ACTIVE_KERNEL_NAME,
-) -> Iterator[str]:
+        path: StrPath = DEFAULT_KERNEL_LOCATION,
+        modules_path: StrPath = DEFAULT_MODULES_PATH,
+        active_kernel_name: str = DEFAULT_ACTIVE_KERNEL_NAME) -> Iterator[str]:
     """
     Remove inactive kernels and modules.
 

@@ -8,21 +8,10 @@ if TYPE_CHECKING:
     from click.testing import CliRunner
     from pytest_mock import MockerFixture
 
-_LINUX_ONLY_COMMANDS = (
-    'clean-old-kernels-modules',
-    'connect-g603',
-    'inhibit-notifications',
-    'kill-gamescope',
-    'systemd-reset-tpm-cryptenroll',
-    'wait-for-disc',
-)
-_WINE_COMMANDS = (
-    'kill-wine',
-    'set-wine-fonts',
-    'unregister-wine-assocs',
-    'winegoginstall',
-    'wineshell',
-)
+_LINUX_ONLY_COMMANDS = ('clean-old-kernels-modules', 'connect-g603', 'inhibit-notifications',
+                        'kill-gamescope', 'systemd-reset-tpm-cryptenroll', 'wait-for-disc')
+_WINE_COMMANDS = ('kill-wine', 'set-wine-fonts', 'unregister-wine-assocs', 'winegoginstall',
+                  'wineshell')
 
 
 def test_main_help(runner: CliRunner) -> None:

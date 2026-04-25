@@ -45,13 +45,11 @@ log = logging.getLogger(__name__)
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('-d', '--debug', is_flag=True, help='Enable debug logging.')
-@click.option(
-    '-t',
-    '--sleep-time',
-    default=0,
-    type=int,
-    help='Sleep time in seconds to inhibit notifications for.',
-)
+@click.option('-t',
+              '--sleep-time',
+              default=0,
+              type=int,
+              help='Sleep time in seconds to inhibit notifications for.')
 def inhibit_notifications_main(sleep_time: int = 0, *, debug: bool = False) -> None:
     """
     Disable notifications state for a time.
@@ -105,14 +103,8 @@ def umpv_main(files: Sequence[Path], mpv_command: str = 'mpv', *, debug: bool = 
     else:
         log.debug('Starting new mpv instance')
         # Let mpv recreate socket if it does not already exist.
-        args = (
-            *split(mpv_command),
-            *(() if debug else ('--no-terminal',)),
-            '--force-window',
-            f'--input-ipc-server={socket_path}',
-            '--',
-            *(str(x) for x in fixed_files),
-        )
+        args = (*split(mpv_command), *(() if debug else ('--no-terminal',)), '--force-window',
+                f'--input-ipc-server={socket_path}', '--', *(str(x) for x in fixed_files))
         log.debug('Command: %s', ' '.join(quote(x) for x in args))
         sp.run(args, check=True)
 
@@ -191,23 +183,12 @@ def connect_g603_main(device_name: str = 'hci0', *, debug: bool = False) -> None
                     click.echo(f'Pairing with {mac}.')
                     device['org.bluez.Device1'].Pair()
                 else:
-                    log.debug(
-                        'Unhandled property changes: interface=%s, values=%s, mac=%s',
-                        dev_iface,
-                        values,
-                        mac,
-                    )
+                    log.debug('Unhandled property changes: interface=%s, values=%s, mac=%s',
+                              dev_iface, values, mac)
 
     # PropertiesChanged.connect()/.PropertiesChanged = ... will not catch the device node events.
-    bus.con.signal_subscribe(
-        None,
-        'org.freedesktop.DBus.Properties',
-        'PropertiesChanged',
-        None,
-        None,
-        Gio.DBusSignalFlags.NONE,
-        on_properties_changed,
-    )
+    bus.con.signal_subscribe(None, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', None,
+                             None, Gio.DBusSignalFlags.NONE, on_properties_changed)
     log.debug('Looking for existing devices.')
     with contextlib.suppress(KeyError):
         while res := find_bluetooth_device_info_by_name('G603'):
@@ -243,25 +224,21 @@ def kill_gamescope_main() -> None:
               default=5,
               help='Timeout in seconds.',
               metavar='TIMEOUT')
-@click.option(
-    '--xdg-install',
-    default=None,
-    metavar='PATH',
-    help=('Install .desktop file. Argument is the installation prefix such as /usr. Use '
-          '- to install to user XDG directory.'),
-)
-def upload_to_imgbb_main(
-    filenames: Sequence[Path],
-    api_key: str | None = None,
-    keyring_username: str | None = None,
-    timeout: float = 5,
-    xdg_install: str | None = None,
-    *,
-    debug: bool = False,
-    no_browser: bool = False,
-    no_clipboard: bool = False,
-    no_gui: bool = False,
-) -> None:
+@click.option('--xdg-install',
+              default=None,
+              metavar='PATH',
+              help=('Install .desktop file. Argument is the installation prefix such as /usr. Use '
+                    '- to install to user XDG directory.'))
+def upload_to_imgbb_main(filenames: Sequence[Path],
+                         api_key: str | None = None,
+                         keyring_username: str | None = None,
+                         timeout: float = 5,
+                         xdg_install: str | None = None,
+                         *,
+                         debug: bool = False,
+                         no_browser: bool = False,
+                         no_clipboard: bool = False,
+                         no_gui: bool = False) -> None:
     """
     Upload image to ImgBB.
 
@@ -335,14 +312,12 @@ Version=1.0
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('filenames', type=click.Path(exists=True, dir_okay=False, path_type=Path), nargs=2)
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
-def mpv_sbs_main(
-    filenames: tuple[Path, Path],
-    max_width: int = 3840,
-    min_height: int = 31,
-    min_width: int = 31,
-    *,
-    debug: bool = False,
-) -> None:
+def mpv_sbs_main(filenames: tuple[Path, Path],
+                 max_width: int = 3840,
+                 min_height: int = 31,
+                 min_width: int = 31,
+                 *,
+                 debug: bool = False) -> None:
     """
     Display two videos side by side in mpv.
 
@@ -367,17 +342,14 @@ def mpv_sbs_main(
 
     def get_prop(prop: Literal['codec_type', 'disposition', 'height', 'width'],
                  info: ProbeDict) -> Literal['audio', 'video'] | StreamDispositionDict | int:
-        return max(
-            (x for x in info['streams'] if x['codec_type'] == 'video'),
-            key=lambda x: x['disposition'].get('default', 0),
-        )[prop]
+        return max((x for x in info['streams'] if x['codec_type'] == 'video'),
+                   key=lambda x: x['disposition'].get('default', 0))[prop]
 
     def get_default_video_index(info: ProbeDict) -> int:
         return next(
             (i
              for i, x in enumerate(info['streams']) if x.get('disposition', {}).get('default', 0)),
-            next((i for i, x in enumerate(info['streams']) if x['codec_type'] == 'video'), 0),
-        )
+            next((i for i, x in enumerate(info['streams']) if x['codec_type'] == 'video'), 0))
 
     setup_logging(debug=debug, loggers={'deltona': {}})
     filename1, filename2 = filenames
@@ -412,18 +384,11 @@ def mpv_sbs_main(
     if not scale1 and not scale2:
         filter_chain = '[vid1][vid2] hstack [vo]'
     else:
-        filter_chain = ';'.join((
-            f'[vid1] {scale} [vid1_scale]',
-            f'[vid{second_stream_index}] {scale} [vid{second_stream_index}_crop]',
-            f'[vid1_scale][vid{second_stream_index}_crop] hstack [vo]',
-        ))
-    cmd = (
-        'mpv',
-        '--hwdec=no',
-        '--config=no',
-        str(filename1),
-        f'--external-file={filename2}',
-        f'--lavfi-complex={filter_chain}',
-    )
+        filter_chain = ';'.join(
+            (f'[vid1] {scale} [vid1_scale]',
+             f'[vid{second_stream_index}] {scale} [vid{second_stream_index}_crop]',
+             f'[vid1_scale][vid{second_stream_index}_crop] hstack [vo]'))
+    cmd = ('mpv', '--hwdec=no', '--config=no', str(filename1), f'--external-file={filename2}',
+           f'--lavfi-complex={filter_chain}')
     log.debug('Running: %s', ' '.join(quote(str(x)) for x in cmd))
     sp.run(cmd, check=True)

@@ -24,12 +24,10 @@ if TYPE_CHECKING:
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument(
-    'files',
-    metavar='FILE',
-    nargs=-1,
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-)
+@click.argument('files',
+                metavar='FILE',
+                nargs=-1,
+                type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path))
 @click.option('-w', '--webpage', is_flag=True, help='Print the webpage URL (macOS only).')
 def where_from_main(files: Sequence[Path], *, webpage: bool = False) -> None:
     """Display URL where a file was downloaded from."""
@@ -41,24 +39,18 @@ def where_from_main(files: Sequence[Path], *, webpage: bool = False) -> None:
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument(
-    'local_state_path',
-    type=click.Path(dir_okay=False, exists=True, path_type=Path),
-    metavar='LOCAL_STATE_PATH',
-    default=CHROME_DEFAULT_LOCAL_STATE_PATH,
-)
-@click.option(
-    '-s',
-    '--subprocess-name',
-    default='chrome' if not IS_WINDOWS else 'chrome.exe',
-    help="Chromium-based browser subprocess name such as 'chrome'.",
-)
-@click.option(
-    '--sleep-time',
-    default=0.5,
-    type=float,
-    help='Time to sleep after attempting to kill the browser processes in seconds.',
-)
+@click.argument('local_state_path',
+                type=click.Path(dir_okay=False, exists=True, path_type=Path),
+                metavar='LOCAL_STATE_PATH',
+                default=CHROME_DEFAULT_LOCAL_STATE_PATH)
+@click.option('-s',
+              '--subprocess-name',
+              default='chrome' if not IS_WINDOWS else 'chrome.exe',
+              help="Chromium-based browser subprocess name such as 'chrome'.")
+@click.option('--sleep-time',
+              default=0.5,
+              type=float,
+              help='Time to sleep after attempting to kill the browser processes in seconds.')
 def chrome_bisect_flags_main(local_state_path: Path,
                              subprocess_name: str = 'chrome',
                              sleep_time: float = 0.5) -> None:
@@ -130,26 +122,22 @@ def chrome_bisect_flags_main(local_state_path: Path,
 @click.argument('app_id')
 @click.argument('icon_src_uri')
 @click.option('-M', '--monochrome', help='Copy icons to monochrome directory.', is_flag=True)
-@click.option(
-    '-c',
-    '--config-path',
-    help='Chromium browser configuration path. Defaults to Google Chrome.',
-    default=CHROME_DEFAULT_CONFIG_PATH,
-    type=click.Path(exists=True, path_type=Path),
-)
+@click.option('-c',
+              '--config-path',
+              help='Chromium browser configuration path. Defaults to Google Chrome.',
+              default=CHROME_DEFAULT_CONFIG_PATH,
+              type=click.Path(exists=True, path_type=Path))
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('-m', '--masked', help='Copy icons to masked directory.', is_flag=True)
 @click.option('-p', '--profile', help='Profile name.', default='Default')
-def fix_chromium_pwa_icon_main(
-    config_path: Path,
-    app_id: str,
-    icon_src_uri: str,
-    profile: str = 'Default',
-    *,
-    debug: bool = False,
-    masked: bool = False,
-    monochrome: bool = False,
-) -> None:
+def fix_chromium_pwa_icon_main(config_path: Path,
+                               app_id: str,
+                               icon_src_uri: str,
+                               profile: str = 'Default',
+                               *,
+                               debug: bool = False,
+                               masked: bool = False,
+                               monochrome: bool = False) -> None:
     """
     Fix a Chromium PWA icon that failed to sync.
 

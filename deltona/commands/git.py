@@ -73,14 +73,12 @@ def git_checkout_default_branch_main(username: str,
               '--remote',
               is_flag=True,
               help='Rebase with the origin copy of the default branch.')
-def git_rebase_default_branch_main(
-    username: str,
-    base_url: str | None = None,
-    origin_name: str = 'origin',
-    *,
-    debug: bool = False,
-    remote: bool = False,
-) -> None:
+def git_rebase_default_branch_main(username: str,
+                                   base_url: str | None = None,
+                                   origin_name: str = 'origin',
+                                   *,
+                                   debug: bool = False,
+                                   remote: bool = False) -> None:
     """
     Rebase the current head with the default branch.
 
@@ -135,16 +133,14 @@ def git_open_main(name: str = 'origin') -> None:
               help='Specific repository to process as NAME or OWNER/NAME. '
               'May be passed multiple times.')
 @click.option('-u', '--username', default=getpass.getuser(), help='Username.')
-def merge_dependabot_prs_main(
-    username: str,
-    repos: tuple[str, ...] = (),
-    base_url: str | None = None,
-    delay: float = 120,
-    concurrency: int = 1,
-    max_concurrent_http_requests: int = 3,
-    *,
-    debug: bool = False,
-) -> None:
+def merge_dependabot_prs_main(username: str,
+                              repos: tuple[str, ...] = (),
+                              base_url: str | None = None,
+                              delay: float = 120,
+                              concurrency: int = 1,
+                              max_concurrent_http_requests: int = 3,
+                              *,
+                              debug: bool = False) -> None:
     """Merge pull requests made by Dependabot on GitHub."""  # noqa: DOC501
     import keyring  # noqa: PLC0415
 

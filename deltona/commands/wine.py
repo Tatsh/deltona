@@ -82,14 +82,12 @@ def unix2wine_main(filepath: str) -> None:
               is_flag=True)
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('-p', '--prefix', help='Wine prefix path or name.')
-def winegoginstall_main(
-    args: Sequence[str],
-    filename: Path,
-    prefix: str,
-    *,
-    debug: bool = False,
-    very_silent: bool = False,
-) -> None:
+def winegoginstall_main(args: Sequence[str],
+                        filename: Path,
+                        prefix: str,
+                        *,
+                        debug: bool = False,
+                        very_silent: bool = False) -> None:
     """
     Silent installer for GOG InnoSetup-based releases.
 
@@ -106,22 +104,14 @@ def winegoginstall_main(
     env = {
         'DISPLAY': os.environ.get('DISPLAY', ''),
         'XAUTHORITY': os.environ.get('XAUTHORITY', ''),
-        'WINEDEBUG': 'fixme-all',
+        'WINEDEBUG': 'fixme-all'
     }
     very_silent_args = ('/SP-', '/SUPPRESSMSGBOXES', '/VERYSILENT') if very_silent else ('/SILENT',)
     if prefix:
         env['WINEPREFIX'] = (prefix if Path(prefix).exists() else str(
             (Path('~/.local/share/wineprefixes') / prefix).expanduser()))
-    cmd = (
-        'wine',
-        str(filename),
-        '/CLOSEAPPLICATIONS',
-        '/FORCECLOSEAPPLICATIONS',
-        '/NOCANCEL',
-        '/NORESTART',
-        *very_silent_args,
-        *args,
-    )
+    cmd = ('wine', str(filename), '/CLOSEAPPLICATIONS', '/FORCECLOSEAPPLICATIONS', '/NOCANCEL',
+           '/NORESTART', *very_silent_args, *args)
     log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
     click.echo('Be very patient especially if this release is large.', err=True)
     try:
@@ -183,12 +173,10 @@ def set_wine_fonts_main(dpi: int = DEFAULT_DPI,
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
-@click.option(
-    '-e',
-    '--exe',
-    help='EXE to patch.',
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
-)
+@click.option('-e',
+              '--exe',
+              help='EXE to patch.',
+              type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option('-f', '--font', default='Noto Sans Regular', help='Font to use.')
 def patch_ultraiso_font_main(exe: Path | None = None,
                              font: str = 'Noto Sans',

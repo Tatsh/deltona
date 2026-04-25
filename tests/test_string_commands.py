@@ -32,9 +32,8 @@ if TYPE_CHECKING:
     [
         ('hello', 0),
         # cspell: disable-next-line  # noqa: ERA001
-        ('héllo', 1),
-    ],
-)
+        ('héllo', 1)
+    ])
 def test_is_ascii_main(runner: CliRunner, mocker: MockerFixture, tmp_path: Path, input_str: str,
                        expected: int) -> None:
     input_file = tmp_path / 'test_is_ascii.txt'
@@ -212,7 +211,7 @@ def test_cssq_prints_json_lines(runner: CliRunner, mocker: MockerFixture, tmp_pa
     mocker.patch('deltona.commands.string.cssq', return_value=['A', 'B'])
     mock_json = mocker.patch(
         'deltona.commands.string.json.dumps',
-        side_effect=lambda x, *a, **kw: f'"{x}"',  # noqa: ARG005
+        side_effect=lambda x, *a, **kw: f'"{x}"'  # noqa: ARG005
     )
     result = runner.invoke(cssq_main, ['-j', '-s', '-t', 'div', str(input_file)])
     assert result.exit_code == 0

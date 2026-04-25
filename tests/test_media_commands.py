@@ -36,26 +36,18 @@ class _ReturnCodeType(enum.IntEnum):
     FAILURE = enum.auto()
 
 
-@pytest.mark.parametrize(
-    ('input_', 'cdda_return', 'return_code_type'),
-    [
-        ('', None, _ReturnCodeType.FAILURE),
-        ('01:23:45', None, _ReturnCodeType.FAILURE),
-        ('01:23:45', '01:23:45', _ReturnCodeType.SUCCESS),
-        ('00:00:00', '00:00:00', _ReturnCodeType.SUCCESS),
-        ('12:34:00', '12:34:00', _ReturnCodeType.SUCCESS),
-        ('01:02:03', '01:02:03', _ReturnCodeType.SUCCESS),
-        ('01:02:00', '01:02:00', _ReturnCodeType.SUCCESS),
-        ('00:01:', None, _ReturnCodeType.FAILURE),
-    ],
-)
-def test_add_cdda_times_main_success(
-    input_: str,
-    cdda_return: str,
-    return_code_type: _ReturnCodeType,
-    mocker: MockerFixture,
-    runner: CliRunner,
-) -> None:
+@pytest.mark.parametrize(('input_', 'cdda_return', 'return_code_type'),
+                         [('', None, _ReturnCodeType.FAILURE),
+                          ('01:23:45', None, _ReturnCodeType.FAILURE),
+                          ('01:23:45', '01:23:45', _ReturnCodeType.SUCCESS),
+                          ('00:00:00', '00:00:00', _ReturnCodeType.SUCCESS),
+                          ('12:34:00', '12:34:00', _ReturnCodeType.SUCCESS),
+                          ('01:02:03', '01:02:03', _ReturnCodeType.SUCCESS),
+                          ('01:02:00', '01:02:00', _ReturnCodeType.SUCCESS),
+                          ('00:01:', None, _ReturnCodeType.FAILURE)])
+def test_add_cdda_times_main_success(input_: str, cdda_return: str,
+                                     return_code_type: _ReturnCodeType, mocker: MockerFixture,
+                                     runner: CliRunner) -> None:
     mocker.patch('deltona.commands.media.add_cdda_times', return_value=cdda_return)
     result = runner.invoke(add_cdda_times_main, [input_])
     if return_code_type == _ReturnCodeType.SUCCESS:
@@ -147,10 +139,8 @@ def test_display_info_json_main_subprocess_error(mocker: MockerFixture, runner: 
                                                  tmp_path: Path) -> None:
     f = tmp_path / 'file.mp3'
     f.write_text('dummy')
-    mocker.patch(
-        'deltona.commands.media.get_info_json',
-        side_effect=sp.CalledProcessError(returncode=1, cmd='ffprobe', output='Error'),
-    )
+    mocker.patch('deltona.commands.media.get_info_json',
+                 side_effect=sp.CalledProcessError(returncode=1, cmd='ffprobe', output='Error'))
     result = runner.invoke(display_info_json_main, [str(f)])
     assert result.exit_code != 0
 
@@ -370,10 +360,8 @@ def test_flac_dir_finalize_main(mocker: MockerFixture, runner: CliRunner, tmp_pa
     img.write_text('dummy')
     mocker.patch('deltona.commands.media.underscorize', side_effect=lambda x: x)
     mocker.patch('deltona.commands.media.make_sfv')
-    mocker.patch(
-        'deltona.commands.media.sp.run',
-        return_value=mocker.MagicMock(
-            stdout='tracknumber=1\nartist=Artist\ntitle=Title\nunknown\n'),
-    )
+    mocker.patch('deltona.commands.media.sp.run',
+                 return_value=mocker.MagicMock(
+                     stdout='tracknumber=1\nartist=Artist\ntitle=Title\nunknown\n'))
     result = runner.invoke(flac_dir_finalize_main, [str(d)])
     assert result.exit_code == 0

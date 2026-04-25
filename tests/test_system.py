@@ -178,12 +178,7 @@ def test_find_bluetooth_device_info_by_name_success(monkeypatch: pytest.MonkeyPa
     }
     monkeypatch.setattr('pydbus.SystemBus', fsb)
     result = find_bluetooth_device_info_by_name('TestDevice')
-    assert result == (
-        '/org/bluez/hci0/dev_00_11_22_33_44_55',
-        {
-            'Name': 'TestDevice'
-        },
-    )
+    assert result == ('/org/bluez/hci0/dev_00_11_22_33_44_55', {'Name': 'TestDevice'})
     mock_bluez.GetManagedObjects.assert_called_once()
 
 
@@ -310,11 +305,8 @@ def test_kill_wine_kills_wine_processes(mocker: MockerFixture) -> None:
 
     def mock_process_iter(*args: Any, **kwargs: Any) -> list[Any]:
         return [
-            mock_proc_wineserver,
-            mock_proc_wine_preloader,
-            mock_proc_wine64_preloader,
-            mock_proc_exe,
-            mock_proc_other,
+            mock_proc_wineserver, mock_proc_wine_preloader, mock_proc_wine64_preloader,
+            mock_proc_exe, mock_proc_other
         ]
 
     mocker.patch('psutil.process_iter', mock_process_iter)
@@ -365,8 +357,7 @@ def test_reset_tpm_enrollment_dry_run_logs(mocker: MockerFixture) -> None:
     mock_sp_run.assert_called_with(
         ('cryptsetup', 'luksDump', '--dump-json-metadata', f'/dev/disk/by-uuid/{uuid}'),
         check=True,
-        capture_output=True,
-    )
+        capture_output=True)
 
 
 def test_reset_tpm_enrollment_no_tokens(mocker: MockerFixture) -> None:
@@ -511,12 +502,10 @@ def test_get_kwriteconfig_commands_skips_metrics_and_state(mocker: MockerFixture
     mock_config = mocker.patch('deltona.system.configparser.ConfigParser')
     config_instance = mock_config.return_value
     config_instance.sections.return_value = ['General']
-    config_instance.__getitem__.return_value.items.return_value = [
-        ('Height', '100'),
-        ('State', 'AAAA/'),
-        ('Special[$e]', 'foo'),
-        ('NormalKey', 'bar'),
-    ]
+    config_instance.__getitem__.return_value.items.return_value = [('Height', '100'),
+                                                                   ('State', 'AAAA/'),
+                                                                   ('Special[$e]', 'foo'),
+                                                                   ('NormalKey', 'bar')]
 
     mocker.patch('binaryornot.helpers.is_binary_string', return_value=False)
     mocker.patch('deltona.system.Path.exists', return_value=False)
@@ -547,12 +536,10 @@ def test_get_kwriteconfig_commands_type_detection(mocker: MockerFixture) -> None
     mock_config = mocker.patch('deltona.system.configparser.ConfigParser')
     config_instance = mock_config.return_value
     config_instance.sections.return_value = ['General']
-    config_instance.__getitem__.return_value.items.return_value = [
-        ('BoolKey', 'true'),
-        ('IntKey', '42'),
-        ('PathKey', '/some/file'),
-        ('StringKey', 'hello'),
-    ]
+    config_instance.__getitem__.return_value.items.return_value = [('BoolKey', 'true'),
+                                                                   ('IntKey', '42'),
+                                                                   ('PathKey', '/some/file'),
+                                                                   ('StringKey', 'hello')]
     mocker.patch('binaryornot.helpers.is_binary_string', return_value=False)
 
     def fake_exists(path: Path) -> bool:
@@ -587,12 +574,10 @@ def test_get_kwriteconfig_commands_type_detection_path_not_file(mocker: MockerFi
     mock_config = mocker.patch('deltona.system.configparser.ConfigParser')
     config_instance = mock_config.return_value
     config_instance.sections.return_value = ['General']
-    config_instance.__getitem__.return_value.items.return_value = [
-        ('BoolKey', 'true'),
-        ('IntKey', '42'),
-        ('PathKey', '/some/file'),
-        ('StringKey', 'hello'),
-    ]
+    config_instance.__getitem__.return_value.items.return_value = [('BoolKey', 'true'),
+                                                                   ('IntKey', '42'),
+                                                                   ('PathKey', '/some/file'),
+                                                                   ('StringKey', 'hello')]
     mocker.patch('binaryornot.helpers.is_binary_string', return_value=False)
 
     def fake_match(pattern: str, value: str, *, flags: int = 0) -> bool | None:
@@ -652,12 +637,10 @@ def test_get_kconfig_dict(mocker: MockerFixture) -> None:
     mock_config = mocker.patch('deltona.system.configparser.ConfigParser')
     config_instance = mock_config.return_value
     config_instance.sections.return_value = ['General']
-    config_instance.__getitem__.return_value.items.return_value = [
-        ('BoolKey', 'true'),
-        ('IntKey', '42'),
-        ('PathKey', '/some/file'),
-        ('StringKey', 'hello'),
-    ]
+    config_instance.__getitem__.return_value.items.return_value = [('BoolKey', 'true'),
+                                                                   ('IntKey', '42'),
+                                                                   ('PathKey', '/some/file'),
+                                                                   ('StringKey', 'hello')]
 
     assert get_kconfig_dict() == {
         'General': {

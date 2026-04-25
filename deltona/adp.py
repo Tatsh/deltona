@@ -91,98 +91,86 @@ async def calculate_salary(*,
     check_date = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
     gross_pay = hours * pay_rate
     async with AsyncSession() as session:
-        req = await session.post(
-            POST_URI,
-            headers={
-                'accept': 'application/json, text/javascript, */*; q=0.01',
-                'cache-control': 'no-cache',
-                'dnt': '1',
-                'origin': 'https://www.symmetry.com',
-                'pcc-api-key': API_KEY,
-                'referer': REFERER,
-            },
-            json={
-                'checkDate': check_date,
-                'state': state.upper(),
-                'rates': [{
-                    'payRate': str(pay_rate),
-                    'hours': str(hours),
-                }],
-                'grossPay': str(gross_pay),
-                'grossPayType': 'PAY_PER_PERIOD',
-                'grossPayYTD': '0',
-                'payFrequency': 'MONTHLY',
-                'exemptFederal': 'false',
-                'exemptFica': 'false',
-                'exemptMedicare': 'false',
-                'federalFilingStatusType': 'SINGLE',
-                'federalAllowances': '0',
-                'additionalFederalWithholding': '0',
-                'roundFederalWithholding': 'false',
-                'print': {
-                    'checkDate': check_date,
-                    'checkNumber': '',
-                    'checkNumberOnCheck': 'false',
-                    'companyAddressLine1': '',
-                    'companyAddressLine2': '',
-                    'companyAddressLine3': '',
-                    'companyName': '',
-                    'companyNameOnCheck': 'false',
-                    'employeeAddressLine1': '',
-                    'employeeAddressLine2': '',
-                    'employeeAddressLine3': '',
-                    'employeeName': '',
-                    'id': '',
-                    'remarks': '',
-                },
-                'otherIncome': [],
-                'payCodes': [],
-                'stockOptions': [],
-                'stateInfo': {
-                    'parms': [
-                        {
-                            'name': 'TOTALALLOWANCES',
-                            'value': '0'
-                        },
-                        {
-                            'name': 'additionalStateWithholding',
-                            'value': '0'
-                        },
-                        {
-                            'name': 'SPOUSEBLINDNESS',
-                            'value': 'false'
-                        },
-                        {
-                            'name': 'stateExemption',
-                            'value': 'false'
-                        },
-                        {
-                            'name': 'PERSONALBLINDNESS',
-                            'value': 'false'
-                        },
-                        {
-                            'name': 'HEADOFHOUSEHOLD',
-                            'value': 'false'
-                        },
-                        {
-                            'name': 'FULLTIMESTUDENT',
-                            'value': 'false'
-                        },
-                    ]
-                },
-                'voluntaryDeductions': [],
-                'presetDeductions': [],
-            },
-            timeout=30,
-        )
+        req = await session.post(POST_URI,
+                                 headers={
+                                     'accept': 'application/json, text/javascript, */*; q=0.01',
+                                     'cache-control': 'no-cache',
+                                     'dnt': '1',
+                                     'origin': 'https://www.symmetry.com',
+                                     'pcc-api-key': API_KEY,
+                                     'referer': REFERER
+                                 },
+                                 json={
+                                     'checkDate': check_date,
+                                     'state': state.upper(),
+                                     'rates': [{
+                                         'payRate': str(pay_rate),
+                                         'hours': str(hours)
+                                     }],
+                                     'grossPay': str(gross_pay),
+                                     'grossPayType': 'PAY_PER_PERIOD',
+                                     'grossPayYTD': '0',
+                                     'payFrequency': 'MONTHLY',
+                                     'exemptFederal': 'false',
+                                     'exemptFica': 'false',
+                                     'exemptMedicare': 'false',
+                                     'federalFilingStatusType': 'SINGLE',
+                                     'federalAllowances': '0',
+                                     'additionalFederalWithholding': '0',
+                                     'roundFederalWithholding': 'false',
+                                     'print': {
+                                         'checkDate': check_date,
+                                         'checkNumber': '',
+                                         'checkNumberOnCheck': 'false',
+                                         'companyAddressLine1': '',
+                                         'companyAddressLine2': '',
+                                         'companyAddressLine3': '',
+                                         'companyName': '',
+                                         'companyNameOnCheck': 'false',
+                                         'employeeAddressLine1': '',
+                                         'employeeAddressLine2': '',
+                                         'employeeAddressLine3': '',
+                                         'employeeName': '',
+                                         'id': '',
+                                         'remarks': ''
+                                     },
+                                     'otherIncome': [],
+                                     'payCodes': [],
+                                     'stockOptions': [],
+                                     'stateInfo': {
+                                         'parms': [{
+                                             'name': 'TOTALALLOWANCES',
+                                             'value': '0'
+                                         }, {
+                                             'name': 'additionalStateWithholding',
+                                             'value': '0'
+                                         }, {
+                                             'name': 'SPOUSEBLINDNESS',
+                                             'value': 'false'
+                                         }, {
+                                             'name': 'stateExemption',
+                                             'value': 'false'
+                                         }, {
+                                             'name': 'PERSONALBLINDNESS',
+                                             'value': 'false'
+                                         }, {
+                                             'name': 'HEADOFHOUSEHOLD',
+                                             'value': 'false'
+                                         }, {
+                                             'name': 'FULLTIMESTUDENT',
+                                             'value': 'false'
+                                         }]
+                                     },
+                                     'voluntaryDeductions': [],
+                                     'presetDeductions': []
+                                 },
+                                 timeout=30)
     req.raise_for_status()
     data = cast('ResponseDict', req.json())['content']
-    return SalaryResponse(
-        federal=data['federal'],
-        fica=data['fica'],
-        fuckery=gross_pay - data['netPay'],
-        gross=gross_pay,
-        medicare=data['medicare'],
-        net_pay=data['netPay'],
-        state=data['state'],
-    )
+    return SalaryResponse(federal=data['federal'],
+                          fica=data['fica'],
+                          fuckery=gross_pay - data['netPay'],
+                          gross=gross_pay,
+                          medicare=data['medicare'],
+                          net_pay=data['netPay'],
+                          state=data['state'])

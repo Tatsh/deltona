@@ -22,12 +22,8 @@ if TYPE_CHECKING:
     from github.PullRequest import PullRequest
     from github.Repository import Repository
 
-__all__ = (
-    'DependabotMergeError',
-    'convert_git_ssh_url_to_https',
-    'get_github_default_branch',
-    'merge_dependabot_pull_requests',
-)
+__all__ = ('DependabotMergeError', 'convert_git_ssh_url_to_https', 'get_github_default_branch',
+           'merge_dependabot_pull_requests')
 
 _T = TypeVar('_T')
 log = logging.getLogger(__name__)
@@ -62,15 +58,11 @@ def convert_git_ssh_url_to_https(url: str) -> str:
     if url.startswith('https://'):
         return re.sub(r'\.git$', '', url)
     return re.sub(
-        r'\.git$',
-        '',
-        re.sub(
-            r'\.([a-z]+):',
-            r'.\1/',
-            re.sub(r'^(?:ssh://)?(?:[a-z0-9A-Z]+@)?', 'https://', url, count=1),
-            count=1,
-        ),
-    )
+        r'\.git$', '',
+        re.sub(r'\.([a-z]+):',
+               r'.\1/',
+               re.sub(r'^(?:ssh://)?(?:[a-z0-9A-Z]+@)?', 'https://', url, count=1),
+               count=1))
 
 
 def get_github_default_branch(*,

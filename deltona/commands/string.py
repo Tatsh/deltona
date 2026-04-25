@@ -13,14 +13,7 @@ import sys
 from bascom import setup_logging
 from deltona import naming
 from deltona.constants import CONTEXT_SETTINGS
-from deltona.string import (
-    cssq,
-    fullwidth_to_narrow,
-    is_ascii,
-    sanitize,
-    slugify,
-    underscorize,
-)
+from deltona.string import cssq, fullwidth_to_narrow, is_ascii, sanitize, slugify, underscorize
 from deltona.typing import DecodeErrorsOption
 import click
 
@@ -43,8 +36,7 @@ def is_ascii_main(file: TextIO) -> None:
     '--errors',
     default='strict',
     type=click.Choice(DecodeErrorsOption.__args__),  # type: ignore[attr-defined]
-    help='Error handling mode.',
-)
+    help='Error handling mode.')
 @click.argument('file', type=click.File('r'), default=sys.stdin)
 def urldecode_main(file: TextIO,
                    encoding: str = 'utf-8',
@@ -171,23 +163,19 @@ def slugify_main(file: TextIO, *, no_lower: bool = False) -> None:
 @click.option('-c', '--chinese', help='Enable Chinese mode.', is_flag=True)
 @click.option('-j', '--japanese', help='Enable Japanese mode.', is_flag=True)
 @click.option('-s', '--ampersands', help='Replace " and " with " & ".', is_flag=True)
-def title_fixer_main(
-    titles: tuple[str, ...],
-    *,
-    no_english: bool = False,
-    chinese: bool = False,
-    japanese: bool = False,
-    arabic: bool = False,
-    no_names: bool = False,
-    ampersands: bool = False,
-) -> None:
+def title_fixer_main(titles: tuple[str, ...],
+                     *,
+                     no_english: bool = False,
+                     chinese: bool = False,
+                     japanese: bool = False,
+                     arabic: bool = False,
+                     no_names: bool = False,
+                     ampersands: bool = False) -> None:
     """Fix titles."""  # noqa: DOC501
-    modes = (
-        *((naming.Mode.Arabic,) if arabic else ()),
-        *((naming.Mode.Chinese,) if chinese else ()),
-        *((naming.Mode.English,) if not no_english else ()),
-        *((naming.Mode.Japanese,) if japanese else ()),
-    )
+    modes = (*((naming.Mode.Arabic,) if arabic else
+               ()), *((naming.Mode.Chinese,) if chinese else
+                      ()), *((naming.Mode.English,) if not no_english else
+                             ()), *((naming.Mode.Japanese,) if japanese else ()))
     if not modes:
         click.echo('No modes specified.', err=True)
         raise click.Abort
@@ -208,17 +196,15 @@ def title_fixer_main(
 @click.option('-j', '--json', 'json_lines', is_flag=True, help='Output as JSON lines.')
 @click.option('-s', '--strip', is_flag=True, help='Strip whitespace from text content.')
 @click.option('-t', '--text', is_flag=True, help='Output content within the HTML tags only.')
-def cssq_main(
-    file: TextIO,
-    selector: str,
-    limit: int = 0,
-    *,
-    debug: bool = False,
-    debug_selector: bool = False,
-    json_lines: bool = False,
-    strip: bool = False,
-    text: bool = False,
-) -> None:
+def cssq_main(file: TextIO,
+              selector: str,
+              limit: int = 0,
+              *,
+              debug: bool = False,
+              debug_selector: bool = False,
+              json_lines: bool = False,
+              strip: bool = False,
+              text: bool = False) -> None:
     """Filter HTML with CSS."""
     setup_logging(debug=debug, loggers={'bs4': {}, 'deltona': {}, 'soupsieve': {}})
     for item in cssq(selector,

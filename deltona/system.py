@@ -24,24 +24,11 @@ from .typing import CDStatus, StrPath, StrPathMustExist
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-__all__ = (
-    'CHROME_DEFAULT_CONFIG_PATH',
-    'CHROME_DEFAULT_LOCAL_STATE_PATH',
-    'IS_LINUX',
-    'MultipleKeySlots',
-    'find_bluetooth_device_info_by_name',
-    'get_kwriteconfig_commands',
-    'inhibit_notifications',
-    'kill_gamescope',
-    'kill_wine',
-    'pan_connect',
-    'pan_disconnect',
-    'patch_macos_bundle_info_plist',
-    'reset_tpm_enrollment',
-    'slug_rename',
-    'uninhibit_notifications',
-    'wait_for_disc',
-)
+__all__ = ('CHROME_DEFAULT_CONFIG_PATH', 'CHROME_DEFAULT_LOCAL_STATE_PATH', 'IS_LINUX',
+           'MultipleKeySlots', 'find_bluetooth_device_info_by_name', 'get_kwriteconfig_commands',
+           'inhibit_notifications', 'kill_gamescope', 'kill_wine', 'pan_connect', 'pan_disconnect',
+           'patch_macos_bundle_info_plist', 'reset_tpm_enrollment', 'slug_rename',
+           'uninhibit_notifications', 'wait_for_disc')
 
 CDROM_DRIVE_STATUS = 0x5326
 IS_LINUX = sys.platform == 'linux'
@@ -377,12 +364,8 @@ def reset_tpm_enrollment(uuid: str, *, dry_run: bool = True) -> None:
 
 
 IGNORED_GROUPS = {
-    'KFileDialog Settings',
-    'FileDialogSize',
-    'Recent Files[$e]',
-    'Recent URLs[$e]',
-    'Recent Files',
-    '$Version',
+    'KFileDialog Settings', 'FileDialogSize', 'Recent Files[$e]', 'Recent URLs[$e]', 'Recent Files',
+    '$Version'
 }
 DEFAULT_FILE = Path.home() / '.config' / 'kdeglobals'
 POSITION_RE = (

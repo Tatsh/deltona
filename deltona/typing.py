@@ -13,21 +13,9 @@ from typing_extensions import NotRequired
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-__all__ = (
-    'CDStatus',
-    'DecodeErrorsOption',
-    'FileDescriptorOrPath',
-    'FormatDict',
-    'INCITS38Code',
-    'ProbeDict',
-    'StrOrBytesPath',
-    'StrPath',
-    'StreamDispositionDict',
-    'StreamsDict',
-    'UNIXStrPath',
-    'assert_not_none',
-    'contains_type_path_like_str',
-)
+__all__ = ('CDStatus', 'DecodeErrorsOption', 'FileDescriptorOrPath', 'FormatDict', 'INCITS38Code',
+           'ProbeDict', 'StrOrBytesPath', 'StrPath', 'StreamDispositionDict', 'StreamsDict',
+           'UNIXStrPath', 'assert_not_none', 'contains_type_path_like_str')
 
 DecodeErrorsOption: TypeAlias = Literal['ignore', 'replace', 'strict']
 """
@@ -35,68 +23,12 @@ Decode errors option for string decoding functions.
 
 :meta hide-value:
 """
-INCITS38Code: TypeAlias = Literal[
-    'AK',
-    'AL',
-    'AR',
-    'AS',
-    'AZ',
-    'CA',
-    'CO',
-    'CT',
-    'DC',
-    'DE',
-    'FL',
-    'FM',
-    'GA',
-    'GU',
-    'HI',
-    'IA',
-    'ID',
-    'IL',
-    'IN',
-    'KS',
-    'KY',
-    'LA',
-    'MA',
-    'MD',
-    'ME',
-    'MH',
-    'MI',
-    'MN',
-    'MO',
-    'MP',
-    'MS',
-    'MT',
-    'NC',
-    'ND',
-    'NE',
-    'NH',
-    'NJ',
-    'NM',
-    'NV',
-    'NY',
-    'OH',
-    'OK',
-    'OR',
-    'PA',
-    'PR',
-    'PW',
-    'RI',
-    'SC',
-    'SD',
-    'TN',
-    'TX',
-    'UM',
-    'UT',
-    'VA',
-    'VI',
-    'VT',
-    'WA',
-    'WI',
-    'WV',
-    'WY',
-]
+INCITS38Code: TypeAlias = Literal['AK', 'AL', 'AR', 'AS', 'AZ', 'CA', 'CO', 'CT', 'DC', 'DE', 'FL',
+                                  'FM', 'GA', 'GU', 'HI', 'IA', 'ID', 'IL', 'IN', 'KS', 'KY', 'LA',
+                                  'MA', 'MD', 'ME', 'MH', 'MI', 'MN', 'MO', 'MP', 'MS', 'MT', 'NC',
+                                  'ND', 'NE', 'NH', 'NJ', 'NM', 'NV', 'NY', 'OH', 'OK', 'OR', 'PA',
+                                  'PR', 'PW', 'RI', 'SC', 'SD', 'TN', 'TX', 'UM', 'UT', 'VA', 'VI',
+                                  'VT', 'WA', 'WI', 'WV', 'WY']
 """
 Two-letter state code according to INCITS 38-2009.
 

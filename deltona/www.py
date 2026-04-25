@@ -29,20 +29,10 @@ if TYPE_CHECKING:
 
     from .typing import FileDescriptorOrPath, StrPath
 
-__all__ = (
-    'BookmarksDataset',
-    'BookmarksHTMLAnchorAttributes',
-    'BookmarksHTMLFolder',
-    'BookmarksHTMLFolderAttributes',
-    'BookmarksHTMLLink',
-    'RecurseBookmarksHTMLCallback',
-    'check_bookmarks_html_urls',
-    'generate_html_dir_tree',
-    'parse_bookmarks_html',
-    'recurse_bookmarks_html',
-    'upload_to_imgbb',
-    'where_from',
-)
+__all__ = ('BookmarksDataset', 'BookmarksHTMLAnchorAttributes', 'BookmarksHTMLFolder',
+           'BookmarksHTMLFolderAttributes', 'BookmarksHTMLLink', 'RecurseBookmarksHTMLCallback',
+           'check_bookmarks_html_urls', 'generate_html_dir_tree', 'parse_bookmarks_html',
+           'recurse_bookmarks_html', 'upload_to_imgbb', 'where_from')
 
 log = logging.getLogger(__name__)
 KEY_ORIGIN_URL = 'user.xdg.origin.url'
@@ -103,10 +93,8 @@ def generate_html_dir_tree(start_dir: StrPath,
         Complete HTML document string.
     """
     def recurse_cwd(path: Path, _cur_depth: int = 0) -> Iterator[str]:
-        for entry in sorted(
-                sorted(scandir(path), key=lambda x: x.name),
-                key=lambda x: not x.is_dir(follow_symlinks=follow_symlinks),
-        ):
+        for entry in sorted(sorted(scandir(path), key=lambda x: x.name),
+                            key=lambda x: not x.is_dir(follow_symlinks=follow_symlinks)):
             if entry.is_dir(follow_symlinks=follow_symlinks) and _cur_depth < depth:
                 yield ('<li class="dir mui--text-dark mui--text-body2"><details><summary>'
                        f'<code>{escape(entry.name)}/</code></summary><ul>')
@@ -163,13 +151,11 @@ ul {{
         os.chdir(saved)
 
 
-async def upload_to_imgbb(
-    path: StrPath,
-    *,
-    api_key: str | None = None,
-    keyring_username: str | None = None,
-    http_timeout: float = 5,
-) -> Response:
+async def upload_to_imgbb(path: StrPath,
+                          *,
+                          api_key: str | None = None,
+                          keyring_username: str | None = None,
+                          http_timeout: float = 5) -> Response:
     """
     Upload an image to ImgBB.
 
@@ -199,8 +185,7 @@ async def upload_to_imgbb(
             'https://api.imgbb.com/1/upload',
             files={'image': image_data},
             params={'key': api_key or keyring.get_password('imgbb', keyring_username or getuser())},
-            timeout=http_timeout,
-        )
+            timeout=http_timeout)
     r.raise_for_status()
     return r
 
@@ -304,16 +289,11 @@ def recurse_bookmarks_html(soup: Tag, callback: RecurseBookmarksHTMLCallback) ->
                     if parent.name == 'dl' and (h3 := parent.find_previous_sibling('h3')):
                         if not isinstance(h3, Tag_):
                             continue
-                        folder_path.append((
-                            stripped_strings_fixed(h3),
-                            cast('BookmarksHTMLFolderAttributes', h3.attrs),
-                        ))
+                        folder_path.append((stripped_strings_fixed(h3),
+                                            cast('BookmarksHTMLFolderAttributes', h3.attrs)))
                         break
-                callback(
-                    cast('BookmarksHTMLAnchorAttributes', child.attrs),
-                    stripped_strings_fixed(child),
-                    folder_path,
-                )
+                callback(cast('BookmarksHTMLAnchorAttributes', child.attrs),
+                         stripped_strings_fixed(child), folder_path)
 
 
 def create_parsed_tree_structure(
@@ -330,7 +310,7 @@ def create_parsed_tree_structure(
                 'attrs': folder_path[i][1],
                 'children': [],
                 'name': key,
-                'type': 'folder',
+                'type': 'folder'
             }
             ref.append(new_level)
             ref = new_level['children']
@@ -355,11 +335,8 @@ def parse_bookmarks_html(html_content: str) -> BookmarksDataset:
 
     data: BookmarksDataset = []
 
-    def callback(
-        attrs: BookmarksHTMLAnchorAttributes,
-        title: str,
-        folder_path: Sequence[tuple[str, BookmarksHTMLFolderAttributes]],
-    ) -> None:
+    def callback(attrs: BookmarksHTMLAnchorAttributes, title: str,
+                 folder_path: Sequence[tuple[str, BookmarksHTMLFolderAttributes]]) -> None:
         ref = create_parsed_tree_structure(folder_path, data)
         ref.append({'type': 'link', 'title': title, 'attrs': attrs})
 
@@ -397,11 +374,8 @@ async def check_bookmarks_html_urls(
     bookmarks: list[tuple[BookmarksHTMLAnchorAttributes, str,
                           Sequence[tuple[str, BookmarksHTMLFolderAttributes]]]] = []
 
-    def collect_callback(
-        attrs: BookmarksHTMLAnchorAttributes,
-        title: str,
-        folder_path: Sequence[tuple[str, BookmarksHTMLFolderAttributes]],
-    ) -> None:
+    def collect_callback(attrs: BookmarksHTMLAnchorAttributes, title: str,
+                         folder_path: Sequence[tuple[str, BookmarksHTMLFolderAttributes]]) -> None:
         ref = create_parsed_tree_structure(folder_path, data)
         new_data: BookmarksHTMLLink = {'type': 'link', 'title': title, 'attrs': attrs}
         ref.append(new_data)
@@ -425,22 +399,13 @@ async def check_bookmarks_html_urls(
                     parsed = urllib.parse.urlparse(attrs['href'])
                     port_str = f':{parsed.port}' if parsed.port else ''
                     new_location = f'{parsed.scheme}://{parsed.netloc}{port_str}{new_location}'
-                log.info(
-                    '%d: "%s" @ "%s" -> "%s"',
-                    r.status_code,
-                    ' / '.join([*(f[0] for f in folder_path), title]),
-                    attrs['href'],
-                    new_location,
-                )
+                log.info('%d: "%s" @ "%s" -> "%s"', r.status_code, ' / '.join(
+                    [*(f[0] for f in folder_path), title]), attrs['href'], new_location)
                 attrs['href'] = new_location
                 changed.append(new_data)
             case HTTPStatus.NOT_FOUND:
-                log.error(
-                    '%d: "%s" @ "%s"',
-                    r.status_code,
-                    ' / '.join([*(f[0] for f in folder_path), title]),
-                    attrs['href'],
-                )
+                log.error('%d: "%s" @ "%s"', r.status_code,
+                          ' / '.join([*(f[0] for f in folder_path), title]), attrs['href'])
                 not_found.append(new_data)
 
     async with AsyncSession() as session:
@@ -450,7 +415,7 @@ async def check_bookmarks_html_urls(
             'pragma': 'no-cache',
             'referer': 'https://www.google.com/',
             'upgrade-insecure-requests': '1',
-            'user_agent': await generate_chrome_user_agent(),
+            'user_agent': await generate_chrome_user_agent()
         })
         async with anyio.create_task_group() as tg:
             for attrs, title, folder_path in bookmarks:

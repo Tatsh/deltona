@@ -95,29 +95,20 @@ def test_unregister_wine_file_associations_basic(mocker: MockerFixture) -> None:
     mock_path.home.return_value.__truediv__.return_value.glob.side_effect = [
         [mock_file1, mock_file2],  # wine-extension-*.desktop
         [mock_file3, mock_file4],  # x-wine*
-        [mock_file5, mock_file6],  # x-wine-extension*
+        [mock_file5, mock_file6]  # x-wine-extension*
     ]
     # application-x-wine-extension*
     mock_path.home.return_value.__truediv__.return_value.rglob.return_value = [
-        mock_file7,
-        mock_file8,
+        mock_file7, mock_file8
     ]
     sp_run = mocker.patch('deltona.utils.sp.run')
     unregister_wine_file_associations()
     kill_wine_mock.assert_called_once()
-    for _i, f in enumerate(
-        [
-            mock_file1,
-            mock_file2,
-            mock_file3,
-            mock_file4,
-            mock_file5,
-            mock_file6,
-            mock_file7,
-            mock_file8,
-        ],
-            start=1,
-    ):
+    for _i, f in enumerate([
+            mock_file1, mock_file2, mock_file3, mock_file4, mock_file5, mock_file6, mock_file7,
+            mock_file8
+    ],
+                           start=1):
         f.unlink.assert_called()
     mimeinfo_mock.unlink.assert_called()
     assert sp_run.call_count >= 2
@@ -199,10 +190,9 @@ def test_secure_move_path_directory_basic(mocker: MockerFixture) -> None:
     path_instance.name = 'dir'
     path_instance.stat.return_value = mocker.Mock(st_atime=1.0, st_mtime=2.0)
     client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/remote'), None)
-    mocker.patch(
-        'deltona.utils.os.walk',
-        side_effect=[[('/src', ['subdir'], ['file1', 'file2'])], [('/src', ['subdir'], [])]],
-    )
+    mocker.patch('deltona.utils.os.walk',
+                 side_effect=[[('/src', ['subdir'], ['file1', 'file2'])],
+                              [('/src', ['subdir'], [])]])
     sftp.stat.side_effect = FileNotFoundError
     sftp.mkdir = mocker.Mock()
     sftp.put = mocker.Mock()
@@ -292,10 +282,9 @@ def test_secure_move_path_dir_dry_run_preserve_stats(mocker: MockerFixture) -> N
     path_instance.name = 'dir'
     path_instance.stat.return_value = mocker.Mock(st_atime=1.0, st_mtime=2.0)
     client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/remote'), None)
-    mocker.patch(
-        'deltona.utils.os.walk',
-        side_effect=[[('/src', ['subdir'], ['file1', 'file2'])], [('/src', ['subdir'], [])]],
-    )
+    mocker.patch('deltona.utils.os.walk',
+                 side_effect=[[('/src', ['subdir'], ['file1', 'file2'])],
+                              [('/src', ['subdir'], [])]])
     sftp.stat.side_effect = FileNotFoundError
     sftp.mkdir = mocker.Mock()
     sftp.put = mocker.Mock()
@@ -320,10 +309,9 @@ def test_secure_move_path_dir_preserve_stats_alt(mocker: MockerFixture) -> None:
     path_instance.name = 'dir'
     path_instance.stat.return_value = mocker.Mock(st_atime=1.0, st_mtime=2.0)
     client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/remote'), None)
-    mocker.patch(
-        'deltona.utils.os.walk',
-        side_effect=[[('/src', ['subdir'], ['file1', 'file2'])], [('/src', ['subdir'], [])]],
-    )
+    mocker.patch('deltona.utils.os.walk',
+                 side_effect=[[('/src', ['subdir'], ['file1', 'file2'])],
+                              [('/src', ['subdir'], [])]])
     sftp.stat.side_effect = FileNotFoundError
     sftp.mkdir = mocker.Mock()
     sftp.put = mocker.Mock()
@@ -348,10 +336,9 @@ def test_secure_move_path_dir_preserve_stats_alt_dry_run(mocker: MockerFixture) 
     path_instance.name = 'dir'
     path_instance.stat.return_value = mocker.Mock(st_atime=1.0, st_mtime=2.0)
     client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/remote'), None)
-    mocker.patch(
-        'deltona.utils.os.walk',
-        side_effect=[[('/src', ['subdir'], ['file1', 'file2'])], [('/src', ['subdir'], [])]],
-    )
+    mocker.patch('deltona.utils.os.walk',
+                 side_effect=[[('/src', ['subdir'], ['file1', 'file2'])],
+                              [('/src', ['subdir'], [])]])
     sftp.stat.side_effect = FileNotFoundError
     sftp.mkdir = mocker.Mock()
     sftp.put = mocker.Mock()
@@ -376,10 +363,9 @@ def test_secure_move_path_dir_write_into_no_preserve_stats(mocker: MockerFixture
     path_instance.name = 'dir'
     path_instance.stat.return_value = mocker.Mock(st_atime=1.0, st_mtime=2.0)
     client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/remote'), None)
-    mocker.patch(
-        'deltona.utils.os.walk',
-        side_effect=[[('/src', ['subdir'], ['file1', 'file2'])], [('/src', ['subdir'], [])]],
-    )
+    mocker.patch('deltona.utils.os.walk',
+                 side_effect=[[('/src', ['subdir'], ['file1', 'file2'])],
+                              [('/src', ['subdir'], [])]])
     sftp.stat.side_effect = FileNotFoundError
     sftp.mkdir = mocker.Mock()
     sftp.put = mocker.Mock()
@@ -418,7 +404,7 @@ def test_kill_processes_by_name_windows_with_wait_timeout(mocker: MockerFixture)
     run_mock.side_effect = [
         mocker.Mock(),  # taskkill
         mocker.Mock(
-            stdout='"Image Name","PID"\n"notepad.exe","1234"\n"notepad.exe","5678"\n'),  # tasklist
+            stdout='"Image Name","PID"\n"notepad.exe","1234"\n"notepad.exe","5678"\n')  # tasklist
     ]
     sleep_mock = mocker.patch('deltona.utils.time.sleep')
     result = kill_processes_by_name('notepad', wait_timeout=0.1)
@@ -432,7 +418,7 @@ def test_kill_processes_by_name_unix_with_wait_timeout_and_force(mocker: MockerF
     run_mock.side_effect = [
         mocker.Mock(),  # killall
         mocker.Mock(stdout='1234 bash\n5678 bash\n9999 other\n'),  # ps
-        mocker.Mock(stdout=''),  # kill -9
+        mocker.Mock(stdout='')  # kill -9
     ]
     sleep_mock = mocker.patch('deltona.utils.time.sleep')
     mocker.patch('deltona.utils.Path.name', new_callable=mocker.PropertyMock, return_value='bash')
@@ -447,7 +433,7 @@ def test_kill_processes_by_name_no_processes_left(mocker: MockerFixture,
     run_mock = mocker.patch('deltona.utils.sp.run')
     run_mock.side_effect = [
         mocker.Mock(),  # taskkill
-        mocker.Mock(stdout='"Image Name","PID"\n'),  # tasklist
+        mocker.Mock(stdout='"Image Name","PID"\n')  # tasklist
     ]
     sleep_mock = mocker.patch('deltona.utils.time.sleep')
     result = kill_processes_by_name('notepad', wait_timeout=0.1)

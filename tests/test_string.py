@@ -163,9 +163,8 @@ def test_unix_path_to_wine_path_with_forward_slashes(tmp_path: Path) -> None:
         ('http:/example.com', False),  # only one slash
         ('file://localhost/etc/fstab', True),
         ('custom_proto123://foo', True),
-        ('', False),
-    ],
-)
+        ('', False)
+    ])
 def test_is_url_various_cases(input_str: str, expected: bool) -> None:  # noqa: FBT001
     assert string.is_url(input_str) is expected
 
@@ -178,23 +177,18 @@ def test_is_url_various_cases(input_str: str, expected: bool) -> None:  # noqa: 
         # cspell: disable-next-line  # noqa: ERA001
         ('ａｂｃｄｅｆ', 'abcdef'),
         ('￥１０００', '¥1000'),
-        ('Hello　World！', 'Hello World!'),
-    ],
-)
+        ('Hello　World！', 'Hello World!')
+    ])
 def test_fullwidth_to_narrow_various_cases(input_str: str, expected: str) -> None:
     assert string.fullwidth_to_narrow(input_str) == expected
 
 
 @pytest.mark.parametrize(
-    ('input_str', 'expected'),
-    [
-        ('Hello World!', 'hello-world'),
-        ('Python_is_awesome', 'python-is-awesome'),
-        ('  spaces   and---underscores__ ', 'spaces-and-underscores-'),
-        ('Special@#%&* Chars', 'special-chars'),
-        ('MiXeD CaSe and 123', 'mixed-case-and-123'),
-    ],
-)
+    ('input_str', 'expected'), [('Hello World!', 'hello-world'),
+                                ('Python_is_awesome', 'python-is-awesome'),
+                                ('  spaces   and---underscores__ ', 'spaces-and-underscores-'),
+                                ('Special@#%&* Chars', 'special-chars'),
+                                ('MiXeD CaSe and 123', 'mixed-case-and-123')])
 def test_slugify_various_cases(input_str: str, expected: str) -> None:
     assert string.slugify(input_str) == expected
 
@@ -207,23 +201,17 @@ def test_slugify_various_cases(input_str: str, expected: str) -> None:
         ('MMXXIV', True),  # valid Roman numeral (2024)
         ('IIII', False),  # invalid (should be IV)
         ('abc', False),  # not a Roman numeral
-        ('', False),  # empty string
-    ],
-)
+        ('', False)  # empty string
+    ])
 def test_is_roman_numeral_various_cases(input_str: str, expected: bool) -> None:  # noqa: FBT001
     assert string.is_roman_numeral(input_str) is expected
 
 
-@pytest.mark.parametrize(
-    ('input_sentence', 'expected'),
-    [
-        ('Hello world.', 'World hello.'),
-        ('This is a test!', 'Test a is this!'),
-        ('I am here?', 'Here am I?'),
-        ('Python is fun', 'Fun is python.'),
-        ('Why not try?', 'Try not why?'),
-    ],
-)
+@pytest.mark.parametrize(('input_sentence', 'expected'), [('Hello world.', 'World hello.'),
+                                                          ('This is a test!', 'Test a is this!'),
+                                                          ('I am here?', 'Here am I?'),
+                                                          ('Python is fun', 'Fun is python.'),
+                                                          ('Why not try?', 'Try not why?')])
 def test_rev_sentence_various_cases(input_sentence: str, expected: str) -> None:
     assert string.rev_sentence(input_sentence) == expected
 
@@ -239,9 +227,8 @@ def test_rev_sentence_various_cases(input_sentence: str, expected: str) -> None:
         (['Why not try?', '', 'Hello world.'], ['Try not why?', 'World hello.']),
         (['A single word.'], ['Word single a.']),
         (['i am here.'], ['Here am I.']),  # test 'i' capitalization
-        (['Multiple   spaces here!'], ['Here spaces multiple!']),
-    ],
-)
+        (['Multiple   spaces here!'], ['Here spaces multiple!'])
+    ])
 def test_rev_sentences_various_cases(input_sentences: list[str], expected: list[str]) -> None:
     result = list(string.rev_sentences(input_sentences))
     assert result == expected
@@ -289,10 +276,8 @@ def test_sanitize_replaces_pattern(mocker: MockerFixture) -> None:
 def test_add_unidecode_custom_replacement_adds_to_cache(mocker: MockerFixture) -> None:
     fake_cache: dict[int, Sequence[str | None] | None] = {}
     fake_unidecode = mocker.Mock()
-    mocker.patch(
-        'deltona.string._get_unidecode_cache_and_unidecode',
-        return_value=(fake_cache, fake_unidecode),
-    )
+    mocker.patch('deltona.string._get_unidecode_cache_and_unidecode',
+                 return_value=(fake_cache, fake_unidecode))
     mocker.patch('deltona.string.assert_not_none', side_effect=lambda x: x)
     # Add replacement for 'ø'
     find = 'ø'
@@ -310,10 +295,8 @@ def test_add_unidecode_custom_replacement_adds_to_cache(mocker: MockerFixture) -
 def test_add_unidecode_custom_replacement_overwrites_existing(mocker: MockerFixture) -> None:
     fake_cache: dict[int, Sequence[str | None] | None] = {}
     fake_unidecode = mocker.Mock()
-    mocker.patch(
-        'deltona.string._get_unidecode_cache_and_unidecode',
-        return_value=(fake_cache, fake_unidecode),
-    )
+    mocker.patch('deltona.string._get_unidecode_cache_and_unidecode',
+                 return_value=(fake_cache, fake_unidecode))
     mocker.patch('deltona.string.assert_not_none', side_effect=lambda x: x)
     find = 'ø'
     replace = 'oe'
@@ -330,10 +313,8 @@ def test_add_unidecode_custom_replacement_overwrites_existing(mocker: MockerFixt
 def test_add_unidecode_custom_replacement_handles_existing_tuple(mocker: MockerFixture) -> None:
     fake_cache: dict[int, Sequence[str | None] | None] = {}
     fake_unidecode = mocker.Mock()
-    mocker.patch(
-        'deltona.string._get_unidecode_cache_and_unidecode',
-        return_value=(fake_cache, fake_unidecode),
-    )
+    mocker.patch('deltona.string._get_unidecode_cache_and_unidecode',
+                 return_value=(fake_cache, fake_unidecode))
     mocker.patch('deltona.string.assert_not_none', side_effect=lambda x: x)
     find = 'ø'
     replace = 'oe'
@@ -351,10 +332,8 @@ def test_add_unidecode_custom_replacement_raises_when_section_too_short(
         mocker: MockerFixture) -> None:
     fake_cache: dict[int, Sequence[str | None] | None] = {}
     fake_unidecode = mocker.Mock()
-    mocker.patch(
-        'deltona.string._get_unidecode_cache_and_unidecode',
-        return_value=(fake_cache, fake_unidecode),
-    )
+    mocker.patch('deltona.string._get_unidecode_cache_and_unidecode',
+                 return_value=(fake_cache, fake_unidecode))
     mocker.patch('deltona.string.assert_not_none', side_effect=lambda x: x)
     find = 'ø'
     section = ord(find) >> 8
@@ -366,10 +345,8 @@ def test_add_unidecode_custom_replacement_raises_when_section_too_short(
 def test_add_unidecode_custom_replacement_calls_unidecode(mocker: MockerFixture) -> None:
     fake_cache: dict[int, Sequence[str | None] | None] = {}
     fake_unidecode = mocker.Mock()
-    mocker.patch(
-        'deltona.string._get_unidecode_cache_and_unidecode',
-        return_value=(fake_cache, fake_unidecode),
-    )
+    mocker.patch('deltona.string._get_unidecode_cache_and_unidecode',
+                 return_value=(fake_cache, fake_unidecode))
     mocker.patch('deltona.string.assert_not_none', side_effect=lambda x: x)
     find = 'ø'
     replace = 'oe'

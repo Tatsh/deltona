@@ -110,7 +110,7 @@ async def test_check_bookmarks_html_urls_basic(mocker: MockerFixture) -> None:
     mock_session.head = mocker.AsyncMock(
         side_effect=_make_head_side_effect(mocker, {
             'https://example.com': (200, {}),
-            'https://notfound.com': (404, {}),
+            'https://notfound.com': (404, {})
         }))
     mock_session.headers = {}
     mock_async_session = mocker.patch('deltona.www.AsyncSession')
@@ -137,12 +137,10 @@ async def test_check_bookmarks_html_urls_redirect(mocker: MockerFixture) -> None
     </DL>
     """
     mock_session = mocker.MagicMock()
-    mock_session.head = mocker.AsyncMock(
-        side_effect=_make_head_side_effect(mocker, {
-            'https://redirect.com': (301, {
-                'location': '/new-loc'
-            }),
-        }))
+    mock_session.head = mocker.AsyncMock(side_effect=_make_head_side_effect(
+        mocker, {'https://redirect.com': (301, {
+            'location': '/new-loc'
+        })}))
     mock_session.headers = {}
     mock_async_session = mocker.patch('deltona.www.AsyncSession')
     mock_async_session.return_value.__aenter__ = mocker.AsyncMock(return_value=mock_session)
@@ -166,12 +164,10 @@ async def test_check_bookmarks_html_urls_full_redirect(mocker: MockerFixture) ->
     </DL>
     """
     mock_session = mocker.MagicMock()
-    mock_session.head = mocker.AsyncMock(
-        side_effect=_make_head_side_effect(mocker, {
-            'https://redirect.com': (301, {
-                'location': 'https://new-host/new-loc'
-            }),
-        }))
+    mock_session.head = mocker.AsyncMock(side_effect=_make_head_side_effect(
+        mocker, {'https://redirect.com': (301, {
+            'location': 'https://new-host/new-loc'
+        })}))
     mock_session.headers = {}
     mock_async_session = mocker.patch('deltona.www.AsyncSession')
     mock_async_session.return_value.__aenter__ = mocker.AsyncMock(return_value=mock_session)
@@ -242,8 +238,7 @@ async def test_check_bookmarks_html_urls_exhaustive_check(mocker: MockerFixture)
         return mocker.MagicMock(
             status_code=HTTPStatus.FOUND if current_n %
             3 == 0 else HTTPStatus.NOT_FOUND if current_n % 2 == 0 else HTTPStatus.OK,
-            headers={'location': 'https://deltona.dev' if current_n % 2 == 0 else '/index.html'},
-        )
+            headers={'location': 'https://deltona.dev' if current_n % 2 == 0 else '/index.html'})
 
     mock_session.head = mock_head
     mock_session.headers = {}
@@ -390,16 +385,13 @@ def test_parse_bookmarks_html(mocker: MockerFixture) -> None:
 
 
 def test_create_parsed_tree_structure_creates_new_folders(mocker: MockerFixture) -> None:
-    folder_path: list[tuple[str, BookmarksHTMLFolderAttributes]] = [
-        ('Folder1', {
-            'add_date': '1',
-            'last_modified': '2'
-        }),
-        ('Folder2', {
-            'add_date': '3',
-            'last_modified': '4'
-        }),
-    ]
+    folder_path: list[tuple[str, BookmarksHTMLFolderAttributes]] = [('Folder1', {
+        'add_date': '1',
+        'last_modified': '2'
+    }), ('Folder2', {
+        'add_date': '3',
+        'last_modified': '4'
+    })]
     data: BookmarksDataset = []
     result = create_parsed_tree_structure(folder_path, data)
     assert isinstance(result, list)

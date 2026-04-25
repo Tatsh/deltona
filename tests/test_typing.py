@@ -14,9 +14,8 @@ import pytest
         (Union[os.PathLike[str], str], True),  # noqa: UP007
         (Union[str, int], False),  # noqa: UP007
         (str, False),
-        (Union[os.PathLike[str], int, str], True),  # noqa: UP007
-    ],
-)
+        (Union[os.PathLike[str], int, str], True)  # noqa: UP007
+    ])
 def test_contains_type_path_like_str(type_hint: object, expected: bool) -> None:
     assert contains_type_path_like_str(type_hint) is expected
 

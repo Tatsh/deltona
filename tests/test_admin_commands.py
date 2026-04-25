@@ -42,10 +42,9 @@ def test_reset_tpm_enrollments_main_all(mocker: MockerFixture, runner: CliRunner
 
     result = runner.invoke(reset_tpm_enrollments_main, ['-a', '--crypttab', str(fake_crypttab)])
     assert result.exit_code == 0
-    mock_reset.assert_has_calls([
-        mocker.call('uuid1', dry_run=True),
-        mocker.call('uuid2', dry_run=True),
-    ])
+    mock_reset.assert_has_calls(
+        [mocker.call('uuid1', dry_run=True),
+         mocker.call('uuid2', dry_run=True)])
 
 
 def test_reset_tpm_enrollments_main_exception(mocker: MockerFixture, runner: CliRunner) -> None:
@@ -73,10 +72,9 @@ def test_slug_rename_main_success(mocker: MockerFixture, runner: CliRunner) -> N
 
     result = runner.invoke(slug_rename_main, ['old-slug', 'new-slug'])
     assert result.exit_code == 0
-    mock_slug_rename.assert_has_calls([
-        mocker.call('old-slug', no_lower=False),
-        mocker.call('new-slug', no_lower=False),
-    ])
+    mock_slug_rename.assert_has_calls(
+        [mocker.call('old-slug', no_lower=False),
+         mocker.call('new-slug', no_lower=False)])
     assert 'old-slug ->' not in result.output
 
 
@@ -86,10 +84,9 @@ def test_slug_rename_main_success_verbose(mocker: MockerFixture, runner: CliRunn
 
     result = runner.invoke(slug_rename_main, ['old-slug', 'new-slug', '-v'])
     assert result.exit_code == 0
-    mock_slug_rename.assert_has_calls([
-        mocker.call('old-slug', no_lower=False),
-        mocker.call('new-slug', no_lower=False),
-    ])
+    mock_slug_rename.assert_has_calls(
+        [mocker.call('old-slug', no_lower=False),
+         mocker.call('new-slug', no_lower=False)])
     assert 'old-slug ->' in result.output
     assert 'new-slug ->' in result.output
 

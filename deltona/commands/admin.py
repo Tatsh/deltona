@@ -39,20 +39,16 @@ if TYPE_CHECKING:
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('-a', '--all', 'all_', is_flag=True, help='Reset all enrolments.')
 @click.option('-f', '--force', is_flag=True, help='Apply the changes.')
-@click.option(
-    '--crypttab',
-    type=click.Path(path_type=Path, dir_okay=False, exists=True),
-    help='File to read from when passing --all.',
-    default='/etc/crypttab',
-)
-def reset_tpm_enrollments_main(
-    uuids: Sequence[str],
-    crypttab: Path,
-    *,
-    all_: bool = False,
-    debug: bool = False,
-    force: bool = False,
-) -> None:
+@click.option('--crypttab',
+              type=click.Path(path_type=Path, dir_okay=False, exists=True),
+              help='File to read from when passing --all.',
+              default='/etc/crypttab')
+def reset_tpm_enrollments_main(uuids: Sequence[str],
+                               crypttab: Path,
+                               *,
+                               all_: bool = False,
+                               debug: bool = False,
+                               force: bool = False) -> None:
     """
     Reset TPM enrolments that were created by systemd-cryptenroll -tpm2-device=auto.
 
@@ -78,29 +74,23 @@ def reset_tpm_enrollments_main(
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument(
-    'path',
-    type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
-    default=DEFAULT_KERNEL_LOCATION,
-)
+@click.argument('path',
+                type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
+                default=DEFAULT_KERNEL_LOCATION)
 @click.option('--active-kernel-name',
               help='Kernel name like "linux".',
               default=DEFAULT_ACTIVE_KERNEL_NAME)
-@click.option(
-    '-m',
-    '--modules-path',
-    type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
-    help='Location where modules get installed, such as "/lib/modules".',
-    default=DEFAULT_MODULES_PATH,
-)
+@click.option('-m',
+              '--modules-path',
+              type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
+              help='Location where modules get installed, such as "/lib/modules".',
+              default=DEFAULT_MODULES_PATH)
 @click.option('-d', '--debug', is_flag=True, help='Enable debug logging.')
-def clean_old_kernels_and_modules_main(
-    path: Path = DEFAULT_KERNEL_LOCATION,
-    modules_path: Path = DEFAULT_MODULES_PATH,
-    active_kernel_name: str = DEFAULT_ACTIVE_KERNEL_NAME,
-    *,
-    debug: bool = False,
-) -> None:
+def clean_old_kernels_and_modules_main(path: Path = DEFAULT_KERNEL_LOCATION,
+                                       modules_path: Path = DEFAULT_MODULES_PATH,
+                                       active_kernel_name: str = DEFAULT_ACTIVE_KERNEL_NAME,
+                                       *,
+                                       debug: bool = False) -> None:
     """
     Remove inactive kernels and modules.
 
@@ -144,24 +134,21 @@ def _get_ssh_client_cls() -> type[SSHClient]:  # pragma: no cover
     '-p',
     'preserve',
     is_flag=True,
-    help='Preserves modification times, access times, and file mode bits from the source file.',
-)
+    help='Preserves modification times, access times, and file mode bits from the source file.')
 @click.option('-y',
               '--dry-run',
               is_flag=True,
               help='Do not copy anything. Use with -d for testing.')
-def smv_main(
-    filenames: Sequence[Path],
-    target: str,
-    key_filename: str,
-    port: int = 22,
-    timeout: float = 2,
-    *,
-    compress: bool = False,
-    debug: bool = False,
-    dry_run: bool = False,
-    preserve: bool = False,
-) -> None:
+def smv_main(filenames: Sequence[Path],
+             target: str,
+             key_filename: str,
+             port: int = 22,
+             timeout: float = 2,
+             *,
+             compress: bool = False,
+             debug: bool = False,
+             dry_run: bool = False,
+             preserve: bool = False) -> None:
     """
     Secure move.
 
@@ -193,22 +180,18 @@ def smv_main(
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('bundle', type=click.Path(dir_okay=True, file_okay=False, path_type=Path))
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
-@click.option(
-    '-E',
-    '--env-var',
-    'env_vars',
-    help='Environment variable to set.',
-    multiple=True,
-    type=(str, str),
-)
+@click.option('-E',
+              '--env-var',
+              'env_vars',
+              help='Environment variable to set.',
+              multiple=True,
+              type=(str, str))
 @click.option('-r', '--retina', is_flag=True, help='For macOS apps, force Retina support.')
-def patch_bundle_main(
-    bundle: Path,
-    env_vars: tuple[tuple[str, str], ...],
-    *,
-    debug: bool = False,
-    retina: bool = False,
-) -> None:
+def patch_bundle_main(bundle: Path,
+                      env_vars: tuple[tuple[str, str], ...],
+                      *,
+                      debug: bool = False,
+                      retina: bool = False) -> None:
     """Patch a macOS/iOS/etc bundle's Info.plist file."""
     setup_logging(debug=debug, loggers={'deltona': {}})
     data: dict[str, Any] = {}
@@ -251,11 +234,9 @@ def kconfig_to_json_main(files: Sequence[Path], *, all_: bool = False, debug: bo
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument(
-    'path',
-    type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
-    default='.',
-)
+@click.argument('path',
+                type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
+                default='.')
 @click.option('-d', '--depth', default=2, type=int, help='Maximum depth.', metavar='DEPTH')
 @click.option('-f', '--follow-symlinks', is_flag=True, help='Follow symbolic links.')
 @click.option('-o', '--output-file', type=click.File('w'), default=sys.stdout, help='Output file.')

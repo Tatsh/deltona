@@ -187,8 +187,7 @@ async def test_merge_dependabot_pull_requests_explicit_repos(
     await merge_dependabot_pull_requests(token='fake_token', repos=['mine', 'tatsh/other'])
     mock_github.return_value.get_user.return_value.get_repos.assert_not_called()
     assert mock_github.return_value.get_repo.call_args_list == [
-        mocker.call('me/mine'),
-        mocker.call('tatsh/other'),
+        mocker.call('me/mine'), mocker.call('tatsh/other')
     ]
 
 

@@ -30,13 +30,8 @@ if TYPE_CHECKING:
 
     from .typing import StrPath
 
-__all__ = (
-    'DataAdapter',
-    'add_cdda_times',
-    'kill_processes_by_name',
-    'secure_move_path',
-    'unregister_wine_file_associations',
-)
+__all__ = ('DataAdapter', 'add_cdda_times', 'kill_processes_by_name', 'secure_move_path',
+           'unregister_wine_file_associations')
 
 ZERO_TO_99 = '|'.join(f'{x:02d}' for x in range(100))
 ZERO_TO_59 = '|'.join(f'{x:02d}' for x in range(60))
@@ -108,31 +103,23 @@ def unregister_wine_file_associations(*, debug: bool = False) -> None:
     for item in (Path.home() / '.local/share/application').glob('x-wine-extension*'):
         log.debug('Removing MIME file "%s".', item)
         item.unlink()
-    cmd: tuple[str, ...] = (
-        'update-desktop-database',
-        *(('-v',) if debug else ()),
-        str(Path.home() / '.local/share/applications'),
-    )
+    cmd: tuple[str, ...] = ('update-desktop-database', *(('-v',) if debug else ()),
+                            str(Path.home() / '.local/share/applications'))
     log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
     sp.run(cmd, check=True)
-    cmd = (
-        'update-mime-database',
-        *(('-v',) if debug else ()),
-        str(Path.home() / '.local/share/mime'),
-    )
+    cmd = ('update-mime-database', *(('-v',) if debug else
+                                     ()), str(Path.home() / '.local/share/mime'))
     log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
     sp.run(cmd, check=True)
 
 
-def secure_move_path(
-    client: SSHClient,
-    filename: StrPath,
-    remote_target: str,
-    *,
-    dry_run: bool = False,
-    preserve_stats: bool = False,
-    write_into: bool = False,
-) -> None:
+def secure_move_path(client: SSHClient,
+                     filename: StrPath,
+                     remote_target: str,
+                     *,
+                     dry_run: bool = False,
+                     preserve_stats: bool = False,
+                     write_into: bool = False) -> None:
     """
     Move a file or directory to a remote host over SSH.
 
@@ -272,21 +259,16 @@ def kill_processes_by_name(name: str,
             ('ps', 'ax'),
             check=True,
             capture_output=True,
-            text=True,
-        ).stdout.splitlines()
+            text=True).stdout.splitlines()
         if (pids := [int(x[1]) for x in list(csv.reader(lines))[1:]] if IS_WINDOWS else
             [int(y[0]) for y in (x.split() for x in lines) if Path(y[0]).name == name]):
             time.sleep(wait_timeout)
             if force:
-                sp.run(
-                    (
-                        'taskkill.exe',
-                        *(t for sl in (('/pid', str(pid)) for pid in pids) for t in sl),
-                        '/f',
-                    ) if IS_WINDOWS else ('kill', '-9', *(str(x) for x in pids)),
-                    check=False,
-                    capture_output=True,
-                )
+                sp.run(('taskkill.exe', *(t for sl in (('/pid', str(pid)) for pid in pids)
+                                          for t in sl), '/f') if IS_WINDOWS else
+                       ('kill', '-9', *(str(x) for x in pids)),
+                       check=False,
+                       capture_output=True)
     return pids if wait_timeout else None
 
 

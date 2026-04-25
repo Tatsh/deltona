@@ -49,49 +49,48 @@ class InsufficientArguments(Exception):
 
 
 def run_ultraiso(  # noqa: PLR0913
-    *,
-    add_dirs: Iterable[StrPathMustExist] | None = None,
-    add_files: Iterable[StrPathMustExist] | None = None,
-    cmd: StrPathMustExist | None = None,
-    input: StrPathMustExist | None = None,  # noqa: A002
-    output: StrPath | None = None,
-    appid: str | None = None,
-    preparer: str | None = None,
-    publisher: str | None = None,
-    sysid: str | None = None,
-    volset: int | None = None,
-    volume: str | None = None,
-    ilong: bool = False,
-    imax: bool = False,
-    lowercase: bool = False,
-    vernum: bool = False,
-    hfs: bool = False,
-    jlong: bool = False,
-    joliet: bool = False,
-    rockridge: bool = False,
-    udf: bool = False,
-    udfdvd: bool = False,
-    bootfile: StrPathMustExist | None = None,
-    bootinfotable: bool = False,
-    optimize: bool = False,
-    chdir: str | None = None,
-    newdir: str | None = None,
-    rmdir: str | None = None,
-    ahide: str | None = None,
-    hide: str | None = None,
-    pn: Literal[1, 2, 3, 4, 5, 6, 7, 8, 9] | None = None,
-    bin2iso: StrPathMustExist | None = None,
-    dmg2iso: StrPathMustExist | None = None,
-    bin2isz: StrPathMustExist | None = None,
-    compress: Literal[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] | None = None,
-    encrypt: Literal[1, 2, 3] | None = None,
-    password: str | None = None,
-    split: int | None = None,
-    extract: StrPath | None = None,
-    get: str | None = None,
-    list_: StrPath | None = None,
-    prefix: StrPathMustExist = DEFAULT_WINE_PREFIX,
-) -> None:
+        *,
+        add_dirs: Iterable[StrPathMustExist] | None = None,
+        add_files: Iterable[StrPathMustExist] | None = None,
+        cmd: StrPathMustExist | None = None,
+        input: StrPathMustExist | None = None,  # noqa: A002
+        output: StrPath | None = None,
+        appid: str | None = None,
+        preparer: str | None = None,
+        publisher: str | None = None,
+        sysid: str | None = None,
+        volset: int | None = None,
+        volume: str | None = None,
+        ilong: bool = False,
+        imax: bool = False,
+        lowercase: bool = False,
+        vernum: bool = False,
+        hfs: bool = False,
+        jlong: bool = False,
+        joliet: bool = False,
+        rockridge: bool = False,
+        udf: bool = False,
+        udfdvd: bool = False,
+        bootfile: StrPathMustExist | None = None,
+        bootinfotable: bool = False,
+        optimize: bool = False,
+        chdir: str | None = None,
+        newdir: str | None = None,
+        rmdir: str | None = None,
+        ahide: str | None = None,
+        hide: str | None = None,
+        pn: Literal[1, 2, 3, 4, 5, 6, 7, 8, 9] | None = None,
+        bin2iso: StrPathMustExist | None = None,
+        dmg2iso: StrPathMustExist | None = None,
+        bin2isz: StrPathMustExist | None = None,
+        compress: Literal[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] | None = None,
+        encrypt: Literal[1, 2, 3] | None = None,
+        password: str | None = None,
+        split: int | None = None,
+        extract: StrPath | None = None,
+        get: str | None = None,
+        list_: StrPath | None = None,
+        prefix: StrPathMustExist = DEFAULT_WINE_PREFIX) -> None:
     r"""
     Run UltraISO in a convenient way.
 
@@ -230,14 +229,14 @@ def run_ultraiso(  # noqa: PLR0913
                 'rockridge': rockridge,
                 'udf': udf,
                 'udfdvd': udfdvd,
-                'vernum': vernum,
+                'vernum': vernum
         }.items() if v):
             sp_args += [f'-{k}']
         for k, v in ((k, v) for k, v in {
                 'bootfile': bootfile,
                 'bin2iso': bin2iso,
                 'dmg2iso': dmg2iso,
-                'bin2isz': bin2isz,
+                'bin2isz': bin2isz
         }.items() if v is not None):
             sp_args += [f'-{k}', unix_path_to_wine(v)]
         for k, v in ((k, v) for k, v in {
@@ -254,7 +253,7 @@ def run_ultraiso(  # noqa: PLR0913
                 'password': password,
                 'extract': extract,
                 'get': get,
-                'list': list_,
+                'list': list_
         }.items() if v is not None):
             sp_args += [f'-{k}', str(v)]
         for k, i in ((k, i) for k, i in {
@@ -262,7 +261,7 @@ def run_ultraiso(  # noqa: PLR0913
                 'compress': compress,
                 'encrypt': encrypt,
                 'split': split,
-                'pn': pn,
+                'pn': pn
         }.items() if i is not None):
             sp_args += [f'-{k}', str(i)]
     if len(sp_args) < MIN_ARGUMENTS:

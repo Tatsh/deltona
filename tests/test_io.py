@@ -122,7 +122,7 @@ def test_unpack_ebook_success_pdf(mocker: MockerFixture) -> None:
     mock_dir.iterdir.side_effect = [
         [mocker.MagicMock(name='file.zip', name__endswith='.zip')],  # for zip_listing
         [],  # for epub_list
-        [mock_pdf],  # for pdf_list
+        [mock_pdf]  # for pdf_list
     ]
     mock_path.side_effect = [mock_dir, mock_rar_file, mock_pdf]
     # Test
@@ -158,7 +158,7 @@ def test_unpack_ebook_success_epub(mocker: MockerFixture) -> None:
     mock_dir.iterdir.side_effect = [
         [mocker.Mock(name='file.zip', name__endswith='.zip')],  # for zip_listing
         [mock_epub],  # epub_list
-        [],  # for pdf_list
+        []  # for pdf_list
     ]
     mock_path.side_effect = [mock_dir, mock_rar_file, mock_epub]
     # Test
@@ -224,7 +224,7 @@ def test_unpack_ebook_no_pdf_or_epub(mocker: MockerFixture) -> None:
     mock_dir.iterdir.side_effect = [
         [mocker.Mock(name='file.zip', name__endswith='.zip')],  # for zip_listing
         [],  # for pdf_list
-        [],  # for epub_list
+        []  # for epub_list
     ]
     with pytest.raises(ValueError):  # noqa: PT011
         unpack_ebook('some_path')
@@ -249,14 +249,14 @@ def test_unpack_ebook_more_than_1_pdf(mocker: MockerFixture) -> None:
     # Simulate multiple .pdf files after extraction
     pdf_files = [
         mocker.Mock(name='book1.pdf', lower=lambda: 'book1.pdf'),
-        mocker.Mock(name='book2.pdf', lower=lambda: 'book2.pdf'),
+        mocker.Mock(name='book2.pdf', lower=lambda: 'book2.pdf')
     ]
     for pdf in pdf_files:
         pdf.resolve.return_value.parent.name = 'parent_dir'
     mock_dir.iterdir.side_effect = [
         [mocker.Mock(name='file.zip', name__endswith='.zip')],  # for zip_listing
         [],  # for epub_list
-        pdf_files,  # pdf_list with multiple PDFs
+        pdf_files  # pdf_list with multiple PDFs
     ]
     mock_path.side_effect = [mock_dir, mock_rar_file, *pdf_files]
     # Test
@@ -283,14 +283,14 @@ def test_unpack_ebook_more_than_1_epub(mocker: MockerFixture) -> None:
     # Simulate multiple .epub files after extraction
     epub_files = [
         mocker.Mock(name='book1.epub', lower=lambda: 'book1.epub'),
-        mocker.Mock(name='book2.epub', lower=lambda: 'book2.epub'),
+        mocker.Mock(name='book2.epub', lower=lambda: 'book2.epub')
     ]
     for epub in epub_files:
         epub.resolve.return_value.parent.name = 'parent_dir'
     mock_dir.iterdir.side_effect = [
         [mocker.Mock(name='file.zip', name__endswith='.zip')],  # for zip_listing
         epub_files,  # epub_list with multiple EPUBs
-        [],  # for pdf_list
+        []  # for pdf_list
     ]
     mock_path.side_effect = [mock_dir, mock_rar_file, *epub_files]
     # Test
@@ -320,7 +320,7 @@ def test_unpack_ebook_pdf_not_pdf(mocker: MockerFixture) -> None:
     mock_dir.iterdir.side_effect = [
         [mocker.Mock(name='file.zip', name__endswith='.zip')],  # for zip_listing
         [],  # for epub_list
-        [mock_pdf],  # pdf_list with non-PDF file
+        [mock_pdf]  # pdf_list with non-PDF file
     ]
     mock_path.side_effect = [mock_dir, mock_rar_file, mock_pdf]
     # Test
@@ -337,12 +337,7 @@ def test_extract_gog_success(mocker: MockerFixture) -> None:
     mock_game_bin = mocker.Mock()
     mock_input_path.resolve.return_value.open.return_value.__enter__.return_value = mock_game_bin
     script = b'#!/bin/sh\noffset=`head -n 5 "$0"`\nfilesizes="1234"\n'
-    mock_game_bin.read.side_effect = [
-        script,
-        script,
-        b'mojosetup data',
-        b'data zip data',
-    ]
+    mock_game_bin.read.side_effect = [script, script, b'mojosetup data', b'data zip data']
     mock_game_bin.seek = mocker.MagicMock()
     mock_game_bin.tell.side_effect = [42]
 
@@ -355,9 +350,7 @@ def test_extract_gog_success(mocker: MockerFixture) -> None:
     mock_mojosetup_tar_f = mocker.MagicMock()
     mock_datafile_f = mocker.MagicMock()
     mock_output_dir.__truediv__.return_value.open.return_value.__enter__.side_effect = [
-        mock_unpacker_sh_f,
-        mock_mojosetup_tar_f,
-        mock_datafile_f,
+        mock_unpacker_sh_f, mock_mojosetup_tar_f, mock_datafile_f
     ]
     extract_gog('input.gog', 'output_dir')
     mock_output_dir.mkdir.assert_called_once_with(parents=True)

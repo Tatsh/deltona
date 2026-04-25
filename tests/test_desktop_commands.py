@@ -25,22 +25,19 @@ if TYPE_CHECKING:
 
 def _mpv_sbs_probe(width: int, height: int) -> dict[str, Any]:
     return {
-        'streams': [
-            {
-                'codec_type': 'other',
-                'disposition': {
-                    'default': 0
-                }
-            },
-            {
-                'codec_type': 'video',
-                'width': width,
-                'height': height,
-                'disposition': {
-                    'default': 1
-                },
-            },
-        ]
+        'streams': [{
+            'codec_type': 'other',
+            'disposition': {
+                'default': 0
+            }
+        }, {
+            'codec_type': 'video',
+            'width': width,
+            'height': height,
+            'disposition': {
+                'default': 1
+            }
+        }]
     }
 
 
@@ -96,16 +93,9 @@ def test_umpv_main_socket_conn_refused(mocker: MockerFixture, runner: CliRunner,
     assert result.exit_code == 0
     mock_socket.return_value.send.assert_not_called()
     sp_run.assert_called_once_with(
-        (
-            'mpv',
-            '--no-terminal',
-            '--force-window',
-            f'--input-ipc-server={tmp_path}/umpv-socket',
-            '--',
-            str(out_mp4),
-        ),
-        check=True,
-    )
+        ('mpv', '--no-terminal', '--force-window', f'--input-ipc-server={tmp_path}/umpv-socket',
+         '--', str(out_mp4)),
+        check=True)
 
 
 def test_umpv_main_socket_enoent(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
@@ -121,16 +111,9 @@ def test_umpv_main_socket_enoent(mocker: MockerFixture, runner: CliRunner, tmp_p
     assert result.exit_code == 0
     mock_socket.return_value.send.assert_not_called()
     sp_run.assert_called_once_with(
-        (
-            'mpv',
-            '--no-terminal',
-            '--force-window',
-            f'--input-ipc-server={tmp_path}/umpv-socket',
-            '--',
-            str(out_mp4),
-        ),
-        check=True,
-    )
+        ('mpv', '--no-terminal', '--force-window', f'--input-ipc-server={tmp_path}/umpv-socket',
+         '--', str(out_mp4)),
+        check=True)
 
 
 def test_umpv_main_unhandled_socket_exception(mocker: MockerFixture, runner: CliRunner,
@@ -181,45 +164,30 @@ def test_connect_g603(mocker: MockerFixture, runner: CliRunner) -> None:
     mock_bus.get.return_value = mock_device
     mock_signal_subscribe = mock_bus.con.signal_subscribe
 
-    def do_on_properties_changed(
-        sender: str | None,
-        interface_name: str | None,
-        member: str | None,
-        object_path: str | None,
-        arg0: str | None,
-        flags: int,
-        callback: Callable[..., object],
-        *user_data: Any,
-    ) -> int:
+    def do_on_properties_changed(sender: str | None, interface_name: str | None, member: str | None,
+                                 object_path: str | None, arg0: str | None, flags: int,
+                                 callback: Callable[..., object], *user_data: Any) -> int:
         props = mocker.MagicMock()
-        props.unpack.side_effect = [
-            [
-                'org.bluez.Adapter1',
-                {
-                    'Discovering': True
-                },
-            ],
-            [
-                'org.bluez.Device1',
-                {
-                    'Address': '00:11:22:33:44:55',
-                    'ServicesResolved': True,
-                    'Connected': True,
-                    'RSSI': -50,
-                },
-            ],
-        ]
+        props.unpack.side_effect = [['org.bluez.Adapter1', {
+            'Discovering': True
+        }],
+                                    [
+                                        'org.bluez.Device1', {
+                                            'Address': '00:11:22:33:44:55',
+                                            'ServicesResolved': True,
+                                            'Connected': True,
+                                            'RSSI': -50
+                                        }
+                                    ]]
         callback(None, None, '/org/bluez/hci0/dev_00_11_22_33_44_55', None, None, props)
         callback(None, None, '/org/bluez/hci0/dev_00_11_22_33_44_55', None, None, props)
         return 0
 
     mock_signal_subscribe.side_effect = do_on_properties_changed
-    mocker.patch(
-        'deltona.commands.desktop.find_bluetooth_device_info_by_name',
-        side_effect=[('path', {
-            'Address': '00:11:22:33:44:55'
-        }), KeyError],
-    )
+    mocker.patch('deltona.commands.desktop.find_bluetooth_device_info_by_name',
+                 side_effect=[('path', {
+                     'Address': '00:11:22:33:44:55'
+                 }), KeyError])
     mock_remove_device = mock_bus.get.return_value.RemoveDevice
     mock_start_discovery = mock_bus.get.return_value.StartDiscovery
     mock_get_gi_repository_glib.return_value.MainLoop.return_value.run.side_effect = (
@@ -248,28 +216,19 @@ def test_connect_g603_unhandled_property_change(mocker: MockerFixture, runner: C
     mock_bus.get.return_value = mock_device
     mock_signal_subscribe = mock_bus.con.signal_subscribe
 
-    def do_on_properties_changed(
-        sender: str | None,
-        interface_name: str | None,
-        member: str | None,
-        object_path: str | None,
-        arg0: str | None,
-        flags: int,
-        callback: Callable[..., object],
-        *user_data: Any,
-    ) -> int:
+    def do_on_properties_changed(sender: str | None, interface_name: str | None, member: str | None,
+                                 object_path: str | None, arg0: str | None, flags: int,
+                                 callback: Callable[..., object], *user_data: Any) -> int:
         props = mocker.MagicMock()
         props.unpack.return_value = ['org.bluez.Device1', {}]
         callback(None, None, '/org/bluez/hci0/dev_00_11_22_33_44_55', None, None, props)
         return 0
 
     mock_signal_subscribe.side_effect = do_on_properties_changed
-    mocker.patch(
-        'deltona.commands.desktop.find_bluetooth_device_info_by_name',
-        side_effect=[('path', {
-            'Address': '00:11:22:33:44:55'
-        }), KeyError],
-    )
+    mocker.patch('deltona.commands.desktop.find_bluetooth_device_info_by_name',
+                 side_effect=[('path', {
+                     'Address': '00:11:22:33:44:55'
+                 }), KeyError])
     mock_remove_device = mock_bus.get.return_value.RemoveDevice
     mock_start_discovery = mock_bus.get.return_value.StartDiscovery
     mock_get_gi_repository_glib.return_value.MainLoop.return_value.run.side_effect = (
@@ -281,12 +240,8 @@ def test_connect_g603_unhandled_property_change(mocker: MockerFixture, runner: C
     mock_get_gi_repository_glib.return_value.MainLoop.return_value.run.assert_called_once()
     mock_get_gi_repository_glib.return_value.MainLoop.return_value.quit.assert_called_once()
     mock_log_debug.assert_has_calls([
-        mocker.call(
-            'Unhandled property changes: interface=%s, values=%s, mac=%s',
-            'org.bluez.Device1',
-            {},
-            '00:11:22:33:44:55',
-        )
+        mocker.call('Unhandled property changes: interface=%s, values=%s, mac=%s',
+                    'org.bluez.Device1', {}, '00:11:22:33:44:55')
     ])
 
 
@@ -304,34 +259,22 @@ def test_connect_g603_disconnected(mocker: MockerFixture, runner: CliRunner) -> 
     mock_bus.get.return_value = mock_device
     mock_signal_subscribe = mock_bus.con.signal_subscribe
 
-    def do_on_properties_changed(
-        sender: str | None,
-        interface_name: str | None,
-        member: str | None,
-        object_path: str | None,
-        arg0: str | None,
-        flags: int,
-        callback: Callable[..., object],
-        *user_data: Any,
-    ) -> int:
+    def do_on_properties_changed(sender: str | None, interface_name: str | None, member: str | None,
+                                 object_path: str | None, arg0: str | None, flags: int,
+                                 callback: Callable[..., object], *user_data: Any) -> int:
         props = mocker.MagicMock()
-        props.unpack.side_effect = [
-            ['org.bluez.Device1', {
-                'ServicesResolved': False
-            }],
-            ['other_interface', {}],
-        ]
+        props.unpack.side_effect = [['org.bluez.Device1', {
+            'ServicesResolved': False
+        }], ['other_interface', {}]]
         callback(None, None, '/org/bluez/hci0/dev_00_11_22_33_44_55', None, None, props)
         callback(None, None, '/org/bluez/hci0/dev_00_11_22_33_44_55', None, None, props)
         return 0
 
     mock_signal_subscribe.side_effect = do_on_properties_changed
-    mocker.patch(
-        'deltona.commands.desktop.find_bluetooth_device_info_by_name',
-        side_effect=[('path', {
-            'Address': '00:11:22:33:44:55'
-        }), KeyError],
-    )
+    mocker.patch('deltona.commands.desktop.find_bluetooth_device_info_by_name',
+                 side_effect=[('path', {
+                     'Address': '00:11:22:33:44:55'
+                 }), KeyError])
     mock_remove_device = mock_bus.get.return_value.RemoveDevice
     mock_start_discovery = mock_bus.get.return_value.StartDiscovery
     mock_get_gi_repository_glib.return_value.MainLoop.return_value.run.side_effect = (
@@ -360,28 +303,19 @@ def test_connect_g603_ignores_non_g603_devices(mocker: MockerFixture, runner: Cl
     mock_bus.get.return_value = mock_device
     mock_signal_subscribe = mock_bus.con.signal_subscribe
 
-    def do_on_properties_changed(
-        sender: str | None,
-        interface_name: str | None,
-        member: str | None,
-        object_path: str | None,
-        arg0: str | None,
-        flags: int,
-        callback: Callable[..., object],
-        *user_data: Any,
-    ) -> int:
+    def do_on_properties_changed(sender: str | None, interface_name: str | None, member: str | None,
+                                 object_path: str | None, arg0: str | None, flags: int,
+                                 callback: Callable[..., object], *user_data: Any) -> int:
         props = mocker.MagicMock()
         props.unpack.return_value = ['org.bluez.Device1', {}]
         callback(None, None, '/org/bluez/hci0/dev_00_11_22_33_44_55', None, None, props)
         return 0
 
     mock_signal_subscribe.side_effect = do_on_properties_changed
-    mocker.patch(
-        'deltona.commands.desktop.find_bluetooth_device_info_by_name',
-        side_effect=[('path', {
-            'Address': '00:11:22:33:44:55'
-        }), KeyError],
-    )
+    mocker.patch('deltona.commands.desktop.find_bluetooth_device_info_by_name',
+                 side_effect=[('path', {
+                     'Address': '00:11:22:33:44:55'
+                 }), KeyError])
     mock_remove_device = mock_bus.get.return_value.RemoveDevice
     mock_start_discovery = mock_bus.get.return_value.StartDiscovery
     mock_get_gi_repository_glib.return_value.MainLoop.return_value.run.side_effect = (
@@ -410,28 +344,19 @@ def test_connect_g603_key_error(mocker: MockerFixture, runner: CliRunner) -> Non
     mock_bus.get.side_effect = [mock_device, KeyError]
     mock_signal_subscribe = mock_bus.con.signal_subscribe
 
-    def do_on_properties_changed(
-        sender: str | None,
-        interface_name: str | None,
-        member: str | None,
-        object_path: str | None,
-        arg0: str | None,
-        flags: int,
-        callback: Callable[..., object],
-        *user_data: Any,
-    ) -> int:
+    def do_on_properties_changed(sender: str | None, interface_name: str | None, member: str | None,
+                                 object_path: str | None, arg0: str | None, flags: int,
+                                 callback: Callable[..., object], *user_data: Any) -> int:
         props = mocker.MagicMock()
         props.unpack.return_value = ['org.bluez.Device1', {}]
         callback(None, None, '/org/bluez/hci0/dev_00_11_22_33_44_55', None, None, props)
         return 0
 
     mock_signal_subscribe.side_effect = do_on_properties_changed
-    mocker.patch(
-        'deltona.commands.desktop.find_bluetooth_device_info_by_name',
-        side_effect=[('path', {
-            'Address': '00:11:22:33:44:55'
-        }), KeyError],
-    )
+    mocker.patch('deltona.commands.desktop.find_bluetooth_device_info_by_name',
+                 side_effect=[('path', {
+                     'Address': '00:11:22:33:44:55'
+                 }), KeyError])
     mock_get_gi_repository_glib.return_value.MainLoop.return_value.run.side_effect = (
         KeyboardInterrupt)
     result = runner.invoke(connect_g603_main)
@@ -456,28 +381,19 @@ def test_connect_g603_paired(mocker: MockerFixture, runner: CliRunner) -> None:
     mock_bus.get.return_value = mock_device
     mock_signal_subscribe = mock_bus.con.signal_subscribe
 
-    def do_on_properties_changed(
-        sender: str | None,
-        interface_name: str | None,
-        member: str | None,
-        object_path: str | None,
-        arg0: str | None,
-        flags: int,
-        callback: Callable[..., object],
-        *user_data: Any,
-    ) -> int:
+    def do_on_properties_changed(sender: str | None, interface_name: str | None, member: str | None,
+                                 object_path: str | None, arg0: str | None, flags: int,
+                                 callback: Callable[..., object], *user_data: Any) -> int:
         props = mocker.MagicMock()
         props.unpack.return_value = ['org.bluez.Device1', {'Paired': True}]
         callback(None, None, '/org/bluez/hci0/dev_00_11_22_33_44_55', None, None, props)
         return 0
 
     mock_signal_subscribe.side_effect = do_on_properties_changed
-    mocker.patch(
-        'deltona.commands.desktop.find_bluetooth_device_info_by_name',
-        side_effect=[('path', {
-            'Address': '00:11:22:33:44:55'
-        }), KeyError],
-    )
+    mocker.patch('deltona.commands.desktop.find_bluetooth_device_info_by_name',
+                 side_effect=[('path', {
+                     'Address': '00:11:22:33:44:55'
+                 }), KeyError])
     mock_get_gi_repository_glib.return_value.MainLoop.return_value.run.side_effect = (
         KeyboardInterrupt)
     result = runner.invoke(connect_g603_main)
@@ -520,13 +436,11 @@ def test_upload_to_imgbb_no_gui(mocker: MockerFixture, runner: CliRunner, tmp_pa
     mocker.patch('pyperclip.copy')
     mock_open = mocker.patch('deltona.commands.desktop.webbrowser.open')
     mocker.patch('deltona.commands.desktop.setup_logging')
-    mocker.patch(
-        'deltona.commands.desktop.upload_to_imgbb',
-        new=AsyncMock(return_value=mocker.MagicMock(json=mocker.MagicMock(
-            return_value={'data': {
-                'url': 'https://example.com/image.png'
-            }}))),
-    )
+    mocker.patch('deltona.commands.desktop.upload_to_imgbb',
+                 new=AsyncMock(return_value=mocker.MagicMock(json=mocker.MagicMock(
+                     return_value={'data': {
+                         'url': 'https://example.com/image.png'
+                     }}))))
     a_png = tmp_path / 'a.png'
     a_png.write_bytes(b'some image data')
     result = runner.invoke(upload_to_imgbb_main,
@@ -542,13 +456,11 @@ def test_upload_to_imgbb_gui(mocker: MockerFixture, runner: CliRunner, tmp_path:
     mock_open = mocker.patch('deltona.commands.desktop.webbrowser.open')
     mock_run_process = mocker.patch('deltona.commands.desktop.anyio.run_process', new=AsyncMock())
     mocker.patch('deltona.commands.desktop.setup_logging')
-    mocker.patch(
-        'deltona.commands.desktop.upload_to_imgbb',
-        new=AsyncMock(return_value=mocker.MagicMock(json=mocker.MagicMock(
-            return_value={'data': {
-                'url': 'https://example.com/image.png'
-            }}))),
-    )
+    mocker.patch('deltona.commands.desktop.upload_to_imgbb',
+                 new=AsyncMock(return_value=mocker.MagicMock(json=mocker.MagicMock(
+                     return_value={'data': {
+                         'url': 'https://example.com/image.png'
+                     }}))))
     a_png = tmp_path / 'a.png'
     a_png.write_bytes(b'some image data')
     result = runner.invoke(upload_to_imgbb_main, [str(a_png)])
@@ -557,8 +469,7 @@ def test_upload_to_imgbb_gui(mocker: MockerFixture, runner: CliRunner, tmp_path:
     assert 'https://example.com/image.png' in result.output
     mock_run_process.assert_called_once_with(
         ('fake', '--title', 'Successfully uploaded', '--msgbox', 'https://example.com/image.png'),
-        check=False,
-    )
+        check=False)
     mock_copy.assert_called_once_with('https://example.com/image.png')
 
 
@@ -603,13 +514,11 @@ def test_upload_to_imgbb_no_files(mocker: MockerFixture, runner: CliRunner, tmp_
     mocker.patch('pyperclip.copy')
     mocker.patch('deltona.commands.desktop.webbrowser.open')
     mocker.patch('deltona.commands.desktop.setup_logging')
-    mocker.patch(
-        'deltona.commands.desktop.upload_to_imgbb',
-        new=AsyncMock(return_value=mocker.MagicMock(json=mocker.MagicMock(
-            return_value={'data': {
-                'url': 'https://example.com/image.png'
-            }}))),
-    )
+    mocker.patch('deltona.commands.desktop.upload_to_imgbb',
+                 new=AsyncMock(return_value=mocker.MagicMock(json=mocker.MagicMock(
+                     return_value={'data': {
+                         'url': 'https://example.com/image.png'
+                     }}))))
     result = runner.invoke(upload_to_imgbb_main)
     assert result.exit_code == 0
 
@@ -619,13 +528,11 @@ def test_upload_to_imgbb(mocker: MockerFixture, runner: CliRunner, tmp_path: Pat
     mocker.patch('pyperclip.copy')
     mock_open = mocker.patch('deltona.commands.desktop.webbrowser.open')
     mocker.patch('deltona.commands.desktop.setup_logging')
-    mocker.patch(
-        'deltona.commands.desktop.upload_to_imgbb',
-        new=AsyncMock(return_value=mocker.MagicMock(json=mocker.MagicMock(
-            return_value={'data': {
-                'url': 'https://example.com/image.png'
-            }}))),
-    )
+    mocker.patch('deltona.commands.desktop.upload_to_imgbb',
+                 new=AsyncMock(return_value=mocker.MagicMock(json=mocker.MagicMock(
+                     return_value={'data': {
+                         'url': 'https://example.com/image.png'
+                     }}))))
     a_png = tmp_path / 'a.png'
     a_png.write_bytes(b'some image data')
     result = runner.invoke(upload_to_imgbb_main, [str(a_png)])
@@ -635,30 +542,24 @@ def test_upload_to_imgbb(mocker: MockerFixture, runner: CliRunner, tmp_path: Pat
 
 def test_mpv_sbs_main(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
     mocker.patch('deltona.commands.desktop.setup_logging')
-    mocker.patch(
-        'deltona.commands.desktop.ffprobe',
-        return_value={
-            'streams': [
-                {
-                    'codec_type': 'other',
-                    'disposition': {
-                        'default': 0
-                    }
-                },
-                {
-                    'codec_type': 'other'
-                },
-                {
-                    'codec_type': 'video',
-                    'width': 1920,
-                    'height': 1080,
-                    'disposition': {
-                        'default': 1
-                    },
-                },
-            ]
-        },
-    )
+    mocker.patch('deltona.commands.desktop.ffprobe',
+                 return_value={
+                     'streams': [{
+                         'codec_type': 'other',
+                         'disposition': {
+                             'default': 0
+                         }
+                     }, {
+                         'codec_type': 'other'
+                     }, {
+                         'codec_type': 'video',
+                         'width': 1920,
+                         'height': 1080,
+                         'disposition': {
+                             'default': 1
+                         }
+                     }]
+                 })
     mock_sp_run = mocker.patch('deltona.commands.desktop.sp.run')
     out_mp4 = tmp_path / 'file1.mp4'
     out_mp4.write_bytes(b'file1')
@@ -667,57 +568,41 @@ def test_mpv_sbs_main(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) 
     result = runner.invoke(mpv_sbs_main, [str(out_mp4), str(out_mp4_right)])
     assert result.exit_code == 0
     mock_sp_run.assert_called_once_with(
-        (
-            'mpv',
-            '--hwdec=no',
-            '--config=no',
-            str(out_mp4),
-            f'--external-file={out_mp4_right}',
-            '--lavfi-complex=[vid1][vid2] hstack [vo]',
-        ),
-        check=True,
-    )
+        ('mpv', '--hwdec=no', '--config=no', str(out_mp4), f'--external-file={out_mp4_right}',
+         '--lavfi-complex=[vid1][vid2] hstack [vo]'),
+        check=True)
 
 
 def test_mpv_sbs_main_non_matching_height(mocker: MockerFixture, runner: CliRunner,
                                           tmp_path: Path) -> None:
     mocker.patch('deltona.commands.desktop.setup_logging')
-    mocker.patch(
-        'deltona.commands.desktop.ffprobe',
-        side_effect=[
-            {
-                'streams': [
-                    {
-                        'codec_type': 'other',
-                        'disposition': {
-                            'default': 0
-                        }
-                    },
-                    {
-                        'codec_type': 'other'
-                    },
-                    {
-                        'codec_type': 'video',
-                        'width': 1920,
-                        'height': 1080,
-                        'disposition': {
-                            'default': 1
-                        },
-                    },
-                ]
-            },
-            {
-                'streams': [{
-                    'codec_type': 'video',
-                    'width': 640,
-                    'height': 480,
-                    'disposition': {
-                        'default': 1
-                    },
-                }]
-            },
-        ],
-    )
+    mocker.patch('deltona.commands.desktop.ffprobe',
+                 side_effect=[{
+                     'streams': [{
+                         'codec_type': 'other',
+                         'disposition': {
+                             'default': 0
+                         }
+                     }, {
+                         'codec_type': 'other'
+                     }, {
+                         'codec_type': 'video',
+                         'width': 1920,
+                         'height': 1080,
+                         'disposition': {
+                             'default': 1
+                         }
+                     }]
+                 }, {
+                     'streams': [{
+                         'codec_type': 'video',
+                         'width': 640,
+                         'height': 480,
+                         'disposition': {
+                             'default': 1
+                         }
+                     }]
+                 }])
     mock_sp_run = mocker.patch('deltona.commands.desktop.sp.run')
     out_mp4 = tmp_path / 'file1.mp4'
     out_mp4.write_bytes(b'file1')
@@ -726,37 +611,25 @@ def test_mpv_sbs_main_non_matching_height(mocker: MockerFixture, runner: CliRunn
     result = runner.invoke(mpv_sbs_main, [str(out_mp4), str(out_mp4_right)])
     assert result.exit_code == 0
     mock_sp_run.assert_called_once_with(
-        (
-            'mpv',
-            '--hwdec=no',
-            '--config=no',
-            str(out_mp4),
-            f'--external-file={out_mp4_right}',
-            ('--lavfi-complex=[vid1] scale=1920x1080 [vid1_scale];[vid2] scale=1920x1080 '
-             '[vid2_crop];[vid1_scale][vid2_crop] hstack [vo]'),
-        ),
-        check=True,
-    )
+        ('mpv', '--hwdec=no', '--config=no', str(out_mp4), f'--external-file={out_mp4_right}',
+         ('--lavfi-complex=[vid1] scale=1920x1080 [vid1_scale];[vid2] scale=1920x1080 '
+          '[vid2_crop];[vid1_scale][vid2_crop] hstack [vo]')),
+        check=True)
 
 
-@pytest.mark.parametrize(
-    ('w1', 'h1', 'w2', 'h2', 'msg'),
-    [
-        (1920, 30, 1920, 1080, 'Invalid height in video 1'),
-        (1920, 1080, 1920, 30, 'Invalid height in video 2'),
-        (4000, 1080, 1920, 1080, 'Video 1 is too wide'),
-        (30, 1080, 1920, 1080, 'Invalid width in video 1'),
-        (1920, 1080, 4000, 1080, 'Video 2 is too wide'),
-        (1920, 1080, 30, 1080, 'Invalid width in video 2'),
-    ],
-)
+@pytest.mark.parametrize(('w1', 'h1', 'w2', 'h2', 'msg'),
+                         [(1920, 30, 1920, 1080, 'Invalid height in video 1'),
+                          (1920, 1080, 1920, 30, 'Invalid height in video 2'),
+                          (4000, 1080, 1920, 1080, 'Video 1 is too wide'),
+                          (30, 1080, 1920, 1080, 'Invalid width in video 1'),
+                          (1920, 1080, 4000, 1080, 'Video 2 is too wide'),
+                          (1920, 1080, 30, 1080, 'Invalid width in video 2')])
 def test_mpv_sbs_main_invalid_dimensions(mocker: MockerFixture, runner: CliRunner, tmp_path: Path,
                                          w1: int, h1: int, w2: int, h2: int, msg: str) -> None:
     mocker.patch('deltona.commands.desktop.setup_logging')
-    mocker.patch(
-        'deltona.commands.desktop.ffprobe',
-        side_effect=[_mpv_sbs_probe(w1, h1), _mpv_sbs_probe(w2, h2)],
-    )
+    mocker.patch('deltona.commands.desktop.ffprobe',
+                 side_effect=[_mpv_sbs_probe(w1, h1),
+                              _mpv_sbs_probe(w2, h2)])
     out_mp4 = tmp_path / 'file1.mp4'
     out_mp4.write_bytes(b'file1')
     out_mp4_right = tmp_path / 'file1_right.mp4'

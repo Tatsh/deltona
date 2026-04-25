@@ -17,12 +17,8 @@ if TYPE_CHECKING:
 
     from .typing import StrPath
 
-__all__ = (
-    'fix_chromium_pwa_icon',
-    'generate_chrome_user_agent',
-    'get_last_chrome_major_version',
-    'get_latest_chrome_major_version',
-)
+__all__ = ('fix_chromium_pwa_icon', 'generate_chrome_user_agent', 'get_last_chrome_major_version',
+           'get_latest_chrome_major_version')
 
 
 def _get_pil_image_module() -> ModuleType:  # pragma: no cover
@@ -31,15 +27,13 @@ def _get_pil_image_module() -> ModuleType:  # pragma: no cover
     return Image
 
 
-async def fix_chromium_pwa_icon(
-    config_path: StrPath,
-    app_id: str,
-    icon_src_uri: str,
-    profile: str = 'Default',
-    *,
-    masked: bool = False,
-    monochrome: bool = False,
-) -> None:
+async def fix_chromium_pwa_icon(config_path: StrPath,
+                                app_id: str,
+                                icon_src_uri: str,
+                                profile: str = 'Default',
+                                *,
+                                masked: bool = False,
+                                monochrome: bool = False) -> None:
     """
     Fix a Chromium PWA icon that failed to sync.
 
@@ -108,20 +102,15 @@ async def get_last_chrome_major_version() -> str:
     str
         If no ``Last Version`` file is found, returns empty string.
     """
-    for location in (
-            '~/.config/google-chrome-beta',
-            '~/AppData/Local/Google/Chrome Beta/User Data',
-            '~/Library/Application Support/Google/Chrome Beta',
-            '~/.config/google-chrome',
-            '~/AppData/Local/Google/Chrome/User Data',
-            '~/Library/Application Support/Google/Chrome',
-            '~/.config/google-chrome-unstable',
-            '~/AppData/Local/Google/Chrome Canary/User Data',
-            '~/Library/Application Support/Google/Chrome Canary',
-            '~/.config/chromium',
-            '~/AppData/Local/Google/Chromium/User Data',
-            '~/Library/Application Support/Google/Chromium',
-    ):
+    for location in ('~/.config/google-chrome-beta', '~/AppData/Local/Google/Chrome Beta/User Data',
+                     '~/Library/Application Support/Google/Chrome Beta', '~/.config/google-chrome',
+                     '~/AppData/Local/Google/Chrome/User Data',
+                     '~/Library/Application Support/Google/Chrome',
+                     '~/.config/google-chrome-unstable',
+                     '~/AppData/Local/Google/Chrome Canary/User Data',
+                     '~/Library/Application Support/Google/Chrome Canary', '~/.config/chromium',
+                     '~/AppData/Local/Google/Chromium/User Data',
+                     '~/Library/Application Support/Google/Chromium'):
         p = await anyio.Path(location).expanduser() / 'Last Version'
         if await p.exists():
             return (await p.read_text()).split('.', 1)[0]
@@ -142,8 +131,7 @@ async def get_latest_chrome_major_version() -> str:
         r = await session.get(
             ('https://versionhistory.googleapis.com/v1/chrome/platforms/win/channels/stable/'
              'versions'),
-            timeout=5,
-        )
+            timeout=5)
     return cast('str', r.json()['versions'][0]['version'].split('.')[0])
 
 

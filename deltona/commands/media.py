@@ -88,12 +88,10 @@ def wait_for_disc_main(drive_path: Path, wait_time: float = 1.0) -> None:
 @click.option('--sysid', metavar='STRING', help='System ID.')
 @click.option('--volset', metavar='ID', help='Volume Set ID.', type=int)
 @click.option('--volume', metavar='STRING', help='Volume label.')
-@click.option(
-    '--bootfile',
-    metavar='FILENAME',
-    help='Set boot file.',
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
-)
+@click.option('--bootfile',
+              metavar='FILENAME',
+              help='Set boot file.',
+              type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option('--bootinfotable', is_flag=True, help='Generate boot information table in boot file.')
 @click.option('--optimize',
               is_flag=True,
@@ -105,8 +103,7 @@ def wait_for_disc_main(drive_path: Path, wait_time: float = 1.0) -> None:
     metavar='FILENAME',
     help='Add one file or folder (includes folder name and all files and folders under it).',
     multiple=True,
-    type=click.Path(exists=True, path_type=Path),
-)
+    type=click.Path(exists=True, path_type=Path))
 @click.option(
     '--dir',
     'dirs',
@@ -114,82 +111,60 @@ def wait_for_disc_main(drive_path: Path, wait_time: float = 1.0) -> None:
     multiple=True,
     help=('Add all files and folders under a given directory (does not include the directory name '
           'itself).'),
-    type=click.Path(exists=True, path_type=Path),
-)
+    type=click.Path(exists=True, path_type=Path))
 @click.option('--newdir', metavar='DIRNAME', help='Create a new directory.')
 @click.option('-c', '--chdir', metavar='DIRNAME', help='Change current directory in ISO image.')
-@click.option(
-    '-r',
-    '--rmdir',
-    metavar='FILENAME',
-    help='Remove a file or folder from ISO image (full path should be specified).',
-)
-@click.option(
-    '--hide',
-    metavar='FILENAME',
-    help='Set hidden attribute of a file or folder (full path should be specified).',
-)
+@click.option('-r',
+              '--rmdir',
+              metavar='FILENAME',
+              help='Remove a file or folder from ISO image (full path should be specified).')
+@click.option('--hide',
+              metavar='FILENAME',
+              help='Set hidden attribute of a file or folder (full path should be specified).')
 @click.option(
     '--ahide',
     metavar='FILENAME',
-    help='Set advanced hidden attribute of a file or folder (full path should be specified).',
-)
-@click.option(
-    '-i',
-    '--input',
-    'input_',
-    metavar='FILENAME',
-    help='Input ISO image.',
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
-)
+    help='Set advanced hidden attribute of a file or folder (full path should be specified).')
+@click.option('-i',
+              '--input',
+              'input_',
+              metavar='FILENAME',
+              help='Input ISO image.',
+              type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option('-o', '--output', metavar='FILENAME', help='Output ISO image.')
-@click.option(
-    '--bin2iso',
-    metavar='FILENAME',
-    help='Convert input CD/DVD image to ISO format.',
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
-)
-@click.option(
-    '--dmg2iso',
-    metavar='FILENAME',
-    help='Convert input DMG image to ISO format.',
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
-)
-@click.option(
-    '--bin2isz',
-    metavar='FILENAME',
-    help='Compress input CD/DVD image to ISZ format.',
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
-)
+@click.option('--bin2iso',
+              metavar='FILENAME',
+              help='Convert input CD/DVD image to ISO format.',
+              type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option('--dmg2iso',
+              metavar='FILENAME',
+              help='Convert input DMG image to ISO format.',
+              type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option('--bin2isz',
+              metavar='FILENAME',
+              help='Compress input CD/DVD image to ISZ format.',
+              type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option('--compress', help='Set compression level.', type=click.IntRange(1, 16))
 @click.option('--encrypt', help='Set encryption method.', type=click.IntRange(1, 3))
-@click.option(
-    '--password',
-    metavar='PASSWORD',
-    help='Set ISZ password.',
-    prompt_required=True,
-    hide_input=True,
-)
+@click.option('--password',
+              metavar='PASSWORD',
+              help='Set ISZ password.',
+              prompt_required=True,
+              hide_input=True)
 @click.option('--split', metavar='SIZE', help='Set segment size in bytes.', type=int)
-@click.option(
-    '--list',
-    'list_',
-    metavar='FILENAME',
-    help='Create a list of files and folders in an ISO image.',
-    type=click.Path(dir_okay=False, path_type=Path),
-)
-@click.option(
-    '--get',
-    metavar='FILENAME',
-    help='Set a file or folder (full path should be specified) to be extracted.',
-)
+@click.option('--list',
+              'list_',
+              metavar='FILENAME',
+              help='Create a list of files and folders in an ISO image.',
+              type=click.Path(dir_okay=False, path_type=Path))
+@click.option('--get',
+              metavar='FILENAME',
+              help='Set a file or folder (full path should be specified) to be extracted.')
 @click.option('--extract', metavar='DIRNAME', help='Extract ISO image to specified directory.')
-@click.option(
-    '--cmd',
-    metavar='FILENAME',
-    help='Read arguments from a text file.',
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
-)
+@click.option('--cmd',
+              metavar='FILENAME',
+              help='Read arguments from a text file.',
+              type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option('-l',
               '--ilong',
               is_flag=True,
@@ -202,57 +177,54 @@ def wait_for_disc_main(drive_path: Path, wait_time: float = 1.0) -> None:
 @click.option('--rockridge', is_flag=True, help='Create RockRidge volume.')
 @click.option('--udf', is_flag=True, help='Create UDF volume.')
 @click.option('--hfs', is_flag=True, help='Create Apple HFS volume.')
-@click.option(
-    '--udfdvd',
-    is_flag=True,
-    help='Create UDF DVD image (this option will overwrite all other volume settings).',
-)
+@click.option('--udfdvd',
+              is_flag=True,
+              help='Create UDF DVD image (this option will overwrite all other volume settings).')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug logging.')
 def ultraiso_main(  # noqa: PLR0913, PLR0917
-    ahide: str | None = None,
-    appid: str | None = None,
-    bin2iso: Path | None = None,
-    bin2isz: Path | None = None,
-    bootfile: Path | None = None,
-    chdir: str | None = None,
-    cmd: str | None = None,
-    compress: int | None = None,
-    dirs: Sequence[Path] | None = None,
-    dmg2iso: Path | None = None,
-    encrypt: int | None = None,
-    extract: str | None = None,
-    files: Sequence[Path] | None = None,
-    get: str | None = None,
-    hide: str | None = None,
-    input_: Path | None = None,
-    list_: Path | None = None,
-    newdir: str | None = None,
-    output: str | None = None,
-    password: str | None = None,
-    pn: int | None = None,
-    prefix: str | None = None,
-    preparer: str | None = None,
-    publisher: str | None = None,
-    rmdir: str | None = None,
-    split: int | None = None,
-    sysid: str | None = None,
-    volset: int | None = None,
-    volume: str | None = None,
-    *,
-    bootinfotable: bool = False,
-    hfs: bool = False,
-    ilong: bool = False,
-    imax: bool = False,
-    jlong: bool = False,
-    joliet: bool = False,
-    lowercase: bool = False,
-    optimize: bool = False,
-    rockridge: bool = False,
-    udf: bool = False,
-    udfdvd: bool = False,
-    vernum: bool = False,
-    debug: bool = False,
-) -> None:
+        ahide: str | None = None,
+        appid: str | None = None,
+        bin2iso: Path | None = None,
+        bin2isz: Path | None = None,
+        bootfile: Path | None = None,
+        chdir: str | None = None,
+        cmd: str | None = None,
+        compress: int | None = None,
+        dirs: Sequence[Path] | None = None,
+        dmg2iso: Path | None = None,
+        encrypt: int | None = None,
+        extract: str | None = None,
+        files: Sequence[Path] | None = None,
+        get: str | None = None,
+        hide: str | None = None,
+        input_: Path | None = None,
+        list_: Path | None = None,
+        newdir: str | None = None,
+        output: str | None = None,
+        password: str | None = None,
+        pn: int | None = None,
+        prefix: str | None = None,
+        preparer: str | None = None,
+        publisher: str | None = None,
+        rmdir: str | None = None,
+        split: int | None = None,
+        sysid: str | None = None,
+        volset: int | None = None,
+        volume: str | None = None,
+        *,
+        bootinfotable: bool = False,
+        hfs: bool = False,
+        ilong: bool = False,
+        imax: bool = False,
+        jlong: bool = False,
+        joliet: bool = False,
+        lowercase: bool = False,
+        optimize: bool = False,
+        rockridge: bool = False,
+        udf: bool = False,
+        udfdvd: bool = False,
+        vernum: bool = False,
+        debug: bool = False) -> None:
     """
     CLI interface to UltraISO.
 
@@ -261,49 +233,47 @@ def ultraiso_main(  # noqa: PLR0913, PLR0917
     kwargs = {'prefix': prefix} if prefix and not IS_WINDOWS else {}
     setup_logging(debug=debug, loggers={'deltona': {}})
     try:
-        run_ultraiso(
-            add_dirs=dirs or [],
-            add_files=files or [],
-            bin2iso=bin2iso,
-            dmg2iso=dmg2iso,
-            bootfile=bootfile,
-            bootinfotable=bootinfotable,
-            optimize=optimize,
-            cmd=cmd,
-            chdir=chdir,
-            newdir=newdir,
-            rmdir=rmdir,
-            hfs=hfs,
-            jlong=jlong,
-            joliet=joliet,
-            rockridge=rockridge,
-            udf=udf,
-            udfdvd=udfdvd,
-            ahide=ahide,
-            hide=hide,
-            pn=cast('Any', pn),
-            appid=appid,
-            preparer=preparer,
-            publisher=publisher,
-            sysid=sysid,
-            volset=volset,
-            volume=volume,
-            input=input_,
-            bin2isz=bin2isz,
-            compress=cast('Any', compress),
-            encrypt=cast('Any', encrypt),
-            password=password,
-            split=split,
-            output=output,
-            extract=extract,
-            get=get,
-            list_=list_,
-            ilong=ilong,
-            imax=imax,
-            lowercase=lowercase,
-            vernum=vernum,
-            **kwargs,
-        )
+        run_ultraiso(add_dirs=dirs or [],
+                     add_files=files or [],
+                     bin2iso=bin2iso,
+                     dmg2iso=dmg2iso,
+                     bootfile=bootfile,
+                     bootinfotable=bootinfotable,
+                     optimize=optimize,
+                     cmd=cmd,
+                     chdir=chdir,
+                     newdir=newdir,
+                     rmdir=rmdir,
+                     hfs=hfs,
+                     jlong=jlong,
+                     joliet=joliet,
+                     rockridge=rockridge,
+                     udf=udf,
+                     udfdvd=udfdvd,
+                     ahide=ahide,
+                     hide=hide,
+                     pn=cast('Any', pn),
+                     appid=appid,
+                     preparer=preparer,
+                     publisher=publisher,
+                     sysid=sysid,
+                     volset=volset,
+                     volume=volume,
+                     input=input_,
+                     bin2isz=bin2isz,
+                     compress=cast('Any', compress),
+                     encrypt=cast('Any', encrypt),
+                     password=password,
+                     split=split,
+                     output=output,
+                     extract=extract,
+                     get=get,
+                     list_=list_,
+                     ilong=ilong,
+                     imax=imax,
+                     lowercase=lowercase,
+                     vernum=vernum,
+                     **kwargs)
     except (InsufficientArguments, sp.CalledProcessError) as e:
         raise click.Abort from e
     except FileNotFoundError as e:
@@ -356,39 +326,33 @@ def display_info_json_main(filename: Path, *, debug: bool = False) -> None:
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('-f', '--font', default='Roboto', help='Font to use.')
 @click.option('-n', '--nvenc', is_flag=True, help='Use NVENC.')
-@click.option(
-    '-o',
-    '--output',
-    'output_file',
-    type=click.Path(dir_okay=False, path_type=Path),
-    help='Output file.',
-)
+@click.option('-o',
+              '--output',
+              'output_file',
+              type=click.Path(dir_okay=False, path_type=Path),
+              help='Output file.')
 @click.option('-s', '--font-size', type=int, default=150, help='Font size in pt.')
 @click.argument('audio_filename', type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.argument('text', nargs=-1)
-def audio2vid_main(
-    audio_filename: Path,
-    text: str,
-    font: str = 'Roboto',
-    font_size: int = 150,
-    output_file: Path | None = None,
-    *,
-    debug: bool = False,
-    nvenc: bool = False,
-    videotoolbox: bool = False,
-) -> None:
+def audio2vid_main(audio_filename: Path,
+                   text: str,
+                   font: str = 'Roboto',
+                   font_size: int = 150,
+                   output_file: Path | None = None,
+                   *,
+                   debug: bool = False,
+                   nvenc: bool = False,
+                   videotoolbox: bool = False) -> None:
     """Create a video with static text and audio."""
     setup_logging(debug=debug, loggers={'deltona': {}})
-    create_static_text_video(
-        audio_filename,
-        ' '.join(text),
-        font,
-        font_size,
-        output_file,
-        debug=debug,
-        nvenc=nvenc,
-        videotoolbox=videotoolbox,
-    )
+    create_static_text_video(audio_filename,
+                             ' '.join(text),
+                             font,
+                             font_size,
+                             output_file,
+                             debug=debug,
+                             nvenc=nvenc,
+                             videotoolbox=videotoolbox)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -426,11 +390,9 @@ def cddb_query_main(args: tuple[str, ...], host: str | None = None, *, debug: bo
     """
     setup_logging(debug=debug, loggers={'deltona': {}})
     click.echo(
-        json.dumps(
-            asyncio.run(cddb_query(' '.join(args), host=host))._asdict(),
-            indent=2,
-            sort_keys=True,
-        ))
+        json.dumps(asyncio.run(cddb_query(' '.join(args), host=host))._asdict(),
+                   indent=2,
+                   sort_keys=True))
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -481,32 +443,26 @@ def ke_ebook_ex_main(paths: Sequence[Path],
               help='setpts= string. Defaults to speeding video by 4x.',
               default='0.25*PTS')
 @click.option('--tier', help='Tier (HEVC).', default='high')
-@click.option(
-    '--time-format',
-    metavar='FORMAT',
-    help='Time format to parse from video files.',
-    default='%Y%m%d%H%M%S',
-)
+@click.option('--time-format',
+              metavar='FORMAT',
+              help='Time format to parse from video files.',
+              default='%Y%m%d%H%M%S')
 @click.option('--video-bitrate', default='0k', help='Video bitrate.', metavar='BITRATE')
-@click.option(
-    '--video-decoder',
-    default='hevc_cuvid',
-    help='Video decoder (for hardware decoding only).',
-    metavar='DECODER',
-)
+@click.option('--video-decoder',
+              default='hevc_cuvid',
+              help='Video decoder (for hardware decoding only).',
+              metavar='DECODER')
 @click.option('--video-encoder', default='hevc_nvenc', help='Video encoder.', metavar='ENCODER')
 @click.option('--video-max-bitrate',
               default='20M',
               help='Maximum video bitrate.',
               metavar='BITRATE')
 @click.option('-D', '--no-delete', is_flag=True, help='Do not delete original files.')
-@click.option(
-    '-M',
-    '--match-regexp',
-    help='Regular expression to find the date string.',
-    default=r'^(\d+)_.*',
-    metavar='RE',
-)
+@click.option('-M',
+              '--match-regexp',
+              help='Regular expression to find the date string.',
+              default=r'^(\d+)_.*',
+              metavar='RE')
 @click.option('-O', '--overwrite', is_flag=True, help='Overwrite existing files.')
 @click.option('-T',
               '--temp-dir',
@@ -514,35 +470,34 @@ def ke_ebook_ex_main(paths: Sequence[Path],
               type=click.Path(file_okay=False, path_type=Path))
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 def encode_dashcam_main(  # noqa: PLR0913, PLR0917
-    front_dir: Path,
-    rear_dir: Path | None,
-    output_dir: Path,
-    clip_length: int = 3,
-    crf: int = 26,
-    hwaccel: str = 'auto',
-    level: str = 'auto',
-    match_regexp: str = r'^(\d+)_.*',
-    max_offset: int = 1,
-    preset: str = 'p7',
-    rear_crop: str = '1920:1020:0:0',
-    rear_view_scale_divisor: float = 2.5,
-    setpts: str = '0.25*PTS',
-    temp_dir: Path | None = None,
-    tier: str = 'high',
-    time_format: str = '%Y%m%d%H%M%S',
-    video_bitrate: str = '0k',
-    video_decoder: str = 'hevc_cuvid',
-    video_encoder: str = 'hevc_nvenc',
-    video_max_bitrate: str = '20M',
-    *,
-    debug: bool = False,
-    no_chapters: bool = False,
-    no_delete: bool = False,
-    no_hwaccel: bool = False,
-    no_rear_crop: bool = False,
-    no_setpts: bool = False,
-    overwrite: bool = False,
-) -> None:
+        front_dir: Path,
+        rear_dir: Path | None,
+        output_dir: Path,
+        clip_length: int = 3,
+        crf: int = 26,
+        hwaccel: str = 'auto',
+        level: str = 'auto',
+        match_regexp: str = r'^(\d+)_.*',
+        max_offset: int = 1,
+        preset: str = 'p7',
+        rear_crop: str = '1920:1020:0:0',
+        rear_view_scale_divisor: float = 2.5,
+        setpts: str = '0.25*PTS',
+        temp_dir: Path | None = None,
+        tier: str = 'high',
+        time_format: str = '%Y%m%d%H%M%S',
+        video_bitrate: str = '0k',
+        video_decoder: str = 'hevc_cuvid',
+        video_encoder: str = 'hevc_nvenc',
+        video_max_bitrate: str = '20M',
+        *,
+        debug: bool = False,
+        no_chapters: bool = False,
+        no_delete: bool = False,
+        no_hwaccel: bool = False,
+        no_rear_crop: bool = False,
+        no_setpts: bool = False,
+        overwrite: bool = False) -> None:
     """
     Batch encode dashcam footage, merging rear and front camera footage.
 
@@ -573,32 +528,30 @@ def encode_dashcam_main(  # noqa: PLR0913, PLR0917
                                  == Path(rear_dir).resolve(strict=True)):
         click.echo('Front and rear directories are the same.', err=True)
         raise click.Abort
-    archive_dashcam_footage(
-        front_dir,
-        rear_dir,
-        output_dir,
-        chapters=not no_chapters,
-        clip_length=clip_length,
-        crf=crf,
-        hwaccel=None if no_hwaccel else hwaccel,
-        level=level,
-        match_re=match_regexp,
-        max_offset=max_offset,
-        no_delete=no_delete,
-        overwrite=overwrite,
-        pair_fn=None if rear_dir is None else pair_redtiger_dashcam_files,
-        preset=preset,
-        rear_crop=None if no_rear_crop else rear_crop,
-        rear_view_scale_divisor=rear_view_scale_divisor,
-        setpts=None if no_setpts else setpts,
-        temp_dir=temp_dir,
-        tier=tier,
-        time_format=time_format,
-        video_bitrate=video_bitrate,
-        video_decoder=video_decoder,
-        video_encoder=video_encoder,
-        video_max_bitrate=video_max_bitrate,
-    )
+    archive_dashcam_footage(front_dir,
+                            rear_dir,
+                            output_dir,
+                            chapters=not no_chapters,
+                            clip_length=clip_length,
+                            crf=crf,
+                            hwaccel=None if no_hwaccel else hwaccel,
+                            level=level,
+                            match_re=match_regexp,
+                            max_offset=max_offset,
+                            no_delete=no_delete,
+                            overwrite=overwrite,
+                            pair_fn=None if rear_dir is None else pair_redtiger_dashcam_files,
+                            preset=preset,
+                            rear_crop=None if no_rear_crop else rear_crop,
+                            rear_view_scale_divisor=rear_view_scale_divisor,
+                            setpts=None if no_setpts else setpts,
+                            temp_dir=temp_dir,
+                            tier=tier,
+                            time_format=time_format,
+                            video_bitrate=video_bitrate,
+                            video_decoder=video_decoder,
+                            video_encoder=video_encoder,
+                            video_max_bitrate=video_max_bitrate)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -612,16 +565,14 @@ def encode_dashcam_main(  # noqa: PLR0913, PLR0917
 @click.option('--crf', help='CRF value.', type=int, default=20)
 @click.option('--delete-after', help='Send processed file to wastebin.', is_flag=True)
 @click.option('-f', '--fast', help='Use fewer filters (lower quality).', is_flag=True)
-def hlg2sdr_main(
-    filename: Path,
-    output: Path | None,
-    crf: int = 20,
-    codec: Literal['libx264', 'libx265'] = 'libx265',
-    *,
-    debug: bool = False,
-    delete_after: bool = False,
-    fast: bool = False,
-) -> None:
+def hlg2sdr_main(filename: Path,
+                 output: Path | None,
+                 crf: int = 20,
+                 codec: Literal['libx264', 'libx265'] = 'libx265',
+                 *,
+                 debug: bool = False,
+                 delete_after: bool = False,
+                 fast: bool = False) -> None:
     """Convert an HLG video to SDR."""
     setup_logging(debug=debug, loggers={'deltona': {}})
     hlg_to_sdr(filename, crf, codec, output, fast=fast, delete_after=delete_after)
@@ -630,11 +581,9 @@ def hlg2sdr_main(
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('filename', type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
-@click.option(
-    '--input-json',
-    help='Input JSON file.',
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
-)
+@click.option('--input-json',
+              help='Input JSON file.',
+              type=click.Path(exists=True, dir_okay=False, path_type=Path))
 def tbc2srt_main(filename: Path, input_json: Path | None = None, *, debug: bool = False) -> None:
     """
     Convert VBI data in a ld-decode/vhs-decode TBC file to SubRip format.
@@ -647,14 +596,8 @@ def tbc2srt_main(filename: Path, input_json: Path | None = None, *, debug: bool 
     bin_file = p_filename.parent / f'{p_filename.stem}.bin'
     output_json_file = p_filename.parent / f'{p_filename.stem}.json'
     input_json = input_json or p_filename.parent / 'input.json'
-    cmd: tuple[str, ...] = (
-        'ld-process-vbi',
-        '--input-json',
-        str(input_json),
-        '--output-json',
-        str(output_json_file),
-        str(filename),
-    )
+    cmd: tuple[str, ...] = ('ld-process-vbi', '--input-json', str(input_json), '--output-json',
+                            str(output_json_file), str(filename))
     log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
     sp.run(cmd, check=True)
     cmd = ('ld-export-metadata', '--closed-captions', str(scc_file), str(output_json_file))
@@ -689,8 +632,7 @@ def flac_dir_finalize_main(directory: Path, *, debug: bool = False) -> None:
                     ('metaflac', '--export-tags-to=-', str(flac_path)),  # noqa: S607
                     stdout=sp.PIPE,
                     text=True,
-                    check=False,
-                ).stdout.splitlines()) if y is not None)
+                    check=False).stdout.splitlines()) if y is not None)
 
     def remove_accents(s: str) -> str:
         return ''.join(c for c in unicodedata.normalize('NFD', re.sub(r'[Øø]', 'o', s))
@@ -702,19 +644,12 @@ def flac_dir_finalize_main(directory: Path, *, debug: bool = False) -> None:
                 r'[!&"\'$;`^,#\?%=\.,°±¡¯¬«ª²³¨§¦¥¤£¢¿¾½¼»þ÷¹¸·¶µ´]',  # noqa: RUF001
                 '',
                 re.sub(
-                    r'[/\|:\\\*\+@~]',
-                    '-',
+                    r'[/\|:\\\*\+@~]', '-',
                     re.sub(
-                        r'[<{\(\[]',
-                        '(',
-                        re.sub(
-                            r'[>}\)\]]',
-                            ')',
-                            re.sub(r'\s&\s', ' and ', remove_accents(s), flags=re.IGNORECASE),
-                        ),
-                    ),
-                ),
-            ))
+                        r'[<{\(\[]', '(',
+                        re.sub(r'[>}\)\]]', ')',
+                               re.sub(r'\s&\s', ' and ', remove_accents(s),
+                                      flags=re.IGNORECASE))))))
 
     setup_logging(debug=debug, loggers={'deltona': {}})
     path = Path(directory).resolve(strict=True)
@@ -729,12 +664,9 @@ def flac_dir_finalize_main(directory: Path, *, debug: bool = False) -> None:
     for flac in flac_files:
         tracknumber, artist, title = itemgetter('tracknumber', 'artist', 'title')(dict(
             get_flac_tags(flac)))
-        new_fn = path / re.sub(
-            r'-+',
-            '-',
-            (f'{int(tracknumber):02d}-{sanitize_for_filename(artist)}-'
-             f'{sanitize_for_filename(title)}.flac'.lower()),
-        )
+        new_fn = path / re.sub(r'-+', '-',
+                               (f'{int(tracknumber):02d}-{sanitize_for_filename(artist)}-'
+                                f'{sanitize_for_filename(title)}.flac'.lower()))
         new_flac_files.append(new_fn)
         flac.rename(new_fn)
     for i, img in enumerate(sorted(imgs), start=1):

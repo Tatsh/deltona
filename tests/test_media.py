@@ -452,16 +452,14 @@ def test_hlg_to_sdr_with_all_args(mocker: MockerFixture, tmp_path: Path) -> None
     input_file = tmp_path / 'input.mkv'
     input_file.write_bytes(b'dummy')
     output_file = tmp_path / 'custom.mkv'
-    hlg_to_sdr(
-        input_file,
-        crf=18,
-        output_codec='libx264',
-        output_file=output_file,
-        input_args=['-threads', '2'],
-        output_args=['-map', '0'],
-        fast=True,
-        delete_after=False,
-    )
+    hlg_to_sdr(input_file,
+               crf=18,
+               output_codec='libx264',
+               output_file=output_file,
+               input_args=['-threads', '2'],
+               output_args=['-map', '0'],
+               fast=True,
+               delete_after=False)
     args = fake_run.call_args[0][0]
     assert 'ffmpeg' in args
     assert '-threads' in args
@@ -745,14 +743,12 @@ def test_archive_dashcam_footage_calls_with_correct_args_no_delete(mocker: Mocke
     mock_run = mocker.patch('deltona.media.sp.run')
     mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
     mock_send2trash = mocker.patch('send2trash.send2trash')
-    archive_dashcam_footage(
-        front_dir,
-        rear_dir,
-        output_dir,
-        no_delete=True,
-        video_encoder='hevc_nvenc',
-        video_bitrate='2M',
-    )
+    archive_dashcam_footage(front_dir,
+                            rear_dir,
+                            output_dir,
+                            no_delete=True,
+                            video_encoder='hevc_nvenc',
+                            video_bitrate='2M')
     args = mock_run.call_args_list[0].args[0]
     assert 'hevc_nvenc' in args
     assert '-b:v' in args

@@ -51,12 +51,9 @@ def mock_get_pil_image_module(mocker: MockerFixture, mock_pil_image_module: tupl
 
 
 @pytest.mark.asyncio
-async def test_fix_chromium_pwa_icon_basic(
-    tmp_path: Path,
-    mock_get_pil_image_module: Mock,
-    mock_async_session_get: Mock,
-    mock_pil_image_module: tuple[Mock, Mock],
-) -> None:
+async def test_fix_chromium_pwa_icon_basic(tmp_path: Path, mock_get_pil_image_module: Mock,
+                                           mock_async_session_get: Mock,
+                                           mock_pil_image_module: tuple[Mock, Mock]) -> None:
     app_id = 'test_app_id'
     icon_src_uri = 'http://example.com/icon.png'
     config_path = tmp_path
@@ -78,12 +75,9 @@ async def test_fix_chromium_pwa_icon_basic(
 
 
 @pytest.mark.asyncio
-async def test_fix_chromium_pwa_icon_masked(
-    tmp_path: Path,
-    mock_get_pil_image_module: Mock,
-    mock_async_session_get: Mock,
-    mock_pil_image_module: tuple[Mock, Mock],
-) -> None:
+async def test_fix_chromium_pwa_icon_masked(tmp_path: Path, mock_get_pil_image_module: Mock,
+                                            mock_async_session_get: Mock,
+                                            mock_pil_image_module: tuple[Mock, Mock]) -> None:
     app_id = 'test_app_id'
     icon_src_uri = 'http://example.com/icon.png'
     config_path = tmp_path
@@ -99,12 +93,10 @@ async def test_fix_chromium_pwa_icon_masked(
 
 
 @pytest.mark.asyncio
-async def test_fix_chromium_pwa_icon_monochrome(
-    mocker: MockerFixture,
-    mock_get_pil_image_module: Mock,
-    mock_async_session_get: Mock,
-    mock_pil_image_module: tuple[Mock, Mock],
-) -> None:
+async def test_fix_chromium_pwa_icon_monochrome(mocker: MockerFixture,
+                                                mock_get_pil_image_module: Mock,
+                                                mock_async_session_get: Mock,
+                                                mock_pil_image_module: tuple[Mock, Mock]) -> None:
     mock_path = mocker.patch('deltona.chromium.Path').return_value
     app_id = 'test_app_id'
     icon_src_uri = 'http://example.com/icon.png'
@@ -122,12 +114,9 @@ async def test_fix_chromium_pwa_icon_monochrome(
 
 
 @pytest.mark.asyncio
-async def test_fix_chromium_pwa_icon_not_square(
-    tmp_path: Path,
-    mock_get_pil_image_module: Mock,
-    mock_async_session_get: Mock,
-    mock_pil_image_module: tuple[Mock, Mock],
-) -> None:
+async def test_fix_chromium_pwa_icon_not_square(tmp_path: Path, mock_get_pil_image_module: Mock,
+                                                mock_async_session_get: Mock,
+                                                mock_pil_image_module: tuple[Mock, Mock]) -> None:
     app_id = 'test_app_id'
     icon_src_uri = 'http://example.com/icon.png'
     config_path = tmp_path

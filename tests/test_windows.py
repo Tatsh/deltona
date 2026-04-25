@@ -29,8 +29,7 @@ def test_make_font_entry_with_all_options() -> None:
         strike_out=True,
         underline=True,
         weight=windows.Weight.FW_BOLD,
-        width=2,
-    )
+        width=2)
     assert result.startswith(r'HKEY_USERS\.Default\Control Panel\Desktop\WindowMetrics')
     assert '"MenuFont"=hex:' in result
     assert '53,00,65,00,67,00,6f,00,65,00,20,00,55,00,49,00' in result  # "Segoe UI" in utf-16le hex
