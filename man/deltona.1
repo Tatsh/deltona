@@ -27,9 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "DELTONA" "1" "Mar 21, 2026" "0.1.4" "deltona"
+.TH "DELTONA" "1" "Apr 25, 2026" "0.2.0" "deltona"
 .SH NAME
-deltona \- deltona v0.1.4
+deltona \- deltona v0.2.0
 .sp
 A lot of uncategorised utilities.
 .SH CLEAN-OLD-KERNELS-MODULES
@@ -430,6 +430,12 @@ kill\-gamescope [OPTIONS]
 .SH MPV-SBS
 .sp
 Display two videos side by side in mpv.
+.SS Raises
+.INDENT 0.0
+.TP
+.B ValueError
+If either video\(aqs width or height is outside the allowed bounds.
+.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -490,7 +496,7 @@ Optional argument(s)
 .sp
 Upload image to ImgBB.
 .sp
-Get an API key at \X'tty: link https://api.imgbb.com/'\fI\%https://api.imgbb.com/\fP\X'tty: link' and set it with \fIkeyring set imgbb \(dq${USER}\(dq\fP\&.
+Get an API key at \X'tty: link https://api.imgbb.com/'\fI\%https://api.imgbb.com/\fP\X'tty: link' and set it with \fBkeyring set imgbb \(dq${USER}\(dq\fP\&.
 .sp
 Usage
 .INDENT 0.0
@@ -733,6 +739,21 @@ Delay in seconds between attempts.
 .UNINDENT
 .INDENT 0.0
 .TP
+.B \-\-concurrency <concurrency>
+Maximum number of repositories processed in parallel.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-M, \-\-max\-concurrent\-http\-requests <max_concurrent_http_requests>
+Hard cap on simultaneous in\-flight HTTP requests.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-r, \-\-repo <repos>
+Specific repository to process as NAME or OWNER/NAME. May be passed multiple times.
+.UNINDENT
+.INDENT 0.0
+.TP
 .B \-u, \-\-username <username>
 Username.
 .UNINDENT
@@ -913,18 +934,18 @@ Batch encode dashcam footage, merging rear and front camera footage.
 This command\(aqs defaults are intended for use with Red Tiger dashcam output and file structure.
 .sp
 The rear camera view will be placed in the bottom right of the video scaled by dividing the
-width and height by the \-\-rear\-view\-scale\-divisor value specified. It will also be cropped using
-the \-\-rear\-crop value unless \-\-no\-rear\-crop is passed.
+width and height by the \fB\-\-rear\-view\-scale\-divisor\fP value specified. It will also be cropped
+using the \fB\-\-rear\-crop\fP value unless \fB\-\-no\-rear\-crop\fP is passed.
 .sp
-Files are automatically grouped using the regular expression passed with \-M/\-\-match\-regexp. This
-RE must contain at least one group and only the first group will be considered. Make dubious use
-of non\-capturing groups if necessary. The captured group string is expected to be usable with
-the time format specified with \-\-time\-format (see strptime documentation at
+Files are automatically grouped using the regular expression passed with
+\fB\-M\fP/\fB\-\-match\-regexp\fP\&. This RE must contain at least one group and only the first group will
+be considered. Make dubious use of non\-capturing groups if necessary. The captured group string
+is expected to be usable with the time format specified with \fB\-\-time\-format\fP (see
+\fBstrptime\fP documentation at
 \X'tty: link https://docs.python.org/3/library/datetime.html#datetime.datetime.strptime'\fI\%https://docs.python.org/3/library/datetime.html#datetime.datetime.strptime\fP\X'tty: link').
 .sp
-In many cases, the camera leaves behind stray rear camera files (usually no more than one per
-group and always a video without a matching front video file the end). These are automatically
-ignored if possible. This behaviour can be disabled by passing \-\-no\-fix\-groups.
+Front and rear files are paired by timestamp proximity (within \fB\-\-max\-offset\fP seconds). Files
+without a corresponding partner are logged and skipped without deletion.
 .sp
 Original files whose content is successfully converted are sent to the wastebin.
 .sp
@@ -940,7 +961,7 @@ Usage
 .INDENT 3.5
 .sp
 .EX
-encode\-dashcam [OPTIONS] FRONT_DIR REAR_DIR [OUTPUT_DIR]
+encode\-dashcam [OPTIONS] FRONT_DIR [REAR_DIR] [OUTPUT_DIR]
 .EE
 .UNINDENT
 .UNINDENT
@@ -968,8 +989,13 @@ Level (HEVC).
 .UNINDENT
 .INDENT 0.0
 .TP
-.B \-\-no\-fix\-groups
-Disable group discrepancy resolution.
+.B \-\-max\-offset <max_offset>
+Maximum seconds between front and rear timestamps for pairing.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-chapters
+Disable chapter markers in output.
 .UNINDENT
 .INDENT 0.0
 .TP
@@ -1071,7 +1097,7 @@ Required argument
 .INDENT 0.0
 .TP
 .B REAR_DIR
-Required argument
+Optional argument
 .UNINDENT
 .INDENT 0.0
 .TP
@@ -1107,7 +1133,7 @@ Required argument
 .UNINDENT
 .SH HLG2SDR
 .sp
-Convert a HLG video to SDR.
+Convert an HLG video to SDR.
 .sp
 Usage
 .INDENT 0.0
@@ -1402,7 +1428,7 @@ System ID.
 .UNINDENT
 .INDENT 0.0
 .TP
-.B \-\-volset <STRING>
+.B \-\-volset <ID>
 Volume Set ID.
 .UNINDENT
 .INDENT 0.0
@@ -1423,17 +1449,17 @@ Generate boot information table in boot file.
 .INDENT 0.0
 .TP
 .B \-\-optimize
-Optimise file systems by coding same files only once.
+Optimise file systems by coding the same files only once.
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-f, \-\-file <FILENAME>
-Add one file or folder (include folder name and all files and folders under it).
+Add one file or folder (includes folder name and all files and folders under it).
 .UNINDENT
 .INDENT 0.0
 .TP
 .B \-\-dir <DIRNAME>
-Add all files and folders under given directory (not include directory name itself).
+Add all files and folders under a given directory (does not include the directory name itself).
 .UNINDENT
 .INDENT 0.0
 .TP
@@ -2429,7 +2455,7 @@ Options
 .INDENT 0.0
 .TP
 .B \-s, \-\-subprocess\-name <subprocess_name>
-Chromium\-based browser subprocess name such as \(dqchrome\(dq.
+Chromium\-based browser subprocess name such as \(aqchrome\(aq.
 .UNINDENT
 .INDENT 0.0
 .TP

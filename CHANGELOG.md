@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+## [0.2.0] - 2026-04-25
+
 ### Added
 
 - `pair_redtiger_dashcam_files()` and `group_pairs()` public utility functions for
