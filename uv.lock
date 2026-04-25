@@ -9,7 +9,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-04-18T10:04:42.395037171Z"
+exclude-newer = "2026-04-18T11:50:15.645869137Z"
 exclude-newer-span = "P1W"
 
 [[package]]
@@ -879,16 +879,13 @@ dev = [
 docs = [
     { name = "autodoc-pydantic" },
     { name = "doc8" },
-    { name = "docutils" },
     { name = "enum-tools", extra = ["sphinx"] },
     { name = "esbonio" },
-    { name = "numpydoc" },
     { name = "restructuredtext-lint" },
     { name = "sphinx", version = "9.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
     { name = "sphinx-click" },
     { name = "sphinx-datatables" },
     { name = "sphinx-immaterial" },
-    { name = "tomlkit" },
 ]
 tests = [
     { name = "coveralls" },
@@ -958,16 +955,13 @@ dev = [
 docs = [
     { name = "autodoc-pydantic", specifier = ">=2.2.0" },
     { name = "doc8", specifier = ">=2.0.0" },
-    { name = "docutils", specifier = "<0.22" },
     { name = "enum-tools", extras = ["sphinx"], specifier = ">=0.13.0" },
     { name = "esbonio", specifier = ">=2.0.0" },
-    { name = "numpydoc", specifier = ">=1.10.0" },
     { name = "restructuredtext-lint", specifier = ">=2.0.2" },
     { name = "sphinx", marker = "python_full_version >= '3.13'", specifier = ">=9.1.0" },
     { name = "sphinx-click", specifier = ">=6.2.0" },
     { name = "sphinx-datatables", specifier = ">=1.0.0" },
     { name = "sphinx-immaterial", specifier = ">=0.13.9" },
-    { name = "tomlkit", specifier = ">=0.14.0" },
 ]
 tests = [
     { name = "coveralls", specifier = ">=4.1.0" },
@@ -1728,21 +1722,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/89/02/ff649fdaf4a9019c4ba71c038ec8355a1404538eb8bde2028a3956003c39/niquests-3.18.6.tar.gz", hash = "sha256:bdf8e945241670608552e8b3c41556aaf532705e3c8f1ed197a102d017f0a54a", size = 1022813, upload-time = "2026-04-13T06:32:38.628Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0d/3c/78f9a77e4fdd4456088bb7f0a5b2e99ba5d6cbf41fc36f5cbb3f3103a42f/niquests-3.18.6-py3-none-any.whl", hash = "sha256:cb415e31ca18ec69e88f393dcc339bce8baa38d50910e696fd0712d0b9480551", size = 208665, upload-time = "2026-04-13T06:32:37.223Z" },
-]
-
-[[package]]
-name = "numpydoc"
-version = "1.10.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "sphinx", version = "9.0.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
-    { name = "sphinx", version = "9.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e9/3c/dfccc9e7dee357fb2aa13c3890d952a370dd0ed071e0f7ed62ed0df567c1/numpydoc-1.10.0.tar.gz", hash = "sha256:3f7970f6eee30912260a6b31ac72bba2432830cd6722569ec17ee8d3ef5ffa01", size = 94027, upload-time = "2025-12-02T16:39:12.937Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/62/5e/3a6a3e90f35cea3853c45e5d5fb9b7192ce4384616f932cf7591298ab6e1/numpydoc-1.10.0-py3-none-any.whl", hash = "sha256:3149da9874af890bcc2a82ef7aae5484e5aa81cb2778f08e3c307ba6d963721b", size = 69255, upload-time = "2025-12-02T16:39:11.561Z" },
 ]
 
 [[package]]

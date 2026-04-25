@@ -212,7 +212,6 @@ notarytool
 noto
 npmjs
 numpy
-numpydoc
 nvenc
 nwinemenubuilder
 nyapfignore
