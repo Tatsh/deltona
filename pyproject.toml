@@ -6,10 +6,10 @@ requires = ["hatchling"]
 dev = [
   "commitizen>=4.13.10",
   "cz-path>=0.0.6",
-  "mypy>=1.20.0",
+  "mypy>=1.20.1",
   "pydbus-stubs>=0; sys_platform == 'linux'",
-  "ruff>=0.15.10",
-  "ty>=0.0.29",
+  "ruff==0.15.11",
+  "ty>=0.0.31",
   "types-beautifulsoup4>=4.12.0.20250516",
   "types-binaryornot>=0.4.0.20260408",
   "types-paramiko>=4.0.0.20260408",
@@ -79,9 +79,9 @@ dependencies = [
   "bascom>=0.1.2",
   "binaryornot>=0.6.0",
   "click>=8.3.2",
-  "niquests>=3.18.5",
-  "pathspec>=0.12.1",
-  "tomlkit>=0.13.2",
+  "niquests>=3.18.6",
+  "pathspec>=1.0.4",
+  "tomlkit>=0.14.0",
   "typing-extensions>=4.15.0",
 ]
 description = "A lot of uncategorised utilities."
@@ -103,7 +103,7 @@ desktop = [
   "pygobject>=3.56.2; sys_platform == 'linux'",
   "pyperclip>=1.11.0",
 ]
-git = ["gitpython>=3.1.46", "keyring>=25.7.0", "pygithub>=2.9.0"]
+git = ["gitpython>=3.1.46", "keyring>=25.7.0", "pygithub>=2.9.1"]
 media = ["keyring>=25.7.0", "mutagen>=1.47.0", "platformdirs>=4.9.6", "send2trash>=2.1.0"]
 string = ["pyyaml>=6.0.3", "unidecode>=1.4.0", "yt-dlp>=2026.3.17"]
 wine = ["pexpect>=4.9.0", "platformdirs>=4.9.6", "psutil>=7.2.2", "python-xz>=0.6.0"]
@@ -215,7 +215,7 @@ omit = ["conftest.py", "tests.py", "tests/*/test_*.py", "tests/test_*.py"]
 max-line-length = 100
 
 [tool.hatch.build.targets.sdist]
-include = ["deltona", "tests"]
+include = ["deltona", "man", "tests"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["deltona"]
@@ -357,4 +357,4 @@ split_penalty_logical_operator = 300
 use_tabs = false
 
 [tool.yapfignore]
-ignore_patterns = [".venv/**", "node_modules/**"]
+ignore_patterns = [".venv", ".wiswa-ci", "node_modules"]

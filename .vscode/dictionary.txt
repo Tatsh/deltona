@@ -116,7 +116,6 @@ genindex
 gethostname
 getxattr
 gitpython
-gitwildmatch
 globaltoc
 gnudb
 gogextract
@@ -216,6 +215,7 @@ numpy
 numpydoc
 nvenc
 nwinemenubuilder
+nyapfignore
 onefile
 oneline
 otherfilerc

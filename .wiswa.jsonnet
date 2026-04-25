@@ -81,6 +81,7 @@ local utils = import 'utils.libsonnet';
         adp: 'deltona.commands.misc:adp_main',
         burnrariso: 'deltona.commands.misc:burnrariso_main',
         gogextract: 'deltona.commands.misc:gogextract_main',
+        'remove-trailing-commas': 'deltona.commands.misc:remove_trailing_commas_main',
         'unpack-0day': 'deltona.commands.misc:unpack_0day_main',
         // string
         cssq: 'deltona.commands.string:cssq_main',
@@ -196,6 +197,7 @@ local utils = import 'utils.libsonnet';
             optional: true,
             version: utils.latestPypiPackageVersionCaret('soupsieve'),
           },
+          tomlkit: utils.latestPypiPackageVersionCaret('tomlkit'),
           unidecode: {
             optional: true,
             version: utils.latestPypiPackageVersionCaret('unidecode'),
