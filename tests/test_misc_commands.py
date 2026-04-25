@@ -16,6 +16,8 @@ from deltona.io import SFVVerificationError, UnRARExtractionTestFailed
 import pytest
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from click.testing import CliRunner
     from pytest_mock import MockerFixture
 
@@ -222,9 +224,8 @@ def test_remove_trailing_commas_main_skips_token_error(runner: CliRunner, tmp_pa
                                                        mocker: MockerFixture) -> None:
     f = tmp_path / 'broken.py'
     f.write_text('x = (1,)\n')
-    mocker.patch('deltona.commands.misc.remove_trailing_commas',
-                 side_effect=tokenize.TokenError('bad'))
-    mocker.patch('deltona.commands.misc.ast.parse')
+    mocker.patch('deltona.refactor.remove_trailing_commas', side_effect=tokenize.TokenError('bad'))
+    mocker.patch('deltona.refactor.ast.parse')
     result = runner.invoke(remove_trailing_commas_main, [str(f), '--no-format'])
     assert result.exit_code == 0
 
@@ -410,6 +411,55 @@ def test_remove_trailing_commas_main_nested_gitignore(runner: CliRunner, tmp_pat
     assert (sub / 'a.py').read_text() == 'x = (1, 2)\n'
 
 
+def test_remove_trailing_commas_main_iterdir_oserror(runner: CliRunner, tmp_path: Path,
+                                                     mocker: MockerFixture) -> None:
+    real_iterdir = Path.iterdir
+    excluded = tmp_path / 'forbidden'
+    excluded.mkdir()
+    (excluded / 'a.py').write_text('x = (1, 2,)\n')
+    (tmp_path / 'b.py').write_text('y = (1, 2,)\n')
+
+    def fake_iterdir(self: Path) -> Iterator[Path]:
+        if self == excluded:
+            msg = 'permission denied'
+            raise OSError(msg)
+        return real_iterdir(self)
+
+    mocker.patch.object(Path, 'iterdir', fake_iterdir)
+    result = runner.invoke(remove_trailing_commas_main, [str(tmp_path), '--no-format'])
+    assert result.exit_code == 0
+    assert (tmp_path / 'b.py').read_text() == 'y = (1, 2)\n'
+    assert (excluded / 'a.py').read_text() == 'x = (1, 2,)\n'
+
+
+def test_remove_trailing_commas_main_skipped_text_files(runner: CliRunner, tmp_path: Path) -> None:
+    (tmp_path / 'a.py').write_text('x = (1, 2,)\n')
+    (tmp_path / 'data.txt').write_text('not python\n')
+    result = runner.invoke(remove_trailing_commas_main, [str(tmp_path), '--no-format'])
+    assert result.exit_code == 0
+    assert (tmp_path / 'a.py').read_text() == 'x = (1, 2)\n'
+
+
+def test_remove_trailing_commas_main_excludes_individual_file(runner: CliRunner,
+                                                              tmp_path: Path) -> None:
+    (tmp_path / '.git').mkdir()
+    (tmp_path / '.gitignore').write_text('skip_me.py\n')
+    (tmp_path / 'a.py').write_text('x = (1, 2,)\n')
+    (tmp_path / 'skip_me.py').write_text('y = (1, 2,)\n')
+    result = runner.invoke(remove_trailing_commas_main, [str(tmp_path), '--no-format'])
+    assert result.exit_code == 0
+    assert (tmp_path / 'a.py').read_text() == 'x = (1, 2)\n'
+    assert (tmp_path / 'skip_me.py').read_text() == 'y = (1, 2,)\n'
+
+
+def test_remove_trailing_commas_main_dangling_symlink(runner: CliRunner, tmp_path: Path) -> None:
+    (tmp_path / 'a.py').write_text('x = (1, 2,)\n')
+    (tmp_path / 'broken').symlink_to(tmp_path / 'missing-target')
+    result = runner.invoke(remove_trailing_commas_main, [str(tmp_path), '--no-format'])
+    assert result.exit_code == 0
+    assert (tmp_path / 'a.py').read_text() == 'x = (1, 2)\n'
+
+
 def test_remove_trailing_commas_main_unreadable_gitignore(runner: CliRunner, tmp_path: Path,
                                                           mocker: MockerFixture) -> None:
     (tmp_path / '.git').mkdir()
@@ -441,6 +491,171 @@ def test_remove_trailing_commas_main_symlink_escapes_base(runner: CliRunner,
     (repo / 'link.py').symlink_to(target)
     result = runner.invoke(remove_trailing_commas_main, [str(repo), '--no-format'])
     assert result.exit_code == 0
+
+
+def test_remove_trailing_commas_main_extra_excludes_from_pyproject(runner: CliRunner,
+                                                                   tmp_path: Path,
+                                                                   mocker: MockerFixture) -> None:
+    (tmp_path / '.git').mkdir()
+    (tmp_path / 'pyproject.toml').write_text(
+        '[tool.yapfignore]\nignore_patterns = ["build/**"]\n'
+        '[tool.ruff]\nexclude = ["legacy/"]\nextend-exclude = ["vendor/"]\n'
+        '[tool.ruff.format]\nexclude = ["fixtures/"]\n'
+        '[tool.deltona]\nname = "x"\n')
+    (tmp_path / 'package.json').write_text('{"scripts": {"format": "x"}}')
+    (tmp_path / 'a.py').write_text('x = (1, 2,)\n')
+    for sub in ('build', 'legacy', 'vendor', 'fixtures'):
+        (tmp_path / sub).mkdir()
+        (tmp_path / sub / 'b.py').write_text('y = (1, 2,)\n')
+    yarn = tmp_path / 'yarn-fake'
+    yarn.write_text('')
+    mocker.patch('deltona.commands.misc.shutil.which', return_value=str(yarn))
+    mocker.patch('pathlib.Path.cwd', return_value=tmp_path)
+    mocker.patch('deltona.commands.misc.sp.run', return_value=MagicMock(returncode=0))
+    result = runner.invoke(remove_trailing_commas_main, [str(tmp_path)])
+    assert result.exit_code == 0
+    assert (tmp_path / 'a.py').read_text() == 'x = (1, 2)\n'
+    for sub in ('build', 'legacy', 'vendor', 'fixtures'):
+        assert (tmp_path / sub / 'b.py').read_text() == 'y = (1, 2,)\n'
+
+
+def test_remove_trailing_commas_main_extra_excludes_from_ruff_toml(runner: CliRunner,
+                                                                   tmp_path: Path,
+                                                                   mocker: MockerFixture) -> None:
+    (tmp_path / 'ruff.toml').write_text('exclude = ["legacy/"]\nextend-exclude = ["vendor/"]\n'
+                                        '[format]\nexclude = ["fixtures/"]\n')
+    (tmp_path / 'package.json').write_text('{"scripts": {"format": "x"}}')
+    (tmp_path / 'a.py').write_text('x = (1, 2,)\n')
+    for sub in ('legacy', 'vendor', 'fixtures'):
+        (tmp_path / sub).mkdir()
+        (tmp_path / sub / 'b.py').write_text('y = (1, 2,)\n')
+    yarn = tmp_path / 'yarn-fake'
+    yarn.write_text('')
+    mocker.patch('deltona.commands.misc.shutil.which', return_value=str(yarn))
+    mocker.patch('pathlib.Path.cwd', return_value=tmp_path)
+    mocker.patch('deltona.commands.misc.sp.run', return_value=MagicMock(returncode=0))
+    result = runner.invoke(remove_trailing_commas_main, [str(tmp_path)])
+    assert result.exit_code == 0
+    assert (tmp_path / 'a.py').read_text() == 'x = (1, 2)\n'
+    for sub in ('legacy', 'vendor', 'fixtures'):
+        assert (tmp_path / sub / 'b.py').read_text() == 'y = (1, 2,)\n'
+
+
+def test_remove_trailing_commas_main_extra_excludes_skipped_when_no_format(
+        runner: CliRunner, tmp_path: Path, mocker: MockerFixture) -> None:
+    (tmp_path / 'pyproject.toml').write_text('[tool.ruff]\nexclude = ["legacy/"]\n')
+    (tmp_path / 'a.py').write_text('x = (1, 2,)\n')
+    legacy = tmp_path / 'legacy'
+    legacy.mkdir()
+    (legacy / 'b.py').write_text('y = (1, 2,)\n')
+    mocker.patch('pathlib.Path.cwd', return_value=tmp_path)
+    result = runner.invoke(remove_trailing_commas_main, [str(tmp_path), '--no-format'])
+    assert result.exit_code == 0
+    assert (tmp_path / 'a.py').read_text() == 'x = (1, 2)\n'
+    assert (legacy / 'b.py').read_text() == 'y = (1, 2)\n'
+
+
+def test_remove_trailing_commas_main_pyproject_invalid_toml(runner: CliRunner, tmp_path: Path,
+                                                            mocker: MockerFixture) -> None:
+    (tmp_path / 'pyproject.toml').write_text('this is not valid toml === [[[\n')
+    (tmp_path / 'package.json').write_text('{"scripts": {"format": "x"}}')
+    (tmp_path / 'a.py').write_text('x = (1, 2,)\n')
+    yarn = tmp_path / 'yarn-fake'
+    yarn.write_text('')
+    mocker.patch('deltona.commands.misc.shutil.which', return_value=str(yarn))
+    mocker.patch('pathlib.Path.cwd', return_value=tmp_path)
+    mocker.patch('deltona.commands.misc.sp.run', return_value=MagicMock(returncode=0))
+    result = runner.invoke(remove_trailing_commas_main, [str(tmp_path)])
+    assert result.exit_code == 0
+
+
+def test_remove_trailing_commas_main_pyproject_unexpected_shapes(runner: CliRunner, tmp_path: Path,
+                                                                 mocker: MockerFixture) -> None:
+    (tmp_path / 'pyproject.toml').write_text('tool = "not a table"\n')
+    (tmp_path / 'package.json').write_text('{"scripts": {"format": "x"}}')
+    (tmp_path / 'a.py').write_text('x = (1, 2,)\n')
+    yarn = tmp_path / 'yarn-fake'
+    yarn.write_text('')
+    mocker.patch('deltona.commands.misc.shutil.which', return_value=str(yarn))
+    mocker.patch('pathlib.Path.cwd', return_value=tmp_path)
+    mocker.patch('deltona.commands.misc.sp.run', return_value=MagicMock(returncode=0))
+    result = runner.invoke(remove_trailing_commas_main, [str(tmp_path)])
+    assert result.exit_code == 0
+
+
+def test_remove_trailing_commas_main_pyproject_unexpected_sub_tables(runner: CliRunner,
+                                                                     tmp_path: Path,
+                                                                     mocker: MockerFixture) -> None:
+    (tmp_path / 'pyproject.toml').write_text('[tool]\nyapfignore = "scalar"\nruff = "scalar"\n')
+    (tmp_path / 'package.json').write_text('{"scripts": {"format": "x"}}')
+    (tmp_path / 'a.py').write_text('x = (1, 2,)\n')
+    yarn = tmp_path / 'yarn-fake'
+    yarn.write_text('')
+    mocker.patch('deltona.commands.misc.shutil.which', return_value=str(yarn))
+    mocker.patch('pathlib.Path.cwd', return_value=tmp_path)
+    mocker.patch('deltona.commands.misc.sp.run', return_value=MagicMock(returncode=0))
+    result = runner.invoke(remove_trailing_commas_main, [str(tmp_path)])
+    assert result.exit_code == 0
+
+
+def test_remove_trailing_commas_main_pyproject_ruff_format_scalar(runner: CliRunner, tmp_path: Path,
+                                                                  mocker: MockerFixture) -> None:
+    (tmp_path / 'pyproject.toml').write_text('[tool.ruff]\nformat = "scalar"\n')
+    (tmp_path / 'package.json').write_text('{"scripts": {"format": "x"}}')
+    (tmp_path / 'a.py').write_text('x = (1, 2,)\n')
+    yarn = tmp_path / 'yarn-fake'
+    yarn.write_text('')
+    mocker.patch('deltona.commands.misc.shutil.which', return_value=str(yarn))
+    mocker.patch('pathlib.Path.cwd', return_value=tmp_path)
+    mocker.patch('deltona.commands.misc.sp.run', return_value=MagicMock(returncode=0))
+    result = runner.invoke(remove_trailing_commas_main, [str(tmp_path)])
+    assert result.exit_code == 0
+
+
+def test_remove_trailing_commas_main_no_project_root(runner: CliRunner, tmp_path: Path,
+                                                     mocker: MockerFixture) -> None:
+    (tmp_path / 'a.py').write_text('x = (1, 2,)\n')
+    (tmp_path / 'package.json').write_text('{"scripts": {"format": "x"}}')
+    sub = tmp_path / 'work'
+    sub.mkdir()
+    yarn = tmp_path / 'yarn-fake'
+    yarn.write_text('')
+    mocker.patch('deltona.commands.misc.shutil.which', return_value=str(yarn))
+    mocker.patch('pathlib.Path.cwd', return_value=Path('/missing-root'))
+    mocker.patch('deltona.commands.misc.sp.run', return_value=MagicMock(returncode=0))
+    result = runner.invoke(remove_trailing_commas_main, [str(tmp_path)])
+    assert result.exit_code == 0
+
+
+def test_remove_trailing_commas_main_ruff_toml_format_scalar(runner: CliRunner, tmp_path: Path,
+                                                             mocker: MockerFixture) -> None:
+    (tmp_path / '.ruff.toml').write_text('format = "scalar"\n')
+    (tmp_path / 'package.json').write_text('{"scripts": {"format": "x"}}')
+    (tmp_path / 'a.py').write_text('x = (1, 2,)\n')
+    yarn = tmp_path / 'yarn-fake'
+    yarn.write_text('')
+    mocker.patch('deltona.commands.misc.shutil.which', return_value=str(yarn))
+    mocker.patch('pathlib.Path.cwd', return_value=tmp_path)
+    mocker.patch('deltona.commands.misc.sp.run', return_value=MagicMock(returncode=0))
+    result = runner.invoke(remove_trailing_commas_main, [str(tmp_path)])
+    assert result.exit_code == 0
+
+
+def test_remove_trailing_commas_main_debug_shows_format_output(runner: CliRunner, tmp_path: Path,
+                                                               mocker: MockerFixture) -> None:
+    f = tmp_path / 'x.py'
+    f.write_text('x = (1, 2, 3,)\n')
+    (tmp_path / 'package.json').write_text('{"scripts": {"format": "x", "ruff:fix": "y"}}')
+    yarn = tmp_path / 'yarn-fake'
+    yarn.write_text('')
+    mocker.patch('deltona.commands.misc.shutil.which', return_value=str(yarn))
+    mocker.patch('pathlib.Path.cwd', return_value=tmp_path)
+    run_mock = mocker.patch('deltona.commands.misc.sp.run', return_value=MagicMock(returncode=0))
+    result = runner.invoke(remove_trailing_commas_main, [str(f), '-d'])
+    assert result.exit_code == 0
+    for call in run_mock.call_args_list:
+        assert call.kwargs.get('stdout') is None
+        assert call.kwargs.get('stderr') is None
 
 
 def test_remove_trailing_commas_main_ruff_fix_returns_nonzero(runner: CliRunner, tmp_path: Path,

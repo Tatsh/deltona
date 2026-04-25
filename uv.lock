@@ -9,7 +9,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-04-18T08:42:09.981035685Z"
+exclude-newer = "2026-04-18T09:41:02.001747201Z"
 exclude-newer-span = "P1W"
 
 [[package]]
@@ -814,6 +814,7 @@ dependencies = [
     { name = "click" },
     { name = "niquests" },
     { name = "pathspec" },
+    { name = "tomlkit" },
     { name = "typing-extensions" },
 ]
 
@@ -927,6 +928,7 @@ requires-dist = [
     { name = "python-xz", marker = "extra == 'wine'", specifier = ">=0.6.0" },
     { name = "pyyaml", marker = "extra == 'string'", specifier = ">=6.0.3" },
     { name = "send2trash", marker = "extra == 'media'", specifier = ">=2.1.0" },
+    { name = "tomlkit", specifier = ">=0.13.2" },
     { name = "typing-extensions", specifier = ">=4.15.0" },
     { name = "unidecode", marker = "extra == 'string'", specifier = ">=1.4.0" },
     { name = "yt-dlp", marker = "extra == 'string'", specifier = ">=2026.3.17" },

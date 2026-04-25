@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
-import ast
+from typing import TYPE_CHECKING, Any
 import asyncio
 import json
 import logging
 import shutil
 import subprocess as sp
-import tokenize
 
 from bascom import setup_logging
 from deltona.adp import calculate_salary
@@ -23,13 +21,14 @@ from deltona.io import (
     unpack_0day,
     verify_sfv,
 )
-from deltona.refactor import remove_trailing_commas
+from deltona.refactor import remove_trailing_commas_in_paths
 from deltona.typing import INCITS38Code, assert_not_none
 import click
-import pathspec
+import tomlkit
+import tomlkit.exceptions
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Sequence
 
 log = logging.getLogger(__name__)
 
@@ -178,45 +177,16 @@ def remove_trailing_commas_main(paths: Sequence[Path],
                                 no_dot: bool = False) -> None:
     """Remove non-required trailing commas from Python source files."""
     setup_logging(debug=debug, loggers={'deltona': {}})
-    files: list[Path] = []
-    for p in paths:
-        if p.is_dir():
-            files.extend(_walk_directory(p, use_gitignore=not no_gitignore, allow_dot=not no_dot))
-        else:
-            files.append(p)
-    originals = asyncio.run(_process_files(files))
+    originals = asyncio.run(
+        remove_trailing_commas_in_paths(
+            paths,
+            use_gitignore=not no_gitignore,
+            allow_dot=not no_dot,
+            extra_excludes=() if no_format else _gather_format_exclusions()))
     if originals and not no_format:
         _run_post_format_steps()
     changed = sum(1 for f, original in originals.items() if _read_or_empty(f) != original)
     click.echo(f'Modified {changed} {"file" if changed == 1 else "files"}.')
-
-
-def _rewrite_one(path: Path) -> tuple[Path, str] | None:
-    log.debug('Processing `%s`.', path)
-    try:
-        src = path.read_text(encoding='utf-8')
-    except (OSError, UnicodeDecodeError) as e:
-        log.debug('Skipped `%s`: %s.', path, e)
-        return None
-    try:
-        ast.parse(src)
-    except (SyntaxError, ValueError) as e:
-        log.debug('Skipped `%s`: not valid Python (%s).', path, e)
-        return None
-    try:
-        new = ''.join(remove_trailing_commas(src))
-    except (SyntaxError, tokenize.TokenError) as e:
-        log.debug('Skipped `%s`: %s.', path, e)
-        return None
-    if new == src:
-        return None
-    path.write_text(new, encoding='utf-8')
-    return path, src
-
-
-async def _process_files(files: list[Path]) -> dict[Path, str]:
-    results = await asyncio.gather(*(asyncio.to_thread(_rewrite_one, f) for f in files))
-    return {path: original for entry in results if entry is not None for path, original in (entry,)}
 
 
 def _read_or_empty(path: Path) -> str:
@@ -224,6 +194,77 @@ def _read_or_empty(path: Path) -> str:
         return path.read_text(encoding='utf-8')
     except (OSError, UnicodeDecodeError):
         return ''
+
+
+def _string_list(value: object) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, str)]
+
+
+def _load_toml(path: Path) -> dict[str, Any]:
+    try:
+        return dict(tomlkit.parse(path.read_text(encoding='utf-8')))
+    except (OSError, tomlkit.exceptions.TOMLKitError) as e:
+        log.debug('Could not parse `%s`: %s.', path, e)
+        return {}
+
+
+def _project_root() -> Path | None:
+    cur = Path.cwd().resolve()
+    for candidate in (cur, *cur.parents):
+        for name in ('pyproject.toml', 'ruff.toml', '.ruff.toml'):
+            if (candidate / name).is_file():
+                return candidate
+    return None
+
+
+def _add_patterns(patterns: list[str], source: str, new: list[str]) -> None:
+    if not new:
+        return
+    log.debug('Adding %d exclude pattern(s) from `%s`: %s.', len(new), source, new)
+    patterns.extend(new)
+
+
+def _gather_format_exclusions() -> list[str]:
+    root = _project_root()
+    if root is None:
+        log.debug('No project root found; skipping format-tool exclusions.')
+        return []
+    log.debug('Gathering format-tool exclusions from `%s`.', root)
+    patterns: list[str] = []
+    pyproject = root / 'pyproject.toml'
+    if pyproject.is_file():
+        data = _load_toml(pyproject)
+        tool = data.get('tool')
+        if isinstance(tool, dict):
+            yapfignore = tool.get('yapfignore')
+            if isinstance(yapfignore, dict):
+                _add_patterns(patterns, 'pyproject.toml:tool.yapfignore.ignore_patterns',
+                              _string_list(yapfignore.get('ignore_patterns')))
+            ruff = tool.get('ruff')
+            if isinstance(ruff, dict):
+                _add_patterns(patterns, 'pyproject.toml:tool.ruff.exclude',
+                              _string_list(ruff.get('exclude')))
+                _add_patterns(patterns, 'pyproject.toml:tool.ruff.extend-exclude',
+                              _string_list(ruff.get('extend-exclude')))
+                ruff_format = ruff.get('format')
+                if isinstance(ruff_format, dict):
+                    _add_patterns(patterns, 'pyproject.toml:tool.ruff.format.exclude',
+                                  _string_list(ruff_format.get('exclude')))
+    for name in ('ruff.toml', '.ruff.toml'):
+        rf = root / name
+        if rf.is_file():
+            data = _load_toml(rf)
+            _add_patterns(patterns, f'{name}:exclude', _string_list(data.get('exclude')))
+            _add_patterns(patterns, f'{name}:extend-exclude',
+                          _string_list(data.get('extend-exclude')))
+            rf_format = data.get('format')
+            if isinstance(rf_format, dict):
+                _add_patterns(patterns, f'{name}:format.exclude',
+                              _string_list(rf_format.get('exclude')))
+    log.debug('Final format-tool exclusions (%d): %s.', len(patterns), patterns)
+    return patterns
 
 
 def _package_json_scripts() -> dict[str, str]:
@@ -246,60 +287,17 @@ def _run_post_format_steps() -> None:
         log.warning('`yarn` not found in PATH; skipping format and lint steps.')
         return
     scripts = _package_json_scripts()
+    output = None if log.isEnabledFor(logging.DEBUG) else sp.DEVNULL
     if 'format' in scripts:
         click.echo('Running `yarn format`.')
-        sp.run((yarn, 'format'), check=True)
+        sp.run((yarn, 'format'), check=True, stdout=output, stderr=output)
     else:
         log.info('No `format` script in `package.json`; skipping.')
     if 'ruff:fix' in scripts:
         click.echo('Running `yarn ruff:fix`.')
-        result = sp.run((yarn, 'ruff:fix'), check=False)
+        result = sp.run((yarn, 'ruff:fix'), check=False, stdout=output, stderr=output)
         if result.returncode != 0:
             log.warning('`yarn ruff:fix` exited with code %d; some issues may remain.',
                         result.returncode)
     else:
         log.info('No `ruff:fix` script in `package.json`; skipping.')
-
-
-def _git_repo_root(start: Path) -> Path | None:
-    cur = start.resolve()
-    for c in (cur, *cur.parents):
-        if (c / '.git').exists():
-            return c
-    return None
-
-
-def _build_gitignore_spec(start: Path, repo_root: Path) -> pathspec.PathSpec | None:
-    chain = [repo_root]
-    relative = start.resolve().relative_to(repo_root)
-    for part in relative.parts:
-        chain.append(chain[-1] / part)
-    patterns: list[str] = ['.git']
-    for level in chain:
-        gi = level / '.gitignore'
-        if gi.is_file():
-            try:
-                patterns.extend(gi.read_text().splitlines())
-            except OSError as e:
-                log.debug('Could not read `%s`: %s.', gi, e)
-    return pathspec.PathSpec.from_lines('gitignore', patterns)
-
-
-def _walk_directory(start: Path, *, use_gitignore: bool, allow_dot: bool) -> Iterator[Path]:
-    repo_root = _git_repo_root(start) if use_gitignore else None
-    spec = _build_gitignore_spec(start, repo_root) if repo_root is not None else None
-    base = repo_root if repo_root is not None else start.resolve()
-    for c in start.rglob('*'):
-        if not c.is_file():
-            continue
-        try:
-            rel = c.resolve().relative_to(base)
-        except ValueError:
-            yield c
-            continue
-        parts = rel.parts
-        if not allow_dot and any(part.startswith('.') for part in parts):
-            continue
-        if spec is not None and spec.match_file(str(rel)):
-            continue
-        yield c

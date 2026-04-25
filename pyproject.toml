@@ -81,6 +81,7 @@ dependencies = [
   "click>=8.3.2",
   "niquests>=3.18.5",
   "pathspec>=0.12.1",
+  "tomlkit>=0.13.2",
   "typing-extensions>=4.15.0",
 ]
 description = "A lot of uncategorised utilities."

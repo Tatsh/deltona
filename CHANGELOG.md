@@ -40,8 +40,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - `--no-dot` to skip files and directories starting with `.`.
 - New `deltona.refactor` library module with public functions `find_removable_trailing_commas` and
   `remove_trailing_commas`.
+- New public async function `refactor.remove_trailing_commas_in_paths` that walks files and
+  directories, parses each as Python, removes non-required trailing commas using non-blocking I/O,
+  and returns a mapping of modified paths to their original content.
 - `# rtc-off` and `# rtc-on` in-source directives to skip a block of code from comma removal.
 - `pathspec` base dependency for `.gitignore` matching.
+- `tomlkit` base dependency for reading `pyproject.toml` and Ruff configuration files.
 
 ### Changed
 
@@ -76,6 +80,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   bounded HTTP and task concurrency.
 - `merge_dependabot_pull_requests` now lists repositories with `visibility='all'`, ensuring private
   repositories are included.
+- `remove-trailing-commas` now picks up exclude patterns from `pyproject.toml`
+  (`tool.yapfignore.ignore_patterns`, `tool.ruff.exclude`, `tool.ruff.extend-exclude`,
+  `tool.ruff.format.exclude`) and from `ruff.toml` / `.ruff.toml` (`exclude`, `extend-exclude`,
+  `format.exclude`) when `--no-format` is not passed.
+- `remove-trailing-commas` directory walker now prunes excluded directories during traversal
+  instead of post-filtering, so large directories such as `.venv` and `node_modules` are skipped
+  without descending.
+- `remove-trailing-commas` suppresses `yarn format` and `yarn ruff:fix` output by default; pass
+  `--debug` (`-d`) to show the output and to emit debug logs tracing how the ignore pattern set is
+  built up.
 
 ### Removed
 
