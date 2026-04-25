@@ -87,6 +87,7 @@ def test_git_open_main_convert_ssh(mocker: MockerFixture, runner: CliRunner) -> 
 
 def test_merge_dependabot_prs_main(mocker: MockerFixture, runner: CliRunner) -> None:
     mock_merge = mocker.patch('deltona.commands.git.merge_dependabot_pull_requests',
+                              new_callable=mocker.AsyncMock,
                               side_effect=[RuntimeError, None])
     mock_sleep = mocker.patch('deltona.commands.git.sleep')
     mocker.patch('keyring.get_password', return_value='dummy_token')
@@ -95,6 +96,22 @@ def test_merge_dependabot_prs_main(mocker: MockerFixture, runner: CliRunner) -> 
     assert result.exit_code == 0
     assert mock_merge.call_count == 2
     assert mock_sleep.call_count == 1
+
+
+def test_merge_dependabot_prs_main_forwards_concurrency_options(mocker: MockerFixture,
+                                                                runner: CliRunner) -> None:
+    mock_merge = mocker.patch('deltona.commands.git.merge_dependabot_pull_requests',
+                              new_callable=mocker.AsyncMock,
+                              return_value=None)
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+
+    result = runner.invoke(merge_dependabot_prs_main,
+                           ['--concurrency', '7', '--max-concurrent-http-requests', '5'])
+    assert result.exit_code == 0
+    mock_merge.assert_called_once_with(base_url=None,
+                                       concurrency=7,
+                                       max_concurrent_http_requests=5,
+                                       token='dummy_token')
 
 
 def test_merge_dependabot_prs_main_no_token(mocker: MockerFixture, runner: CliRunner) -> None:

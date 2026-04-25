@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from functools import partial
 from time import sleep
 from typing import TYPE_CHECKING
 import getpass
+import os
 import re
 import webbrowser
 
@@ -15,6 +17,7 @@ from deltona.git import (
     get_github_default_branch,
     merge_dependabot_pull_requests,
 )
+import anyio
 import click
 
 if TYPE_CHECKING:
@@ -115,11 +118,22 @@ def git_open_main(name: str = 'origin') -> None:
 @click.option('-b', '--base-url', help='Base URL for enterprise.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('--delay', type=float, default=120, help='Delay in seconds between attempts.')
+@click.option('--concurrency',
+              type=int,
+              default=os.cpu_count() or 1,
+              help='Maximum number of repositories processed in parallel.')
+@click.option('-M',
+              '--max-concurrent-http-requests',
+              type=int,
+              default=3,
+              help='Hard cap on simultaneous in-flight HTTP requests.')
 @click.option('-u', '--username', default=getpass.getuser(), help='Username.')
 def merge_dependabot_prs_main(
     username: str,
     base_url: str | None = None,
     delay: float = 120,
+    concurrency: int = 1,
+    max_concurrent_http_requests: int = 3,
     *,
     debug: bool = False,
 ) -> None:
@@ -130,9 +144,14 @@ def merge_dependabot_prs_main(
     if not (token := keyring.get_password('tmu-github-api', username)):
         click.echo('No token.', err=True)
         raise click.Abort
+    runner = partial(merge_dependabot_pull_requests,
+                     base_url=base_url,
+                     concurrency=concurrency,
+                     max_concurrent_http_requests=max_concurrent_http_requests,
+                     token=token)
     while True:
         try:
-            merge_dependabot_pull_requests(base_url=base_url, token=token)
+            anyio.run(runner)
             break
         except RuntimeError:
             click.echo(f'Sleeping for {delay} seconds.')

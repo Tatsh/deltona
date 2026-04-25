@@ -21,6 +21,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   file stem. Disable with `--no-chapters`.
 - `duration` field to `FormatDict` and `StreamsDict` typed dictionaries.
 - `anyio`, `async-lru`, and `pytest-asyncio` dependencies.
+- `merge-dependabot-prs` CLI options:
+  - `--concurrency` (default `os.cpu_count() or 1`) to cap repositories processed in parallel.
+  - `-M` / `--max-concurrent-http-requests` (default `3`) to cap simultaneous in-flight HTTP
+    requests.
 
 ### Changed
 
@@ -51,6 +55,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - File I/O in async functions uses anyio for non-blocking access.
 - `merge_dependabot_pull_requests` now lists repositories with `get_repos(sort='full_name')`
   instead of filtering by `affiliation='owner'`.
+- `merge_dependabot_pull_requests` is now async and processes repositories concurrently with
+  bounded HTTP and task concurrency.
 
 ### Removed
 
