@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 from urllib.parse import urlparse
 import asyncio
 import contextlib
@@ -13,15 +13,17 @@ import re
 import anyio
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable, Iterable, Mapping
     from types import ModuleType
 
     from git import Repo
     from github import Github
+    from github.AuthenticatedUser import AuthenticatedUser
     from github.PullRequest import PullRequest
     from github.Repository import Repository
 
 __all__ = (
+    'DependabotMergeError',
     'convert_git_ssh_url_to_https',
     'get_github_default_branch',
     'merge_dependabot_pull_requests',
@@ -29,6 +31,18 @@ __all__ = (
 
 _T = TypeVar('_T')
 log = logging.getLogger(__name__)
+
+
+class DependabotMergeError(RuntimeError):
+    """Raised when one or more Dependabot pull requests could not be merged."""
+
+    remaining: dict[str, int]
+    """Mapping of repository full name to the number of pull requests still unmerged."""
+    def __init__(self, remaining: Mapping[str, int]) -> None:
+        self.remaining = dict(remaining)
+        total = sum(self.remaining.values())
+        super().__init__(f'{total} Dependabot pull request(s) remain across '
+                         f'{len(self.remaining)} repository(ies).')
 
 
 def convert_git_ssh_url_to_https(url: str) -> str:
@@ -119,7 +133,8 @@ def _get_authenticated_user_login(gh: Github) -> str:
 
 
 def _list_user_repositories(gh: Github) -> list[Repository]:
-    return list(gh.get_user().get_repos(sort='full_name', visibility='all'))  # type: ignore[call-arg]
+    return list(
+        cast('AuthenticatedUser', gh.get_user()).get_repos(sort='full_name', visibility='all'))
 
 
 def _merge_dependabot_pull(pull: PullRequest) -> Any:
@@ -163,8 +178,10 @@ async def merge_dependabot_pull_requests(*,
 
     Raises
     ------
-    RuntimeError
-        If any pull request could not be merged.
+    DependabotMergeError
+        If any pull request could not be merged. The exception's ``remaining``
+        attribute maps each affected repository's full name to the number of
+        Dependabot pull requests still unmerged.
     """
     import github  # noqa: PLC0415
     import github.Consts  # noqa: PLC0415
@@ -173,7 +190,8 @@ async def merge_dependabot_pull_requests(*,
     task_limiter = anyio.CapacityLimiter(concurrency or os.cpu_count() or 1)
 
     async def call(fn: Callable[..., _T], /, *args: object) -> _T:
-        return await anyio.to_thread.run_sync(fn, *args, limiter=http_limiter)
+        return await anyio.to_thread.run_sync(  # ty: ignore[unresolved-attribute]
+            fn, *args, limiter=http_limiter)
 
     gh = github.Github(token, base_url=base_url or github.Consts.DEFAULT_BASE_URL, per_page=100)
     if repos is None:
@@ -201,17 +219,18 @@ async def merge_dependabot_pull_requests(*,
             return False
         return True
 
-    async def process_repo(repo: Repository) -> bool:
+    async def process_repo(repo: Repository) -> tuple[str, int]:
         async with task_limiter:
             if repo.archived:
-                return True
+                return repo.full_name, 0
             if not await call(_uses_dependabot, repo, github):
-                return True
+                return repo.full_name, 0
             log.info('Repository: %s', repo.name)
             pull_numbers = await call(_list_dependabot_pull_numbers, repo)
             outcomes = await asyncio.gather(*(process_pull(repo, n) for n in pull_numbers))
-            return all(outcomes)
+            return repo.full_name, sum(1 for ok in outcomes if not ok)
 
     results = await asyncio.gather(*(process_repo(r) for r in repositories))
-    if not all(results):
-        raise RuntimeError
+    remaining = {full_name: count for full_name, count in results if count > 0}
+    if remaining:
+        raise DependabotMergeError(remaining)

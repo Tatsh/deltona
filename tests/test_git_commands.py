@@ -8,6 +8,7 @@ from deltona.commands.git import (
     git_rebase_default_branch_main,
     merge_dependabot_prs_main,
 )
+from deltona.git import DependabotMergeError
 
 if TYPE_CHECKING:
     from click.testing import CliRunner
@@ -86,9 +87,10 @@ def test_git_open_main_convert_ssh(mocker: MockerFixture, runner: CliRunner) -> 
 
 
 def test_merge_dependabot_prs_main(mocker: MockerFixture, runner: CliRunner) -> None:
+    failure = DependabotMergeError({'tatsh/alpha': 2, 'tatsh/beta': 1})
     mock_merge = mocker.patch('deltona.commands.git.merge_dependabot_pull_requests',
                               new_callable=mocker.AsyncMock,
-                              side_effect=[RuntimeError, None])
+                              side_effect=[failure, None])
     mock_sleep = mocker.patch('deltona.commands.git.sleep')
     mocker.patch('keyring.get_password', return_value='dummy_token')
 
@@ -96,6 +98,10 @@ def test_merge_dependabot_prs_main(mocker: MockerFixture, runner: CliRunner) -> 
     assert result.exit_code == 0
     assert mock_merge.call_count == 2
     assert mock_sleep.call_count == 1
+    assert 'Repositories with remaining Dependabot pull requests:' in result.output
+    assert 'tatsh/alpha: 2 pull request(s)' in result.output
+    assert 'tatsh/beta: 1 pull request(s)' in result.output
+    assert result.output.index('tatsh/alpha') < result.output.index('tatsh/beta')
 
 
 def test_merge_dependabot_prs_main_forwards_concurrency_options(mocker: MockerFixture,

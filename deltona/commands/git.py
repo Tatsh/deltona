@@ -13,6 +13,7 @@ import webbrowser
 from bascom import setup_logging
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.git import (
+    DependabotMergeError,
     convert_git_ssh_url_to_https,
     get_github_default_branch,
     merge_dependabot_pull_requests,
@@ -161,6 +162,9 @@ def merge_dependabot_prs_main(
         try:
             anyio.run(runner)
             break
-        except RuntimeError:
+        except DependabotMergeError as e:
+            click.echo('Repositories with remaining Dependabot pull requests:')
+            for full_name in sorted(e.remaining):
+                click.echo(f'  {full_name}: {e.remaining[full_name]} pull request(s)')
             click.echo(f'Sleeping for {delay} seconds.')
             sleep(delay)

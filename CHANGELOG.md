@@ -28,6 +28,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - `-r` / `--repo` (repeatable) to limit processing to specific repositories. Each value may be
     a bare `NAME` (resolved against the authenticated user) or a fully qualified `OWNER/NAME`.
 - `repos` parameter on `merge_dependabot_pull_requests` mirroring the `--repo` CLI option.
+- `DependabotMergeError` raised by `merge_dependabot_pull_requests` when any pull request fails to
+  merge. Carries a `remaining` mapping of repository full name to the count of unmerged pull
+  requests.
+- `merge-dependabot-prs` now prints the repositories with unmerged Dependabot pull requests, and
+  the count of pull requests for each, before sleeping between retry attempts.
 
 ### Changed
 

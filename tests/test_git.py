@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from deltona.git import (
+    DependabotMergeError,
     convert_git_ssh_url_to_https,
     get_github_default_branch,
     merge_dependabot_pull_requests,
@@ -123,6 +124,7 @@ async def test_merge_dependabot_pull_requests_should_raise(mocker: MockerFixture
                                                            monkeypatch: pytest.MonkeyPatch) -> None:
     mock_github = mocker.Mock()
     mock_github_repo = mocker.Mock()
+    mock_github_repo.full_name = 'tatsh/some-repo'
     mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
     mock_github_repo.archived = False
     mock_github_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
@@ -132,8 +134,9 @@ async def test_merge_dependabot_pull_requests_should_raise(mocker: MockerFixture
     mock_github_repo.get_pull.return_value = pull
     mock_github_repo.get_pull.return_value.merge.side_effect = github.GithubException(400)
     monkeypatch.setattr('github.Github', mock_github)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(DependabotMergeError) as exc_info:
         await merge_dependabot_pull_requests(token='fake_token')
+    assert exc_info.value.remaining == {'tatsh/some-repo': 1}
     mock_github_repo.get_pull.assert_called_once_with(1)
     mock_github_repo.get_pull.return_value.merge.assert_called_once_with(merge_method='rebase')
 
