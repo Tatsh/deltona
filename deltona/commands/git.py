@@ -127,9 +127,16 @@ def git_open_main(name: str = 'origin') -> None:
               type=int,
               default=3,
               help='Hard cap on simultaneous in-flight HTTP requests.')
+@click.option('-r',
+              '--repo',
+              'repos',
+              multiple=True,
+              help='Specific repository to process as NAME or OWNER/NAME. '
+              'May be passed multiple times.')
 @click.option('-u', '--username', default=getpass.getuser(), help='Username.')
 def merge_dependabot_prs_main(
     username: str,
+    repos: tuple[str, ...] = (),
     base_url: str | None = None,
     delay: float = 120,
     concurrency: int = 1,
@@ -148,6 +155,7 @@ def merge_dependabot_prs_main(
                      base_url=base_url,
                      concurrency=concurrency,
                      max_concurrent_http_requests=max_concurrent_http_requests,
+                     repos=repos or None,
                      token=token)
     while True:
         try:

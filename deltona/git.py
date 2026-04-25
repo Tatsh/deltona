@@ -13,7 +13,7 @@ import re
 import anyio
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
     from types import ModuleType
 
     from git import Repo
@@ -114,8 +114,12 @@ def _list_dependabot_pull_numbers(repo: Repository) -> list[int]:
     return [x.number for x in repo.get_pulls() if x.user.login == 'dependabot[bot]']
 
 
+def _get_authenticated_user_login(gh: Github) -> str:
+    return gh.get_user().login
+
+
 def _list_user_repositories(gh: Github) -> list[Repository]:
-    return list(gh.get_user().get_repos(sort='full_name'))
+    return list(gh.get_user().get_repos(sort='full_name', visibility='all'))  # type: ignore[call-arg]
 
 
 def _merge_dependabot_pull(pull: PullRequest) -> Any:
@@ -130,13 +134,14 @@ async def merge_dependabot_pull_requests(*,
                                          token: str,
                                          base_url: str | None = None,
                                          concurrency: int | None = None,
-                                         max_concurrent_http_requests: int = 3) -> None:
+                                         max_concurrent_http_requests: int = 3,
+                                         repos: Iterable[str] | None = None) -> None:
     """
     Merge pull requests made by Dependabot on GitHub.
 
     Repositories are processed concurrently up to ``concurrency`` at a time,
     with at most ``max_concurrent_http_requests`` outstanding HTTP requests
-    across the whole operation.
+    across the whole operation. Private repositories are included.
 
     Parameters
     ----------
@@ -150,6 +155,11 @@ async def merge_dependabot_pull_requests(*,
         is unavailable.
     max_concurrent_http_requests : int
         Hard cap on simultaneous in-flight HTTP requests. Default is ``3``.
+    repos : Iterable[str] | None
+        Specific repositories to process. Each item may be a bare repository
+        name (resolved against the authenticated user's login) or a fully
+        qualified ``owner/name``. When ``None``, every accessible repository
+        is processed.
 
     Raises
     ------
@@ -166,7 +176,14 @@ async def merge_dependabot_pull_requests(*,
         return await anyio.to_thread.run_sync(fn, *args, limiter=http_limiter)
 
     gh = github.Github(token, base_url=base_url or github.Consts.DEFAULT_BASE_URL, per_page=100)
-    repos = await call(_list_user_repositories, gh)
+    if repos is None:
+        repositories = await call(_list_user_repositories, gh)
+    else:
+        specs = list(repos)
+        login = (await call(_get_authenticated_user_login, gh) if any(
+            '/' not in spec for spec in specs) else '')
+        full_names = [spec if '/' in spec else f'{login}/{spec}' for spec in specs]
+        repositories = list(await asyncio.gather(*(call(gh.get_repo, n) for n in full_names)))
 
     async def process_pull(repo: Repository, num: int) -> bool:
         pull: PullRequest | None = None
@@ -195,6 +212,6 @@ async def merge_dependabot_pull_requests(*,
             outcomes = await asyncio.gather(*(process_pull(repo, n) for n in pull_numbers))
             return all(outcomes)
 
-    results = await asyncio.gather(*(process_repo(r) for r in repos))
+    results = await asyncio.gather(*(process_repo(r) for r in repositories))
     if not all(results):
         raise RuntimeError

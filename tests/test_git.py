@@ -166,6 +166,56 @@ async def test_merge_dependabot_pull_requests_adds_recreate_comment(
 
 
 @pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_explicit_repos(
+        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
+    mock_github = mocker.Mock()
+    mock_github.return_value.get_user.return_value.login = 'me'
+    bare_repo = mocker.Mock()
+    bare_repo.archived = False
+    bare_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
+    bare_repo.get_pulls.return_value = []
+    full_repo = mocker.Mock()
+    full_repo.archived = False
+    full_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
+    full_repo.get_pulls.return_value = []
+    mock_github.return_value.get_repo.side_effect = (lambda name: bare_repo
+                                                     if name == 'me/mine' else full_repo)
+    monkeypatch.setattr('github.Github', mock_github)
+    await merge_dependabot_pull_requests(token='fake_token', repos=['mine', 'tatsh/other'])
+    mock_github.return_value.get_user.return_value.get_repos.assert_not_called()
+    assert mock_github.return_value.get_repo.call_args_list == [
+        mocker.call('me/mine'),
+        mocker.call('tatsh/other'),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_explicit_repos_only_full_names(
+        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
+    mock_github = mocker.Mock()
+    repo = mocker.Mock()
+    repo.archived = False
+    repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
+    repo.get_pulls.return_value = []
+    mock_github.return_value.get_repo.return_value = repo
+    monkeypatch.setattr('github.Github', mock_github)
+    await merge_dependabot_pull_requests(token='fake_token', repos=['tatsh/other'])
+    mock_github.return_value.get_user.assert_not_called()
+    mock_github.return_value.get_repo.assert_called_once_with('tatsh/other')
+
+
+@pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_includes_private_repos(
+        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
+    mock_github = mocker.Mock()
+    mock_github.return_value.get_user.return_value.get_repos.return_value = []
+    monkeypatch.setattr('github.Github', mock_github)
+    await merge_dependabot_pull_requests(token='fake_token')
+    _, kwargs = mock_github.return_value.get_user.return_value.get_repos.call_args
+    assert kwargs.get('visibility') == 'all'
+
+
+@pytest.mark.asyncio
 async def test_merge_dependabot_pull_requests_does_not_add_duplicate_recreate_comment(
         mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
     mock_github = mocker.Mock()

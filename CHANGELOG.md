@@ -25,6 +25,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - `--concurrency` (default `os.cpu_count() or 1`) to cap repositories processed in parallel.
   - `-M` / `--max-concurrent-http-requests` (default `3`) to cap simultaneous in-flight HTTP
     requests.
+  - `-r` / `--repo` (repeatable) to limit processing to specific repositories. Each value may be
+    a bare `NAME` (resolved against the authenticated user) or a fully qualified `OWNER/NAME`.
+- `repos` parameter on `merge_dependabot_pull_requests` mirroring the `--repo` CLI option.
 
 ### Changed
 
@@ -57,6 +60,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   instead of filtering by `affiliation='owner'`.
 - `merge_dependabot_pull_requests` is now async and processes repositories concurrently with
   bounded HTTP and task concurrency.
+- `merge_dependabot_pull_requests` now lists repositories with `visibility='all'`, ensuring private
+  repositories are included.
 
 ### Removed
 

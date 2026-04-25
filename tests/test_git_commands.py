@@ -111,7 +111,20 @@ def test_merge_dependabot_prs_main_forwards_concurrency_options(mocker: MockerFi
     mock_merge.assert_called_once_with(base_url=None,
                                        concurrency=7,
                                        max_concurrent_http_requests=5,
+                                       repos=None,
                                        token='dummy_token')
+
+
+def test_merge_dependabot_prs_main_forwards_repos(mocker: MockerFixture, runner: CliRunner) -> None:
+    mock_merge = mocker.patch('deltona.commands.git.merge_dependabot_pull_requests',
+                              new_callable=mocker.AsyncMock,
+                              return_value=None)
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+
+    result = runner.invoke(merge_dependabot_prs_main, ['--repo', 'mine', '-r', 'tatsh/other'])
+    assert result.exit_code == 0
+    _, kwargs = mock_merge.call_args
+    assert kwargs['repos'] == ('mine', 'tatsh/other')
 
 
 def test_merge_dependabot_prs_main_no_token(mocker: MockerFixture, runner: CliRunner) -> None:
