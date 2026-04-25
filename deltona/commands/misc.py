@@ -184,30 +184,39 @@ def remove_trailing_commas_main(paths: Sequence[Path],
             files.extend(_walk_directory(p, use_gitignore=not no_gitignore, allow_dot=not no_dot))
         else:
             files.append(p)
-    originals: dict[Path, str] = {}
-    for f in files:
-        try:
-            src = f.read_text()
-        except (OSError, UnicodeDecodeError) as e:
-            log.debug('Skipped `%s`: %s.', f, e)
-            continue
-        try:
-            ast.parse(src)
-        except (SyntaxError, ValueError) as e:
-            log.debug('Skipped `%s`: not valid Python (%s).', f, e)
-            continue
-        try:
-            new = ''.join(remove_trailing_commas(src))
-        except (SyntaxError, tokenize.TokenError) as e:
-            log.debug('Skipped `%s`: %s.', f, e)
-            continue
-        if new != src:
-            f.write_text(new)
-            originals[f] = src
+    originals = asyncio.run(_process_files(files))
     if originals and not no_format:
         _run_post_format_steps()
     changed = sum(1 for f, original in originals.items() if _read_or_empty(f) != original)
     click.echo(f'Modified {changed} {"file" if changed == 1 else "files"}.')
+
+
+def _rewrite_one(path: Path) -> tuple[Path, str] | None:
+    log.debug('Processing `%s`.', path)
+    try:
+        src = path.read_text(encoding='utf-8')
+    except (OSError, UnicodeDecodeError) as e:
+        log.debug('Skipped `%s`: %s.', path, e)
+        return None
+    try:
+        ast.parse(src)
+    except (SyntaxError, ValueError) as e:
+        log.debug('Skipped `%s`: not valid Python (%s).', path, e)
+        return None
+    try:
+        new = ''.join(remove_trailing_commas(src))
+    except (SyntaxError, tokenize.TokenError) as e:
+        log.debug('Skipped `%s`: %s.', path, e)
+        return None
+    if new == src:
+        return None
+    path.write_text(new, encoding='utf-8')
+    return path, src
+
+
+async def _process_files(files: list[Path]) -> dict[Path, str]:
+    results = await asyncio.gather(*(asyncio.to_thread(_rewrite_one, f) for f in files))
+    return {path: original for entry in results if entry is not None for path, original in (entry,)}
 
 
 def _read_or_empty(path: Path) -> str:
