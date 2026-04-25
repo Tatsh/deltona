@@ -9,7 +9,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-04-18T00:33:13.513504077Z"
+exclude-newer = "2026-04-18T08:42:09.981035685Z"
 exclude-newer-span = "P1W"
 
 [[package]]
@@ -813,6 +813,7 @@ dependencies = [
     { name = "binaryornot" },
     { name = "click" },
     { name = "niquests" },
+    { name = "pathspec" },
     { name = "typing-extensions" },
 ]
 
@@ -913,6 +914,7 @@ requires-dist = [
     { name = "mutagen", marker = "extra == 'media'", specifier = ">=1.47.0" },
     { name = "niquests", specifier = ">=3.18.5" },
     { name = "paramiko", marker = "extra == 'admin'", specifier = ">=4.0.0" },
+    { name = "pathspec", specifier = ">=0.12.1" },
     { name = "pexpect", marker = "extra == 'wine'", specifier = ">=4.9.0" },
     { name = "pillow", marker = "extra == 'www'", specifier = ">=12.2.0" },
     { name = "platformdirs", marker = "extra == 'media'", specifier = ">=4.9.6" },

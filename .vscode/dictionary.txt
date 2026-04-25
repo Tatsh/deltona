@@ -116,6 +116,7 @@ genindex
 gethostname
 getxattr
 gitpython
+gitwildmatch
 globaltoc
 gnudb
 gogextract
@@ -221,6 +222,7 @@ otherfilerc
 paramiko
 parms
 pathlib
+pathspec
 pavelzw
 personalblindness
 pexpect

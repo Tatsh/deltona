@@ -144,6 +144,7 @@ local utils = import 'utils.libsonnet';
             optional: true,
             version: utils.latestPypiPackageVersionCaret('paramiko'),
           },
+          pathspec: utils.latestPypiPackageVersionCaret('pathspec'),
           pexpect: {
             optional: true,
             version: utils.latestPypiPackageVersionCaret('pexpect'),

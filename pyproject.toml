@@ -80,6 +80,7 @@ dependencies = [
   "binaryornot>=0.6.0",
   "click>=8.3.2",
   "niquests>=3.18.5",
+  "pathspec>=0.12.1",
   "typing-extensions>=4.15.0",
 ]
 description = "A lot of uncategorised utilities."
@@ -150,6 +151,7 @@ netloc = "deltona.commands.string:urldecode_main"
 patch-bundle = "deltona.commands.admin:patch_bundle_main"
 patch-uiso-font = "deltona.commands.wine:patch_ultraiso_font_main"
 pl2json = "deltona.commands.string:pl2json_main"
+remove-trailing-commas = "deltona.commands.misc:remove_trailing_commas_main"
 sanitize = "deltona.commands.string:sanitize_main"
 set-wine-fonts = "deltona.commands.wine:set_wine_fonts_main"
 show-info-json = "deltona.commands.media:display_info_json_main"

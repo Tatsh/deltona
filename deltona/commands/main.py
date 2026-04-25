@@ -52,6 +52,7 @@ _COMMANDS: dict[str, str] = {
     'patch-bundle': 'deltona.commands.admin:patch_bundle_main',
     'patch-uiso-font': 'deltona.commands.wine:patch_ultraiso_font_main',
     'pl2json': 'deltona.commands.string:pl2json_main',
+    'remove-trailing-commas': 'deltona.commands.misc:remove_trailing_commas_main',
     'sanitize': 'deltona.commands.string:sanitize_main',
     'set-wine-fonts': 'deltona.commands.wine:set_wine_fonts_main',
     'show-info-json': 'deltona.commands.media:display_info_json_main',
@@ -75,23 +76,14 @@ _COMMANDS: dict[str, str] = {
     'wait-for-disc': 'deltona.commands.media:wait_for_disc_main',
     'where-from': 'deltona.commands.www:where_from_main',
     'winegoginstall': 'deltona.commands.wine:winegoginstall_main',
-    'wineshell': 'deltona.commands.wine:wineshell_main',
+    'wineshell': 'deltona.commands.wine:wineshell_main'
 }
 _LINUX_ONLY: frozenset[str] = frozenset({
-    'clean-old-kernels-modules',
-    'connect-g603',
-    'inhibit-notifications',
-    'kill-gamescope',
-    'systemd-reset-tpm-cryptenroll',
-    'wait-for-disc',
+    'clean-old-kernels-modules', 'connect-g603', 'inhibit-notifications', 'kill-gamescope',
+    'systemd-reset-tpm-cryptenroll', 'wait-for-disc'
 })
-_NOT_WINDOWS: frozenset[str] = _LINUX_ONLY | frozenset({
-    'kill-wine',
-    'set-wine-fonts',
-    'unregister-wine-assocs',
-    'winegoginstall',
-    'wineshell',
-})
+_NOT_WINDOWS: frozenset[str] = _LINUX_ONLY | frozenset(
+    {'kill-wine', 'set-wine-fonts', 'unregister-wine-assocs', 'winegoginstall', 'wineshell'})
 
 
 def _excluded() -> frozenset[str]:

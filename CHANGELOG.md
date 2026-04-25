@@ -33,6 +33,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   requests.
 - `merge-dependabot-prs` now prints the repositories with unmerged Dependabot pull requests, and
   the count of pull requests for each, before sleeping between retry attempts.
+- New `remove-trailing-commas` CLI command that walks files or directories and removes non-required
+  trailing commas from Python source. Options:
+  - `--no-format` to skip running `yarn format` and `yarn ruff:fix` after editing.
+  - `--no-gitignore` to disable `.gitignore` filtering when walking directories.
+  - `--no-dot` to skip files and directories starting with `.`.
+- New `deltona.refactor` library module with public functions `find_removable_trailing_commas` and
+  `remove_trailing_commas`.
+- `# rtc-off` and `# rtc-on` in-source directives to skip a block of code from comma removal.
+- `pathspec` base dependency for `.gitignore` matching.
 
 ### Changed
 
