@@ -90,6 +90,7 @@ exebak
 extrabold
 extralight
 faststart
+fetchone
 ffmetadata
 ffprobe
 fica
