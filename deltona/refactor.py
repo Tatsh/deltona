@@ -24,6 +24,7 @@ _SKIP = {
     tokenize.COMMENT, tokenize.DEDENT, tokenize.ENCODING, tokenize.INDENT, tokenize.NEWLINE,
     tokenize.NL
 }
+_STATEMENT_BREAKS = {tokenize.DEDENT, tokenize.ENCODING, tokenize.INDENT, tokenize.NEWLINE}
 _KEYWORDS_BEFORE_PAREN_NOT_CALL = {
     'and', 'as', 'assert', 'async', 'await', 'del', 'elif', 'else', 'except', 'finally', 'for',
     'from', 'global', 'if', 'import', 'in', 'is', 'lambda', 'nonlocal', 'not', 'or', 'raise',
@@ -54,6 +55,8 @@ def _disabled_lines(tokens: list[tokenize.TokenInfo]) -> set[int]:
 
 def _prev_sig(tokens: list[tokenize.TokenInfo], i: int) -> tokenize.TokenInfo | None:
     for j in range(i - 1, -1, -1):
+        if tokens[j].type in _STATEMENT_BREAKS:
+            return None
         if tokens[j].type not in _SKIP:
             return tokens[j]
     return None

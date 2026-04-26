@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+### Fixed
+
+- `remove-trailing-commas` no longer strips the required comma from single-element tuple unpacks on
+  the left-hand side of an assignment (for example `(count,) = cursor.fetchone()`), which would
+  silently change the assignment's semantics.
+
 ## [0.2.0] - 2026-04-25
 
 ### Added

@@ -45,6 +45,21 @@ def test_find_removable_trailing_commas_preserves_single_element_subscript_tuple
     assert list(find_removable_trailing_commas(src)) == []
 
 
+def test_find_removable_trailing_commas_preserves_lhs_unpack_after_annotation() -> None:
+    src = 'def f():\n    count: int\n    (count,) = bar()\n'
+    assert list(find_removable_trailing_commas(src)) == []
+
+
+def test_find_removable_trailing_commas_preserves_lhs_unpack_at_module_top() -> None:
+    src = '(x,) = items\n'
+    assert list(find_removable_trailing_commas(src)) == []
+
+
+def test_find_removable_trailing_commas_preserves_lhs_unpack_after_prior_statement() -> None:
+    src = 'a = 1\n(b,) = (2,)\n'
+    assert list(find_removable_trailing_commas(src)) == []
+
+
 def test_find_removable_trailing_commas_multi_element_subscript() -> None:
     src = 'x = a[1, 2,]\n'
     assert list(find_removable_trailing_commas(src)) == [(1, 10)]
