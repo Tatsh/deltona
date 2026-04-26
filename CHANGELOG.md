@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+## [0.2.1] - 2026-04-26
+
 ### Fixed
 
 - `remove-trailing-commas` no longer strips the required comma from single-element tuple unpacks on
