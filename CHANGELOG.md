@@ -9,6 +9,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+### Added
+
+- New `merge-pre-commit-prs` CLI command that merges PRs opened by pre-commit.ci. Mirrors the
+  options of `merge-dependabot-prs` (`--base-url`, `--delay`, `--concurrency`,
+  `-M`/`--max-concurrent-http-requests`, `-r`/`--repo`). Skips repositories without a top-level
+  `.pre-commit-config.yaml`, and posts `pre-commit.ci autofix` on the PR (deduped against the
+  latest comment) when a merge attempt fails.
+- Public async function `deltona.git.merge_pre_commit_ci_pull_requests` mirroring
+  `merge_dependabot_pull_requests`.
+- `deltona.git.BotMergeError` base class for bot-PR merge failures, carrying `remaining` and a
+  human-readable `bot_label`. `DependabotMergeError` is now a subclass and remains
+  backward-compatible.
+- `deltona.git.PreCommitCIMergeError` raised when one or more pre-commit.ci pull requests cannot be
+  merged.
+
 ## [0.2.1] - 2026-04-26
 
 ### Fixed

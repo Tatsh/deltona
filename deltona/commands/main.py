@@ -44,6 +44,7 @@ _COMMANDS: dict[str, str] = {
     'kill-gamescope': 'deltona.commands.desktop:kill_gamescope_main',
     'kill-wine': 'deltona.commands.wine:kill_wine_main',
     'merge-dependabot-prs': 'deltona.commands.git:merge_dependabot_prs_main',
+    'merge-pre-commit-prs': 'deltona.commands.git:merge_pre_commit_ci_prs_main',
     'mp4json': 'deltona.commands.media:add_info_json_main',
     'mp4json-display': 'deltona.commands.media:display_info_json_main',
     'mpv-sbs': 'deltona.commands.desktop:mpv_sbs_main',

@@ -7,8 +7,9 @@ from deltona.commands.git import (
     git_open_main,
     git_rebase_default_branch_main,
     merge_dependabot_prs_main,
+    merge_pre_commit_ci_prs_main,
 )
-from deltona.git import DependabotMergeError
+from deltona.git import DependabotMergeError, PreCommitCIMergeError
 
 if TYPE_CHECKING:
     from click.testing import CliRunner
@@ -140,3 +141,39 @@ def test_merge_dependabot_prs_main_no_token(mocker: MockerFixture, runner: CliRu
     result = runner.invoke(merge_dependabot_prs_main)
     assert result.exit_code != 0
     mock_get_gh_default_branch.assert_not_called()
+
+
+def test_merge_pre_commit_ci_prs_main(mocker: MockerFixture, runner: CliRunner) -> None:
+    failure = PreCommitCIMergeError({'tatsh/alpha': 2, 'tatsh/beta': 1})
+    mock_merge = mocker.patch('deltona.commands.git.merge_pre_commit_ci_pull_requests',
+                              new_callable=mocker.AsyncMock,
+                              side_effect=[failure, None])
+    mock_sleep = mocker.patch('deltona.commands.git.sleep')
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+
+    result = runner.invoke(merge_pre_commit_ci_prs_main)
+    assert result.exit_code == 0
+    assert mock_merge.call_count == 2
+    assert mock_sleep.call_count == 1
+    assert 'Repositories with remaining pre-commit.ci pull requests:' in result.output
+    assert 'tatsh/alpha: 2 pull request(s)' in result.output
+    assert 'tatsh/beta: 1 pull request(s)' in result.output
+
+
+def test_merge_pre_commit_ci_prs_main_forwards_repos(mocker: MockerFixture,
+                                                     runner: CliRunner) -> None:
+    mock_merge = mocker.patch('deltona.commands.git.merge_pre_commit_ci_pull_requests',
+                              new_callable=mocker.AsyncMock,
+                              return_value=None)
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+
+    result = runner.invoke(merge_pre_commit_ci_prs_main, ['--repo', 'mine', '-r', 'tatsh/other'])
+    assert result.exit_code == 0
+    _, kwargs = mock_merge.call_args
+    assert kwargs['repos'] == ('mine', 'tatsh/other')
+
+
+def test_merge_pre_commit_ci_prs_main_no_token(mocker: MockerFixture, runner: CliRunner) -> None:
+    mocker.patch('keyring.get_password', return_value=None)
+    result = runner.invoke(merge_pre_commit_ci_prs_main)
+    assert result.exit_code != 0

@@ -60,6 +60,7 @@ local utils = import 'utils.libsonnet';
         'git-open': 'deltona.commands.git:git_open_main',
         'git-rebase-default-branch': 'deltona.commands.git:git_rebase_default_branch_main',
         'merge-dependabot-prs': 'deltona.commands.git:merge_dependabot_prs_main',
+        'merge-pre-commit-prs': 'deltona.commands.git:merge_pre_commit_ci_prs_main',
         // media
         'add-cdda-times': 'deltona.commands.media:add_cdda_times_main',
         'add-info-json': 'deltona.commands.media:add_info_json_main',

@@ -13,15 +13,20 @@ import webbrowser
 from bascom import setup_logging
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.git import (
+    BotMergeError,
     DependabotMergeError,
+    PreCommitCIMergeError,
     convert_git_ssh_url_to_https,
     get_github_default_branch,
     merge_dependabot_pull_requests,
+    merge_pre_commit_ci_pull_requests,
 )
 import anyio
 import click
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from git import Repo
 
 
@@ -113,6 +118,20 @@ def git_open_main(name: str = 'origin') -> None:
     webbrowser.open(convert_git_ssh_url_to_https(url))
 
 
+def _run_bot_merge_with_retry(runner: Callable[[], Awaitable[None]],
+                              error_class: type[BotMergeError], delay: float) -> None:
+    while True:
+        try:
+            anyio.run(runner)
+            break
+        except error_class as e:
+            click.echo(f'Repositories with remaining {e.bot_label} pull requests:')
+            for full_name in sorted(e.remaining):
+                click.echo(f'  {full_name}: {e.remaining[full_name]} pull request(s)')
+            click.echo(f'Sleeping for {delay} seconds.')
+            sleep(delay)
+
+
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('-b', '--base-url', help='Base URL for enterprise.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
@@ -154,13 +173,48 @@ def merge_dependabot_prs_main(username: str,
                      max_concurrent_http_requests=max_concurrent_http_requests,
                      repos=repos or None,
                      token=token)
-    while True:
-        try:
-            anyio.run(runner)
-            break
-        except DependabotMergeError as e:
-            click.echo('Repositories with remaining Dependabot pull requests:')
-            for full_name in sorted(e.remaining):
-                click.echo(f'  {full_name}: {e.remaining[full_name]} pull request(s)')
-            click.echo(f'Sleeping for {delay} seconds.')
-            sleep(delay)
+    _run_bot_merge_with_retry(runner, DependabotMergeError, delay)
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option('-b', '--base-url', help='Base URL for enterprise.')
+@click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
+@click.option('--delay', type=float, default=120, help='Delay in seconds between attempts.')
+@click.option('--concurrency',
+              type=int,
+              default=os.cpu_count() or 1,
+              help='Maximum number of repositories processed in parallel.')
+@click.option('-M',
+              '--max-concurrent-http-requests',
+              type=int,
+              default=3,
+              help='Hard cap on simultaneous in-flight HTTP requests.')
+@click.option('-r',
+              '--repo',
+              'repos',
+              multiple=True,
+              help='Specific repository to process as NAME or OWNER/NAME. '
+              'May be passed multiple times.')
+@click.option('-u', '--username', default=getpass.getuser(), help='Username.')
+def merge_pre_commit_ci_prs_main(username: str,
+                                 repos: tuple[str, ...] = (),
+                                 base_url: str | None = None,
+                                 delay: float = 120,
+                                 concurrency: int = 1,
+                                 max_concurrent_http_requests: int = 3,
+                                 *,
+                                 debug: bool = False) -> None:
+    """Merge pull requests made by pre-commit.ci on GitHub."""  # noqa: DOC501
+    import keyring  # noqa: PLC0415
+
+    setup_logging(debug=debug, loggers={'deltona': {}, 'github': {}, 'keyring': {}})
+    if not (token := keyring.get_password('tmu-github-api', username)):
+        click.echo('No token.', err=True)
+        raise click.Abort
+    runner = partial(merge_pre_commit_ci_pull_requests,
+                     base_url=base_url,
+                     concurrency=concurrency,
+                     max_concurrent_http_requests=max_concurrent_http_requests,
+                     repos=repos or None,
+                     token=token)
+    _run_bot_merge_with_retry(runner, PreCommitCIMergeError, delay)
