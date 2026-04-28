@@ -22,7 +22,7 @@ from .string import slugify
 from .typing import CDStatus, StrPath, StrPathMustExist
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Callable, Iterator
 
 __all__ = ('CHROME_DEFAULT_CONFIG_PATH', 'CHROME_DEFAULT_LOCAL_STATE_PATH', 'IS_LINUX',
            'MultipleKeySlots', 'find_bluetooth_device_info_by_name', 'get_kwriteconfig_commands',
@@ -116,7 +116,7 @@ def inhibit_notifications(name: str = __name__, reason: str = 'No reason specifi
     if notifications.Inhibited:
         return False
     log.debug('Disabling notifications.')
-    _key = notifications.Inhibit(name, reason, {})
+    _key = cast('Callable[..., int]', notifications.Inhibit)(name, reason, {})
     return True
 
 
@@ -148,7 +148,7 @@ def uninhibit_notifications() -> None:
     if not notifications.Inhibited:
         return
     if _key is not None:
-        notifications.UnInhibit(_key)
+        cast('Callable[[int], None]', notifications.UnInhibit)(_key)
         _key = None
 
 
@@ -159,7 +159,8 @@ def get_inhibitor(what: str, who: str, why: str, mode: str) -> int:
         log.exception('Cannot import pydbus.', stack_info=False)
         return -1
     login1 = SystemBus().get('org.freedesktop.login1', '/org/freedesktop/login1')
-    return cast('int', login1['org.freedesktop.login1.Manager'].Inhibit(what, who, why, mode))
+    return cast('Callable[..., int]', login1['org.freedesktop.login1.Manager'].Inhibit)(what, who,
+                                                                                        why, mode)
 
 
 def find_bluetooth_device_info_by_name(name: str) -> tuple[str, dict[str, Any]]:
@@ -194,7 +195,7 @@ def find_bluetooth_device_info_by_name(name: str) -> tuple[str, dict[str, Any]]:
     for k, v in bluez['org.freedesktop.DBus.ObjectManager'].GetManagedObjects().items():
         if ('org.bluez.Device1' in v and 'Name' in v['org.bluez.Device1']
                 and v['org.bluez.Device1']['Name'] == name):
-            return k, v['org.bluez.Device1']
+            return k, dict(v['org.bluez.Device1'])  # ty: ignore[no-matching-overload]
     raise KeyError(name)
 
 
@@ -220,7 +221,7 @@ def pan_connect(device_mac: str, hci: str = 'hci0') -> None:
 
     device_mac = f'dev_{device_mac.upper().replace(":", "_")}'
     device = SystemBus().get('org.bluez', f'/org/bluez/{hci}/{device_mac}')
-    device.Connect('nap')
+    cast('Callable[[str], None]', device.Connect)('nap')
 
 
 def pan_disconnect(device_mac: str, hci: str = 'hci0') -> None:
@@ -245,7 +246,7 @@ def pan_disconnect(device_mac: str, hci: str = 'hci0') -> None:
 
     device_mac = f'dev_{device_mac.upper().replace(":", "_")}'
     device = SystemBus().get('org.bluez', f'/org/bluez/{hci}/{device_mac}')
-    device.Disconnect()
+    cast('Callable[[], None]', device.Disconnect)()
 
 
 def slug_rename(path: StrPath, *, no_lower: bool = False) -> StrPath:

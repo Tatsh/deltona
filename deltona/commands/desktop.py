@@ -109,7 +109,7 @@ def umpv_main(files: Sequence[Path], mpv_command: str = 'mpv', *, debug: bool = 
         sp.run(args, check=True)
 
 
-def _get_pydbus_system_bus_callable() -> Callable[[], Bus]:  # pragma: no cover
+def _get_pydbus_system_bus_callable() -> Callable[[], Bus[Any]]:  # pragma: no cover
     from pydbus import SystemBus  # noqa: PLC0415
 
     return SystemBus
