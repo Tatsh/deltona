@@ -415,7 +415,7 @@ class CDDBQueryResult(NamedTuple):
     """Track titles."""
 
 
-def _parse_cddb_query_response(lines: list[str], *,
+def _parse_cddb_query_response(lines: Sequence[str], *,
                                accept_first_match: bool) -> tuple[str, str, str, str]:
     """
     Parse the first CDDB HTTP response (``cddb query``).

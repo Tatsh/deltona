@@ -9,7 +9,7 @@ import re
 from .string import fix_apostrophes, is_roman_numeral
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Mapping
 
 __all__ = ('Mode', 'adjust_title')
 
@@ -122,7 +122,7 @@ MODE_MAP = {
 }
 
 
-def _get_name(word: str, names: dict[str, str] = NAMES_TO_FIX) -> str | None:
+def _get_name(word: str, names: Mapping[str, str] = NAMES_TO_FIX) -> str | None:
     word = word.lower()
     for name, output in names.items():
         if name.lower() == word:
@@ -132,7 +132,7 @@ def _get_name(word: str, names: dict[str, str] = NAMES_TO_FIX) -> str | None:
 
 def adjust_title(words: str,
                  modes: Iterable[Mode] = (Mode.English,),
-                 names: dict[str, str] = NAMES_TO_FIX,
+                 names: Mapping[str, str] = NAMES_TO_FIX,
                  *,
                  disable_names: bool = False,
                  ampersands: bool = False) -> str:
@@ -150,8 +150,8 @@ def adjust_title(words: str,
         The string to adjust.
     modes : Iterable[Mode]
         The modes to operate in. Default is English.
-    names : dict[str, str]
-        A dictionary of names to fix. The key is the name to fix, and the value is the fixed name.
+    names : Mapping[str, str]
+        A mapping of names to fix. The key is the name to fix, and the value is the fixed name.
         Default is a set of common names.
     disable_names : bool
         If True, do not fix names. Default is ``False``.
