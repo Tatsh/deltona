@@ -70,9 +70,10 @@ def chrome_bisect_flags_main(local_state_path: Path,
         click.echo('Testing flags:')
         for flag in flags:
             click.echo(f'- {flag}')
-        local_state['browser']['enabled_labs_experiments'] = flags
+        state_to_write = deepcopy(local_state)
+        state_to_write['browser']['enabled_labs_experiments'] = list(flags)
         with local_state_path.open('w+', encoding='utf-8') as f:
-            json.dump(local_state, f, allow_nan=False)
+            json.dump(state_to_write, f, allow_nan=False)
         click.confirm('Start browser and test for the issue, then press enter', show_default=False)
         kill_processes_by_name(subprocess_name, sleep_time, force=True)
         at_fault = click.confirm('Did the problem occur?')
@@ -82,10 +83,10 @@ def chrome_bisect_flags_main(local_state_path: Path,
         len_flags = len(flags)
         if len_flags < flags_min_len:
             return flags[0] if len_flags == 1 else None
-        done, bad_flag = start_test(flags[:len_flags // 2], deepcopy(local_state))
+        done, bad_flag = start_test(flags[:len_flags // 2], local_state)
         if done:
             return bad_flag or do_test(flags[:len_flags // 2], local_state)
-        done, bad_flag = start_test(flags[len_flags // 2:], deepcopy(local_state))
+        done, bad_flag = start_test(flags[len_flags // 2:], local_state)
         if done:
             return bad_flag or do_test(flags[len_flags // 2:], local_state)
         return None

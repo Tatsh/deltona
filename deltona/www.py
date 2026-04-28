@@ -391,7 +391,6 @@ async def check_bookmarks_html_urls(
         async with limiter:
             log.debug('HEAD %s', attrs['href'])
             r = await session.head(attrs['href'])
-        new_data: BookmarksHTMLLink = {'type': 'link', 'title': title, 'attrs': attrs}
         match r.status_code:
             case HTTPStatus.MOVED_PERMANENTLY | HTTPStatus.FOUND:
                 new_location = str(r.headers['location'])
@@ -401,12 +400,14 @@ async def check_bookmarks_html_urls(
                     new_location = f'{parsed.scheme}://{parsed.netloc}{port_str}{new_location}'
                 log.info('%d: "%s" @ "%s" -> "%s"', r.status_code, ' / '.join(
                     [*(f[0] for f in folder_path), title]), attrs['href'], new_location)
-                attrs['href'] = new_location
-                changed.append(new_data)
+                updated_attrs = cast('BookmarksHTMLAnchorAttributes', {
+                    **attrs, 'href': new_location
+                })
+                changed.append({'type': 'link', 'title': title, 'attrs': updated_attrs})
             case HTTPStatus.NOT_FOUND:
                 log.error('%d: "%s" @ "%s"', r.status_code,
                           ' / '.join([*(f[0] for f in folder_path), title]), attrs['href'])
-                not_found.append(new_data)
+                not_found.append({'type': 'link', 'title': title, 'attrs': attrs})
 
     async with AsyncSession() as session:
         session.headers.update({
