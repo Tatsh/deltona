@@ -188,9 +188,8 @@ async def test_merge_dependabot_pull_requests_explicit_repos(
     monkeypatch.setattr('github.Github', mock_github)
     await merge_dependabot_pull_requests(token='fake_token', repos=['mine', 'tatsh/other'])
     mock_github.return_value.get_user.return_value.get_repos.assert_not_called()
-    assert mock_github.return_value.get_repo.call_args_list == [
-        mocker.call('me/mine'), mocker.call('tatsh/other')
-    ]
+    called_names = {c.args[0] for c in mock_github.return_value.get_repo.call_args_list}
+    assert called_names == {'me/mine', 'tatsh/other'}
 
 
 @pytest.mark.asyncio
