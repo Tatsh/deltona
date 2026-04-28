@@ -6,10 +6,10 @@ requires = ["hatchling"]
 dev = [
   "commitizen>=4.13.10",
   "cz-path>=0.0.6",
-  "mypy>=1.20.1",
+  "mypy>=1.20.2",
   "pydbus-stubs>=0; sys_platform == 'linux'",
   "ruff==0.15.11",
-  "ty>=0.0.31",
+  "ty>=0.0.32",
   "types-beautifulsoup4>=4.12.0.20250516",
   "types-binaryornot>=0.4.0.20260408",
   "types-paramiko>=4.0.0.20260408",
@@ -307,6 +307,9 @@ max-statements = 150
 [tool.uv]
 default-groups = "all"
 exclude-newer = "1 week"
+
+[tool.uv.exclude-newer-package]
+pydbus-stubs = false
 
 [tool.yapf]
 align_closing_bracket_with_visual_indent = true

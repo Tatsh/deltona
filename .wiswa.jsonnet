@@ -261,6 +261,11 @@ local utils = import 'utils.libsonnet';
           },
         },
       },
+      uv+: {
+        'exclude-newer-package': {
+          'pydbus-stubs': false,
+        },
+      },
     },
   },
   pyinstaller+: {
