@@ -15,6 +15,8 @@ import pathspec
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterable, Iterator
 
+    from pathspec.patterns.gitignore.basic import GitIgnoreBasicPattern
+
 __all__ = ('find_removable_trailing_commas', 'remove_trailing_commas',
            'remove_trailing_commas_in_paths')
 
@@ -225,8 +227,9 @@ async def _gitignore_patterns(start: anyio.Path, repo_root: anyio.Path) -> list[
     return patterns
 
 
-async def _combined_spec(start: anyio.Path, repo_root: anyio.Path | None,
-                         extra_excludes: Iterable[str]) -> pathspec.PathSpec | None:
+async def _combined_spec(
+        start: anyio.Path, repo_root: anyio.Path | None,
+        extra_excludes: Iterable[str]) -> pathspec.PathSpec[GitIgnoreBasicPattern] | None:
     patterns: list[str] = []
     if repo_root is not None:
         patterns.extend(await _gitignore_patterns(start, repo_root))
