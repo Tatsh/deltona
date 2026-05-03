@@ -33,5 +33,5 @@ platforms:
 source-code: 'https://github.com/Tatsh/deltona'
 summary: 'A lot of uncategorised utilities.'
 title: 'deltona'
-version: '0.2.1'
+version: '0.2.2'
 website: 'https://tatsh.github.io/deltona/'

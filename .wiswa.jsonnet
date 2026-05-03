@@ -7,7 +7,7 @@ local utils = import 'utils.libsonnet';
   description: 'A lot of uncategorised utilities.',
   keywords: ['bluetooth', 'command line', 'file management', 'git', 'multimedia'],
   project_name: 'deltona',
-  version: '0.2.1',
+  version: '0.2.2',
   want_claude: true,
   want_main: false,  // Multiple entry points.
   want_flatpak: true,

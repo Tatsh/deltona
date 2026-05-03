@@ -10,7 +10,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
+exclude-newer = "2026-04-26T00:29:52.637076403Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
@@ -852,7 +852,7 @@ wheels = [
 
 [[package]]
 name = "deltona"
-version = "0.2.1"
+version = "0.2.2"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },

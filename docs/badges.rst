@@ -16,8 +16,8 @@
       :target: https://github.com/Tatsh/deltona/blob/master/LICENSE.txt
       :alt: License
 
-   .. image:: https://img.shields.io/github/commits-since/Tatsh/deltona/v0.2.1/master
-      :target: https://github.com/Tatsh/deltona/compare/v0.2.1...master
+   .. image:: https://img.shields.io/github/commits-since/Tatsh/deltona/v0.2.2/master
+      :target: https://github.com/Tatsh/deltona/compare/v0.2.2...master
       :alt: GitHub commits since latest release (by SemVer including pre-releases)
 
    .. image:: https://github.com/Tatsh/deltona/actions/workflows/codeql.yml/badge.svg
