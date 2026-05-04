@@ -76,6 +76,7 @@ html_theme_options = {
     'toc_title_is_page_title': True
 }
 intersphinx_mapping = {
+    'anyio': ('https://anyio.readthedocs.io/en/stable/', None),
     'bascom': ('https://bascom.readthedocs.io/en/latest/', None),
     'binaryornot': ('https://binaryornot.readthedocs.io/en/latest/', None),
     'bs4': ('https://www.crummy.com/software/BeautifulSoup/bs4/doc/', None),
@@ -85,10 +86,11 @@ intersphinx_mapping = {
     'mutagen': ('https://mutagen.readthedocs.io/en/latest/', None),
     'niquests': ('https://niquests.readthedocs.io/en/latest/', None),
     'paramiko': ('https://www.paramiko.org/', None),
+    'pathspec': ('https://python-path-specification.readthedocs.io/en/latest/', None),
     'pexpect': ('https://pexpect.readthedocs.io/en/stable/', None),
     'pillow': ('https://pillow.readthedocs.io/en/stable/', None),
     'platformdirs': ('https://platformdirs.readthedocs.io/en/latest/', None),
-    'psutil': ('https://psutil.readthedocs.io/en/latest/', None),
+    'psutil': ('https://psutil.readthedocs.io/stable/', None),
     'pydbus': ('https://pydbus.readthedocs.io/en/latest/', None),
     'pygithub': ('https://pygithub.readthedocs.io/en/latest/', None),
     'pygobject': ('https://pygobject.gnome.org/', None),
