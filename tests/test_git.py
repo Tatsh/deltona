@@ -246,6 +246,80 @@ async def test_merge_dependabot_pull_requests_does_not_add_duplicate_recreate_co
 
 
 @pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_logs_unexpected_error_and_continues(
+        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
+    mock_github = mocker.Mock()
+    boom_repo = mocker.Mock()
+    boom_repo.full_name = 'tatsh/boom'
+    boom_repo.archived = False
+    boom_repo.security_and_analysis.dependabot_security_updates.status = 'disabled'
+    boom_repo.get_contents.side_effect = RuntimeError('unexpected')
+    healthy_repo = mocker.Mock()
+    healthy_repo.full_name = 'tatsh/healthy'
+    healthy_repo.archived = False
+    healthy_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
+    healthy_pull = mocker.Mock(user=mocker.Mock(login='dependabot[bot]'), number=1)
+    healthy_repo.get_pulls.return_value = [healthy_pull]
+    healthy_repo.get_pull.return_value = healthy_pull
+    healthy_pull.merge.return_value.merged = True
+    mock_github.return_value.get_user.return_value.get_repos.return_value = [
+        boom_repo, healthy_repo
+    ]
+    monkeypatch.setattr('github.Github', mock_github)
+    await merge_dependabot_pull_requests(token='fake_token')
+    healthy_repo.get_pull.assert_called_once_with(1)
+    healthy_pull.merge.assert_called_once_with(merge_method='rebase')
+
+
+@pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_skips_repo_with_pulls_disabled(
+        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture) -> None:
+    mock_github = mocker.Mock()
+    pulls_disabled_repo = mocker.Mock()
+    pulls_disabled_repo.full_name = 'tatsh/pulls-disabled'
+    pulls_disabled_repo.archived = False
+    pulls_disabled_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
+    pulls_disabled_repo.get_pulls.side_effect = github.UnknownObjectException(404)
+    healthy_repo = mocker.Mock()
+    healthy_repo.full_name = 'tatsh/healthy'
+    healthy_repo.archived = False
+    healthy_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
+    healthy_pull = mocker.Mock(user=mocker.Mock(login='dependabot[bot]'), number=1)
+    healthy_repo.get_pulls.return_value = [healthy_pull]
+    healthy_repo.get_pull.return_value = healthy_pull
+    healthy_pull.merge.return_value.merged = True
+    mock_github.return_value.get_user.return_value.get_repos.return_value = [
+        pulls_disabled_repo, healthy_repo
+    ]
+    monkeypatch.setattr('github.Github', mock_github)
+    with caplog.at_level('INFO', logger='deltona.git'):
+        await merge_dependabot_pull_requests(token='fake_token')
+    healthy_repo.get_pull.assert_called_once_with(1)
+    healthy_pull.merge.assert_called_once_with(merge_method='rebase')
+    assert any('pull requests not available' in r.message and r.levelname == 'INFO'
+               for r in caplog.records)
+    assert not any(r.levelname == 'ERROR' for r in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_logs_other_github_errors(
+        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture) -> None:
+    mock_github = mocker.Mock()
+    failing_repo = mocker.Mock()
+    failing_repo.full_name = 'tatsh/failing'
+    failing_repo.archived = False
+    failing_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
+    failing_repo.get_pulls.side_effect = github.GithubException(500)
+    mock_github.return_value.get_user.return_value.get_repos.return_value = [failing_repo]
+    monkeypatch.setattr('github.Github', mock_github)
+    with caplog.at_level('ERROR', logger='deltona.git'):
+        await merge_dependabot_pull_requests(token='fake_token')
+    assert any('GitHub API error' in r.message and r.levelname == 'ERROR' for r in caplog.records)
+
+
+@pytest.mark.asyncio
 async def test_merge_pre_commit_ci_pull_requests_success(mocker: MockerFixture,
                                                          monkeypatch: pytest.MonkeyPatch) -> None:
     mock_github = mocker.Mock()

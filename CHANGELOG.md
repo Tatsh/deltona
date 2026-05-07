@@ -9,6 +9,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+### Changed
+
+- `merge-dependabot-prs` and `merge-pre-commit-ci-prs` now silently skip repositories whose pull
+  requests endpoint returns 404 (for example, repositories that have pull requests disabled).
+  Previously this was logged as an error with a stack trace; it is now a single informational log
+  line.
+- On retry after `BotMergeError` (Dependabot or pre-commit.ci), only the repositories that still
+  have unmerged pull requests are re-fetched. Previously every repository was re-processed on each
+  retry.
+
+### Fixed
+
+- `merge-dependabot-prs` and `merge-pre-commit-ci-prs` no longer abort the entire run when one
+  repository's API call fails (for example, when listing pull requests returns an unexpected
+  error). The failing repository is logged and the command continues processing the remaining
+  repositories.
+
 ## [0.2.2] - 2026-05-02
 
 ### Added

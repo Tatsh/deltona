@@ -103,6 +103,28 @@ def test_merge_dependabot_prs_main(mocker: MockerFixture, runner: CliRunner) -> 
     assert 'tatsh/alpha: 2 pull request(s)' in result.output
     assert 'tatsh/beta: 1 pull request(s)' in result.output
     assert result.output.index('tatsh/alpha') < result.output.index('tatsh/beta')
+    first_kwargs = mock_merge.call_args_list[0].kwargs
+    second_kwargs = mock_merge.call_args_list[1].kwargs
+    assert first_kwargs['repos'] is None
+    assert second_kwargs['repos'] == ('tatsh/alpha', 'tatsh/beta')
+
+
+def test_merge_dependabot_prs_main_retries_only_remaining_repos(mocker: MockerFixture,
+                                                                runner: CliRunner) -> None:
+    failure = DependabotMergeError({'tatsh/beta': 1})
+    mock_merge = mocker.patch('deltona.commands.git.merge_dependabot_pull_requests',
+                              new_callable=mocker.AsyncMock,
+                              side_effect=[failure, None])
+    mocker.patch('deltona.commands.git.sleep')
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+
+    result = runner.invoke(merge_dependabot_prs_main,
+                           ['-r', 'tatsh/alpha', '-r', 'tatsh/beta', '-r', 'tatsh/gamma'])
+    assert result.exit_code == 0
+    assert mock_merge.call_count == 2
+    assert mock_merge.call_args_list[0].kwargs['repos'] == ('tatsh/alpha', 'tatsh/beta',
+                                                            'tatsh/gamma')
+    assert mock_merge.call_args_list[1].kwargs['repos'] == ('tatsh/beta',)
 
 
 def test_merge_dependabot_prs_main_forwards_concurrency_options(mocker: MockerFixture,
@@ -158,6 +180,8 @@ def test_merge_pre_commit_ci_prs_main(mocker: MockerFixture, runner: CliRunner) 
     assert 'Repositories with remaining pre-commit.ci pull requests:' in result.output
     assert 'tatsh/alpha: 2 pull request(s)' in result.output
     assert 'tatsh/beta: 1 pull request(s)' in result.output
+    assert mock_merge.call_args_list[0].kwargs['repos'] is None
+    assert mock_merge.call_args_list[1].kwargs['repos'] == ('tatsh/alpha', 'tatsh/beta')
 
 
 def test_merge_pre_commit_ci_prs_main_forwards_repos(mocker: MockerFixture,

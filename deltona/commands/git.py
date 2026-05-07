@@ -118,11 +118,14 @@ def git_open_main(name: str = 'origin') -> None:
     webbrowser.open(convert_git_ssh_url_to_https(url))
 
 
-def _run_bot_merge_with_retry(runner: Callable[[], Awaitable[None]],
+def _run_bot_merge_with_retry(make_runner: Callable[[tuple[str, ...] | None],
+                                                    Callable[[], Awaitable[None]]],
+                              initial_repos: tuple[str, ...] | None,
                               error_class: type[BotMergeError], delay: float) -> None:
+    repos = initial_repos
     while True:
         try:
-            anyio.run(runner)
+            anyio.run(make_runner(repos))
             break
         except error_class as e:
             click.echo(f'Repositories with remaining {e.bot_label} pull requests:')
@@ -130,6 +133,7 @@ def _run_bot_merge_with_retry(runner: Callable[[], Awaitable[None]],
                 click.echo(f'  {full_name}: {e.remaining[full_name]} pull request(s)')
             click.echo(f'Sleeping for {delay} seconds.')
             sleep(delay)
+            repos = tuple(sorted(e.remaining))
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -167,13 +171,16 @@ def merge_dependabot_prs_main(username: str,
     if not (token := keyring.get_password('tmu-github-api', username)):
         click.echo('No token.', err=True)
         raise click.Abort
-    runner = partial(merge_dependabot_pull_requests,
-                     base_url=base_url,
-                     concurrency=concurrency,
-                     max_concurrent_http_requests=max_concurrent_http_requests,
-                     repos=repos or None,
-                     token=token)
-    _run_bot_merge_with_retry(runner, DependabotMergeError, delay)
+
+    def make_runner(current_repos: tuple[str, ...] | None) -> Callable[[], Awaitable[None]]:
+        return partial(merge_dependabot_pull_requests,
+                       base_url=base_url,
+                       concurrency=concurrency,
+                       max_concurrent_http_requests=max_concurrent_http_requests,
+                       repos=current_repos,
+                       token=token)
+
+    _run_bot_merge_with_retry(make_runner, repos or None, DependabotMergeError, delay)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -211,10 +218,13 @@ def merge_pre_commit_ci_prs_main(username: str,
     if not (token := keyring.get_password('tmu-github-api', username)):
         click.echo('No token.', err=True)
         raise click.Abort
-    runner = partial(merge_pre_commit_ci_pull_requests,
-                     base_url=base_url,
-                     concurrency=concurrency,
-                     max_concurrent_http_requests=max_concurrent_http_requests,
-                     repos=repos or None,
-                     token=token)
-    _run_bot_merge_with_retry(runner, PreCommitCIMergeError, delay)
+
+    def make_runner(current_repos: tuple[str, ...] | None) -> Callable[[], Awaitable[None]]:
+        return partial(merge_pre_commit_ci_pull_requests,
+                       base_url=base_url,
+                       concurrency=concurrency,
+                       max_concurrent_http_requests=max_concurrent_http_requests,
+                       repos=current_repos,
+                       token=token)
+
+    _run_bot_merge_with_retry(make_runner, repos or None, PreCommitCIMergeError, delay)

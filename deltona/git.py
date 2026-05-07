@@ -212,17 +212,32 @@ async def _merge_bot_pull_requests(*,
 
     async def process_repo(repo: Repository) -> tuple[str, int]:
         async with task_limiter:
-            if repo.archived:
+            try:
+                if repo.archived:
+                    return repo.full_name, 0
+                if not await call(uses_bot, repo, github):
+                    return repo.full_name, 0
+                log.info('Repository: %s', repo.name)
+                pull_numbers = await call(_list_bot_pull_numbers, repo, bot_login)
+            except github.UnknownObjectException:
+                log.info('Skipping repository `%s`: pull requests not available.', repo.full_name)
                 return repo.full_name, 0
-            if not await call(uses_bot, repo, github):
+            except github.GithubException:
+                log.exception('Skipping repository `%s` due to GitHub API error.', repo.full_name)
                 return repo.full_name, 0
-            log.info('Repository: %s', repo.name)
-            pull_numbers = await call(_list_bot_pull_numbers, repo, bot_login)
             outcomes = await asyncio.gather(*(process_pull(repo, n) for n in pull_numbers))
             return repo.full_name, sum(1 for ok in outcomes if not ok)
 
-    results = await asyncio.gather(*(process_repo(r) for r in repositories))
-    remaining = {full_name: count for full_name, count in results if count > 0}
+    gathered = await asyncio.gather(*(process_repo(r) for r in repositories),
+                                    return_exceptions=True)
+    remaining: dict[str, int] = {}
+    for repo, outcome in zip(repositories, gathered, strict=True):
+        if isinstance(outcome, BaseException):
+            log.error('Unexpected error processing `%s`: %s', repo.full_name, outcome)
+            continue
+        full_name, count = outcome
+        if count > 0:
+            remaining[full_name] = count
     if remaining:
         raise error_class(remaining)
 
