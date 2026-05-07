@@ -34,6 +34,7 @@ bsky
 burnfree
 burnrariso
 cabac
+caplog
 ccextractor
 cdda
 cddb
