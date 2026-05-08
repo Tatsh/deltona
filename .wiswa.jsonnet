@@ -7,7 +7,7 @@ local utils = import 'utils.libsonnet';
   description: 'A lot of uncategorised utilities.',
   keywords: ['bluetooth', 'command line', 'file management', 'git', 'multimedia'],
   project_name: 'deltona',
-  version: '0.2.2',
+  version: '0.2.3',
   want_claude: true,
   want_main: false,  // Multiple entry points.
   want_flatpak: true,
@@ -313,6 +313,30 @@ local utils = import 'utils.libsonnet';
     'libgirepository-2.0-dev',
     'pkg-config',
   ],
+  // Override the snapcraft and flatpak sources so packagers build from the released git tag
+  // instead of the local source directory. The version string is bumped on each release by cz.
+  snapcraft+: {
+    parts+: {
+      [settings.project_name]+: {
+        source: 'https://github.com/Tatsh/' + settings.project_name + '.git',
+        'source-tag': 'v' + settings.version,
+        'source-type': 'git',
+      },
+    },
+  },
+  flatpak+: {
+    modules: [
+      super.flatpak.modules[0] + {
+        sources: [
+          {
+            tag: 'v' + settings.version,
+            type: 'git',
+            url: 'https://github.com/Tatsh/' + settings.project_name + '.git',
+          },
+        ],
+      },
+    ],
+  },
   readthedocs+: {
     build+: {
       apt_packages: apt_packages,

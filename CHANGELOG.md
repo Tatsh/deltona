@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+## [0.2.3] - 2026-05-08
+
 ### Changed
 
 - `merge-dependabot-prs` and `merge-pre-commit-ci-prs` now silently skip repositories whose pull
@@ -18,6 +20,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - On retry after `BotMergeError` (Dependabot or pre-commit.ci), only the repositories that still
   have unmerged pull requests are re-fetched. Previously every repository was re-processed on each
   retry.
+- Snapcraft and Flatpak manifests now build from the released git tag instead of the current source
+  directory, so packagers and CI use a stable, reproducible source.
 
 ### Fixed
 
@@ -256,7 +260,8 @@ Minor release for testing the release process.
 
 First version. `check_bookmarks_html_urls` may have unresolved issues.
 
-[unreleased]: https://github.com/Tatsh/deltona/compare/v0.2.2...HEAD
+[unreleased]: https://github.com/Tatsh/deltona/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/Tatsh/deltona/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/Tatsh/deltona/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/Tatsh/deltona/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/Tatsh/deltona/compare/v0.1.4...v0.2.0

@@ -23,7 +23,9 @@ parts:
     plugin: 'python'
     python-packages:
       - '.'
-    source: '.'
+    source: 'https://github.com/Tatsh/deltona.git'
+    source-tag: 'v0.2.3'
+    source-type: 'git'
     stage-packages: []
 platforms:
   amd64:
@@ -33,5 +35,5 @@ platforms:
 source-code: 'https://github.com/Tatsh/deltona'
 summary: 'A lot of uncategorised utilities.'
 title: 'deltona'
-version: '0.2.2'
+version: '0.2.3'
 website: 'https://tatsh.github.io/deltona/'
