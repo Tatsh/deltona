@@ -100,8 +100,8 @@ def test_merge_dependabot_prs_main(mocker: MockerFixture, runner: CliRunner) -> 
     assert mock_merge.call_count == 2
     assert mock_sleep.call_count == 1
     assert 'Repositories with remaining Dependabot pull requests:' in result.output
-    assert 'tatsh/alpha: 2 pull request(s)' in result.output
-    assert 'tatsh/beta: 1 pull request(s)' in result.output
+    assert 'tatsh/alpha: 2 pull requests' in result.output
+    assert 'tatsh/beta: 1 pull request' in result.output
     assert result.output.index('tatsh/alpha') < result.output.index('tatsh/beta')
     first_kwargs = mock_merge.call_args_list[0].kwargs
     second_kwargs = mock_merge.call_args_list[1].kwargs
@@ -178,8 +178,8 @@ def test_merge_pre_commit_ci_prs_main(mocker: MockerFixture, runner: CliRunner) 
     assert mock_merge.call_count == 2
     assert mock_sleep.call_count == 1
     assert 'Repositories with remaining pre-commit.ci pull requests:' in result.output
-    assert 'tatsh/alpha: 2 pull request(s)' in result.output
-    assert 'tatsh/beta: 1 pull request(s)' in result.output
+    assert 'tatsh/alpha: 2 pull requests' in result.output
+    assert 'tatsh/beta: 1 pull request' in result.output
     assert mock_merge.call_args_list[0].kwargs['repos'] is None
     assert mock_merge.call_args_list[1].kwargs['repos'] == ('tatsh/alpha', 'tatsh/beta')
 

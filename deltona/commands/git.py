@@ -130,7 +130,8 @@ def _run_bot_merge_with_retry(make_runner: Callable[[tuple[str, ...] | None],
         except error_class as e:
             click.echo(f'Repositories with remaining {e.bot_label} pull requests:')
             for full_name in sorted(e.remaining):
-                click.echo(f'  {full_name}: {e.remaining[full_name]} pull request(s)')
+                count = e.remaining[full_name]
+                click.echo(f'  {full_name}: {count} pull request{"" if count == 1 else "s"}')
             click.echo(f'Sleeping for {delay} seconds.')
             sleep(delay)
             repos = tuple(sorted(e.remaining))
