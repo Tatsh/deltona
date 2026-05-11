@@ -204,7 +204,11 @@ async def _merge_bot_pull_requests(*,
                 log.debug('merge() did not raise but merged is False.')
                 await post_recreate_if_missing(pull)
         except github.GithubException:
-            log.exception('Failed to merge PR %s in repository %s.', num, repo.name)
+            if log.isEnabledFor(logging.DEBUG):
+                log.exception('Failed to merge PR %s in repository `%s`. Will retry.', num,
+                              repo.name)
+            else:
+                log.warning('Failed to merge PR %s in repository `%s`. Will retry.', num, repo.name)
             if pull is not None:
                 await post_recreate_if_missing(pull)
             return False

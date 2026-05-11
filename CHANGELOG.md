@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+### Changed
+
+- `merge-dependabot-prs` and `merge-pre-commit-ci-prs` no longer print a full traceback when a pull
+  request fails to merge during normal runs. A concise warning is logged instead, noting that the
+  pull request will be retried. The full traceback is still emitted under `-d`/`--debug`.
+
 ## [0.2.3] - 2026-05-08
 
 ### Changed
