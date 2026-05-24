@@ -253,6 +253,12 @@ def _resolve_ssh_config(host: str, ssh_config: Path | None, *,
               help='Connect to the target host by first making an SSH connection to one or '
               'more jump hosts. Multiple hops are comma-separated. Each entry is '
               '[user@]host[:port].')
+@click.option('-l',
+              'bandwidth_limit',
+              type=int,
+              default=None,
+              metavar='KBIT_PER_SEC',
+              help='Limit bandwidth used in Kbit/s. Applied per-file.')
 @click.option('-P', '--port', type=int, default=None, help='Port.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('-i',
@@ -273,8 +279,8 @@ def _resolve_ssh_config(host: str, ssh_config: Path | None, *,
 @click.option('-B',
               'batch_mode',
               is_flag=True,
-              help='Batch mode. Accepted for scp compatibility; paramiko is already '
-              'non-interactive so this has no runtime effect.')
+              help='Batch mode. Accepted for compatibility; no runtime effect because the '
+              'underlying SSH library is already non-interactive.')
 @click.option('-o',
               'ssh_options',
               multiple=True,
@@ -292,6 +298,7 @@ def smv_main(filenames: Sequence[Path],
              key_filename: str | None,
              ssh_config: Path | None,
              ssh_options: tuple[str, ...],
+             bandwidth_limit: int | None = None,
              jump_dest: str | None = None,
              port: int | None = None,
              timeout: float | None = None,
@@ -343,6 +350,7 @@ def smv_main(filenames: Sequence[Path],
             secure_move_path(client,
                              filename,
                              target_dir_or_filename,
+                             bandwidth_limit_kbits=bandwidth_limit,
                              dry_run=dry_run,
                              preserve_stats=preserve)
 

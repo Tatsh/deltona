@@ -114,6 +114,24 @@ def unregister_wine_file_associations(*, debug: bool = False) -> None:
     sp.run(cmd, check=True)
 
 
+class _BandwidthLimiter:
+    """Sleep-based throttle for ``sftp.put`` callbacks."""
+    def __init__(self, kbits_per_sec: float) -> None:
+        self._byte_budget_per_sec = kbits_per_sec * 1000.0 / 8.0
+        self._start: float | None = None
+
+    def __call__(self, bytes_transferred: int, total: int) -> None:
+        del total
+        now = time.monotonic()
+        if self._start is None:
+            self._start = now
+            return
+        expected_elapsed = bytes_transferred / self._byte_budget_per_sec
+        actual_elapsed = now - self._start
+        if expected_elapsed > actual_elapsed:
+            time.sleep(expected_elapsed - actual_elapsed)
+
+
 def _resolve_remote_file_target(sftp: SFTPClient, remote_target: str, basename: str, *,
                                 target_is_dir: bool) -> str:
     if not target_is_dir:
@@ -130,6 +148,7 @@ def secure_move_path(client: SSHClient,
                      filename: StrPath,
                      remote_target: str,
                      *,
+                     bandwidth_limit_kbits: float | None = None,
                      dry_run: bool = False,
                      preserve_stats: bool = False,
                      write_into: bool = False) -> None:
@@ -148,6 +167,8 @@ def secure_move_path(client: SSHClient,
         Remote destination path. ``~`` is expanded to the remote home directory. When moving a
         file, if this ends with ``/`` or refers to an existing remote directory, the source
         basename is appended; otherwise it is used as the literal destination filename.
+    bandwidth_limit_kbits : float | None
+        If set, throttle each upload to the given bandwidth in Kbit/s.
     dry_run : bool
         If ``True``, do not perform any file operations.
     preserve_stats : bool
@@ -156,6 +177,10 @@ def secure_move_path(client: SSHClient,
         If ``True``, write into the target directory rather than creating a new one.
     """
     log.debug('Source: "%s", remote target: "%s"', filename, remote_target)
+
+    def make_limiter() -> _BandwidthLimiter | None:
+        return (_BandwidthLimiter(bandwidth_limit_kbits)
+                if bandwidth_limit_kbits is not None else None)
 
     def mkdir_ignore_existing(sftp: SFTPClient, td: str, times: tuple[float, float]) -> None:
         if not write_into:
@@ -186,7 +211,7 @@ def secure_move_path(client: SSHClient,
                                                              path.name,
                                                              target_is_dir=target_is_dir)
             if not dry_run:
-                sftp.put(filename, remote_file_target)
+                sftp.put(filename, remote_file_target, callback=make_limiter())
                 if preserve_stats:
                     local_s = Path(filename).stat()
                     sftp.utime(remote_file_target, (local_s.st_atime, local_s.st_mtime))
@@ -216,7 +241,7 @@ def secure_move_path(client: SSHClient,
                     dp = str(p_root / name).replace(dn_prefix, '')
                     log.debug('PUT "%s" "%s/%s"', src, remote_target, dp)
                     if not dry_run:
-                        sftp.put(src, f'{remote_target}/{dp}')
+                        sftp.put(src, f'{remote_target}/{dp}', callback=make_limiter())
                         if preserve_stats:
                             local_s = Path(src).stat()
                             sftp.utime(f'{remote_target}/{dp}',

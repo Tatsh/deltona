@@ -158,7 +158,7 @@ def test_secure_move_path_file_remote_missing_uses_literal_target(mocker: Mocker
     client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/tatsh'), None)
     sftp.stat.side_effect = FileNotFoundError
     secure_move_path(client, 'file.zip', '~/renamed.zip')
-    sftp.put.assert_called_once_with('file.zip', '/home/tatsh/renamed.zip')
+    sftp.put.assert_called_once_with('file.zip', '/home/tatsh/renamed.zip', callback=None)
 
 
 def test_secure_move_path_file_trailing_slash_appends_basename(mocker: MockerFixture) -> None:
@@ -173,7 +173,8 @@ def test_secure_move_path_file_trailing_slash_appends_basename(mocker: MockerFix
     client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/tatsh'), None)
     secure_move_path(client, 'spice2x-25-08-21.zip', '~/Downloads/')
     sftp.put.assert_called_once_with('spice2x-25-08-21.zip',
-                                     '/home/tatsh/Downloads/spice2x-25-08-21.zip')
+                                     '/home/tatsh/Downloads/spice2x-25-08-21.zip',
+                                     callback=None)
 
 
 def test_secure_move_path_file_remote_dir_appends_basename(mocker: MockerFixture) -> None:
@@ -188,7 +189,64 @@ def test_secure_move_path_file_remote_dir_appends_basename(mocker: MockerFixture
     client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/tatsh'), None)
     sftp.stat.return_value = mocker.Mock(st_mode=0o040755)
     secure_move_path(client, 'file.zip', '~/Downloads')
-    sftp.put.assert_called_once_with('file.zip', '/home/tatsh/Downloads/file.zip')
+    sftp.put.assert_called_once_with('file.zip', '/home/tatsh/Downloads/file.zip', callback=None)
+
+
+def test_secure_move_path_bandwidth_limit_passes_callback(mocker: MockerFixture) -> None:
+    client = mocker.MagicMock()
+    sftp = mocker.MagicMock()
+    client.open_sftp.return_value.__enter__.return_value = sftp
+    path_mock = mocker.patch('deltona.utils.Path')
+    path_instance = path_mock.return_value
+    path_instance.is_file.return_value = True
+    path_instance.name = 'file.zip'
+    path_instance.stat.return_value = mocker.Mock(st_atime=1.0, st_mtime=2.0)
+    client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/tatsh'), None)
+    secure_move_path(client, 'file.zip', '~/file.zip', bandwidth_limit_kbits=1024)
+    _, kwargs = sftp.put.call_args
+    callback = kwargs['callback']
+    assert callable(callback)
+
+
+def test_secure_move_path_bandwidth_limit_throttles(mocker: MockerFixture) -> None:
+    client = mocker.MagicMock()
+    sftp = mocker.MagicMock()
+    client.open_sftp.return_value.__enter__.return_value = sftp
+    path_mock = mocker.patch('deltona.utils.Path')
+    path_instance = path_mock.return_value
+    path_instance.is_file.return_value = True
+    path_instance.name = 'file.zip'
+    path_instance.stat.return_value = mocker.Mock(st_atime=1.0, st_mtime=2.0)
+    client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/tatsh'), None)
+    sleep_mock = mocker.patch('deltona.utils.time.sleep')
+    monotonic_mock = mocker.patch('deltona.utils.time.monotonic')
+    monotonic_mock.side_effect = [100.0, 100.5]
+    secure_move_path(client, 'file.zip', '~/file.zip', bandwidth_limit_kbits=1000)
+    callback = sftp.put.call_args.kwargs['callback']
+    callback(0, 1_000_000)
+    callback(125_000, 1_000_000)
+    sleep_mock.assert_called_once_with(0.5)
+
+
+def test_secure_move_path_bandwidth_limit_no_sleep_when_within_budget(
+        mocker: MockerFixture) -> None:
+    client = mocker.MagicMock()
+    sftp = mocker.MagicMock()
+    client.open_sftp.return_value.__enter__.return_value = sftp
+    path_mock = mocker.patch('deltona.utils.Path')
+    path_instance = path_mock.return_value
+    path_instance.is_file.return_value = True
+    path_instance.name = 'file.zip'
+    path_instance.stat.return_value = mocker.Mock(st_atime=1.0, st_mtime=2.0)
+    client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/tatsh'), None)
+    sleep_mock = mocker.patch('deltona.utils.time.sleep')
+    monotonic_mock = mocker.patch('deltona.utils.time.monotonic')
+    monotonic_mock.side_effect = [100.0, 105.0]
+    secure_move_path(client, 'file.zip', '~/file.zip', bandwidth_limit_kbits=1000)
+    callback = sftp.put.call_args.kwargs['callback']
+    callback(0, 1_000_000)
+    callback(125_000, 1_000_000)
+    sleep_mock.assert_not_called()
 
 
 def test_secure_move_path_file_basic_preserve_stats(mocker: MockerFixture) -> None:

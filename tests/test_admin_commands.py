@@ -198,6 +198,7 @@ def test_smv_main_success(mocker: MockerFixture, runner: CliRunner, tmp_path: Pa
     mock_smv.assert_called_once_with(mock_client,
                                      tmp_src,
                                      'dst',
+                                     bandwidth_limit_kbits=None,
                                      dry_run=False,
                                      preserve_stats=False)
     mock_client.load_system_host_keys.assert_called_once()
@@ -497,6 +498,20 @@ def test_smv_main_q_silenced_by_v(mocker: MockerFixture, runner: CliRunner, tmp_
     result = runner.invoke(smv_main, ['--no-ssh-config', '-q', '-v', str(tmp_src), 'host:dst'])
     assert result.exit_code == 0, result.output
     assert any(r.message == 'qv-probe' for r in caplog.records)
+
+
+def test_smv_main_l_propagates_to_secure_move_path(mocker: MockerFixture, runner: CliRunner,
+                                                   tmp_path: Path) -> None:
+    [mock_client] = _make_smv_clients(mocker, 1)
+    mocker.patch('paramiko.SSHClient', return_value=mock_client)
+    mock_smv = mocker.patch('deltona.commands.admin.secure_move_path')
+    tmp_src = tmp_path / 'src'
+    tmp_src.touch()
+
+    result = runner.invoke(smv_main, ['--no-ssh-config', '-l', '2048', str(tmp_src), 'host:dst'])
+    assert result.exit_code == 0, result.output
+    _, kwargs = mock_smv.call_args
+    assert kwargs['bandwidth_limit_kbits'] == 2048
 
 
 def test_smv_main_b_accepted(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:

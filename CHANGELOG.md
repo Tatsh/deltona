@@ -28,6 +28,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and the user falls back to the target user if omitted.
 - `smv` `-o ProxyJump=...` is now also honoured (added to the `-o` whitelist). Same chain syntax
   as `-J`. Explicit `-J` takes precedence over `-o ProxyJump`.
+- `smv` `-l KBIT_PER_SEC` to throttle SFTP uploads in Kbit/s. The limit is applied per file (each
+  upload is independently bounded to the rate). Implemented as a sleep-based callback passed to
+  paramiko's `sftp.put`.
+- `secure_move_path` accepts a new `bandwidth_limit_kbits: float | None = None` keyword for the
+  same effect when calling the library directly.
 
 ### Changed
 
