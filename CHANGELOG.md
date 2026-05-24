@@ -9,11 +9,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+### Added
+
+- `smv` now reads `~/.ssh/config` by default, applying `HostName`, `User`, `Port`, `IdentityFile`,
+  `Compression`, and `ConnectTimeout` directives. Explicit CLI flags still take precedence.
+- `smv` `-F`/`--ssh-config` option to load an alternative ssh_config file (mirrors `scp -F`).
+- `smv` `--no-ssh-config` option to disable ssh_config reading entirely.
+
 ### Changed
 
 - `merge-dependabot-prs` and `merge-pre-commit-ci-prs` no longer print a full traceback when a pull
   request fails to merge during normal runs. A concise warning is logged instead, noting that the
   pull request will be retried. The full traceback is still emitted under `-d`/`--debug`.
+- `smv` `-i`/`--key` now takes a path argument (validated for existence) instead of a file handle,
+  so the option is actually usable; previously a file-handle object was passed to paramiko, which
+  expects a path.
 
 ### Fixed
 
@@ -21,6 +31,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   when the remote target is a directory (for example `smv file.zip host:~/Downloads/`). The source
   basename is now appended to directory-style targets, matching `scp` behaviour, while plain
   renames still work when the target does not exist remotely.
+- `smv` no longer mis-parses `user@host:path` targets; the `user@` prefix is now correctly
+  separated from the hostname before being handed to paramiko, which previously failed DNS
+  resolution.
 
 ## [0.2.3] - 2026-05-08
 

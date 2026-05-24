@@ -122,14 +122,51 @@ def _get_ssh_client_cls() -> type[SSHClient]:  # pragma: no cover
     return SSHClient
 
 
+def _parse_target(target: str) -> tuple[str | None, str, str]:
+    host_part, _, path = target.partition(':')
+    if '@' in host_part:
+        user, _, host = host_part.partition('@')
+        return user, host, path
+    return None, host_part, path
+
+
+def _resolve_ssh_config(host: str, ssh_config: Path | None, *,
+                        no_ssh_config: bool) -> dict[str, Any]:
+    if no_ssh_config:
+        return {}
+    path = ssh_config
+    if path is None:
+        default = Path.home() / '.ssh' / 'config'
+        if default.is_file():
+            path = default
+    if path is None:
+        return {}
+    from paramiko import SSHConfig  # noqa: PLC0415
+    return dict(SSHConfig.from_path(str(path)).lookup(host))
+
+
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('filenames', type=click.Path(exists=True, path_type=Path), nargs=-1)
 @click.argument('target')
-@click.option('-C', 'compress', is_flag=True, help='Enable compression.')
-@click.option('-P', '--port', type=int, default=22, help='Port.')
+@click.option('-C',
+              'compress',
+              is_flag=True,
+              flag_value=True,
+              default=None,
+              help='Enable compression.')
+@click.option('-F',
+              '--ssh-config',
+              type=click.Path(exists=True, dir_okay=False, path_type=Path),
+              help='Path to an alternative ssh_config file. Defaults to ~/.ssh/config if it '
+              'exists.')
+@click.option('-P', '--port', type=int, default=None, help='Port.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
-@click.option('-i', '--key', 'key_filename', type=click.File('r'), help='Private key.')
-@click.option('-t', '--timeout', type=float, default=2, help='Timeout in seconds.')
+@click.option('-i',
+              '--key',
+              'key_filename',
+              type=click.Path(exists=True, dir_okay=False, path_type=str),
+              help='Private key file.')
+@click.option('-t', '--timeout', type=float, default=None, help='Timeout in seconds.')
 @click.option(
     '-p',
     'preserve',
@@ -139,15 +176,20 @@ def _get_ssh_client_cls() -> type[SSHClient]:  # pragma: no cover
               '--dry-run',
               is_flag=True,
               help='Do not copy anything. Use with -d for testing.')
+@click.option('--no-ssh-config',
+              is_flag=True,
+              help='Do not read ~/.ssh/config or any other ssh_config file.')
 def smv_main(filenames: Sequence[Path],
              target: str,
-             key_filename: str,
-             port: int = 22,
-             timeout: float = 2,
+             key_filename: str | None,
+             ssh_config: Path | None,
+             port: int | None = None,
+             timeout: float | None = None,
              *,
-             compress: bool = False,
+             compress: bool | None = None,
              debug: bool = False,
              dry_run: bool = False,
+             no_ssh_config: bool = False,
              preserve: bool = False) -> None:
     """
     Secure move.
@@ -157,18 +199,28 @@ def smv_main(filenames: Sequence[Path],
     Always test with the --dry-run/-y option.
     """
     setup_logging(debug=debug, loggers={'deltona': {}, 'paramiko': {}})
-    username = target.split('@', maxsplit=1)[0] if '@' in target else None
-    hostname = target.split(':', maxsplit=1)[0]
-    target_dir_or_filename = target.split(':')[1]
+    cli_user, cli_host, target_dir_or_filename = _parse_target(target)
+    cfg = _resolve_ssh_config(cli_host, ssh_config, no_ssh_config=no_ssh_config)
+    hostname = cfg.get('hostname', cli_host)
+    username = cli_user or cfg.get('user')
+    resolved_port = port if port is not None else int(cfg.get('port', 22))
+    resolved_timeout = (timeout if timeout is not None else float(cfg.get('connecttimeout', 2.0)))
+    resolved_compress = (compress
+                         if compress is not None else cfg.get('compression', 'no').lower() == 'yes')
+    resolved_key: str | None = key_filename
+    if resolved_key is None:
+        identityfiles = cfg.get('identityfile')
+        if identityfiles:
+            resolved_key = identityfiles[0]
     ssh_client_cls = _get_ssh_client_cls()
     with ssh_client_cls() as client:
         client.load_system_host_keys()
         client.connect(hostname,
-                       port,
+                       resolved_port,
                        username,
-                       compress=compress,
-                       key_filename=key_filename,
-                       timeout=timeout)
+                       compress=resolved_compress,
+                       key_filename=resolved_key,
+                       timeout=resolved_timeout)
         for filename in filenames:
             secure_move_path(client,
                              filename,
