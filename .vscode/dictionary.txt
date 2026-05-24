@@ -236,6 +236,7 @@ plistlib
 pointsize
 proc
 prodvers
+proxyjump
 psutil
 pycache
 pydantic
@@ -294,6 +295,7 @@ tahoma
 taskkill
 tasklist
 tatsh
+tcpip
 testpaths
 toctree
 tomlkit
