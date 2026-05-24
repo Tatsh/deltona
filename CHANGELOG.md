@@ -15,6 +15,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `Compression`, and `ConnectTimeout` directives. Explicit CLI flags still take precedence.
 - `smv` `-F`/`--ssh-config` option to load an alternative ssh_config file (mirrors `scp -F`).
 - `smv` `--no-ssh-config` option to disable ssh_config reading entirely.
+- `smv` `-o KEY=VALUE` (repeatable) to pass ssh_config-style options on the command line. Supported
+  keys: `Compression`, `ConnectTimeout`, `HostName`, `IdentityFile`, `Port`, and `User`. Unknown
+  keys are rejected with a clear error. Precedence: explicit CLI flag > `-o` > `-F` >
+  `~/.ssh/config` > built-in defaults (matches `scp`).
+- `smv` `-q`/`--quiet` to silence INFO-level log output (errors are still printed).
+- `smv` `-v`/`--verbose` as an alias for `-d`/`--debug` (matches `scp -v`).
+- `smv` `-B` for scp batch-mode compatibility. Accepted as a no-op because paramiko is already
+  non-interactive by default.
 
 ### Changed
 

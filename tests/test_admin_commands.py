@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+import logging
 
 from deltona.commands.admin import (
     clean_old_kernels_and_modules_main,
@@ -19,6 +20,7 @@ from pytest_mock import MockerFixture
 if TYPE_CHECKING:
     from click.testing import CliRunner
     from pytest_mock import MockerFixture
+    import pytest
 
 
 def test_reset_tpm_enrollments_main_success(mocker: MockerFixture, runner: CliRunner) -> None:
@@ -357,3 +359,147 @@ def test_smv_main_missing_default_ssh_config_noop(mocker: MockerFixture, runner:
                                                 compress=False,
                                                 key_filename=None,
                                                 timeout=2.0)
+
+
+def test_smv_main_o_overrides_ssh_config(mocker: MockerFixture, runner: CliRunner,
+                                         tmp_path: Path) -> None:
+    mock_ssh_client_cls = mocker.patch('deltona.commands.admin._get_ssh_client_cls')
+    mock_client = mock_ssh_client_cls.return_value.return_value.__enter__.return_value
+    mocker.patch('deltona.commands.admin.secure_move_path')
+    mocker.patch('deltona.commands.admin._resolve_ssh_config',
+                 return_value={
+                     'hostname': 'config-host',
+                     'user': 'config-user',
+                     'port': '2200',
+                     'compression': 'no'
+                 })
+    tmp_src = tmp_path / 'src'
+    tmp_src.touch()
+
+    result = runner.invoke(smv_main, [
+        '-o', 'User=alice', '-o', 'Port=3300', '-o', 'Compression=yes',
+        str(tmp_src), 'limelight:dst'
+    ])
+    assert result.exit_code == 0
+    mock_client.connect.assert_called_once_with('config-host',
+                                                3300,
+                                                'alice',
+                                                compress=True,
+                                                key_filename=None,
+                                                timeout=2.0)
+
+
+def test_smv_main_o_identityfile(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
+    mock_ssh_client_cls = mocker.patch('deltona.commands.admin._get_ssh_client_cls')
+    mock_client = mock_ssh_client_cls.return_value.return_value.__enter__.return_value
+    mocker.patch('deltona.commands.admin.secure_move_path')
+    mocker.patch('deltona.commands.admin._resolve_ssh_config', return_value={})
+    tmp_src = tmp_path / 'src'
+    tmp_src.touch()
+
+    result = runner.invoke(smv_main, ['-o', 'IdentityFile=/keys/from-o', str(tmp_src), 'host:dst'])
+    assert result.exit_code == 0
+    _, kwargs = mock_client.connect.call_args
+    assert kwargs['key_filename'] == '/keys/from-o'
+
+
+def test_smv_main_explicit_beats_o(mocker: MockerFixture, runner: CliRunner,
+                                   tmp_path: Path) -> None:
+    mock_ssh_client_cls = mocker.patch('deltona.commands.admin._get_ssh_client_cls')
+    mock_client = mock_ssh_client_cls.return_value.return_value.__enter__.return_value
+    mocker.patch('deltona.commands.admin.secure_move_path')
+    mocker.patch('deltona.commands.admin._resolve_ssh_config', return_value={})
+    tmp_src = tmp_path / 'src'
+    tmp_src.touch()
+
+    result = runner.invoke(smv_main, ['-o', 'Port=2200', '-P', '4444', str(tmp_src), 'host:dst'])
+    assert result.exit_code == 0
+    args, _ = mock_client.connect.call_args
+    assert args[1] == 4444
+
+
+def test_smv_main_o_unknown_key_rejected(mocker: MockerFixture, runner: CliRunner,
+                                         tmp_path: Path) -> None:
+    mocker.patch('deltona.commands.admin._get_ssh_client_cls')
+    mocker.patch('deltona.commands.admin.secure_move_path')
+    mocker.patch('deltona.commands.admin._resolve_ssh_config', return_value={})
+    tmp_src = tmp_path / 'src'
+    tmp_src.touch()
+
+    result = runner.invoke(smv_main, ['-o', 'KexAlgorithms=foo', str(tmp_src), 'host:dst'])
+    assert result.exit_code != 0
+    assert 'unsupported ssh option' in result.output.lower()
+
+
+def test_smv_main_o_malformed_rejected(mocker: MockerFixture, runner: CliRunner,
+                                       tmp_path: Path) -> None:
+    mocker.patch('deltona.commands.admin._get_ssh_client_cls')
+    mocker.patch('deltona.commands.admin.secure_move_path')
+    mocker.patch('deltona.commands.admin._resolve_ssh_config', return_value={})
+    tmp_src = tmp_path / 'src'
+    tmp_src.touch()
+
+    result = runner.invoke(smv_main, ['-o', 'NoEqualsSign', str(tmp_src), 'host:dst'])
+    assert result.exit_code != 0
+    assert 'expected KEY=VALUE' in result.output
+
+
+def test_smv_main_v_aliases_debug(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
+    mocker.patch('deltona.commands.admin._get_ssh_client_cls')
+    mocker.patch('deltona.commands.admin.secure_move_path')
+    mocker.patch('deltona.commands.admin._resolve_ssh_config', return_value={})
+    setup_mock = mocker.patch('deltona.commands.admin.setup_logging')
+    tmp_src = tmp_path / 'src'
+    tmp_src.touch()
+
+    result = runner.invoke(smv_main, ['-v', str(tmp_src), 'host:dst'])
+    assert result.exit_code == 0
+    _, kwargs = setup_mock.call_args
+    assert kwargs['debug'] is True
+
+
+def test_smv_main_q_silences_info_logs(mocker: MockerFixture, runner: CliRunner, tmp_path: Path,
+                                       caplog: pytest.LogCaptureFixture) -> None:
+    mocker.patch('deltona.commands.admin._get_ssh_client_cls')
+    mocker.patch('deltona.commands.admin._resolve_ssh_config', return_value={})
+    mocker.patch('deltona.commands.admin.setup_logging')
+    mock_smv = mocker.patch('deltona.commands.admin.secure_move_path')
+    mock_smv.side_effect = lambda *_args, **_kwargs: logging.getLogger('deltona.probe').info(
+        'q-probe')
+    tmp_src = tmp_path / 'src'
+    tmp_src.touch()
+
+    caplog.set_level(logging.INFO, logger='deltona')
+    result = runner.invoke(smv_main, ['-q', str(tmp_src), 'host:dst'])
+    assert result.exit_code == 0
+    assert not any(r.message == 'q-probe' for r in caplog.records)
+
+
+def test_smv_main_q_silenced_by_v(mocker: MockerFixture, runner: CliRunner, tmp_path: Path,
+                                  caplog: pytest.LogCaptureFixture) -> None:
+    mocker.patch('deltona.commands.admin._get_ssh_client_cls')
+    mocker.patch('deltona.commands.admin._resolve_ssh_config', return_value={})
+    mocker.patch('deltona.commands.admin.setup_logging')
+    mock_smv = mocker.patch('deltona.commands.admin.secure_move_path')
+    mock_smv.side_effect = lambda *_args, **_kwargs: logging.getLogger('deltona.probe').info(
+        'qv-probe')
+    tmp_src = tmp_path / 'src'
+    tmp_src.touch()
+
+    caplog.set_level(logging.INFO, logger='deltona')
+    result = runner.invoke(smv_main, ['-q', '-v', str(tmp_src), 'host:dst'])
+    assert result.exit_code == 0
+    assert any(r.message == 'qv-probe' for r in caplog.records)
+
+
+def test_smv_main_B_accepted(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
+    mock_ssh_client_cls = mocker.patch('deltona.commands.admin._get_ssh_client_cls')
+    mock_client = mock_ssh_client_cls.return_value.return_value.__enter__.return_value
+    mocker.patch('deltona.commands.admin.secure_move_path')
+    mocker.patch('deltona.commands.admin._resolve_ssh_config', return_value={})
+    tmp_src = tmp_path / 'src'
+    tmp_src.touch()
+
+    result = runner.invoke(smv_main, ['-B', str(tmp_src), 'host:dst'])
+    assert result.exit_code == 0
+    assert mock_client.connect.called

@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TextIO
 import json
+import logging
 import re
 import sys
 
@@ -130,6 +131,27 @@ def _parse_target(target: str) -> tuple[str | None, str, str]:
     return None, host_part, path
 
 
+_SUPPORTED_SSH_OPTIONS = frozenset(
+    {'compression', 'connecttimeout', 'hostname', 'identityfile', 'port', 'user'})
+
+
+def _parse_ssh_options(entries: Sequence[str]) -> dict[str, Any]:
+    overrides: dict[str, Any] = {}
+    for entry in entries:
+        if '=' not in entry:
+            msg = f'expected KEY=VALUE, got {entry!r}'
+            raise click.BadParameter(msg, param_hint='-o')
+        key, _, value = entry.partition('=')
+        key = key.strip().lower()
+        value = value.strip()
+        if key not in _SUPPORTED_SSH_OPTIONS:
+            supported = ', '.join(sorted(_SUPPORTED_SSH_OPTIONS))
+            msg = f'unsupported ssh option {key!r}. Supported: {supported}'
+            raise click.BadParameter(msg, param_hint='-o')
+        overrides[key] = [value] if key == 'identityfile' else value
+    return overrides
+
+
 def _resolve_ssh_config(host: str, ssh_config: Path | None, *,
                         no_ssh_config: bool) -> dict[str, Any]:
     if no_ssh_config:
@@ -176,6 +198,20 @@ def _resolve_ssh_config(host: str, ssh_config: Path | None, *,
               '--dry-run',
               is_flag=True,
               help='Do not copy anything. Use with -d for testing.')
+@click.option('-B',
+              'batch_mode',
+              is_flag=True,
+              help='Batch mode. Accepted for scp compatibility; paramiko is already '
+              'non-interactive so this has no runtime effect.')
+@click.option('-o',
+              'ssh_options',
+              multiple=True,
+              metavar='KEY=VALUE',
+              help='Pass an ssh_config-style option. May be repeated. Supported keys: '
+              'Compression, ConnectTimeout, HostName, IdentityFile, Port, User. Explicit '
+              'flags override these; these override -F and ~/.ssh/config.')
+@click.option('-q', '--quiet', is_flag=True, help='Suppress non-error log output.')
+@click.option('-v', '--verbose', is_flag=True, help='Verbose output. Alias for --debug.')
 @click.option('--no-ssh-config',
               is_flag=True,
               help='Do not read ~/.ssh/config or any other ssh_config file.')
@@ -183,14 +219,18 @@ def smv_main(filenames: Sequence[Path],
              target: str,
              key_filename: str | None,
              ssh_config: Path | None,
+             ssh_options: tuple[str, ...],
              port: int | None = None,
              timeout: float | None = None,
              *,
+             batch_mode: bool = False,
              compress: bool | None = None,
              debug: bool = False,
              dry_run: bool = False,
              no_ssh_config: bool = False,
-             preserve: bool = False) -> None:
+             preserve: bool = False,
+             quiet: bool = False,
+             verbose: bool = False) -> None:
     """
     Secure move.
 
@@ -198,9 +238,14 @@ def smv_main(filenames: Sequence[Path],
 
     Always test with the --dry-run/-y option.
     """
-    setup_logging(debug=debug, loggers={'deltona': {}, 'paramiko': {}})
+    setup_logging(debug=debug or verbose, loggers={'deltona': {}, 'paramiko': {}})
+    if quiet and not (debug or verbose):
+        for name in ('deltona', 'paramiko'):
+            logging.getLogger(name).setLevel(logging.WARNING)
+    del batch_mode  # accepted for scp compatibility; paramiko is non-interactive by default.
     cli_user, cli_host, target_dir_or_filename = _parse_target(target)
     cfg = _resolve_ssh_config(cli_host, ssh_config, no_ssh_config=no_ssh_config)
+    cfg.update(_parse_ssh_options(ssh_options))
     hostname = cfg.get('hostname', cli_host)
     username = cli_user or cfg.get('user')
     resolved_port = port if port is not None else int(cfg.get('port', 22))
