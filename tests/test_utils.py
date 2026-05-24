@@ -146,6 +146,51 @@ def test_secure_move_path_file_basic(mocker: MockerFixture) -> None:
     assert path_instance.unlink.called
 
 
+def test_secure_move_path_file_remote_missing_uses_literal_target(mocker: MockerFixture) -> None:
+    client = mocker.MagicMock()
+    sftp = mocker.MagicMock()
+    client.open_sftp.return_value.__enter__.return_value = sftp
+    path_mock = mocker.patch('deltona.utils.Path')
+    path_instance = path_mock.return_value
+    path_instance.is_file.return_value = True
+    path_instance.name = 'file.zip'
+    path_instance.stat.return_value = mocker.Mock(st_atime=1.0, st_mtime=2.0)
+    client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/tatsh'), None)
+    sftp.stat.side_effect = FileNotFoundError
+    secure_move_path(client, 'file.zip', '~/renamed.zip')
+    sftp.put.assert_called_once_with('file.zip', '/home/tatsh/renamed.zip')
+
+
+def test_secure_move_path_file_trailing_slash_appends_basename(mocker: MockerFixture) -> None:
+    client = mocker.MagicMock()
+    sftp = mocker.MagicMock()
+    client.open_sftp.return_value.__enter__.return_value = sftp
+    path_mock = mocker.patch('deltona.utils.Path')
+    path_instance = path_mock.return_value
+    path_instance.is_file.return_value = True
+    path_instance.name = 'spice2x-25-08-21.zip'
+    path_instance.stat.return_value = mocker.Mock(st_atime=1.0, st_mtime=2.0)
+    client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/tatsh'), None)
+    secure_move_path(client, 'spice2x-25-08-21.zip', '~/Downloads/')
+    sftp.put.assert_called_once_with('spice2x-25-08-21.zip',
+                                     '/home/tatsh/Downloads/spice2x-25-08-21.zip')
+
+
+def test_secure_move_path_file_remote_dir_appends_basename(mocker: MockerFixture) -> None:
+    client = mocker.MagicMock()
+    sftp = mocker.MagicMock()
+    client.open_sftp.return_value.__enter__.return_value = sftp
+    path_mock = mocker.patch('deltona.utils.Path')
+    path_instance = path_mock.return_value
+    path_instance.is_file.return_value = True
+    path_instance.name = 'file.zip'
+    path_instance.stat.return_value = mocker.Mock(st_atime=1.0, st_mtime=2.0)
+    client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/tatsh'), None)
+    sftp.stat.return_value = mocker.Mock(st_mode=0o040755)
+    secure_move_path(client, 'file.zip', '~/Downloads')
+    sftp.put.assert_called_once_with('file.zip', '/home/tatsh/Downloads/file.zip')
+
+
 def test_secure_move_path_file_basic_preserve_stats(mocker: MockerFixture) -> None:
     client = mocker.MagicMock()
     sftp = mocker.MagicMock()

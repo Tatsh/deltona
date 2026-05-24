@@ -15,6 +15,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   request fails to merge during normal runs. A concise warning is logged instead, noting that the
   pull request will be retried. The full traceback is still emitted under `-d`/`--debug`.
 
+### Fixed
+
+- `smv` (and the underlying `secure_move_path` utility) no longer fails with `OSError: Failure`
+  when the remote target is a directory (for example `smv file.zip host:~/Downloads/`). The source
+  basename is now appended to directory-style targets, matching `scp` behaviour, while plain
+  renames still work when the target does not exist remotely.
+
 ## [0.2.3] - 2026-05-08
 
 ### Changed

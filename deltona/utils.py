@@ -13,6 +13,7 @@ import csv
 import logging
 import os
 import re
+import stat
 import subprocess as sp
 import time
 
@@ -113,6 +114,18 @@ def unregister_wine_file_associations(*, debug: bool = False) -> None:
     sp.run(cmd, check=True)
 
 
+def _resolve_remote_file_target(sftp: SFTPClient, remote_target: str, basename: str, *,
+                                target_is_dir: bool) -> str:
+    if not target_is_dir:
+        try:
+            attrs = sftp.stat(remote_target)
+        except FileNotFoundError:
+            attrs = None
+        if (attrs is not None and isinstance(attrs.st_mode, int) and stat.S_ISDIR(attrs.st_mode)):
+            target_is_dir = True
+    return f'{remote_target}/{basename}' if target_is_dir else remote_target
+
+
 def secure_move_path(client: SSHClient,
                      filename: StrPath,
                      remote_target: str,
@@ -132,7 +145,9 @@ def secure_move_path(client: SSHClient,
     filename : StrPath
         Local file or directory to move.
     remote_target : str
-        Remote destination path. ``~`` is expanded to the remote home directory.
+        Remote destination path. ``~`` is expanded to the remote home directory. When moving a
+        file, if this ends with ``/`` or refers to an existing remote directory, the source
+        basename is appended; otherwise it is used as the literal destination filename.
     dry_run : bool
         If ``True``, do not perform any file operations.
     preserve_stats : bool
@@ -162,13 +177,19 @@ def secure_move_path(client: SSHClient,
     path = Path(filename)
     _, stdout, __ = client.exec_command('echo "${HOME}"')
     remote_target = remote_target.replace('~', stdout.read().decode().strip())
+    target_is_dir = remote_target.endswith('/')
+    remote_target = remote_target.rstrip('/') or '/'
     with client.open_sftp() as sftp:
         if path.is_file():
+            remote_file_target = _resolve_remote_file_target(sftp,
+                                                             remote_target,
+                                                             path.name,
+                                                             target_is_dir=target_is_dir)
             if not dry_run:
-                sftp.put(filename, remote_target)
+                sftp.put(filename, remote_file_target)
                 if preserve_stats:
                     local_s = Path(filename).stat()
-                    sftp.utime(remote_target, (local_s.st_atime, local_s.st_mtime))
+                    sftp.utime(remote_file_target, (local_s.st_atime, local_s.st_mtime))
             log.debug('Deleting local file "%s".', path)
             if not dry_run:
                 path.unlink()
