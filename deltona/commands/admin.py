@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TextIO
+from typing import TYPE_CHECKING, Any, NamedTuple, TextIO
 import json
 import logging
 import re
@@ -30,7 +31,7 @@ from deltona.www import generate_html_dir_tree
 import click
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
 
     from paramiko import SSHClient
 
@@ -132,7 +133,72 @@ def _parse_target(target: str) -> tuple[str | None, str, str]:
 
 
 _SUPPORTED_SSH_OPTIONS = frozenset(
-    {'compression', 'connecttimeout', 'hostname', 'identityfile', 'port', 'user'})
+    {'compression', 'connecttimeout', 'hostname', 'identityfile', 'port', 'proxyjump', 'user'})
+
+
+class _JumpHop(NamedTuple):
+    """A single jump hop in an ssh chain."""
+
+    host: str
+    """Hostname or IP address."""
+    port: int
+    """TCP port."""
+    user: str | None
+    """Optional username override for this hop."""
+
+
+def _parse_jump_spec(spec: str) -> list[_JumpHop]:
+    hops: list[_JumpHop] = []
+    for raw in spec.split(','):
+        entry = raw.strip()
+        if not entry:
+            continue
+        if '@' in entry:
+            user, _, host_port = entry.partition('@')
+        else:
+            user, host_port = None, entry
+        host, _, port_str = host_port.partition(':')
+        try:
+            port = int(port_str) if port_str else 22
+        except ValueError as e:
+            msg = f'invalid jump port in {entry!r}'
+            raise click.BadParameter(msg, param_hint='-J') from e
+        hops.append(_JumpHop(host=host, port=port, user=user))
+    return hops
+
+
+@contextmanager
+def _connect_with_jumps(jumps: Sequence[_JumpHop], target_host: str, target_port: int,
+                        target_user: str | None, *, compress: bool, key_filename: str | None,
+                        timeout: float) -> Iterator[SSHClient]:
+    ssh_client_cls = _get_ssh_client_cls()
+    with ExitStack() as stack:
+        prev_transport = None
+        for hop in jumps:
+            jump_client = stack.enter_context(ssh_client_cls())
+            jump_client.load_system_host_keys()
+            kwargs: dict[str, Any] = {
+                'compress': compress,
+                'key_filename': key_filename,
+                'timeout': timeout
+            }
+            if prev_transport is not None:
+                kwargs['sock'] = prev_transport.open_channel('direct-tcpip', (hop.host, hop.port),
+                                                             ('', 0))
+            jump_client.connect(hop.host, hop.port, hop.user, **kwargs)
+            prev_transport = jump_client.get_transport()
+        target = stack.enter_context(ssh_client_cls())
+        target.load_system_host_keys()
+        target_kwargs: dict[str, Any] = {
+            'compress': compress,
+            'key_filename': key_filename,
+            'timeout': timeout
+        }
+        if prev_transport is not None:
+            target_kwargs['sock'] = prev_transport.open_channel('direct-tcpip',
+                                                                (target_host, target_port), ('', 0))
+        target.connect(target_host, target_port, target_user, **target_kwargs)
+        yield target
 
 
 def _parse_ssh_options(entries: Sequence[str]) -> dict[str, Any]:
@@ -181,6 +247,12 @@ def _resolve_ssh_config(host: str, ssh_config: Path | None, *,
               type=click.Path(exists=True, dir_okay=False, path_type=Path),
               help='Path to an alternative ssh_config file. Defaults to ~/.ssh/config if it '
               'exists.')
+@click.option('-J',
+              'jump_dest',
+              metavar='DESTINATION',
+              help='Connect to the target host by first making an SSH connection to one or '
+              'more jump hosts. Multiple hops are comma-separated. Each entry is '
+              '[user@]host[:port].')
 @click.option('-P', '--port', type=int, default=None, help='Port.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('-i',
@@ -220,6 +292,7 @@ def smv_main(filenames: Sequence[Path],
              key_filename: str | None,
              ssh_config: Path | None,
              ssh_options: tuple[str, ...],
+             jump_dest: str | None = None,
              port: int | None = None,
              timeout: float | None = None,
              *,
@@ -257,15 +330,15 @@ def smv_main(filenames: Sequence[Path],
         identityfiles = cfg.get('identityfile')
         if identityfiles:
             resolved_key = identityfiles[0]
-    ssh_client_cls = _get_ssh_client_cls()
-    with ssh_client_cls() as client:
-        client.load_system_host_keys()
-        client.connect(hostname,
-                       resolved_port,
-                       username,
-                       compress=resolved_compress,
-                       key_filename=resolved_key,
-                       timeout=resolved_timeout)
+    jump_spec = jump_dest if jump_dest is not None else cfg.get('proxyjump') or ''
+    jumps = _parse_jump_spec(jump_spec) if jump_spec else []
+    with _connect_with_jumps(jumps,
+                             hostname,
+                             resolved_port,
+                             username,
+                             compress=resolved_compress,
+                             key_filename=resolved_key,
+                             timeout=resolved_timeout) as client:
         for filename in filenames:
             secure_move_path(client,
                              filename,

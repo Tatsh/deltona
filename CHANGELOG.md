@@ -23,6 +23,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `smv` `-v`/`--verbose` as an alias for `-d`/`--debug` (matches `scp -v`).
 - `smv` `-B` for scp batch-mode compatibility. Accepted as a no-op because paramiko is already
   non-interactive by default.
+- `smv` `-J [user@]host[:port][,...]` to route the SFTP connection through one or more SSH jump
+  hosts (`scp -J` equivalent). Multiple hops are comma-separated. Each hop's port defaults to 22
+  and the user falls back to the target user if omitted.
+- `smv` `-o ProxyJump=...` is now also honoured (added to the `-o` whitelist). Same chain syntax
+  as `-J`. Explicit `-J` takes precedence over `-o ProxyJump`.
 
 ### Changed
 
