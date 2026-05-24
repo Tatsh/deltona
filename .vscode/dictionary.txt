@@ -49,6 +49,7 @@ codesign
 colorlog
 commitizen
 conftest
+connecttimeout
 consolas
 cooldown
 coveragerc
@@ -132,6 +133,8 @@ htmlcov
 htmltree
 hwaccel
 hwdec
+identityfile
+identityfiles
 ilayhi
 ilayka
 ilayya
