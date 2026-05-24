@@ -27,9 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "DELTONA" "1" "May 08, 2026" "0.2.3" "deltona"
+.TH "DELTONA" "1" "May 24, 2026" "0.2.4" "deltona"
 .SH NAME
-deltona \- deltona v0.2.3
+deltona \- deltona v0.2.4
 .sp
 A lot of uncategorised utilities.
 .SH CLEAN-OLD-KERNELS-MODULES
@@ -267,6 +267,21 @@ Enable compression.
 .UNINDENT
 .INDENT 0.0
 .TP
+.B \-F, \-\-ssh\-config <ssh_config>
+Path to an alternative ssh_config file. Defaults to ~/.ssh/config if it exists.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-J <DESTINATION>
+Connect to the target host by first making an SSH connection to one or more jump hosts. Multiple hops are comma\-separated. Each entry is [user@]host[:port].
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-l <KBIT_PER_SEC>
+Limit bandwidth used in Kbit/s. Applied per\-file.
+.UNINDENT
+.INDENT 0.0
+.TP
 .B \-P, \-\-port <port>
 Port.
 .UNINDENT
@@ -278,7 +293,7 @@ Enable debug output.
 .INDENT 0.0
 .TP
 .B \-i, \-\-key <key_filename>
-Private key.
+Private key file.
 .UNINDENT
 .INDENT 0.0
 .TP
@@ -294,6 +309,31 @@ Preserves modification times, access times, and file mode bits from the source f
 .TP
 .B \-y, \-\-dry\-run
 Do not copy anything. Use with \-d for testing.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-B
+Batch mode. Accepted for compatibility; no runtime effect because the underlying SSH library is already non\-interactive.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-o <KEY=VALUE>
+Pass an ssh_config\-style option. May be repeated. Supported keys: Compression, ConnectTimeout, HostName, IdentityFile, Port, User. Explicit flags override these; these override \-F and ~/.ssh/config.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-q, \-\-quiet
+Suppress non\-error log output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-v, \-\-verbose
+Verbose output. Alias for \-\-debug.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-ssh\-config
+Do not read ~/.ssh/config or any other ssh_config file.
 .UNINDENT
 .sp
 Arguments
