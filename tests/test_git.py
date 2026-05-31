@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 import logging
 
 from deltona.git import (
@@ -11,11 +11,11 @@ from deltona.git import (
     merge_dependabot_pull_requests,
     merge_pre_commit_ci_pull_requests,
 )
-import github
 import pytest
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
+    from tests.conftest import FakeGitHub
 
 
 def test_convert_git_ssh_url_to_https() -> None:
@@ -27,139 +27,76 @@ def test_convert_git_ssh_url_to_https() -> None:
             'https://github.com/user/repo')
 
 
-def test_get_github_default_branch(mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_github = mocker.Mock()
-    mock_repo = mocker.Mock()
-    mock_github.get_repo.return_value = mock_repo
-    monkeypatch.setattr('github.Github', mock_github)
-    mock_repo.remote.return_value.url = 'git@github.com:user/repo.git'
-    mock_github.return_value.get_repo.return_value.default_branch = 'main'
-    result = get_github_default_branch(repo=mock_repo, token='fake_token')
+@pytest.mark.asyncio
+async def test_get_github_default_branch(fake_github: FakeGitHub, mocker: MockerFixture) -> None:
+    fake_github.add_repo('user/repo', listed=False, default_branch='main')
+    repo = mocker.Mock()
+    repo.remote.return_value.url = 'git@github.com:user/repo.git'
+    result = await get_github_default_branch(repo=repo, token='fake_token')
     assert result == 'main'
-    mock_github.return_value.get_repo.assert_called_once_with('user/repo')
+    assert fake_github.repo_gets == ['user/repo']
 
 
 @pytest.mark.asyncio
-async def test_merge_dependabot_pull_requests_success(mocker: MockerFixture,
-                                                      monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_github = mocker.Mock()
-    mock_github_repo = mocker.Mock()
-    mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
-    mock_github_repo.archived = False
-    mock_github_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
-    mock_github_repo.get_pulls.return_value = [
-        mocker.Mock(user=mocker.Mock(login='dependabot[bot]'), number=1)
-    ]
-    mock_github_repo.get_pull.return_value.merge.return_value.merged = True
-    monkeypatch.setattr('github.Github', mock_github)
+async def test_merge_dependabot_pull_requests_success(fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/repo', security_status='enabled')
+    fake_github.add_pull('tatsh/repo', 1)
     await merge_dependabot_pull_requests(token='fake_token')
-    mock_github_repo.get_pull.assert_called_once_with(1)
-    mock_github_repo.get_pull.return_value.merge.assert_called_once_with(merge_method='rebase')
+    assert fake_github.merge_calls == [('tatsh/repo', 1, {'merge_method': 'rebase'})]
 
 
 @pytest.mark.asyncio
 async def test_merge_dependabot_pull_requests_success_get_pull_fails(
-        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_github = mocker.Mock()
-    mock_github_repo = mocker.Mock()
-    mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
-    mock_github_repo.archived = False
-    mock_github_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
-    mock_pull = mocker.MagicMock(user=mocker.Mock(login='dependabot[bot]'), number=1)
-    mock_github_repo.get_pull.side_effect = github.GithubException(400)
-    mock_github_repo.get_pulls.return_value = [mock_pull]
-    monkeypatch.setattr('github.Github', mock_github)
-    with pytest.raises(RuntimeError):
+        fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/repo', security_status='enabled')
+    fake_github.add_pull('tatsh/repo', 1, get_error=400)
+    with pytest.raises(DependabotMergeError):
         await merge_dependabot_pull_requests(token='fake_token')
-    mock_pull.as_issue.return_value.create_comment.assert_not_called()
+    assert fake_github.posted_comments == []
+    assert fake_github.merge_calls == []
 
 
 @pytest.mark.asyncio
-async def test_merge_dependabot_pull_requests_success_alt(mocker: MockerFixture,
-                                                          monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_github = mocker.Mock()
-    mock_github_repo = mocker.Mock()
-    mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
-    mock_github_repo.archived = False
-    mock_github_repo.security_and_analysis.dependabot_security_updates.status = 'not enabled'
-    mock_github_repo.get_pulls.return_value = [
-        mocker.Mock(user=mocker.Mock(login='dependabot[bot]'), number=1)
-    ]
-    mock_github_repo.get_pull.return_value.merge.return_value.merged = True
-    monkeypatch.setattr('github.Github', mock_github)
+async def test_merge_dependabot_pull_requests_success_alt(fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/repo',
+                         security_status='not enabled',
+                         files={'.github/workflows/dependabot.yml'})
+    fake_github.add_pull('tatsh/repo', 1)
     await merge_dependabot_pull_requests(token='fake_token')
-    mock_github_repo.get_pull.assert_called_once_with(1)
-    mock_github_repo.get_pull.return_value.merge.assert_called_once_with(merge_method='rebase')
+    assert fake_github.merge_calls == [('tatsh/repo', 1, {'merge_method': 'rebase'})]
 
 
 @pytest.mark.asyncio
-async def test_merge_dependabot_pull_requests_skips_archived(
-        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_github = mocker.Mock()
-    mock_github_repo = mocker.Mock()
-    mock_github_repo.archived = True
-    mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
-    monkeypatch.setattr('github.Github', mock_github)
+async def test_merge_dependabot_pull_requests_skips_archived(fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/repo', archived=True)
     await merge_dependabot_pull_requests(token='fake_token')
-    mock_github_repo.get_pulls.assert_not_called()
-    mock_github_repo.get_contents.assert_not_called()
+    assert not any(path.endswith('/pulls') for _, path in fake_github.requests)
+    assert not any('/contents/' in path for _, path in fake_github.requests)
 
 
 @pytest.mark.asyncio
-async def test_merge_dependabot_pull_requests_no_dependabot(
-        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
-    def raise_ghe(*args: Any) -> None:
-        raise github.GithubException(400)
-
-    mock_github = mocker.Mock()
-    mock_github_repo = mocker.Mock()
-    mock_github_repo.archived = False
-    mock_github_repo.get_contents.side_effect = raise_ghe
-    mock_github_repo.security_and_analysis.dependabot_security_updates.status = 'disabled'
-    mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
-    monkeypatch.setattr('github.Github', mock_github)
+async def test_merge_dependabot_pull_requests_no_dependabot(fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/repo', security_status='disabled')
     await merge_dependabot_pull_requests(token='fake_token')
-    mock_github_repo.get_pulls.assert_not_called()
+    assert not any(path.endswith('/pulls') for _, path in fake_github.requests)
 
 
 @pytest.mark.asyncio
-async def test_merge_dependabot_pull_requests_should_raise(mocker: MockerFixture,
-                                                           monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_github = mocker.Mock()
-    mock_github_repo = mocker.Mock()
-    mock_github_repo.full_name = 'tatsh/some-repo'
-    mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
-    mock_github_repo.archived = False
-    mock_github_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
-    pull = mocker.Mock(user=mocker.Mock(login='dependabot[bot]'), number=1)
-    pull.get_issue_comments.return_value = []
-    mock_github_repo.get_pulls.return_value = [pull]
-    mock_github_repo.get_pull.return_value = pull
-    mock_github_repo.get_pull.return_value.merge.side_effect = github.GithubException(400)
-    monkeypatch.setattr('github.Github', mock_github)
+async def test_merge_dependabot_pull_requests_should_raise(fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/some-repo', security_status='enabled')
+    fake_github.add_pull('tatsh/some-repo', 1, merge_error=400)
     with pytest.raises(DependabotMergeError) as exc_info:
         await merge_dependabot_pull_requests(token='fake_token')
     assert exc_info.value.remaining == {'tatsh/some-repo': 1}
-    mock_github_repo.get_pull.assert_called_once_with(1)
-    mock_github_repo.get_pull.return_value.merge.assert_called_once_with(merge_method='rebase')
+    assert fake_github.merge_calls == [('tatsh/some-repo', 1, {'merge_method': 'rebase'})]
+    assert fake_github.posted_comments == [('tatsh/some-repo', 1, '@dependabot recreate')]
 
 
 @pytest.mark.asyncio
-async def test_merge_dependabot_pull_requests_should_raise_debug(
-        caplog: pytest.LogCaptureFixture, mocker: MockerFixture,
-        monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_github = mocker.Mock()
-    mock_github_repo = mocker.Mock()
-    mock_github_repo.full_name = 'tatsh/some-repo'
-    mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
-    mock_github_repo.archived = False
-    mock_github_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
-    pull = mocker.Mock(user=mocker.Mock(login='dependabot[bot]'), number=1)
-    pull.get_issue_comments.return_value = []
-    mock_github_repo.get_pulls.return_value = [pull]
-    mock_github_repo.get_pull.return_value = pull
-    mock_github_repo.get_pull.return_value.merge.side_effect = github.GithubException(400)
-    monkeypatch.setattr('github.Github', mock_github)
+async def test_merge_dependabot_pull_requests_should_raise_debug(caplog: pytest.LogCaptureFixture,
+                                                                 fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/some-repo', security_status='enabled')
+    fake_github.add_pull('tatsh/some-repo', 1, merge_error=400)
     with caplog.at_level(logging.DEBUG, logger='deltona.git'), pytest.raises(DependabotMergeError):
         await merge_dependabot_pull_requests(token='fake_token')
     assert any(record.exc_info is not None and 'Will retry' in record.getMessage()
@@ -168,158 +105,72 @@ async def test_merge_dependabot_pull_requests_should_raise_debug(
 
 @pytest.mark.asyncio
 async def test_merge_dependabot_pull_requests_adds_recreate_comment(
-        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_github = mocker.Mock()
-    mock_github_repo = mocker.Mock()
-    mock_pull = mocker.Mock()
-    mock_issue = mocker.Mock()
-    mock_github_repo.archived = False
-    mock_github_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
-    mock_pull.user.login = 'dependabot[bot]'
-    mock_pull.number = 42
-    merge_result = mocker.Mock()
-    merge_result.merged = False
-    mock_pull.merge.return_value = merge_result
-    mock_pull.as_issue.return_value = mock_issue
-    mock_pull.get_issue_comments.return_value = []
-    mock_github_repo.get_pulls.return_value = [mock_pull]
-    mock_github_repo.get_pull.return_value = mock_pull
-    mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
-    monkeypatch.setattr('github.Github', mock_github)
+        fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/repo', security_status='enabled')
+    fake_github.add_pull('tatsh/repo', 42, merged=False)
     await merge_dependabot_pull_requests(token='fake_token')
-    mock_github_repo.get_pull.assert_called_once_with(42)
-    mock_pull.merge.assert_called_once_with(merge_method='rebase')
-    mock_pull.as_issue.assert_called_once()
-    mock_issue.create_comment.assert_called_once_with('@dependabot recreate')
+    assert fake_github.merge_calls == [('tatsh/repo', 42, {'merge_method': 'rebase'})]
+    assert fake_github.posted_comments == [('tatsh/repo', 42, '@dependabot recreate')]
 
 
 @pytest.mark.asyncio
-async def test_merge_dependabot_pull_requests_explicit_repos(
-        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_github = mocker.Mock()
-    mock_github.return_value.get_user.return_value.login = 'me'
-    bare_repo = mocker.Mock()
-    bare_repo.archived = False
-    bare_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
-    bare_repo.get_pulls.return_value = []
-    full_repo = mocker.Mock()
-    full_repo.archived = False
-    full_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
-    full_repo.get_pulls.return_value = []
-    mock_github.return_value.get_repo.side_effect = (lambda name: bare_repo
-                                                     if name == 'me/mine' else full_repo)
-    monkeypatch.setattr('github.Github', mock_github)
+async def test_merge_dependabot_pull_requests_explicit_repos(fake_github: FakeGitHub) -> None:
+    fake_github.user_login = 'me'
+    fake_github.add_repo('me/mine', listed=False, security_status='enabled')
+    fake_github.add_repo('tatsh/other', listed=False, security_status='enabled')
     await merge_dependabot_pull_requests(token='fake_token', repos=['mine', 'tatsh/other'])
-    mock_github.return_value.get_user.return_value.get_repos.assert_not_called()
-    called_names = {c.args[0] for c in mock_github.return_value.get_repo.call_args_list}
-    assert called_names == {'me/mine', 'tatsh/other'}
+    assert not fake_github.list_repos_hit
+    assert set(fake_github.repo_gets) == {'me/mine', 'tatsh/other'}
 
 
 @pytest.mark.asyncio
 async def test_merge_dependabot_pull_requests_explicit_repos_only_full_names(
-        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_github = mocker.Mock()
-    repo = mocker.Mock()
-    repo.archived = False
-    repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
-    repo.get_pulls.return_value = []
-    mock_github.return_value.get_repo.return_value = repo
-    monkeypatch.setattr('github.Github', mock_github)
+        fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/other', listed=False, security_status='enabled')
     await merge_dependabot_pull_requests(token='fake_token', repos=['tatsh/other'])
-    mock_github.return_value.get_user.assert_not_called()
-    mock_github.return_value.get_repo.assert_called_once_with('tatsh/other')
+    assert not fake_github.user_endpoint_hit
+    assert fake_github.repo_gets == ['tatsh/other']
 
 
 @pytest.mark.asyncio
 async def test_merge_dependabot_pull_requests_includes_private_repos(
-        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_github = mocker.Mock()
-    mock_github.return_value.get_user.return_value.get_repos.return_value = []
-    monkeypatch.setattr('github.Github', mock_github)
+        fake_github: FakeGitHub) -> None:
     await merge_dependabot_pull_requests(token='fake_token')
-    _, kwargs = mock_github.return_value.get_user.return_value.get_repos.call_args
-    assert kwargs.get('visibility') == 'all'
+    assert fake_github.list_repos_query.get('visibility') == 'all'
 
 
 @pytest.mark.asyncio
 async def test_merge_dependabot_pull_requests_does_not_add_duplicate_recreate_comment(
-        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_github = mocker.Mock()
-    mock_github_repo = mocker.Mock()
-    mock_pull = mocker.Mock()
-    mock_issue = mocker.Mock()
-    mock_github_repo.archived = False
-    mock_github_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
-    mock_pull.user.login = 'dependabot[bot]'
-    mock_pull.number = 42
-    merge_result = mocker.Mock()
-    merge_result.merged = False
-    mock_pull.merge.return_value = merge_result
-    mock_pull.as_issue.return_value = mock_issue
-    mock_comment = mocker.Mock(body='@dependabot recreate')
-    mock_pull.get_issue_comments.return_value = [mock_comment]
-    mock_github_repo.get_pulls.return_value = [mock_pull]
-    mock_github_repo.get_pull.return_value = mock_pull
-    mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
-    monkeypatch.setattr('github.Github', mock_github)
+        fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/repo', security_status='enabled')
+    fake_github.add_pull('tatsh/repo', 42, merged=False, comments=['@dependabot recreate'])
     await merge_dependabot_pull_requests(token='fake_token')
-    mock_github_repo.get_pull.assert_called_once_with(42)
-    mock_pull.merge.assert_called_once_with(merge_method='rebase')
-    mock_issue.create_comment.assert_not_called()
+    assert fake_github.merge_calls == [('tatsh/repo', 42, {'merge_method': 'rebase'})]
+    assert fake_github.posted_comments == []
 
 
 @pytest.mark.asyncio
 async def test_merge_dependabot_pull_requests_logs_unexpected_error_and_continues(
-        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_github = mocker.Mock()
-    boom_repo = mocker.Mock()
-    boom_repo.full_name = 'tatsh/boom'
-    boom_repo.archived = False
-    boom_repo.security_and_analysis.dependabot_security_updates.status = 'disabled'
-    boom_repo.get_contents.side_effect = RuntimeError('unexpected')
-    healthy_repo = mocker.Mock()
-    healthy_repo.full_name = 'tatsh/healthy'
-    healthy_repo.archived = False
-    healthy_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
-    healthy_pull = mocker.Mock(user=mocker.Mock(login='dependabot[bot]'), number=1)
-    healthy_repo.get_pulls.return_value = [healthy_pull]
-    healthy_repo.get_pull.return_value = healthy_pull
-    healthy_pull.merge.return_value.merged = True
-    mock_github.return_value.get_user.return_value.get_repos.return_value = [
-        boom_repo, healthy_repo
-    ]
-    monkeypatch.setattr('github.Github', mock_github)
+        fake_github: FakeGitHub) -> None:
+    fake_github.add_repo(
+        'tatsh/boom',
+        security_status='disabled',
+        contents_exc={'.github/workflows/dependabot.yml': RuntimeError('unexpected')})
+    fake_github.add_repo('tatsh/healthy', security_status='enabled')
+    fake_github.add_pull('tatsh/healthy', 1)
     await merge_dependabot_pull_requests(token='fake_token')
-    healthy_repo.get_pull.assert_called_once_with(1)
-    healthy_pull.merge.assert_called_once_with(merge_method='rebase')
+    assert fake_github.merge_calls == [('tatsh/healthy', 1, {'merge_method': 'rebase'})]
 
 
 @pytest.mark.asyncio
 async def test_merge_dependabot_pull_requests_skips_repo_with_pulls_disabled(
-        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch,
-        caplog: pytest.LogCaptureFixture) -> None:
-    mock_github = mocker.Mock()
-    pulls_disabled_repo = mocker.Mock()
-    pulls_disabled_repo.full_name = 'tatsh/pulls-disabled'
-    pulls_disabled_repo.archived = False
-    pulls_disabled_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
-    pulls_disabled_repo.get_pulls.side_effect = github.UnknownObjectException(404)
-    healthy_repo = mocker.Mock()
-    healthy_repo.full_name = 'tatsh/healthy'
-    healthy_repo.archived = False
-    healthy_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
-    healthy_pull = mocker.Mock(user=mocker.Mock(login='dependabot[bot]'), number=1)
-    healthy_repo.get_pulls.return_value = [healthy_pull]
-    healthy_repo.get_pull.return_value = healthy_pull
-    healthy_pull.merge.return_value.merged = True
-    mock_github.return_value.get_user.return_value.get_repos.return_value = [
-        pulls_disabled_repo, healthy_repo
-    ]
-    monkeypatch.setattr('github.Github', mock_github)
+        fake_github: FakeGitHub, caplog: pytest.LogCaptureFixture) -> None:
+    fake_github.add_repo('tatsh/pulls-disabled', security_status='enabled', pulls_error=404)
+    fake_github.add_repo('tatsh/healthy', security_status='enabled')
+    fake_github.add_pull('tatsh/healthy', 1)
     with caplog.at_level('INFO', logger='deltona.git'):
         await merge_dependabot_pull_requests(token='fake_token')
-    healthy_repo.get_pull.assert_called_once_with(1)
-    healthy_pull.merge.assert_called_once_with(merge_method='rebase')
+    assert fake_github.merge_calls == [('tatsh/healthy', 1, {'merge_method': 'rebase'})]
     assert any('pull requests not available' in r.message and r.levelname == 'INFO'
                for r in caplog.records)
     assert not any(r.levelname == 'ERROR' for r in caplog.records)
@@ -327,117 +178,58 @@ async def test_merge_dependabot_pull_requests_skips_repo_with_pulls_disabled(
 
 @pytest.mark.asyncio
 async def test_merge_dependabot_pull_requests_logs_other_github_errors(
-        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch,
-        caplog: pytest.LogCaptureFixture) -> None:
-    mock_github = mocker.Mock()
-    failing_repo = mocker.Mock()
-    failing_repo.full_name = 'tatsh/failing'
-    failing_repo.archived = False
-    failing_repo.security_and_analysis.dependabot_security_updates.status = 'enabled'
-    failing_repo.get_pulls.side_effect = github.GithubException(500)
-    mock_github.return_value.get_user.return_value.get_repos.return_value = [failing_repo]
-    monkeypatch.setattr('github.Github', mock_github)
+        fake_github: FakeGitHub, caplog: pytest.LogCaptureFixture) -> None:
+    fake_github.add_repo('tatsh/failing', security_status='enabled', pulls_error=500)
     with caplog.at_level('ERROR', logger='deltona.git'):
         await merge_dependabot_pull_requests(token='fake_token')
     assert any('GitHub API error' in r.message and r.levelname == 'ERROR' for r in caplog.records)
 
 
 @pytest.mark.asyncio
-async def test_merge_pre_commit_ci_pull_requests_success(mocker: MockerFixture,
-                                                         monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_github = mocker.Mock()
-    mock_github_repo = mocker.Mock()
-    mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
-    mock_github_repo.archived = False
-    mock_github_repo.get_pulls.return_value = [
-        mocker.Mock(user=mocker.Mock(login='pre-commit-ci[bot]'), number=7)
-    ]
-    mock_github_repo.get_pull.return_value.merge.return_value.merged = True
-    monkeypatch.setattr('github.Github', mock_github)
+async def test_merge_pre_commit_ci_pull_requests_success(fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/repo', files={'.pre-commit-config.yaml'})
+    fake_github.add_pull('tatsh/repo', 7, user_login='pre-commit-ci[bot]')
     await merge_pre_commit_ci_pull_requests(token='fake_token')
-    mock_github_repo.get_contents.assert_called_once_with('.pre-commit-config.yaml')
-    mock_github_repo.get_pull.assert_called_once_with(7)
-    mock_github_repo.get_pull.return_value.merge.assert_called_once_with(merge_method='rebase')
+    assert ('GET', '/repos/tatsh/repo/contents/.pre-commit-config.yaml') in fake_github.requests
+    assert fake_github.merge_calls == [('tatsh/repo', 7, {'merge_method': 'rebase'})]
 
 
 @pytest.mark.asyncio
 async def test_merge_pre_commit_ci_pull_requests_no_pre_commit_config(
-        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
-    def raise_ghe(*args: Any) -> None:
-        raise github.GithubException(404)
-
-    mock_github = mocker.Mock()
-    mock_github_repo = mocker.Mock()
-    mock_github_repo.archived = False
-    mock_github_repo.get_contents.side_effect = raise_ghe
-    mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
-    monkeypatch.setattr('github.Github', mock_github)
+        fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/repo')
     await merge_pre_commit_ci_pull_requests(token='fake_token')
-    mock_github_repo.get_pulls.assert_not_called()
+    assert not any(path.endswith('/pulls') for _, path in fake_github.requests)
 
 
 @pytest.mark.asyncio
 async def test_merge_pre_commit_ci_pull_requests_posts_autofix_comment(
-        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_github = mocker.Mock()
-    mock_github_repo = mocker.Mock()
-    mock_pull = mocker.Mock()
-    mock_issue = mocker.Mock()
-    mock_github_repo.archived = False
-    mock_pull.user.login = 'pre-commit-ci[bot]'
-    mock_pull.number = 9
-    merge_result = mocker.Mock()
-    merge_result.merged = False
-    mock_pull.merge.return_value = merge_result
-    mock_pull.as_issue.return_value = mock_issue
-    mock_pull.get_issue_comments.return_value = []
-    mock_github_repo.get_pulls.return_value = [mock_pull]
-    mock_github_repo.get_pull.return_value = mock_pull
-    mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
-    monkeypatch.setattr('github.Github', mock_github)
+        fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/repo', files={'.pre-commit-config.yaml'})
+    fake_github.add_pull('tatsh/repo', 9, user_login='pre-commit-ci[bot]', merged=False)
     await merge_pre_commit_ci_pull_requests(token='fake_token')
-    mock_issue.create_comment.assert_called_once_with('pre-commit.ci autofix')
+    assert fake_github.posted_comments == [('tatsh/repo', 9, 'pre-commit.ci autofix')]
 
 
 @pytest.mark.asyncio
 async def test_merge_pre_commit_ci_pull_requests_does_not_add_duplicate_autofix_comment(
-        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_github = mocker.Mock()
-    mock_github_repo = mocker.Mock()
-    mock_pull = mocker.Mock()
-    mock_issue = mocker.Mock()
-    mock_github_repo.archived = False
-    mock_pull.user.login = 'pre-commit-ci[bot]'
-    mock_pull.number = 9
-    merge_result = mocker.Mock()
-    merge_result.merged = False
-    mock_pull.merge.return_value = merge_result
-    mock_pull.as_issue.return_value = mock_issue
-    mock_pull.get_issue_comments.return_value = [mocker.Mock(body='pre-commit.ci autofix')]
-    mock_github_repo.get_pulls.return_value = [mock_pull]
-    mock_github_repo.get_pull.return_value = mock_pull
-    mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
-    monkeypatch.setattr('github.Github', mock_github)
+        fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/repo', files={'.pre-commit-config.yaml'})
+    fake_github.add_pull('tatsh/repo',
+                         9,
+                         user_login='pre-commit-ci[bot]',
+                         merged=False,
+                         comments=['pre-commit.ci autofix'])
     await merge_pre_commit_ci_pull_requests(token='fake_token')
-    mock_issue.create_comment.assert_not_called()
+    assert fake_github.posted_comments == []
 
 
 @pytest.mark.asyncio
-async def test_merge_pre_commit_ci_pull_requests_should_raise(
-        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_github = mocker.Mock()
-    mock_github_repo = mocker.Mock()
-    mock_github_repo.full_name = 'tatsh/some-repo'
-    mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_github_repo]
-    mock_github_repo.archived = False
-    pull = mocker.Mock(user=mocker.Mock(login='pre-commit-ci[bot]'), number=3)
-    pull.get_issue_comments.return_value = []
-    mock_github_repo.get_pulls.return_value = [pull]
-    mock_github_repo.get_pull.return_value = pull
-    mock_github_repo.get_pull.return_value.merge.side_effect = github.GithubException(400)
-    monkeypatch.setattr('github.Github', mock_github)
+async def test_merge_pre_commit_ci_pull_requests_should_raise(fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/some-repo', files={'.pre-commit-config.yaml'})
+    fake_github.add_pull('tatsh/some-repo', 3, user_login='pre-commit-ci[bot]', merge_error=400)
     with pytest.raises(PreCommitCIMergeError) as exc_info:
         await merge_pre_commit_ci_pull_requests(token='fake_token')
     assert exc_info.value.remaining == {'tatsh/some-repo': 1}
     assert exc_info.value.bot_label == 'pre-commit.ci'
-    pull.as_issue.return_value.create_comment.assert_called_once_with('pre-commit.ci autofix')
+    assert fake_github.posted_comments == [('tatsh/some-repo', 3, 'pre-commit.ci autofix')]

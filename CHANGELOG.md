@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+### Changed
+
+- The GitHub client now uses [gidgethub](https://gidgethub.readthedocs.io/) instead of PyGithub.
+  This makes the GitHub helpers natively asynchronous (no thread pool) and replaces the `pygithub`
+  optional dependency with `gidgethub`. `get_github_default_branch` is now a coroutine.
+
 ## [0.2.4] - 2026-05-23
 
 ### Added

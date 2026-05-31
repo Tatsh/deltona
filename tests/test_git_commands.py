@@ -19,7 +19,8 @@ if TYPE_CHECKING:
 def test_git_checkout_default_branch_success(mocker: MockerFixture, runner: CliRunner) -> None:
     mock_repo = mocker.patch('deltona.commands.git._get_git_repo')
     mocker.patch('keyring.get_password', return_value='dummy_token')
-    mock_get_gh_default_branch = mocker.patch('deltona.commands.git.get_github_default_branch')
+    mock_get_gh_default_branch = mocker.patch('deltona.commands.git.get_github_default_branch',
+                                              new_callable=mocker.AsyncMock)
     mock_get_gh_default_branch.return_value = 'main'
     mock_checkout = mocker.Mock()
     mock_head = mocker.Mock(checkout=mock_checkout)
@@ -50,7 +51,8 @@ def test_git_checkout_default_branch_no_token(mocker: MockerFixture, runner: Cli
 def test_git_rebase_default_branch_success(mocker: MockerFixture, runner: CliRunner) -> None:
     mock_repo = mocker.patch('deltona.commands.git._get_git_repo')
     mocker.patch('keyring.get_password', return_value='dummy_token')
-    mock_get_gh_default_branch = mocker.patch('deltona.commands.git.get_github_default_branch')
+    mock_get_gh_default_branch = mocker.patch('deltona.commands.git.get_github_default_branch',
+                                              new_callable=mocker.AsyncMock)
     mock_get_gh_default_branch.return_value = 'main'
 
     result = runner.invoke(git_rebase_default_branch_main, ['--remote'])

@@ -10,7 +10,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-05-24T21:07:59.478517931Z"
+exclude-newer = "2026-05-24T22:04:15.622199931Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
@@ -860,9 +860,9 @@ desktop = [
     { name = "pyperclip" },
 ]
 git = [
+    { name = "gidgethub" },
     { name = "gitpython" },
     { name = "keyring" },
-    { name = "pygithub" },
 ]
 media = [
     { name = "keyring" },
@@ -936,6 +936,7 @@ requires-dist = [
     { name = "beautifulsoup4", marker = "extra == 'www'", specifier = ">=4.14.3" },
     { name = "binaryornot", specifier = ">=0.6.0" },
     { name = "click", specifier = ">=8.4.1" },
+    { name = "gidgethub", marker = "extra == 'git'", specifier = ">=5.4.0" },
     { name = "gitpython", marker = "extra == 'git'", specifier = ">=3.1.50" },
     { name = "html5lib", marker = "extra == 'www'", specifier = ">=1.1" },
     { name = "keyring", marker = "extra == 'git'", specifier = ">=25.7.0" },
@@ -951,7 +952,6 @@ requires-dist = [
     { name = "platformdirs", marker = "extra == 'wine'", specifier = ">=4.9.6" },
     { name = "psutil", marker = "extra == 'wine'", specifier = ">=7.2.2" },
     { name = "pydbus", marker = "sys_platform == 'linux' and extra == 'desktop'", specifier = ">=0.6.0" },
-    { name = "pygithub", marker = "extra == 'git'", specifier = ">=2.9.1" },
     { name = "pygobject", marker = "sys_platform == 'linux' and extra == 'desktop'", specifier = ">=3.56.3" },
     { name = "pyperclip", marker = "extra == 'desktop'", specifier = ">=1.11.0" },
     { name = "python-xz", marker = "extra == 'wine'", specifier = ">=0.6.0" },
@@ -1111,7 +1111,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -1125,6 +1125,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b5/fe/997687a931ab51049acce6fa1f23e8f01216374ea81374ddee763c493db5/filelock-3.29.0.tar.gz", hash = "sha256:69974355e960702e789734cb4871f884ea6fe50bd8404051a3530bc07809cf90", size = 57571, upload-time = "2026-04-19T15:39:10.068Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/81/47/dd9a212ef6e343a6857485ffe25bba537304f1913bdbed446a23f7f592e1/filelock-3.29.0-py3-none-any.whl", hash = "sha256:96f5f6344709aa1572bbf631c640e4ebeeb519e08da902c39a001882f30ac258", size = 39812, upload-time = "2026-04-19T15:39:08.752Z" },
+]
+
+[[package]]
+name = "gidgethub"
+version = "5.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyjwt", extra = ["crypto"] },
+    { name = "uritemplate" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/35/d4/6374d7a1d276ec23f5bc71a2571d36824cd121693cc2eaefa04484c02551/gidgethub-5.4.0.tar.gz", hash = "sha256:7470d7723d7c1743471a2d62e79c8752fba12b1c0972e4bad57252338a501dbd", size = 126781, upload-time = "2025-06-03T22:10:53.639Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/70/48/847be03638905119b9310d15057d18f923c0ec5c846381d2fa2ccc1b7c54/gidgethub-5.4.0-py3-none-any.whl", hash = "sha256:522bd3a846a315c3163925a840930c4c9a0d685d5853afe852fd589cb472daf5", size = 21233, upload-time = "2025-06-03T22:10:52.115Z" },
 ]
 
 [[package]]
@@ -1196,7 +1209,7 @@ name = "importlib-metadata"
 version = "9.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "zipp", marker = "python_full_version < '3.13'" },
+    { name = "zipp", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a9/01/15bb152d77b21318514a96f43af312635eb2500c96b55398d020c93d86ea/importlib_metadata-9.0.0.tar.gz", hash = "sha256:a4f57ab599e6a2e3016d7595cfd72eb4661a5106e787a95bcc90c7105b831efc", size = 56405, upload-time = "2026-03-20T06:42:56.999Z" }
 wheels = [
@@ -2160,22 +2173,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/5e/ba/35e160852d5e486bac207d7d8cfb8a11ecf5fc27a70cb3402628af37dd15/pydbus_stubs-0.0.4.tar.gz", hash = "sha256:e50f2b8440e32c0e70fad7995d37aa0a5ac27506aab85eca5d93502ee3e6d5c1", size = 9028, upload-time = "2026-04-28T21:49:02.873Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f8/79/783e5e64dec1bffa526cfe70143de71af656b86df765548c38a0807acbfe/pydbus_stubs-0.0.4-py3-none-any.whl", hash = "sha256:8cb14e6814683a874d4f707af8963202271f5a1b4c6fe76ecab7752ffcd97f8c", size = 12709, upload-time = "2026-04-28T21:49:01.757Z" },
-]
-
-[[package]]
-name = "pygithub"
-version = "2.9.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pyjwt", extra = ["crypto"] },
-    { name = "pynacl" },
-    { name = "requests" },
-    { name = "typing-extensions" },
-    { name = "urllib3" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ab/c3/8465a311197e16cf5ab68789fe689535e90f6b61ab524cc32a39e67237ae/pygithub-2.9.1.tar.gz", hash = "sha256:59771d7ff63d54d427be2e7d0dad2208dfffc2b0a045fec959263787739b611c", size = 2594989, upload-time = "2026-04-14T07:26:13.622Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/77/aa/81a5506f089a26338bff17535e4339b3b22049ebd1bcdeff756c4d7a7559/pygithub-2.9.1-py3-none-any.whl", hash = "sha256:2ec78fca30092d51a42d76f4ddb02131b6f0c666a35dfdf364cf302cdda115b9", size = 449710, upload-time = "2026-04-14T07:26:12.382Z" },
 ]
 
 [[package]]
@@ -3342,6 +3339,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/94/7d/a8a765761bbc0c836e397a2e48d498305a865b70a8600fd7a942e85dcf63/Unidecode-1.4.0.tar.gz", hash = "sha256:ce35985008338b676573023acc382d62c264f307c8f7963733405add37ea2b23", size = 200149, upload-time = "2025-04-24T08:45:03.798Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8f/b7/559f59d57d18b44c6d1250d2eeaa676e028b9c527431f5d0736478a73ba1/Unidecode-1.4.0-py3-none-any.whl", hash = "sha256:c3c7606c27503ad8d501270406e345ddb480a7b5f38827eafe4fa82a137f0021", size = 235837, upload-time = "2025-04-24T08:45:01.609Z" },
+]
+
+[[package]]
+name = "uritemplate"
+version = "4.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/98/60/f174043244c5306c9988380d2cb10009f91563fc4b31293d27e17201af56/uritemplate-4.2.0.tar.gz", hash = "sha256:480c2ed180878955863323eea31b0ede668795de182617fef9c6ca09e6ec9d0e", size = 33267, upload-time = "2025-06-02T15:12:06.318Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a9/99/3ae339466c9183ea5b8ae87b34c0b897eda475d2aec2307cae60e5cd4f29/uritemplate-4.2.0-py3-none-any.whl", hash = "sha256:962201ba1c4edcab02e60f9a0d3821e82dfc5d2d6662a21abd533879bdb8a686", size = 11488, upload-time = "2025-06-02T15:12:03.405Z" },
 ]
 
 [[package]]

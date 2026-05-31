@@ -117,7 +117,9 @@ gamescopereaper
 gbrpf
 genindex
 gethostname
+getiter
 getxattr
+gidgethub
 gitpython
 globaltoc
 gnudb

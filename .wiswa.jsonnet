@@ -127,6 +127,10 @@ local utils = import 'utils.libsonnet';
           },
           binaryornot: utils.latestPypiPackageVersionCaret('binaryornot'),
           click: utils.latestPypiPackageVersionCaret('click'),
+          gidgethub: {
+            optional: true,
+            version: utils.latestPypiPackageVersionCaret('gidgethub'),
+          },
           gitpython: {
             optional: true,
             version: utils.latestPypiPackageVersionCaret('gitpython'),
@@ -169,10 +173,6 @@ local utils = import 'utils.libsonnet';
             platform: 'linux',
             version: utils.latestPypiPackageVersionCaret('pydbus'),
           },
-          pygithub: {
-            optional: true,
-            version: utils.latestPypiPackageVersionCaret('pygithub'),
-          },
           pygobject: {
             optional: true,
             platform: 'linux',
@@ -212,7 +212,7 @@ local utils = import 'utils.libsonnet';
         extras: {
           admin: ['paramiko'],
           desktop: ['pydbus', 'pygobject', 'pyperclip'],
-          git: ['gitpython', 'keyring', 'pygithub'],
+          git: ['gidgethub', 'gitpython', 'keyring'],
           media: ['keyring', 'mutagen', 'platformdirs', 'send2trash'],
           string: ['unidecode', 'pyyaml', 'yt-dlp'],
           wine: ['pexpect', 'platformdirs', 'psutil', 'python-xz'],
@@ -289,7 +289,7 @@ local utils = import 'utils.libsonnet';
     include_only: ['deltona'],
     test_commands: ['add-cdda-times --help'],
     uv_sync_args: ['--all-extras', '--all-groups'],
-    requirements_filter: 'beautifulsoup4|gitpython|html5lib|mutagen|paramiko|pexpect|pillow|platformdirs|psutil|pydbus|pygithub|pygobject|pyperclip|python-xz|pyyaml|unidecode|yt-dlp',
+    requirements_filter: 'beautifulsoup4|gidgethub|gitpython|html5lib|mutagen|paramiko|pexpect|pillow|platformdirs|psutil|pydbus|pygobject|pyperclip|python-xz|pyyaml|unidecode|yt-dlp',
   },
   local apt_packages = ['libcairo2-dev', 'libgirepository-2.0-dev'],
   github+: {

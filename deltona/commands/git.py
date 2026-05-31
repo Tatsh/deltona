@@ -56,16 +56,18 @@ def git_checkout_default_branch_main(username: str,
     """  # noqa: DOC501
     import keyring  # noqa: PLC0415
 
-    setup_logging(debug=debug, loggers={'deltona': {}, 'github': {}, 'keyring': {}})
+    setup_logging(debug=debug, loggers={'deltona': {}, 'gidgethub': {}, 'keyring': {}})
     token = keyring.get_password('tmu-github-api', username)
     if not token:
         click.echo('No token.', err=True)
         raise click.Abort
     repo = _get_git_repo()
-    default_branch = get_github_default_branch(repo=repo,
-                                               base_url=base_url,
-                                               token=token,
-                                               origin_name=origin_name)
+    default_branch = anyio.run(
+        partial(get_github_default_branch,
+                base_url=base_url,
+                origin_name=origin_name,
+                repo=repo,
+                token=token))
     next(b for b in repo.heads if b.name == default_branch).checkout()
 
 
@@ -94,16 +96,18 @@ def git_rebase_default_branch_main(username: str,
     """  # noqa: DOC501
     import keyring  # noqa: PLC0415
 
-    setup_logging(debug=debug, loggers={'deltona': {}, 'github': {}, 'keyring': {}})
+    setup_logging(debug=debug, loggers={'deltona': {}, 'gidgethub': {}, 'keyring': {}})
     token = keyring.get_password('tmu-github-api', username)
     if not token:
         click.echo('No token.', err=True)
         raise click.Abort
     repo = _get_git_repo()
-    default_branch = get_github_default_branch(repo=repo,
-                                               base_url=base_url,
-                                               token=token,
-                                               origin_name=origin_name)
+    default_branch = anyio.run(
+        partial(get_github_default_branch,
+                base_url=base_url,
+                origin_name=origin_name,
+                repo=repo,
+                token=token))
     repo.git.rebase(f'{origin_name}/{default_branch}' if remote else default_branch)
 
 
@@ -168,7 +172,7 @@ def merge_dependabot_prs_main(username: str,
     """Merge pull requests made by Dependabot on GitHub."""  # noqa: DOC501
     import keyring  # noqa: PLC0415
 
-    setup_logging(debug=debug, loggers={'deltona': {}, 'github': {}, 'keyring': {}})
+    setup_logging(debug=debug, loggers={'deltona': {}, 'gidgethub': {}, 'keyring': {}})
     if not (token := keyring.get_password('tmu-github-api', username)):
         click.echo('No token.', err=True)
         raise click.Abort
@@ -215,7 +219,7 @@ def merge_pre_commit_ci_prs_main(username: str,
     """Merge pull requests made by pre-commit.ci on GitHub."""  # noqa: DOC501
     import keyring  # noqa: PLC0415
 
-    setup_logging(debug=debug, loggers={'deltona': {}, 'github': {}, 'keyring': {}})
+    setup_logging(debug=debug, loggers={'deltona': {}, 'gidgethub': {}, 'keyring': {}})
     if not (token := keyring.get_password('tmu-github-api', username)):
         click.echo('No token.', err=True)
         raise click.Abort
