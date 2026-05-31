@@ -25,7 +25,7 @@ from niquests import AsyncSession
 from .typing import ProbeDict, StrPath, assert_not_none
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Sequence
+    from collections.abc import Callable, Iterable, Iterator, Sequence
 
 __all__ = ('CDDBQueryResult', 'add_info_json_to_media_file', 'archive_dashcam_footage',
            'cddb_query', 'create_static_text_video', 'ffprobe', 'get_info_json', 'group_pairs',
@@ -38,6 +38,16 @@ _DEFAULT_FORMATS = ('f32be', 'f32le', 'f64be', 'f64le', 's8', 's16be', 's16le', 
                     's32be', 's32le', 'u8', 'u16be', 'u16le', 'u24be', 'u24le', 'u32be', 'u32le')
 _DEFAULT_RATES = (8000, 12000, 16000, 22050, 24000, 32000, 44100, 48000, 64000, 88200, 96000,
                   128000, 176400, 192000, 352800, 384000)
+
+
+@contextlib.contextmanager
+def _unlink_on_exit() -> Iterator[list[Path]]:
+    paths: list[Path] = []
+    try:
+        yield paths
+    finally:
+        for path in paths:
+            path.unlink(missing_ok=True)
 
 
 def supported_audio_input_formats(
@@ -920,10 +930,8 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
                                          prefix='concat-',
                                          suffix='.txt') as temp_concat:
             log.debug('Group size: %d pairs', len(pair_group))
-            to_be_merged: list[Path] = []
             send_to_waste: list[Path] = []
-            metadata_path: str | None = None
-            try:
+            with _unlink_on_exit() as temp_files:
                 for i, (back_file, front_file) in enumerate(pair_group):
                     log.debug('Back file: %s, front file: %s', back_file, front_file)
                     if back_file is not None:
@@ -941,7 +949,7 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
                                                      suffix=f'.{extension}') as tf:
                         sp.run(cmd, stdout=tf, check=True, stderr=sp.PIPE)
                         tf_fixed = Path(tf.name).resolve(strict=True)
-                        to_be_merged.append(tf_fixed)
+                        temp_files.append(tf_fixed)
                         temp_concat.write(f"file '{tf_fixed}'\n")
                 temp_concat.flush()
                 first_front = pair_group[0][1]
@@ -955,7 +963,7 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
                                             f'{full_output_path.suffix}')
                         suffix += 1
                 metadata_args: tuple[str, ...] = ()
-                if chapters and len(to_be_merged) > 0:
+                if chapters and len(temp_files) > 0:
                     with tempfile.NamedTemporaryFile('w',
                                                      dir=temp_dir,
                                                      encoding='utf-8',
@@ -964,7 +972,7 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
                                                      delete=False) as metadata_file:
                         metadata_file.write(';FFMETADATA1\n')
                         chapter_start = 0
-                        for _merged_file, (_, front_file) in zip(to_be_merged,
+                        for _merged_file, (_, front_file) in zip(temp_files,
                                                                  pair_group,
                                                                  strict=True):
                             source_duration = float(
@@ -981,6 +989,7 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
                                                 f'title={chapter_title}\n')
                             chapter_start += duration_ms
                         metadata_path = metadata_file.name
+                    temp_files.append(Path(metadata_path))
                     metadata_args = ('-i', metadata_path, '-map_metadata', '1')
                     log.debug('Chapter metadata file: %s', metadata_path)
                 cmd = ('ffmpeg', '-hide_banner', '-y', '-f', 'concat', '-safe', '0', '-i',
@@ -991,11 +1000,6 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
                     for path in send_to_waste:
                         send2trash(path)
                         log.debug('Sent to wastebin: %s', path)
-            finally:
-                for path in to_be_merged:
-                    path.unlink(missing_ok=True)
-                if metadata_path is not None:
-                    Path(metadata_path).unlink(missing_ok=True)
 
 
 def hlg_to_sdr(input_file: StrPath,
