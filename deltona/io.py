@@ -56,8 +56,20 @@ def context_os_open(path: StrPath,
         File descriptor.
     """
     f = os.open(path, flags, mode, dir_fd=dir_fd)
-    yield f
-    os.close(f)
+    try:
+        yield f
+    finally:
+        os.close(f)
+
+
+@contextlib.contextmanager
+def _chdir(path: StrPath) -> Iterator[None]:
+    saved = Path.cwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(saved)
 
 
 def unpack_0day(path: StrPath, *, remove_diz: bool = True) -> None:
@@ -72,9 +84,7 @@ def unpack_0day(path: StrPath, *, remove_diz: bool = True) -> None:
         Remove any files matching ``*.diz`` glob (not case-sensitive). Defaults to ``True``.
     """
     path = Path(path)
-    saved = Path.cwd()
-    os.chdir(path)
-    try:
+    with _chdir(path):
         for zip_file in path.glob('*.zip'):
             with ZipFile(zip_file) as z:
                 z.extractall()
@@ -90,8 +100,6 @@ def unpack_0day(path: StrPath, *, remove_diz: bool = True) -> None:
                 path.glob('*.part*.rar' if any(
                     re.search(r'\.part[0-9]{,3}\.rar$', str(r), re.IGNORECASE)
                     for r in rars) else '*.[rstuvwxyz][0-9a][0-9r]')))
-    finally:
-        os.chdir(saved)
 
 
 def extract_rar_from_zip(zip_file: ZipFile) -> Iterator[str]:
@@ -136,9 +144,7 @@ def unpack_ebook(path: StrPath) -> None:
 
     if not (path := Path(path)).is_dir():
         raise NotADirectoryError
-    saved = Path.cwd()
-    os.chdir(path)
-    try:
+    with _chdir(path):
         zip_listing = frozenset(ZipFile(x) for x in path.iterdir() if x.name.endswith('.zip'))
         if len(zip_listing) == 0:
             raise FileExistsError
@@ -174,8 +180,6 @@ def unpack_ebook(path: StrPath) -> None:
             zip_file.close()
         for x in extracted:
             x.unlink()
-    finally:
-        os.chdir(saved)
 
 
 GOG_FILESIZE_RE = re.compile(r'filesizes="(\d+?)"')
