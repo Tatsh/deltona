@@ -326,7 +326,7 @@ local utils = import 'utils.libsonnet';
   },
   flatpak+: {
     modules: [
-      super.flatpak.modules[0] + {
+      super.modules[0] + {
         sources: [
           {
             tag: 'v' + settings.version,

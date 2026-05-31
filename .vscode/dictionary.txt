@@ -215,7 +215,6 @@ norecursedirs
 norestart
 notarytool
 noto
-npmjs
 numpy
 nvenc
 nwinemenubuilder
@@ -224,6 +223,7 @@ onefile
 oneline
 otherfilerc
 paramiko
+paramiko's
 parms
 pathlib
 pathspec
@@ -234,6 +234,7 @@ pipx
 platformdirs
 plistlib
 pointsize
+preapproved
 proc
 prodvers
 proxyjump
@@ -320,6 +321,8 @@ ultraiso
 umpv
 underscorised
 underscorize
+undraft
+undrafted
 unidecode
 uninhibit
 urldecode
@@ -347,6 +350,7 @@ wingdi
 wiswa
 wiswa's
 wkwebview
+worktree
 wwdc
 xauthority
 xcrun
