@@ -56,7 +56,7 @@ def git_checkout_default_branch_main(username: str,
     """  # noqa: DOC501
     import keyring  # noqa: PLC0415
 
-    setup_logging(debug=debug, loggers={'deltona': {}, 'gidgethub': {}, 'keyring': {}})
+    setup_logging(debug=debug, loggers={'deltona': {}, 'keyring': {}, 'urllib3': {}})
     token = keyring.get_password('tmu-github-api', username)
     if not token:
         click.echo('No token.', err=True)
@@ -172,7 +172,7 @@ def merge_dependabot_prs_main(username: str,
     """Merge pull requests made by Dependabot on GitHub."""  # noqa: DOC501
     import keyring  # noqa: PLC0415
 
-    setup_logging(debug=debug, loggers={'deltona': {}, 'gidgethub': {}, 'keyring': {}})
+    setup_logging(debug=debug, loggers={'deltona': {}, 'keyring': {}, 'urllib3': {}})
     if not (token := keyring.get_password('tmu-github-api', username)):
         click.echo('No token.', err=True)
         raise click.Abort
@@ -219,7 +219,7 @@ def merge_pre_commit_ci_prs_main(username: str,
     """Merge pull requests made by pre-commit.ci on GitHub."""  # noqa: DOC501
     import keyring  # noqa: PLC0415
 
-    setup_logging(debug=debug, loggers={'deltona': {}, 'gidgethub': {}, 'keyring': {}})
+    setup_logging(debug=debug, loggers={'deltona': {}, 'keyring': {}, 'urllib3': {}})
     if not (token := keyring.get_password('tmu-github-api', username)):
         click.echo('No token.', err=True)
         raise click.Abort
