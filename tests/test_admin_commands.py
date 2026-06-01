@@ -15,7 +15,6 @@ from deltona.commands.admin import (
     smv_main,
 )
 from deltona.system import MultipleKeySlots
-from pytest_mock import MockerFixture
 
 if TYPE_CHECKING:
     from click.testing import CliRunner
