@@ -153,11 +153,16 @@ def _log_merge_failure(number: int, name: str) -> None:
 async def _uses_dependabot(gh: gidgethub.abc.GitHubAPI, repo: Mapping[str, Any]) -> bool:
     import gidgethub  # noqa: PLC0415
 
+    full_name = repo['full_name']
+    # The /user/repos list endpoint omits security_and_analysis, so fetch the full repository to
+    # read the Dependabot security-updates status when the field is absent.
+    if 'security_and_analysis' not in repo:
+        repo = await gh.getitem(f'/repos/{full_name}')
     updates = (repo.get('security_and_analysis') or {}).get('dependabot_security_updates') or {}
     if updates.get('status') == 'enabled':
         return True
     try:
-        await gh.getitem(f'/repos/{repo["full_name"]}/contents/.github/workflows/dependabot.yml')
+        await gh.getitem(f'/repos/{full_name}/contents/.github/workflows/dependabot.yml')
     except gidgethub.HTTPException:
         return False
     return True

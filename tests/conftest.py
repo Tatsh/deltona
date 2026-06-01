@@ -60,14 +60,16 @@ class FakeRepo:
     def name(self) -> str:
         return self.full_name.split('/')[-1]
 
-    def payload(self) -> dict[str, Any]:
+    def payload(self, *, full: bool = False) -> dict[str, Any]:
         data: dict[str, Any] = {
             'archived': self.archived,
             'default_branch': self.default_branch,
             'full_name': self.full_name,
             'name': self.name,
         }
-        if self.security_status is not None:
+        # Mirror GitHub: security_and_analysis is only returned by the single-repository
+        # endpoint, never by the /user/repos list endpoint.
+        if full and self.security_status is not None:
             data['security_and_analysis'] = {
                 'dependabot_security_updates': {
                     'status': self.security_status
@@ -165,7 +167,7 @@ class FakeGitHub:
             return self._route_comments(method, match, data)
         if (match := self._REPO.match(path)):
             self.repo_gets.append(match['full'])
-            return 200, self.repos[match['full']].payload()
+            return 200, self.repos[match['full']].payload(full=True)
         msg = f'Unhandled route: {method} {path}'
         raise AssertionError(msg)
 
