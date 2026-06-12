@@ -172,7 +172,15 @@ def merge_dependabot_prs_main(username: str,
     """Merge pull requests made by Dependabot on GitHub."""  # noqa: DOC501
     import keyring  # noqa: PLC0415
 
-    setup_logging(debug=debug, loggers={'deltona': {}, 'keyring': {}, 'urllib3': {}})
+    setup_logging(debug=debug,
+                  loggers={
+                      'deltona': {},
+                      'keyring': {},
+                      'urllib3': {},
+                      'urllib3.util.retry': {
+                          'level': 'WARNING'
+                      }
+                  })
     if not (token := keyring.get_password('tmu-github-api', username)):
         click.echo('No token.', err=True)
         raise click.Abort
