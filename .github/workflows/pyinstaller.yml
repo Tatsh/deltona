@@ -16,7 +16,7 @@ jobs:
           python-version: '3.13'
       - if: matrix.os == 'windows-11-arm'
         name: 'Cache vcpkg installed packages'
-        uses: 'actions/cache@v6.0.0'
+        uses: 'actions/cache@v6.1.0'
         with:
           key: vcpkg-arm64-windows-openssl-${{ hashFiles('.github/workflows/pyinstaller.yml') }}
           path: '~/vcpkg/installed'
