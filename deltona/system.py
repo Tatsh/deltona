@@ -195,7 +195,7 @@ def find_bluetooth_device_info_by_name(name: str) -> tuple[str, dict[str, Any]]:
     for k, v in bluez['org.freedesktop.DBus.ObjectManager'].GetManagedObjects().items():
         if ('org.bluez.Device1' in v and 'Name' in v['org.bluez.Device1']
                 and v['org.bluez.Device1']['Name'] == name):
-            return k, dict(v['org.bluez.Device1'])  # ty: ignore[no-matching-overload]
+            return k, dict(v['org.bluez.Device1'])
     raise KeyError(name)
 
 
