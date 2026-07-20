@@ -201,7 +201,7 @@ def test_unpack_ebook_no_rar_found(mocker: MockerFixture) -> None:
     mock_zipfile_cls.side_effect = [mock_zip1]
     mock_dir.iterdir.return_value = [mocker.Mock(name='file.zip', name__endswith='.zip')]
     mock_extract_rar_from_zip.return_value = []
-    with pytest.raises(ValueError):  # noqa: PT011
+    with pytest.raises(ValueError):  # ruff:ignore[pytest-raises-too-broad]
         unpack_ebook('some_path')
 
 
@@ -226,7 +226,7 @@ def test_unpack_ebook_no_pdf_or_epub(mocker: MockerFixture) -> None:
         [],  # for pdf_list
         []  # for epub_list
     ]
-    with pytest.raises(ValueError):  # noqa: PT011
+    with pytest.raises(ValueError):  # ruff:ignore[pytest-raises-too-broad]
         unpack_ebook('some_path')
 
 
@@ -368,7 +368,7 @@ def test_extract_gog_invalid_offset(mocker: MockerFixture) -> None:
     mock_input_path.resolve.return_value.open.return_value.__enter__.return_value = mock_game_bin
     script = b'#!/bin/sh\nfilesizes="1234"\n'
     mock_game_bin.read.return_value = script
-    with pytest.raises(ValueError):  # noqa: PT011
+    with pytest.raises(ValueError):  # ruff:ignore[pytest-raises-too-broad]
         extract_gog('input.gog', 'output_dir')
     mock_output_dir.mkdir.assert_called_once_with(parents=True)
 
@@ -393,7 +393,7 @@ def test_extract_gog_invalid_filesize(mocker: MockerFixture) -> None:
     mock_unpacker_sh_f = mocker.MagicMock()
     open_f = mock_output_dir.__truediv__.return_value.open.return_value
     open_f.__enter__.return_value = mock_unpacker_sh_f
-    with pytest.raises(ValueError):  # noqa: PT011
+    with pytest.raises(ValueError):  # ruff:ignore[pytest-raises-too-broad]
         extract_gog('input.gog', 'output_dir')
     mock_output_dir.mkdir.assert_called_once_with(parents=True)
 

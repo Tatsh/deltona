@@ -22,7 +22,7 @@ __all__ = ('fix_chromium_pwa_icon', 'generate_chrome_user_agent', 'get_last_chro
 
 
 def _get_pil_image_module() -> ModuleType:  # pragma: no cover
-    from PIL import Image  # noqa: PLC0415
+    from PIL import Image  # ruff:ignore[import-outside-top-level]
 
     return Image
 

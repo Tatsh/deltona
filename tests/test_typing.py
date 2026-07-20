@@ -1,4 +1,4 @@
-# ruff: noqa: FBT001
+# ruff:file-ignore[boolean-type-hint-positional-argument]
 from __future__ import annotations
 
 from typing import Union
@@ -11,10 +11,10 @@ import pytest
 @pytest.mark.parametrize(
     ('type_hint', 'expected'),
     [
-        (Union[os.PathLike[str], str], True),  # noqa: UP007
-        (Union[str, int], False),  # noqa: UP007
+        (Union[os.PathLike[str], str], True),  # ruff:ignore[non-pep604-annotation-union]
+        (Union[str, int], False),  # ruff:ignore[non-pep604-annotation-union]
         (str, False),
-        (Union[os.PathLike[str], int, str], True)  # noqa: UP007
+        (Union[os.PathLike[str], int, str], True)  # ruff:ignore[non-pep604-annotation-union]
     ])
 def test_contains_type_path_like_str(type_hint: object, expected: bool) -> None:
     assert contains_type_path_like_str(type_hint) is expected

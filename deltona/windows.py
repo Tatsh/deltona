@@ -408,7 +408,7 @@ def make_font_entry(field: Field,
     ------
     NameTooLong
         If the font name is longer than 64 characters.
-    """  # noqa: E501
+    """  # ruff:ignore[line-too-long]
     if len(name) > LF_FULLFACESIZE:
         raise NameTooLong(name)
     height = -((font_size_pt * dpi) // DEFAULT_DPI)

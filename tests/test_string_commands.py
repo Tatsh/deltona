@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     ('input_str', 'expected'),
     [
         ('hello', 0),
-        # cspell: disable-next-line  # noqa: ERA001
+        # cspell: disable-next-line  # ruff:ignore[commented-out-code]
         ('héllo', 1)
     ])
 def test_is_ascii_main(runner: CliRunner, mocker: MockerFixture, tmp_path: Path, input_str: str,
@@ -53,7 +53,7 @@ def test_urldecode_main_basic(runner: CliRunner, tmp_path: Path) -> None:
 
 def test_urldecode_main_netloc(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:
     input_file = tmp_path / 'test_urldecode_netloc.txt'
-    # cspell: disable-next-line  # noqa: ERA001
+    # cspell: disable-next-line  # ruff:ignore[commented-out-code]
     input_file.write_text('https%3A%2F%2Fexample.com%2Ffoo\n', encoding='utf-8')
     mocker.patch('sys.argv', ['netloc'])
     result = runner.invoke(urldecode_main, [str(input_file)])
@@ -168,8 +168,9 @@ def test_is_bin_main_empty_not_binary(runner: CliRunner, tmp_path: Path) -> None
 
 def test_fullwidth2ascii_main(runner: CliRunner, tmp_path: Path) -> None:
     input_file = tmp_path / 'test_fullwidth2ascii.txt'
-    # cspell: disable-next-line  # noqa: ERA001
-    input_file.write_text('ｈｅｌｌｏ\n', encoding='utf-8')  # noqa: RUF001
+    # cspell: disable-next-line  # ruff:ignore[commented-out-code]
+    input_file.write_text('ｈｅｌｌｏ\n',
+                          encoding='utf-8')  # ruff:ignore[ambiguous-unicode-character-string]
     result = runner.invoke(fullwidth2ascii_main, [str(input_file)])
     assert 'hello' in result.output
 
@@ -211,7 +212,7 @@ def test_cssq_prints_json_lines(runner: CliRunner, mocker: MockerFixture, tmp_pa
     mocker.patch('deltona.commands.string.cssq', return_value=['A', 'B'])
     mock_json = mocker.patch(
         'deltona.commands.string.json.dumps',
-        side_effect=lambda x, *a, **kw: f'"{x}"'  # noqa: ARG005
+        side_effect=lambda x, *a, **kw: f'"{x}"'  # ruff:ignore[unused-lambda-argument]
     )
     result = runner.invoke(cssq_main, ['-j', '-s', '-t', 'div', str(input_file)])
     assert result.exit_code == 0

@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('file', type=click.File('r'), default=sys.stdin)
 def is_ascii_main(file: TextIO) -> None:
-    """Check if a file is ASCII."""  # noqa: DOC501
+    """Check if a file is ASCII."""  # ruff:ignore[docstring-missing-exception]
     if not is_ascii(file.read()):
         raise click.exceptions.Exit(1)
 
@@ -65,7 +65,7 @@ def underscorize_main(file: TextIO) -> None:
 @click.option('-i', '--indent', default=2, type=click.IntRange(2, 9), help='Indent width (spaces).')
 def json2yaml_main(file: TextIO, indent: int = 2, *, default_flow_style: bool = False) -> None:
     """Convert JSON to YAML."""
-    import yaml  # noqa: PLC0415
+    import yaml  # ruff:ignore[import-outside-top-level]
 
     click.echo(yaml.dump(json.load(file), indent=indent, default_flow_style=default_flow_style))
 
@@ -110,7 +110,7 @@ def pl2json_main(file: BytesIO) -> None:
 
     This command does not do any type conversions. This means files containing <data> objects will
     not work.
-    """  # noqa: DOC501
+    """  # ruff:ignore[docstring-missing-exception]
     try:
         click.echo(json.dumps(plistlib.load(file), sort_keys=True, allow_nan=False, indent=2))
     except TypeError as e:
@@ -127,12 +127,12 @@ def is_bin_main(file: BytesIO) -> None:
     For this utility, 0 byte files do not count as binary.
 
     Exit code 0 means the file probably contains binary content.
-    """  # noqa: DOC501
+    """  # ruff:ignore[docstring-missing-exception]
     file.seek(0, io.SEEK_END)
     if file.tell() == 0:
         click.echo('File is empty. Not counting as binary.', err=True)
         raise click.Abort
-    from binaryornot.helpers import is_binary_string  # noqa: PLC0415
+    from binaryornot.helpers import is_binary_string  # ruff:ignore[import-outside-top-level]
 
     file.seek(0)
     if is_binary_string(file.read(1024)):
@@ -171,7 +171,7 @@ def title_fixer_main(titles: tuple[str, ...],
                      arabic: bool = False,
                      no_names: bool = False,
                      ampersands: bool = False) -> None:
-    """Fix titles."""  # noqa: DOC501
+    """Fix titles."""  # ruff:ignore[docstring-missing-exception]
     modes = (*((naming.Mode.Arabic,) if arabic else
                ()), *((naming.Mode.Chinese,) if chinese else
                       ()), *((naming.Mode.English,) if not no_english else

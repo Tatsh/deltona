@@ -1,6 +1,6 @@
 """String utilities."""
 
-# ruff: noqa: RUF001
+# ruff:file-ignore[ambiguous-unicode-character-string]
 from __future__ import annotations
 
 from functools import cache
@@ -126,7 +126,7 @@ def hexstr2bytes_generator(s: str) -> Iterator[int]:
     """
     for i in range(0, len(s), 2):
         hex_num = s[i:i + 2]
-        if len(hex_num) != 2:  # noqa: PLR2004
+        if len(hex_num) != 2:  # ruff:ignore[magic-value-comparison]
             raise ValueError(hex_num)
         yield int(hex_num, 16)
 
@@ -175,7 +175,7 @@ def unix_path_to_wine(path: StrPath) -> str:
 
 
 def _get_yt_dlp_sanitize_filename() -> Callable[..., str]:  # pragma: no cover
-    from yt_dlp.utils import sanitize_filename  # noqa: PLC0415
+    from yt_dlp.utils import sanitize_filename  # ruff:ignore[import-outside-top-level]
 
     return sanitize_filename
 
@@ -223,7 +223,7 @@ def is_url(filename: StrPath) -> bool:
         ``True`` if ``filename`` looks like a URL.
     """
     parts = str(filename).split('://', 1)
-    if len(parts) < 2:  # noqa: PLR2004
+    if len(parts) < 2:  # ruff:ignore[magic-value-comparison]
         return False
     # protocol prefix has no special characters => it's a URL
     return all(x in f'{string.ascii_letters}{string.digits}_' for x in parts[0])
@@ -231,7 +231,7 @@ def is_url(filename: StrPath) -> bool:
 
 def _get_unidecode_cache_and_unidecode(
 ) -> tuple[dict[int, Sequence[str | None] | None], Callable[..., str]]:  # pragma: no cover
-    from unidecode import Cache, unidecode  # noqa: PLC0415
+    from unidecode import Cache, unidecode  # ruff:ignore[import-outside-top-level]
 
     return Cache, unidecode
 
@@ -547,8 +547,8 @@ def cssq_one(selector: str,
     str | Tag | None
         The selected item, or ``None`` if no match was found.
     """
-    from bs4 import BeautifulSoup  # noqa: PLC0415
-    import soupsieve as sv  # noqa: PLC0415
+    from bs4 import BeautifulSoup  # ruff:ignore[import-outside-top-level]
+    import soupsieve as sv  # ruff:ignore[import-outside-top-level]
 
     soup = BeautifulSoup(file, 'html5lib')
     element = soup.select_one(selector, flags=sv.DEBUG if debug_selector else 0)
@@ -622,8 +622,8 @@ def cssq(selector: str,
     Iterator[Tag] | Iterator[str]
         The filtered items.
     """
-    from bs4 import BeautifulSoup  # noqa: PLC0415
-    import soupsieve as sv  # noqa: PLC0415
+    from bs4 import BeautifulSoup  # ruff:ignore[import-outside-top-level]
+    import soupsieve as sv  # ruff:ignore[import-outside-top-level]
 
     soup = BeautifulSoup(file, 'html5lib')
     yield from [

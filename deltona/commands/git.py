@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 
 def _get_git_repo() -> Repo:  # pragma: no cover
-    from git import Repo  # noqa: PLC0415
+    from git import Repo  # ruff:ignore[import-outside-top-level]
 
     return Repo(search_parent_directories=True)
 
@@ -53,8 +53,8 @@ def git_checkout_default_branch_main(username: str,
 
     To set a token, ``keyring set tmu-github-api "${USER}"``. The token must have
     access to the public_repo or repo scope.
-    """  # noqa: DOC501
-    import keyring  # noqa: PLC0415
+    """  # ruff:ignore[docstring-missing-exception]
+    import keyring  # ruff:ignore[import-outside-top-level]
 
     setup_logging(debug=debug, loggers={'deltona': {}, 'keyring': {}, 'urllib3': {}})
     token = keyring.get_password('tmu-github-api', username)
@@ -93,8 +93,8 @@ def git_rebase_default_branch_main(username: str,
 
     To set a token, ``keyring set tmu-github-api "${USER}"``. The token must have
     access to the public_repo or repo scope.
-    """  # noqa: DOC501
-    import keyring  # noqa: PLC0415
+    """  # ruff:ignore[docstring-missing-exception]
+    import keyring  # ruff:ignore[import-outside-top-level]
 
     setup_logging(debug=debug, loggers={'deltona': {}, 'gidgethub': {}, 'keyring': {}})
     token = keyring.get_password('tmu-github-api', username)
@@ -169,8 +169,8 @@ def merge_dependabot_prs_main(username: str,
                               max_concurrent_http_requests: int = 3,
                               *,
                               debug: bool = False) -> None:
-    """Merge pull requests made by Dependabot on GitHub."""  # noqa: DOC501
-    import keyring  # noqa: PLC0415
+    """Merge pull requests made by Dependabot on GitHub."""  # ruff:ignore[docstring-missing-exception]
+    import keyring  # ruff:ignore[import-outside-top-level]
 
     setup_logging(debug=debug,
                   loggers={
@@ -224,8 +224,8 @@ def merge_pre_commit_ci_prs_main(username: str,
                                  max_concurrent_http_requests: int = 3,
                                  *,
                                  debug: bool = False) -> None:
-    """Merge pull requests made by pre-commit.ci on GitHub."""  # noqa: DOC501
-    import keyring  # noqa: PLC0415
+    """Merge pull requests made by pre-commit.ci on GitHub."""  # ruff:ignore[docstring-missing-exception]
+    import keyring  # ruff:ignore[import-outside-top-level]
 
     setup_logging(debug=debug, loggers={'deltona': {}, 'keyring': {}, 'urllib3': {}})
     if not (token := keyring.get_password('tmu-github-api', username)):

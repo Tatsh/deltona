@@ -44,8 +44,8 @@ def wineshell_main(prefix_name: str, *, debug: bool = False) -> None:
     Start a new shell with WINEPREFIX set up.
 
     For Bash and similar shells only.
-    """  # noqa: DOC501
-    import pexpect  # noqa: PLC0415
+    """  # ruff:ignore[docstring-missing-exception]
+    import pexpect  # ruff:ignore[import-outside-top-level]
 
     setup_logging(debug=debug, loggers={'deltona': {}, 'pexpect': {}})
     target = (Path(prefix_name) if Path(prefix_name).exists() else
@@ -55,7 +55,9 @@ def wineshell_main(prefix_name: str, *, debug: bool = False) -> None:
                       dimensions=(terminal.lines, terminal.columns))
     c.sendline(f'export WINEPREFIX={quote(str(target))}; export PS1="{target.name}🍷$PS1"')
 
-    def resize(sig: int, frame: FrameType | None) -> None:  # pragma: no cover  # noqa: ARG001
+    def resize(
+        sig: int, frame: FrameType | None
+    ) -> None:  # pragma: no cover  # ruff:ignore[unused-function-argument]
         terminal = shutil.get_terminal_size()
         c.setwinsize(terminal.lines, terminal.columns)
 
@@ -96,7 +98,7 @@ def winegoginstall_main(args: Sequence[str],
     .. code-block:: text
 
        /CLOSEAPPLICATIONS /FORCECLOSEAPPLICATIONS /NOCANCEL /NORESTART /SILENT
-    """  # noqa: DOC501
+    """  # ruff:ignore[docstring-missing-exception]
     setup_logging(debug=debug, loggers={'deltona': {}})
     if 'DISPLAY' not in os.environ or 'XAUTHORITY' not in os.environ:  # pragma: no cover
         log.warning(

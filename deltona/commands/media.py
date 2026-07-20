@@ -58,7 +58,7 @@ def add_cdda_times_main(times: tuple[str, ...]) -> None:
 
     A CDDA timestamp is 3 zero-prefixed integers MM:SS:FF, separated by colons. FF is the number of
     frames out of 75.
-    """  # noqa: DOC501
+    """  # ruff:ignore[docstring-missing-exception]
     if (result := add_cdda_times(times)) is None:
         raise click.Abort
     click.echo(result)
@@ -74,7 +74,7 @@ def add_cdda_times_main(times: tuple[str, ...]) -> None:
               help='Wait time in seconds.',
               metavar='TIME')
 def wait_for_disc_main(drive_path: Path, wait_time: float = 1.0) -> None:
-    """Wait for a disc in a drive to be ready."""  # noqa: DOC501
+    """Wait for a disc in a drive to be ready."""  # ruff:ignore[docstring-missing-exception]
     if not wait_for_disc(str(drive_path), sleep_time=wait_time):
         raise click.Abort
 
@@ -179,7 +179,7 @@ def wait_for_disc_main(drive_path: Path, wait_time: float = 1.0) -> None:
               is_flag=True,
               help='Create UDF DVD image (this option will overwrite all other volume settings).')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug logging.')
-def ultraiso_main(  # noqa: PLR0913, PLR0917
+def ultraiso_main(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
         ahide: str | None = None,
         appid: str | None = None,
         bin2iso: Path | None = None,
@@ -227,7 +227,7 @@ def ultraiso_main(  # noqa: PLR0913, PLR0917
     CLI interface to UltraISO.
 
     On non-Windows, runs UltraISO via Wine.
-    """  # noqa: DOC501
+    """  # ruff:ignore[docstring-missing-exception]
     kwargs = {'prefix': prefix} if prefix and not IS_WINDOWS else {}
     setup_logging(debug=debug, loggers={'deltona': {}})
     try:
@@ -283,7 +283,7 @@ def ultraiso_main(  # noqa: PLR0913, PLR0917
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.argument('device')
 def supported_audio_input_formats_main(device: str, *, debug: bool = False) -> None:
-    """Get supported input formats and sample rates by invoking ffmpeg."""  # noqa: DOC501
+    """Get supported input formats and sample rates by invoking ffmpeg."""  # ruff:ignore[docstring-missing-exception]
     setup_logging(debug=debug, loggers={'deltona': {}})
     try:
         for format_, rate in supported_audio_input_formats(device):
@@ -307,7 +307,7 @@ def add_info_json_main(filename: Sequence[Path], *, debug: bool = False) -> None
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.argument('filename', type=click.Path(exists=True, dir_okay=False, path_type=Path))
 def display_info_json_main(filename: Path, *, debug: bool = False) -> None:
-    """Display embedded info.json in a media file."""  # noqa: DOC501
+    """Display embedded info.json in a media file."""  # ruff:ignore[docstring-missing-exception]
     setup_logging(debug=debug, loggers={'deltona': {}})
     try:
         click.echo(get_info_json(filename, raw=True))
@@ -358,7 +358,7 @@ def audio2vid_main(audio_filename: Path,
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 def mvid_rename_main(filenames: tuple[str, ...], *, debug: bool = False) -> None:
     """Rename music video files."""
-    from send2trash import send2trash as _send2trash  # noqa: PLC0415
+    from send2trash import send2trash as _send2trash  # ruff:ignore[import-outside-top-level]
 
     setup_logging(debug=debug, loggers={'deltona': {}})
     for filename in filenames:
@@ -406,7 +406,7 @@ def ke_ebook_ex_main(paths: Sequence[Path],
     for path in paths:
         unpack_ebook(path)
     if delete_paths:
-        from send2trash import send2trash as _send2trash  # noqa: PLC0415
+        from send2trash import send2trash as _send2trash  # ruff:ignore[import-outside-top-level]
 
         for path in paths:
             _send2trash(path)
@@ -467,7 +467,7 @@ def ke_ebook_ex_main(paths: Sequence[Path],
               help='Temporary directory for processing.',
               type=click.Path(file_okay=False, path_type=Path))
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
-def encode_dashcam_main(  # noqa: PLR0913, PLR0917
+def encode_dashcam_main(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
         front_dir: Path,
         rear_dir: Path | None,
         output_dir: Path,
@@ -520,7 +520,7 @@ def encode_dashcam_main(  # noqa: PLR0913, PLR0917
     Example use:
 
         encode-dashcam Movie_F/ Movie_R/ ~/output_dir
-    """  # noqa: DOC501
+    """  # ruff:ignore[docstring-missing-exception]
     setup_logging(debug=debug, loggers={'deltona': {}})
     if rear_dir is not None and (Path(front_dir).resolve(strict=True)
                                  == Path(rear_dir).resolve(strict=True)):
@@ -607,7 +607,7 @@ def tbc2srt_main(filename: Path, input_json: Path | None = None, *, debug: bool 
     cmd = ('ccextractor', '-in=raw', str(bin_file))
     log.debug('Running: %s', ' '.join(quote(x) for x in cmd))
     sp.run(cmd, check=True)
-    from send2trash import send2trash as _send2trash  # noqa: PLC0415
+    from send2trash import send2trash as _send2trash  # ruff:ignore[import-outside-top-level]
 
     _send2trash([scc_file, bin_file, output_json_file, input_json])
 
@@ -620,14 +620,15 @@ def flac_dir_finalize_main(directory: Path, *, debug: bool = False) -> None:
     def get_flac_tags(flac_path: Path) -> Iterator[tuple[str, str]]:
         def _split_eq(x: str) -> tuple[str, str] | None:
             y = x.split('=', 1)
-            if len(y) == 2:  # noqa: PLR2004
+            if len(y) == 2:  # ruff:ignore[magic-value-comparison]
                 return y[0].lower(), y[1]
             return None
 
         return (
             y for y in (
                 _split_eq(x) for x in sp.run(
-                    ('metaflac', '--export-tags-to=-', str(flac_path)),  # noqa: S607
+                    ('metaflac', '--export-tags-to=-',
+                     str(flac_path)),  # ruff:ignore[start-process-with-partial-path]
                     stdout=sp.PIPE,
                     text=True,
                     check=False).stdout.splitlines()) if y is not None)
@@ -639,7 +640,7 @@ def flac_dir_finalize_main(directory: Path, *, debug: bool = False) -> None:
     def sanitize_for_filename(s: str) -> str:
         return underscorize(
             re.sub(
-                r'[!&"\'$;`^,#\?%=\.,°±¡¯¬«ª²³¨§¦¥¤£¢¿¾½¼»þ÷¹¸·¶µ´]',  # noqa: RUF001
+                r'[!&"\'$;`^,#\?%=\.,°±¡¯¬«ª²³¨§¦¥¤£¢¿¾½¼»þ÷¹¸·¶µ´]',  # ruff:ignore[ambiguous-unicode-character-string]
                 '',
                 re.sub(
                     r'[/\|:\\\*\+@~]', '-',

@@ -70,7 +70,7 @@ def reset_tpm_enrollments_main(uuids: Sequence[str],
     for uuid in uuids:
         try:
             reset_tpm_enrollment(uuid, dry_run=not force)
-        except MultipleKeySlots:  # noqa: PERF203
+        except MultipleKeySlots:  # ruff:ignore[try-except-in-loop]
             click.echo(f'Cannot reset TPM enrolment for {uuid}.')
             continue
 
@@ -119,7 +119,7 @@ def slug_rename_main(filenames: tuple[str, ...],
 
 
 def _get_ssh_client_cls() -> type[SSHClient]:  # pragma: no cover
-    from paramiko import SSHClient  # noqa: PLC0415
+    from paramiko import SSHClient  # ruff:ignore[import-outside-top-level]
 
     return SSHClient
 
@@ -229,7 +229,7 @@ def _resolve_ssh_config(host: str, ssh_config: Path | None, *,
             path = default
     if path is None:
         return {}
-    from paramiko import SSHConfig  # noqa: PLC0415
+    from paramiko import SSHConfig  # ruff:ignore[import-outside-top-level]
     return dict(SSHConfig.from_path(str(path)).lookup(host))
 
 

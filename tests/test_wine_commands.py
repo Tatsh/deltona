@@ -142,7 +142,8 @@ def test_set_wine_fonts_main_logs_warning_about_missing_env_vars(mocker: MockerF
 
 def test_patch_ultraiso_font_main_with_exe(mocker: MockerFixture, runner: CliRunner,
                                            tmp_path: Path) -> None:
-    mocker.patch('deltona.commands.wine.IS_WINDOWS', False)  # noqa: FBT003
+    mocker.patch('deltona.commands.wine.IS_WINDOWS',
+                 False)  # ruff:ignore[boolean-positional-value-in-call]
     exe = tmp_path / 'UltraISO.exe'
     exe.write_text('dummy')
     patch_ultraiso_font = mocker.patch('deltona.commands.wine.patch_ultraiso_font')
@@ -153,7 +154,8 @@ def test_patch_ultraiso_font_main_with_exe(mocker: MockerFixture, runner: CliRun
 
 def test_patch_ultraiso_font_main_windows_no_exe(mocker: MockerFixture, runner: CliRunner,
                                                  tmp_path: Path) -> None:
-    mocker.patch('deltona.commands.wine.IS_WINDOWS', True)  # noqa: FBT003
+    mocker.patch('deltona.commands.wine.IS_WINDOWS',
+                 True)  # ruff:ignore[boolean-positional-value-in-call]
     patch_ultraiso_font = mocker.patch('deltona.commands.wine.patch_ultraiso_font')
     result = runner.invoke(patch_ultraiso_font_main, ['--font', 'Arial'])
     assert result.exit_code == 0
@@ -163,7 +165,8 @@ def test_patch_ultraiso_font_main_windows_no_exe(mocker: MockerFixture, runner: 
 def test_patch_ultraiso_font_main_without_exe(mocker: MockerFixture, runner: CliRunner,
                                               tmp_path: Path) -> None:
     patch_ultraiso_font = mocker.patch('deltona.commands.wine.patch_ultraiso_font')
-    mocker.patch('deltona.commands.wine.IS_WINDOWS', False)  # noqa: FBT003
+    mocker.patch('deltona.commands.wine.IS_WINDOWS',
+                 False)  # ruff:ignore[boolean-positional-value-in-call]
     mocker.patch('os.environ', {'WINEPREFIX': str(tmp_path)})
     result = runner.invoke(patch_ultraiso_font_main, ['--font', 'Arial'])
     assert result.exit_code == 0

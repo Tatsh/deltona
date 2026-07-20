@@ -1,4 +1,4 @@
-# ruff: noqa: FBT003, S108
+# ruff:file-ignore[boolean-positional-value-in-call, hardcoded-temp-file]
 from __future__ import annotations
 
 from pathlib import Path
