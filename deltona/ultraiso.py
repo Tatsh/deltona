@@ -48,12 +48,12 @@ class InsufficientArguments(Exception):
         super().__init__('Insufficient amount of arguments.')
 
 
-def run_ultraiso(  # noqa: PLR0913
+def run_ultraiso(  # ruff:ignore[too-many-arguments]
         *,
         add_dirs: Iterable[StrPathMustExist] | None = None,
         add_files: Iterable[StrPathMustExist] | None = None,
         cmd: StrPathMustExist | None = None,
-        input: StrPathMustExist | None = None,  # noqa: A002
+        input: StrPathMustExist | None = None,  # ruff:ignore[builtin-argument-shadowing]
         output: StrPath | None = None,
         appid: str | None = None,
         preparer: str | None = None,
@@ -192,7 +192,7 @@ def run_ultraiso(  # noqa: PLR0913
         If not enough arguments are passed.
     FileNotFoundError
         If the UltraISO executable cannot be found.
-    """  # noqa: DOC501
+    """  # ruff:ignore[docstring-missing-exception]
     if (actual_exe_path := get_ultraiso_path(prefix)) is None:
         raise FileNotFoundError
     env = {}

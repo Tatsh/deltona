@@ -143,7 +143,8 @@ def test_connect_g603_import_error(mocker: MockerFixture, runner: CliRunner) -> 
 
 
 def test_connect_g603_not_linux(mocker: MockerFixture, runner: CliRunner) -> None:
-    mocker.patch('deltona.commands.desktop.IS_LINUX', False)  # noqa: FBT003
+    mocker.patch('deltona.commands.desktop.IS_LINUX',
+                 False)  # ruff:ignore[boolean-positional-value-in-call]
     mocker.patch('deltona.commands.desktop.setup_logging')
     mocker.patch('deltona.commands.desktop._get_gi_repository_glib')
     mocker.patch('deltona.commands.desktop._get_pydbus_system_bus_callable')

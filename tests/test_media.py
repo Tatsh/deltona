@@ -44,7 +44,7 @@ def test_supported_audio_input_formats_device_error(mocker: MockerFixture) -> No
     fake_proc.stdout = ''
     fake_proc.stderr = 'Device or resource busy'
     mocker.patch('deltona.media.sp.run', return_value=fake_proc)
-    with pytest.raises(OSError):  # noqa: PT011
+    with pytest.raises(OSError):  # ruff:ignore[pytest-raises-too-broad]
         supported_audio_input_formats('hw:Missing', formats=('f32le',), rates=(44100,))
 
 
@@ -229,7 +229,7 @@ async def test_cddb_query_no_username(mocker: MockerFixture) -> None:
     mocker.patch('deltona.media.socket.gethostname', return_value='host')
     mocker.patch('deltona.media.getpass.getuser', return_value=None)
     mocker.patch('keyring.get_password', return_value='host')
-    with pytest.raises(ValueError):  # noqa: PT011
+    with pytest.raises(ValueError):  # ruff:ignore[pytest-raises-too-broad]
         await cddb_query(disc_id)
 
 
@@ -240,7 +240,7 @@ async def test_cddb_query_no_host(mocker: MockerFixture) -> None:
     mocker.patch('deltona.media.socket.gethostname', return_value='host')
     mocker.patch('deltona.media.getpass.getuser', return_value='username')
     mocker.patch('keyring.get_password', return_value=None)
-    with pytest.raises(ValueError):  # noqa: PT011
+    with pytest.raises(ValueError):  # ruff:ignore[pytest-raises-too-broad]
         await cddb_query(disc_id)
 
 

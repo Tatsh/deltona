@@ -1,4 +1,4 @@
-# ruff: noqa: RUF001
+# ruff:file-ignore[ambiguous-unicode-character-string]
 from __future__ import annotations
 
 from pathlib import Path
@@ -24,7 +24,7 @@ def test_strip_ansi_returns_original_if_no_ansi() -> None:
 
 
 def test_strip_ansi_empty_string() -> None:
-    assert string.strip_ansi('') == ''  # noqa: PLC1901
+    assert string.strip_ansi('') == ''  # ruff:ignore[compare-to-empty-string]
 
 
 def test_underscorize_replaces_spaces_with_underscore() -> None:
@@ -48,7 +48,7 @@ def test_underscorize_multiple_whitespace() -> None:
 def test_underscorize_empty_string() -> None:
     s = ''
     result = string.underscorize(s)
-    assert result == ''  # noqa: PLC1901
+    assert result == ''  # ruff:ignore[compare-to-empty-string]
 
 
 def test_underscorize_no_whitespace() -> None:
@@ -63,7 +63,7 @@ def test_is_ascii_all_ascii() -> None:
 
 
 def test_is_ascii_with_non_ascii() -> None:
-    # cspell: disable-next-line  # noqa: ERA001
+    # cspell: disable-next-line  # ruff:ignore[commented-out-code]
     s = 'hello wørld'
     assert string.is_ascii(s) is False
 
@@ -165,7 +165,9 @@ def test_unix_path_to_wine_path_with_forward_slashes(tmp_path: Path) -> None:
         ('custom_proto123://foo', True),
         ('', False)
     ])
-def test_is_url_various_cases(input_str: str, expected: bool) -> None:  # noqa: FBT001
+def test_is_url_various_cases(
+        input_str: str,
+        expected: bool) -> None:  # ruff:ignore[boolean-type-hint-positional-argument]
     assert string.is_url(input_str) is expected
 
 
@@ -174,7 +176,7 @@ def test_is_url_various_cases(input_str: str, expected: bool) -> None:  # noqa: 
     [
         ('ＡＢＣ１２３', 'ABC123'),
         ('！＠＃＄％', '!@#$%'),
-        # cspell: disable-next-line  # noqa: ERA001
+        # cspell: disable-next-line  # ruff:ignore[commented-out-code]
         ('ａｂｃｄｅｆ', 'abcdef'),
         ('￥１０００', '¥1000'),
         ('Hello　World！', 'Hello World!')
@@ -197,13 +199,15 @@ def test_slugify_various_cases(input_str: str, expected: str) -> None:
     ('input_str', 'expected'),
     [
         ('XIV', True),  # valid Roman numeral
-        # cspell: disable-next-line  # noqa: ERA001
+        # cspell: disable-next-line  # ruff:ignore[commented-out-code]
         ('MMXXIV', True),  # valid Roman numeral (2024)
         ('IIII', False),  # invalid (should be IV)
         ('abc', False),  # not a Roman numeral
         ('', False)  # empty string
     ])
-def test_is_roman_numeral_various_cases(input_str: str, expected: bool) -> None:  # noqa: FBT001
+def test_is_roman_numeral_various_cases(
+        input_str: str,
+        expected: bool) -> None:  # ruff:ignore[boolean-type-hint-positional-argument]
     assert string.is_roman_numeral(input_str) is expected
 
 

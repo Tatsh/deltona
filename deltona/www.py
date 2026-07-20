@@ -43,7 +43,7 @@ def _getxattr(file: FileDescriptorOrPath,
               name: str,
               *,
               follow_symlinks: bool = False) -> bytes:  # pragma: no cover
-    from os import getxattr  # noqa: PLC0415
+    from os import getxattr  # ruff:ignore[import-outside-top-level]
 
     return getxattr(file, name, follow_symlinks=follow_symlinks)
 
@@ -177,7 +177,7 @@ async def upload_to_imgbb(path: StrPath,
     Response
         The response from the ImgBB API.
     """
-    import keyring  # noqa: PLC0415
+    import keyring  # ruff:ignore[import-outside-top-level]
 
     image_data = await (await anyio.Path(path).resolve(strict=True)).read_bytes()
     async with AsyncSession() as session:
@@ -275,7 +275,7 @@ def recurse_bookmarks_html(soup: Tag, callback: RecurseBookmarksHTMLCallback) ->
     callback : RecurseBookmarksHTMLCallback
         Function called for each link found.
     """
-    from bs4 import Tag as Tag_  # noqa: PLC0415
+    from bs4 import Tag as Tag_  # ruff:ignore[import-outside-top-level]
 
     for child in soup.children:
         if not isinstance(child, Tag_):
@@ -305,7 +305,7 @@ def create_parsed_tree_structure(
     for i, key in enumerate(keys):
         try:
             next(x for x in ref if x['type'] == 'folder' and x['name'] == key)
-        except StopIteration:  # noqa: PERF203
+        except StopIteration:  # ruff:ignore[try-except-in-loop]
             new_level: BookmarksHTMLFolder = {
                 'attrs': folder_path[i][1],
                 'children': [],
@@ -331,7 +331,7 @@ def parse_bookmarks_html(html_content: str) -> BookmarksDataset:
     BookmarksDataset
         Parsed bookmark tree.
     """
-    from bs4 import BeautifulSoup as Soup  # noqa: PLC0415
+    from bs4 import BeautifulSoup as Soup  # ruff:ignore[import-outside-top-level]
 
     data: BookmarksDataset = []
 
@@ -362,7 +362,7 @@ async def check_bookmarks_html_urls(
     tuple[BookmarksDataset, BookmarksDataset, BookmarksDataset]
         A tuple of ``(all_data, changed, not_found)`` bookmark datasets.
     """
-    from bs4 import BeautifulSoup  # noqa: PLC0415
+    from bs4 import BeautifulSoup  # ruff:ignore[import-outside-top-level]
 
     # After html5lib fixes it, the structure is:
     # DL -> many p -> many DT -> H3 (folder), DL then

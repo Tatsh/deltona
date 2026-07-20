@@ -86,7 +86,7 @@ def supported_audio_input_formats(
         for rate in rates:
             log.debug('Checking pcm_%s @ %d.', format_, rate)
             p = sp.run(
-                (  # noqa: S607
+                (  # ruff:ignore[start-process-with-partial-path]
                     'ffmpeg', '-hide_banner', '-loglevel', 'info', '-f', 'alsa', '-acodec',
                     f'pcm_{format_}', '-ar', str(rate), '-i', input_device),
                 text=True,
@@ -104,7 +104,7 @@ def supported_audio_input_formats(
 
 def is_audio_input_format_supported(
         input_device: str,
-        format: str,  # noqa: A002
+        format: str,  # ruff:ignore[builtin-argument-shadowing]
         rate: int) -> bool:
     """
     Check if an audio format is supported by a device.
@@ -168,14 +168,16 @@ def add_info_json_to_media_file(path: StrPath,
             log.debug('No upload date to set.')
             return
         log.debug('Setting date to %s.', upload_date)
-        seconds = datetime.strptime(upload_date, '%Y%m%d').timestamp()  # noqa: DTZ007
+        seconds = datetime.strptime(
+            upload_date, '%Y%m%d').timestamp()  # ruff:ignore[call-datetime-strptime-without-zone]
         utime(path, times=(seconds, seconds))
 
     def mkvpropedit_add_json() -> None:
         if any(
                 re.match((r"^Attachment ID \d+: type 'application/json', size \d+ bytes, "
                           r"file name 'info.json'"), line) for line in sp.run(
-                              ('mkvmerge', '--identify', str(path)),  # noqa: S607
+                              ('mkvmerge', '--identify',
+                               str(path)),  # ruff:ignore[start-process-with-partial-path]
                               capture_output=True,
                               check=True,
                               text=True).stdout.splitlines()):
@@ -183,7 +185,7 @@ def add_info_json_to_media_file(path: StrPath,
             return
         log.debug('Attaching info.json to MKV.')
         sp.run(
-            (  # noqa: S607
+            (  # ruff:ignore[start-process-with-partial-path]
                 'mkvpropedit', str(path), '--attachment-name', 'info.json', '--add-attachment',
                 str(json_path)),
             check=True,
@@ -198,7 +200,7 @@ def add_info_json_to_media_file(path: StrPath,
                                           dir=path.parent,
                                           mode='w+') as ffm):
             sp.run(
-                (  # noqa: S607
+                (  # ruff:ignore[start-process-with-partial-path]
                     'ffmpeg', '-hide_banner', '-loglevel', 'warning', '-y', '-i', f'file:{path}',
                     '-f', 'ffmetadata', f'{ffm.name}'),
                 check=True,
@@ -215,7 +217,7 @@ def add_info_json_to_media_file(path: StrPath,
                                              mode='w+') as nfw:
                 nfw.writelines(lines)
             sp.run(
-                (  # noqa: S607
+                (  # ruff:ignore[start-process-with-partial-path]
                     'ffmpeg', '-y', '-i', f'file:{path}', '-i', f'file:{nfw.name}', '-map_metadata',
                     '1', '-c', 'copy', *(('-write_id3v1', '1') if is_mp3 else
                                          ()), f'file:{tf.name}'),
@@ -228,18 +230,20 @@ def add_info_json_to_media_file(path: StrPath,
     def mp4box_add_json() -> None:
         with contextlib.suppress(sp.CalledProcessError):
             sp.run(
-                ('MP4Box', '-rem-item', '1', str(path)),  # noqa: S607
+                ('MP4Box', '-rem-item', '1',
+                 str(path)),  # ruff:ignore[start-process-with-partial-path]
                 capture_output=not debug,
                 check=True)
         sp.run(
-            ('MP4Box', '-set-meta', 'mp21', str(path)),  # noqa: S607
+            ('MP4Box', '-set-meta', 'mp21',
+             str(path)),  # ruff:ignore[start-process-with-partial-path]
             capture_output=not debug,
             check=True)
         info_json_path = Path('info.json')
         copyfile(json_path, info_json_path)
         log.debug('Attaching info.json to MP4.')
         sp.run(
-            (  # noqa: S607
+            (  # ruff:ignore[start-process-with-partial-path]
                 'MP4Box', '-add-item',
                 (f'{info_json_path}:replace:name=youtube-dl metadata:mime=application/json:'
                  'encoding=utf8'), str(path)),
@@ -281,7 +285,7 @@ def ffprobe(path: StrPath) -> ProbeDict:
         'ProbeDict',
         json.loads(
             sp.run(
-                (  # noqa: S607
+                (  # ruff:ignore[start-process-with-partial-path]
                     'ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_format',
                     '-show_streams', str(path)),
                 check=True,
@@ -316,14 +320,16 @@ def get_info_json(path: StrPath, *, raw: bool = False) -> Any:
             out = ffprobe(path)['format']['tags']['info_json']
         case 'm4a' | 'm4b' | 'm4p' | 'm4r' | 'm4v' | 'mp4':
             out = sp.run(
-                ('MP4Box', '-dump-item', '1:path=/dev/stdout', str(path)),  # noqa: S607
+                ('MP4Box', '-dump-item', '1:path=/dev/stdout',
+                 str(path)),  # ruff:ignore[start-process-with-partial-path]
                 check=True,
                 capture_output=True,
                 text=True).stdout.strip()
         case 'mkv':
             out = (
                 sp.run(
-                    ('mkvextract', str(path), 'attachments', '1:/dev/stdout'),  # noqa: S607
+                    ('mkvextract', str(path), 'attachments',
+                     '1:/dev/stdout'),  # ruff:ignore[start-process-with-partial-path]
                     check=True,
                     capture_output=True,
                     text=True).stdout.strip().splitlines()[1])
@@ -383,7 +389,7 @@ def create_static_text_video(audio_file: StrPath,
     with tempfile.NamedTemporaryFile(suffix='.png', delete=False, dir=Path.cwd()) as tf:
         try:
             sp.run(
-                (  # noqa: S607
+                (  # ruff:ignore[start-process-with-partial-path]
                     'magick', '-font',
                     font, '-size', '1920x1080', 'xc:black', '-fill', 'white', '-pointsize',
                     str(font_size), '-draw', f"gravity Center text 0,0 '{text}'", tf.name),
@@ -538,7 +544,7 @@ async def cddb_query(disc_id: str,
     username = username or getpass.getuser()
     if not username:
         raise ValueError(username)
-    import keyring  # noqa: PLC0415
+    import keyring  # ruff:ignore[import-outside-top-level]
 
     host = host or keyring.get_password('gnudb', username)
     if not host:
@@ -582,10 +588,10 @@ def group_files(items: Iterable[str],
     groups.append(group)
     for item in items_sorted[1:]:
         p = Path(item).resolve(strict=True)
-        this_dt = datetime.strptime(  # noqa: DTZ007
+        this_dt = datetime.strptime(  # ruff:ignore[call-datetime-strptime-without-zone]
             assert_not_none(re.match(match_re,
                                      Path(item).name)).group(1), time_format)
-        last_dt = datetime.strptime(  # noqa: DTZ007
+        last_dt = datetime.strptime(  # ruff:ignore[call-datetime-strptime-without-zone]
             assert_not_none(re.match(match_re,
                                      Path(group[-1]).name)).group(1), time_format)
         diff = (this_dt - last_dt).total_seconds() // 60
@@ -617,7 +623,7 @@ def parse_timestamp(name: str, match_re: re.Pattern[str] | str, time_format: str
     datetime
         Parsed datetime object.
     """
-    return datetime.strptime(  # noqa: DTZ007
+    return datetime.strptime(  # ruff:ignore[call-datetime-strptime-without-zone]
         assert_not_none(re.match(match_re, name)).group(1), time_format)
 
 
@@ -726,7 +732,7 @@ def group_pairs(pairs: Sequence[tuple[Path, Path]],
     return groups
 
 
-def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
+def archive_dashcam_footage(  # ruff:ignore[too-many-arguments, too-many-locals]
         front_dir: StrPath,
         rear_dir: StrPath | None,
         output_dir: StrPath,
@@ -857,8 +863,8 @@ def archive_dashcam_footage(  # noqa: PLR0913, PLR0914
     ------
     subprocess.CalledProcessError
         If an FFmpeg invocation fails.
-    """  # noqa: DOC502
-    from send2trash import send2trash  # noqa: PLC0415
+    """  # ruff:ignore[docstring-extraneous-exception]
+    from send2trash import send2trash  # ruff:ignore[import-outside-top-level]
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -1033,7 +1039,7 @@ def hlg_to_sdr(input_file: StrPath,
     fast : bool
         If ``True``, use fewer filters for faster but lower quality conversion.
     """
-    from send2trash import send2trash  # noqa: PLC0415
+    from send2trash import send2trash  # ruff:ignore[import-outside-top-level]
 
     input_file = Path(input_file)
     vf = ((

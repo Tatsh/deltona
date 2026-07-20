@@ -70,8 +70,8 @@ def inhibit_notifications_main(sleep_time: int = 0, *, debug: bool = False) -> N
 @click.option('--mpv-command', default='mpv', help='mpv command including arguments.')
 @click.argument('files', type=click.Path(path_type=Path), nargs=-1)
 def umpv_main(files: Sequence[Path], mpv_command: str = 'mpv', *, debug: bool = False) -> None:
-    """Run a single instance of mpv."""  # noqa: DOC501
-    from platformdirs import user_state_path  # noqa: PLC0415
+    """Run a single instance of mpv."""  # ruff:ignore[docstring-missing-exception]
+    from platformdirs import user_state_path  # ruff:ignore[import-outside-top-level]
 
     setup_logging(debug=debug, loggers={'deltona': {}})
     fixed_files = ((p if is_url(p) else str(p.resolve(strict=True))) for p in files)
@@ -110,13 +110,15 @@ def umpv_main(files: Sequence[Path], mpv_command: str = 'mpv', *, debug: bool = 
 
 
 def _get_pydbus_system_bus_callable() -> Callable[[], Bus[Any]]:  # pragma: no cover
-    from pydbus import SystemBus  # noqa: PLC0415
+    from pydbus import SystemBus  # ruff:ignore[import-outside-top-level]
 
     return SystemBus
 
 
 def _get_gi_repository_glib() -> ModuleType:  # pragma: no cover
-    from gi.repository import GLib  # type: ignore[unused-ignore] # noqa: PLC0415
+    from gi.repository import (
+        GLib,  # type: ignore[unused-ignore]
+    )
 
     return GLib
 
@@ -135,11 +137,13 @@ def connect_g603_main(device_name: str = 'hci0', *, debug: bool = False) -> None
 
     This is useful for connecting the mouse back when it randomly decides not to re-pair, and you
     have no other mouse but you can get to your terminal.
-    """  # noqa: DOC501
+    """  # ruff:ignore[docstring-missing-exception]
     if not IS_LINUX:
         click.echo('Only Linux is supported.', err=True)
         raise click.Abort
-    from gi.repository import Gio  # pyright: ignore[reportMissingModuleSource] # noqa: PLC0415
+    from gi.repository import (
+        Gio,  # pyright: ignore[reportMissingModuleSource]
+    )
 
     try:
         g_lib = _get_gi_repository_glib()
@@ -295,7 +299,7 @@ Version=1.0
         if r:
             url: str = r.json()['data']['url']
             if not no_clipboard:
-                import pyperclip  # noqa: PLC0415
+                import pyperclip  # ruff:ignore[import-outside-top-level]
 
                 pyperclip.copy(url)
             if show_gui:

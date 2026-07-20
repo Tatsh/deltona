@@ -296,9 +296,11 @@ def kill_processes_by_name(name: str,
     name = f'{name}{Path(name).suffix or ".exe"}' if IS_WINDOWS else name
     pids: list[int] = []
     if IS_WINDOWS:
-        sp.run(('taskkill.exe', '/im', name), check=False, capture_output=True)  # noqa: S607
+        sp.run(('taskkill.exe', '/im', name), check=False,
+               capture_output=True)  # ruff:ignore[start-process-with-partial-path]
     else:
-        sp.run(('killall', f'-{signal}', name), check=False, capture_output=True)  # noqa: S607
+        sp.run(('killall', f'-{signal}', name), check=False,
+               capture_output=True)  # ruff:ignore[start-process-with-partial-path]
     if wait_timeout:
         lines = sp.run(
             ('tasklist.exe', '/fo', 'csv', '/fi', f'IMAGENAME eq {name}') if IS_WINDOWS else
@@ -340,7 +342,7 @@ class DataAdapter(BaseAdapter):
         """
         r = niquests.Response()
         url = assert_not_none(request.url)
-        r._content = url[5:].encode()  # noqa: SLF001
+        r._content = url[5:].encode()  # ruff:ignore[private-member-access]
         r.status_code = HTTPStatus.OK
         return r
 

@@ -253,7 +253,7 @@ async def test_check_bookmarks_html_urls_exhaustive_check(mocker: MockerFixture)
 
 def test_where_from_linux(mocker: MockerFixture) -> None:
     # Simulate IS_LINUX = True
-    mocker.patch('deltona.www.IS_LINUX', True)  # noqa: FBT003
+    mocker.patch('deltona.www.IS_LINUX', True)  # ruff:ignore[boolean-positional-value-in-call]
     # Mock getxattr to return bytes
     mock_getxattr = mocker.patch('deltona.www._getxattr', return_value=b'https://example.com')
     # Should return the decoded string
@@ -264,7 +264,7 @@ def test_where_from_linux(mocker: MockerFixture) -> None:
 
 def test_where_from_macos_webpage_false(mocker: MockerFixture) -> None:
     # Simulate IS_LINUX = False
-    mocker.patch('deltona.www.IS_LINUX', False)  # noqa: FBT003
+    mocker.patch('deltona.www.IS_LINUX', False)  # ruff:ignore[boolean-positional-value-in-call]
     # Prepare fake plist data
     fake_plist = plistlib.dumps(['https://file.com', 'https://webpage.com'])
     # Patch hexstr2bytes to just return the bytes
@@ -279,7 +279,7 @@ def test_where_from_macos_webpage_false(mocker: MockerFixture) -> None:
 
 def test_where_from_macos_webpage_true(mocker: MockerFixture) -> None:
     # Simulate IS_LINUX = False
-    mocker.patch('deltona.www.IS_LINUX', False)  # noqa: FBT003
+    mocker.patch('deltona.www.IS_LINUX', False)  # ruff:ignore[boolean-positional-value-in-call]
     # Prepare fake plist data
     fake_plist = plistlib.dumps(['https://file.com', 'https://webpage.com'])
     # Patch hexstr2bytes to just return the bytes

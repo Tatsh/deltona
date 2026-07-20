@@ -83,7 +83,7 @@ def _make_github_api(session: niquests.AsyncSession,
                      token: str,
                      base_url: str | None = None,
                      limiter: anyio.CapacityLimiter | None = None) -> gidgethub.abc.GitHubAPI:
-    import gidgethub.abc  # noqa: PLC0415
+    import gidgethub.abc  # ruff:ignore[import-outside-top-level]
 
     class _NiquestsGitHubAPI(gidgethub.abc.GitHubAPI):
         @override
@@ -144,14 +144,14 @@ def _log_merge_failure(number: int, name: str) -> None:
     # Called only from ``except`` handlers, so ``sys.exc_info`` is set and
     # ``log.exception`` attaches the traceback even though it is not lexically inside the handler.
     if log.isEnabledFor(logging.DEBUG):
-        log.exception(  # noqa: LOG004
+        log.exception(  # ruff:ignore[log-exception-outside-except-handler]
             'Failed to merge PR %s in repository `%s`. Will retry.', number, name)
     else:
         log.warning('Failed to merge PR %s in repository `%s`. Will retry.', number, name)
 
 
 async def _uses_dependabot(gh: gidgethub.abc.GitHubAPI, repo: Mapping[str, Any]) -> bool:
-    import gidgethub  # noqa: PLC0415
+    import gidgethub  # ruff:ignore[import-outside-top-level]
 
     full_name = repo['full_name']
     # The /user/repos list endpoint omits security_and_analysis, so fetch the full repository to
@@ -169,7 +169,7 @@ async def _uses_dependabot(gh: gidgethub.abc.GitHubAPI, repo: Mapping[str, Any])
 
 
 async def _uses_pre_commit_ci(gh: gidgethub.abc.GitHubAPI, repo: Mapping[str, Any]) -> bool:
-    import gidgethub  # noqa: PLC0415
+    import gidgethub  # ruff:ignore[import-outside-top-level]
 
     try:
         await gh.getitem(f'/repos/{repo["full_name"]}/contents/.pre-commit-config.yaml')
@@ -189,7 +189,7 @@ async def _merge_bot_pull_requests(*,
                                    concurrency: int | None = None,
                                    max_concurrent_http_requests: int = 3,
                                    repos: Iterable[str] | None = None) -> None:
-    import gidgethub  # noqa: PLC0415
+    import gidgethub  # ruff:ignore[import-outside-top-level]
 
     http_limiter = anyio.CapacityLimiter(max_concurrent_http_requests)
     task_limiter = anyio.CapacityLimiter(concurrency or os.cpu_count() or 1)
@@ -309,7 +309,7 @@ async def merge_dependabot_pull_requests(*,
         If any pull request could not be merged. The exception's ``remaining``
         attribute maps each affected repository's full name to the number of
         Dependabot pull requests still unmerged.
-    """  # noqa: DOC502
+    """  # ruff:ignore[docstring-extraneous-exception]
     await _merge_bot_pull_requests(base_url=base_url,
                                    bot_login='dependabot[bot]',
                                    concurrency=concurrency,
@@ -359,7 +359,7 @@ async def merge_pre_commit_ci_pull_requests(*,
         If any pull request could not be merged. The exception's ``remaining``
         attribute maps each affected repository's full name to the number of
         pre-commit.ci pull requests still unmerged.
-    """  # noqa: DOC502
+    """  # ruff:ignore[docstring-extraneous-exception]
     await _merge_bot_pull_requests(base_url=base_url,
                                    bot_login='pre-commit-ci[bot]',
                                    concurrency=concurrency,

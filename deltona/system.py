@@ -71,7 +71,7 @@ def wait_for_disc(drive_path: StrPathMustExist = 'dev/sr0', *, sleep_time: float
     bool
         ``True`` if the disc is ready, ``False`` if interrupted.
     """
-    import fcntl  # noqa: PLC0415
+    import fcntl  # ruff:ignore[import-outside-top-level]
 
     with context_os_open(drive_path, os.O_RDONLY | os.O_NONBLOCK) as f:
         s = -1
@@ -105,9 +105,9 @@ def inhibit_notifications(name: str = __name__, reason: str = 'No reason specifi
     bool
         ``True`` if inhibited, ``False`` otherwise.
     """
-    global _key  # noqa: PLW0603
+    global _key  # ruff:ignore[global-statement]
     try:
-        from pydbus import SessionBus  # noqa: PLC0415
+        from pydbus import SessionBus  # ruff:ignore[import-outside-top-level]
     except (ImportError, ModuleNotFoundError):  # pragma: no cover
         log.exception('Cannot import pydbus.', stack_info=False)
         return False
@@ -135,9 +135,9 @@ def uninhibit_notifications() -> None:
     ConnectionError
         If D-Bus connection is not available (which can be caused by not having pydbus installed).
     """
-    global _key  # noqa: PLW0603
+    global _key  # ruff:ignore[global-statement]
     try:
-        from pydbus import SessionBus  # noqa: PLC0415
+        from pydbus import SessionBus  # ruff:ignore[import-outside-top-level]
     except (ImportError, ModuleNotFoundError):  # pragma: no cover
         log.exception('Cannot import pydbus.', stack_info=False)
         return
@@ -154,7 +154,7 @@ def uninhibit_notifications() -> None:
 
 def get_inhibitor(what: str, who: str, why: str, mode: str) -> int:
     try:
-        from pydbus import SystemBus  # noqa: PLC0415
+        from pydbus import SystemBus  # ruff:ignore[import-outside-top-level]
     except (ImportError, ModuleNotFoundError):  # pragma: no cover
         log.exception('Cannot import pydbus.', stack_info=False)
         return -1
@@ -189,7 +189,7 @@ def find_bluetooth_device_info_by_name(name: str) -> tuple[str, dict[str, Any]]:
     """
     if not IS_LINUX:
         raise NotImplementedError
-    from pydbus import SystemBus  # noqa: PLC0415
+    from pydbus import SystemBus  # ruff:ignore[import-outside-top-level]
 
     bluez = SystemBus().get('org.bluez', '/')
     for k, v in bluez['org.freedesktop.DBus.ObjectManager'].GetManagedObjects().items():
@@ -217,7 +217,7 @@ def pan_connect(device_mac: str, hci: str = 'hci0') -> None:
     """
     if not IS_LINUX:
         raise NotImplementedError
-    from pydbus import SystemBus  # noqa: PLC0415
+    from pydbus import SystemBus  # ruff:ignore[import-outside-top-level]
 
     device_mac = f'dev_{device_mac.upper().replace(":", "_")}'
     device = SystemBus().get('org.bluez', f'/org/bluez/{hci}/{device_mac}')
@@ -242,7 +242,7 @@ def pan_disconnect(device_mac: str, hci: str = 'hci0') -> None:
     """
     if not IS_LINUX:
         raise NotImplementedError
-    from pydbus import SystemBus  # noqa: PLC0415
+    from pydbus import SystemBus  # ruff:ignore[import-outside-top-level]
 
     device_mac = f'dev_{device_mac.upper().replace(":", "_")}'
     device = SystemBus().get('org.bluez', f'/org/bluez/{hci}/{device_mac}')
@@ -291,7 +291,7 @@ def patch_macos_bundle_info_plist(bundle: StrPath, **data: Any) -> None:
 
 def kill_gamescope() -> None:
     """Kill all running Gamescope and gamescopereaper processes."""
-    import psutil  # noqa: PLC0415
+    import psutil  # ruff:ignore[import-outside-top-level]
 
     for proc in (x for x in psutil.process_iter(('pid', 'name', 'username'))
                  if x.info['name'] in {'gamescope', 'gamescopereaper'}):
@@ -300,7 +300,7 @@ def kill_gamescope() -> None:
 
 def kill_wine() -> None:
     """Kill all running Wine processes including wineserver and Wine-wrapped executables."""
-    import psutil  # noqa: PLC0415
+    import psutil  # ruff:ignore[import-outside-top-level]
 
     for proc in (x for x in psutil.process_iter(('pid', 'name', 'username'))
                  if x.info['name'] in {'wineserver', 'wine-preloader', 'wine64-preloader'} or (
@@ -372,7 +372,7 @@ DEFAULT_FILE = Path.home() / '.config' / 'kdeglobals'
 POSITION_RE = (
     r'(^(Height|Width|Window-Maximized) [0-9]+)|'
     r'((e?DP-[0-9]+|HDMI-[0-9]+(-[0-9]+)?|VNC-[0-9]+)$)|'
-    r'((e?DP-[0-9]+|HDMI-[0-9]+(-[0-9]+)?|VNC-[0-9]+) (Height|Width|(X|Y)Position|Window-Maximized))|'  # noqa: E501
+    r'((e?DP-[0-9]+|HDMI-[0-9]+(-[0-9]+)?|VNC-[0-9]+) (Height|Width|(X|Y)Position|Window-Maximized))|'  # ruff:ignore[line-too-long]
     r'([0-9]+x[0-9]+ screen: (Height|Width|(X|Y)Position)$)|'
     r'([0-9] screens: (Height|Width|(X|Y)Position)$)')
 STATE_RE = r'^AAAA/'
@@ -394,7 +394,8 @@ def _iter_config_sections(file: StrPath) -> Iterator[tuple[str, str, str]]:
             log.debug('Ignoring section "%s".', section)
             continue
         for key, value in config[section].items():
-            from binaryornot.helpers import is_binary_string  # noqa: PLC0415
+            from binaryornot.helpers import (
+                is_binary_string,)
 
             if is_binary_string(value.encode()):
                 log.debug('Ignoring binary value in key %s.', key)

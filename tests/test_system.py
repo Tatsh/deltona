@@ -39,7 +39,7 @@ def make_fake_system_bus() -> tuple[Any, mock.Mock]:
     manager = mock.Mock()
 
     class FakeSystemBus:
-        def get(self, *args: Any, **kwargs: Any) -> dict[str, Any]:  # noqa: PLR6301
+        def get(self, *args: Any, **kwargs: Any) -> dict[str, Any]:  # ruff:ignore[no-self-use]
             return {'org.freedesktop.login1.Manager': manager}
 
     return FakeSystemBus, manager
@@ -49,7 +49,7 @@ def make_fake_session_bus() -> tuple[Any, mock.Mock]:
     notifications = mock.Mock()
 
     class FakeSessionBus:
-        def get(self, *args: Any, **kwargs: Any) -> dict[str, Any]:  # noqa: PLR6301
+        def get(self, *args: Any, **kwargs: Any) -> dict[str, Any]:  # ruff:ignore[no-self-use]
             return notifications
 
     return FakeSessionBus, notifications
@@ -161,7 +161,7 @@ def make_fake_bluez_system_bus() -> tuple[Any, mock.Mock]:
     manager = mock.Mock()
 
     class FakeSystemBus:
-        def get(self, *args: Any, **kwargs: Any) -> dict[str, Any]:  # noqa: PLR6301
+        def get(self, *args: Any, **kwargs: Any) -> dict[str, Any]:  # ruff:ignore[no-self-use]
             return {'org.freedesktop.DBus.ObjectManager': manager}
 
     return FakeSystemBus, manager
@@ -191,13 +191,13 @@ def test_find_bluetooth_device_info_by_name_not_found(monkeypatch: pytest.Monkey
 
 
 def test_find_bluetooth_device_info_by_name_not_linux(mocker: MockerFixture) -> None:
-    mocker.patch('deltona.system.IS_LINUX', False)  # noqa: FBT003
+    mocker.patch('deltona.system.IS_LINUX', False)  # ruff:ignore[boolean-positional-value-in-call]
     with pytest.raises(NotImplementedError):
         find_bluetooth_device_info_by_name('TestDevice')
 
 
 def test_find_bluetooth_device_info_by_name_no_device1(mocker: MockerFixture) -> None:
-    mocker.patch('deltona.system.IS_LINUX', True)  # noqa: FBT003
+    mocker.patch('deltona.system.IS_LINUX', True)  # ruff:ignore[boolean-positional-value-in-call]
     fsb, mock_bluez = make_fake_bluez_system_bus()
     mock_bluez.GetManagedObjects.return_value = {
         '/org/bluez/hci0/dev_00_11_22_33_44_55': {
@@ -228,7 +228,7 @@ def test_slug_rename_success(mocker: MockerFixture) -> None:
 def test_patch_macos_bundle_info_plist_success(mocker: MockerFixture) -> None:
     mock_path = mocker.patch('deltona.system.Path')
     mock_plistlib = mocker.patch('deltona.system.plistlib')
-    mock_info_plist = mock_path.return_value.resolve.return_value.__truediv__.return_value.__truediv__.return_value  # noqa: E501
+    mock_info_plist = mock_path.return_value.resolve.return_value.__truediv__.return_value.__truediv__.return_value  # ruff:ignore[line-too-long]
     mock_info_plist.open.return_value.__enter__.return_value = mock.Mock()
     patch_macos_bundle_info_plist('test_bundle', key='value')
     mock_info_plist.open.assert_any_call('rb')
@@ -261,7 +261,7 @@ def test_pan_connect_success(mocker: MockerFixture) -> None:
     mock_system_bus = mocker.patch('pydbus.SystemBus')
     mock_device = mocker.Mock()
     mock_system_bus.return_value.get.return_value = mock_device
-    mocker.patch('deltona.system.IS_LINUX', True)  # noqa: FBT003
+    mocker.patch('deltona.system.IS_LINUX', True)  # ruff:ignore[boolean-positional-value-in-call]
     pan_connect('00:11:22:33:44:55', hci='hci1')
     mock_system_bus.return_value.get.assert_called_once_with(
         'org.bluez', '/org/bluez/hci1/dev_00_11_22_33_44_55')
@@ -269,7 +269,7 @@ def test_pan_connect_success(mocker: MockerFixture) -> None:
 
 
 def test_pan_connect_not_linux(mocker: MockerFixture) -> None:
-    mocker.patch('deltona.system.IS_LINUX', False)  # noqa: FBT003
+    mocker.patch('deltona.system.IS_LINUX', False)  # ruff:ignore[boolean-positional-value-in-call]
     with pytest.raises(NotImplementedError):
         pan_connect('00:11:22:33:44:55')
 
@@ -278,7 +278,7 @@ def test_pan_disconnect_success(mocker: MockerFixture) -> None:
     mock_system_bus = mocker.patch('pydbus.SystemBus')
     mock_device = mocker.Mock()
     mock_system_bus.return_value.get.return_value = mock_device
-    mocker.patch('deltona.system.IS_LINUX', True)  # noqa: FBT003
+    mocker.patch('deltona.system.IS_LINUX', True)  # ruff:ignore[boolean-positional-value-in-call]
     pan_disconnect('00:11:22:33:44:55', hci='hci2')
     mock_system_bus.return_value.get.assert_called_once_with(
         'org.bluez', '/org/bluez/hci2/dev_00_11_22_33_44_55')
@@ -286,7 +286,7 @@ def test_pan_disconnect_success(mocker: MockerFixture) -> None:
 
 
 def test_pan_disconnect_not_linux(mocker: MockerFixture) -> None:
-    mocker.patch('deltona.system.IS_LINUX', False)  # noqa: FBT003
+    mocker.patch('deltona.system.IS_LINUX', False)  # ruff:ignore[boolean-positional-value-in-call]
     with pytest.raises(NotImplementedError):
         pan_disconnect('00:11:22:33:44:55')
 

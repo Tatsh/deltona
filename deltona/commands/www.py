@@ -58,7 +58,7 @@ def chrome_bisect_flags_main(local_state_path: Path,
     Determine which flag is causing an issue in Chrome or any Chromium-based browser.
 
     Only supports removing flags (setting back to default) and not setting them to 'safe' values.
-    """  # noqa: DOC501
+    """  # ruff:ignore[docstring-missing-exception]
     flags_min_len = 2
 
     def start_test(flags: Sequence[str], local_state: ChromeLocalState) -> tuple[bool, str | None]:

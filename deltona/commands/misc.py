@@ -114,7 +114,7 @@ def burnrariso_main(rar_filename: Path,
                     debug: bool = False,
                     no_crc_check: bool = False,
                     test_extraction: bool = False) -> None:
-    """Burns an ISO found in a RAR file via piping."""  # noqa: DOC501
+    """Burns an ISO found in a RAR file via piping."""  # ruff:ignore[docstring-missing-exception]
     setup_logging(debug=debug, loggers={'deltona': {}})
     rar_path = Path(rar_filename)
     unrar = UnRAR(unrar_path)
