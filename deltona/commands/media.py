@@ -624,14 +624,11 @@ def flac_dir_finalize_main(directory: Path, *, debug: bool = False) -> None:
                 return y[0].lower(), y[1]
             return None
 
-        return (
-            y for y in (
-                _split_eq(x) for x in sp.run(
-                    ('metaflac', '--export-tags-to=-',
-                     str(flac_path)),  # ruff:ignore[start-process-with-partial-path]
-                    stdout=sp.PIPE,
-                    text=True,
-                    check=False).stdout.splitlines()) if y is not None)
+        return (y for y in (_split_eq(x)
+                            for x in sp.run(('metaflac', '--export-tags-to=-', str(flac_path)),
+                                            stdout=sp.PIPE,
+                                            text=True,
+                                            check=False).stdout.splitlines()) if y is not None)
 
     def remove_accents(s: str) -> str:
         return ''.join(c for c in unicodedata.normalize('NFD', re.sub(r'[Øø]', 'o', s))

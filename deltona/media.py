@@ -168,19 +168,17 @@ def add_info_json_to_media_file(path: StrPath,
             log.debug('No upload date to set.')
             return
         log.debug('Setting date to %s.', upload_date)
-        seconds = datetime.strptime(
-            upload_date, '%Y%m%d').timestamp()  # ruff:ignore[call-datetime-strptime-without-zone]
+        seconds = datetime.strptime(upload_date, '%Y%m%d').timestamp()
         utime(path, times=(seconds, seconds))
 
     def mkvpropedit_add_json() -> None:
         if any(
                 re.match((r"^Attachment ID \d+: type 'application/json', size \d+ bytes, "
-                          r"file name 'info.json'"), line) for line in sp.run(
-                              ('mkvmerge', '--identify',
-                               str(path)),  # ruff:ignore[start-process-with-partial-path]
-                              capture_output=True,
-                              check=True,
-                              text=True).stdout.splitlines()):
+                          r"file name 'info.json'"), line)
+                for line in sp.run(('mkvmerge', '--identify', str(path)),
+                                   capture_output=True,
+                                   check=True,
+                                   text=True).stdout.splitlines()):
             log.warning('Attachment named info.json already exists. Not modifying file.')
             return
         log.debug('Attaching info.json to MKV.')
@@ -229,16 +227,8 @@ def add_info_json_to_media_file(path: StrPath,
 
     def mp4box_add_json() -> None:
         with contextlib.suppress(sp.CalledProcessError):
-            sp.run(
-                ('MP4Box', '-rem-item', '1',
-                 str(path)),  # ruff:ignore[start-process-with-partial-path]
-                capture_output=not debug,
-                check=True)
-        sp.run(
-            ('MP4Box', '-set-meta', 'mp21',
-             str(path)),  # ruff:ignore[start-process-with-partial-path]
-            capture_output=not debug,
-            check=True)
+            sp.run(('MP4Box', '-rem-item', '1', str(path)), capture_output=not debug, check=True)
+        sp.run(('MP4Box', '-set-meta', 'mp21', str(path)), capture_output=not debug, check=True)
         info_json_path = Path('info.json')
         copyfile(json_path, info_json_path)
         log.debug('Attaching info.json to MP4.')
@@ -319,20 +309,15 @@ def get_info_json(path: StrPath, *, raw: bool = False) -> Any:
         case 'flac':
             out = ffprobe(path)['format']['tags']['info_json']
         case 'm4a' | 'm4b' | 'm4p' | 'm4r' | 'm4v' | 'mp4':
-            out = sp.run(
-                ('MP4Box', '-dump-item', '1:path=/dev/stdout',
-                 str(path)),  # ruff:ignore[start-process-with-partial-path]
-                check=True,
-                capture_output=True,
-                text=True).stdout.strip()
+            out = sp.run(('MP4Box', '-dump-item', '1:path=/dev/stdout', str(path)),
+                         check=True,
+                         capture_output=True,
+                         text=True).stdout.strip()
         case 'mkv':
-            out = (
-                sp.run(
-                    ('mkvextract', str(path), 'attachments',
-                     '1:/dev/stdout'),  # ruff:ignore[start-process-with-partial-path]
-                    check=True,
-                    capture_output=True,
-                    text=True).stdout.strip().splitlines()[1])
+            out = (sp.run(('mkvextract', str(path), 'attachments', '1:/dev/stdout'),
+                          check=True,
+                          capture_output=True,
+                          text=True).stdout.strip().splitlines()[1])
         case 'mp3':
             out = ffprobe(path)['format']['tags']['TXXX'].replace('info_json=', '', 1)
         case 'opus':

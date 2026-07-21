@@ -55,9 +55,7 @@ def wineshell_main(prefix_name: str, *, debug: bool = False) -> None:
                       dimensions=(terminal.lines, terminal.columns))
     c.sendline(f'export WINEPREFIX={quote(str(target))}; export PS1="{target.name}🍷$PS1"')
 
-    def resize(
-        sig: int, frame: FrameType | None
-    ) -> None:  # pragma: no cover  # ruff:ignore[unused-function-argument]
+    def resize(sig: int, frame: FrameType | None) -> None:  # pragma: no cover
         terminal = shutil.get_terminal_size()
         c.setwinsize(terminal.lines, terminal.columns)
 
