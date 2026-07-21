@@ -140,8 +140,7 @@ def unpack_ebook(path: StrPath) -> None:
         If no zip files are found.
     """
     def unrar_x(rar: StrPath) -> None:
-        sp.run(('unrar', 'x', '-y', str(rar)), capture_output=True,
-               check=True)  # ruff:ignore[start-process-with-partial-path]
+        sp.run(('unrar', 'x', '-y', str(rar)), capture_output=True, check=True)
 
     if not (path := Path(path)).is_dir():
         raise NotADirectoryError

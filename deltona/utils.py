@@ -296,11 +296,9 @@ def kill_processes_by_name(name: str,
     name = f'{name}{Path(name).suffix or ".exe"}' if IS_WINDOWS else name
     pids: list[int] = []
     if IS_WINDOWS:
-        sp.run(('taskkill.exe', '/im', name), check=False,
-               capture_output=True)  # ruff:ignore[start-process-with-partial-path]
+        sp.run(('taskkill.exe', '/im', name), check=False, capture_output=True)
     else:
-        sp.run(('killall', f'-{signal}', name), check=False,
-               capture_output=True)  # ruff:ignore[start-process-with-partial-path]
+        sp.run(('killall', f'-{signal}', name), check=False, capture_output=True)
     if wait_timeout:
         lines = sp.run(
             ('tasklist.exe', '/fo', 'csv', '/fi', f'IMAGENAME eq {name}') if IS_WINDOWS else
