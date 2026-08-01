@@ -188,7 +188,7 @@ def test_connect_g603(mocker: MockerFixture, runner: CliRunner) -> None:
     mocker.patch('deltona.commands.desktop.find_bluetooth_device_info_by_name',
                  side_effect=[('path', {
                      'Address': '00:11:22:33:44:55'
-                 }), KeyError])
+                 }), None])
     mock_remove_device = mock_bus.get.return_value.RemoveDevice
     mock_start_discovery = mock_bus.get.return_value.StartDiscovery
     mock_get_gi_repository_glib.return_value.MainLoop.return_value.run.side_effect = (
