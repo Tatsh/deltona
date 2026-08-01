@@ -77,6 +77,60 @@ async def test_merge_dependabot_pull_requests_config_without_security_and_analys
 
 
 @pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_marks_notification_done(
+        fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/repo', security_status='enabled')
+    fake_github.add_pull('tatsh/repo', 1)
+    fake_github.add_notification('tatsh/repo', 1, thread_id='4321')
+    await merge_dependabot_pull_requests(token='fake_token', mark_notifications_done=True)
+    assert fake_github.threads_marked_done == ['4321']
+
+
+@pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_does_not_mark_notification_done_by_default(
+        fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/repo', security_status='enabled')
+    fake_github.add_pull('tatsh/repo', 1)
+    fake_github.add_notification('tatsh/repo', 1, thread_id='4321')
+    await merge_dependabot_pull_requests(token='fake_token')
+    assert fake_github.threads_marked_done == []
+    assert not any(path == '/notifications' for _, path in fake_github.requests)
+
+
+@pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_ignores_non_pull_request_notifications(
+        fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/repo', security_status='enabled')
+    fake_github.add_pull('tatsh/repo', 1)
+    fake_github.add_notification('tatsh/repo', 1, subject_type='Issue', thread_id='4321')
+    await merge_dependabot_pull_requests(token='fake_token', mark_notifications_done=True)
+    assert fake_github.threads_marked_done == []
+
+
+@pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_notification_failure_does_not_fail_merge(
+        caplog: pytest.LogCaptureFixture, fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/repo', security_status='enabled')
+    fake_github.add_pull('tatsh/repo', 1)
+    fake_github.add_notification('tatsh/repo', 1, thread_id='4321')
+    fake_github.thread_delete_error = 500
+    with caplog.at_level(logging.WARNING, logger='deltona.git'):
+        await merge_dependabot_pull_requests(token='fake_token', mark_notifications_done=True)
+    assert fake_github.merge_calls == [('tatsh/repo', 1, {'merge_method': 'rebase'})]
+    assert any('as done' in record.getMessage() for record in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_merge_pre_commit_ci_pull_requests_marks_notification_done(
+        fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/repo', files={'.pre-commit-config.yaml'})
+    fake_github.add_pull('tatsh/repo', 7, user_login='pre-commit-ci[bot]')
+    fake_github.add_notification('tatsh/repo', 7, thread_id='99')
+    await merge_pre_commit_ci_pull_requests(token='fake_token', mark_notifications_done=True)
+    assert fake_github.threads_marked_done == ['99']
+
+
+@pytest.mark.asyncio
 async def test_merge_dependabot_pull_requests_skips_archived(fake_github: FakeGitHub) -> None:
     fake_github.add_repo('tatsh/repo', archived=True)
     await merge_dependabot_pull_requests(token='fake_token')

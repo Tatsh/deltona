@@ -114,6 +114,7 @@ class FakeGitHub:
     _CONTENTS = re.compile(r'^/repos/(?P<full>[^/]+/[^/]+)/contents/(?P<path>.+)$')
     _COMMENTS = re.compile(r'^/repos/(?P<full>[^/]+/[^/]+)/issues/(?P<num>\d+)/comments$')
     _REPO = re.compile(r'^/repos/(?P<full>[^/]+/[^/]+)$')
+    _THREAD = re.compile(r'^/notifications/threads/(?P<id>[^/]+)$')
 
     def __init__(self) -> None:
         self.user_login = 'tatsh'
@@ -126,6 +127,9 @@ class FakeGitHub:
         self.user_endpoint_hit = False
         self.list_repos_hit = False
         self.list_repos_query: dict[str, str] = {}
+        self.notifications: list[dict[str, Any]] = []
+        self.threads_marked_done: list[str] = []
+        self.thread_delete_error: int | None = None
 
     def add_repo(self, full_name: str, *, listed: bool = True, **kwargs: Any) -> FakeRepo:
         repo = FakeRepo(full_name, **kwargs)
@@ -144,6 +148,23 @@ class FakeGitHub:
         self.repos[full_name].pulls.append(pull)
         return pull
 
+    def add_notification(self,
+                         full_name: str,
+                         number: int,
+                         *,
+                         thread_id: str,
+                         subject_type: str = 'PullRequest') -> None:
+        self.notifications.append({
+            'id': thread_id,
+            'repository': {
+                'full_name': full_name
+            },
+            'subject': {
+                'type': subject_type,
+                'url': f'https://api.github.com/repos/{full_name}/pulls/{number}'
+            }
+        })
+
     def route(self, method: str, url: str, data: bytes | None) -> tuple[int, Any]:
         parts = urlsplit(url)
         path = parts.path
@@ -155,6 +176,8 @@ class FakeGitHub:
             self.list_repos_hit = True
             self.list_repos_query = {k: v[0] for k, v in parse_qs(parts.query).items()}
             return 200, [self.repos[name].payload() for name in self.listing]
+        if (result := self._route_notifications(path)) is not None:
+            return result
         if (match := self._MERGE.match(path)):
             return self._route_merge(match, data)
         if (match := self._PULL.match(path)):
@@ -170,6 +193,16 @@ class FakeGitHub:
             return 200, self.repos[match['full']].payload(full=True)
         msg = f'Unhandled route: {method} {path}'
         raise AssertionError(msg)
+
+    def _route_notifications(self, path: str) -> tuple[int, Any] | None:
+        if path == '/notifications':
+            return 200, self.notifications
+        if (match := self._THREAD.match(path)):
+            if self.thread_delete_error is not None:
+                return self.thread_delete_error, {'message': 'thread failed'}
+            self.threads_marked_done.append(match['id'])
+            return 204, None
+        return None
 
     def _find_pull(self, full: str, number: int) -> FakePull:
         return next(p for p in self.repos[full].pulls if p.number == number)

@@ -182,6 +182,34 @@ async def _uses_pre_commit_ci(gh: gidgethub.abc.GitHubAPI, repo: Mapping[str, An
     return True
 
 
+async def _pull_request_notification_threads(
+        gh: gidgethub.abc.GitHubAPI) -> dict[tuple[str, int], str]:
+    # Keyed on the repository full name and pull request number rather than the subject URL, so
+    # that an enterprise base URL does not affect matching.
+    threads: dict[tuple[str, int], str] = {}
+    async for thread in gh.getiter('/notifications{?per_page}', {'per_page': 100}):
+        subject = thread.get('subject') or {}
+        if subject.get('type') != 'PullRequest':
+            continue
+        number = (subject.get('url') or '').rsplit('/', 1)[-1]
+        if not number.isdigit():
+            continue
+        threads[thread['repository']['full_name'], int(number)] = thread['id']
+    return threads
+
+
+async def _mark_notification_done(gh: gidgethub.abc.GitHubAPI, thread_id: str, *, full_name: str,
+                                  number: int) -> None:
+    import gidgethub  # ruff:ignore[import-outside-top-level]
+
+    try:
+        await gh.delete(f'/notifications/threads/{thread_id}')
+    except gidgethub.HTTPException:
+        log.warning('Could not mark the notification for PR %s in `%s` as done.', number, full_name)
+    else:
+        log.debug('Marked the notification for PR %s in `%s` as done.', number, full_name)
+
+
 async def _merge_bot_pull_requests(*,
                                    token: str,
                                    bot_login: str,
@@ -192,11 +220,13 @@ async def _merge_bot_pull_requests(*,
                                    base_url: str | None = None,
                                    concurrency: int | None = None,
                                    max_concurrent_http_requests: int = 3,
-                                   repos: Iterable[str] | None = None) -> None:
+                                   repos: Iterable[str] | None = None,
+                                   mark_notifications_done: bool = False) -> None:
     import gidgethub  # ruff:ignore[import-outside-top-level]
 
     http_limiter = anyio.CapacityLimiter(max_concurrent_http_requests)
     task_limiter = anyio.CapacityLimiter(concurrency or os.cpu_count() or 1)
+    notification_threads: dict[tuple[str, int], str] = {}
 
     async def post_recreate_if_missing(full_name: str, number: int) -> None:
         comments = [c async for c in gh.getiter(f'/repos/{full_name}/issues/{number}/comments')]
@@ -217,10 +247,14 @@ async def _merge_bot_pull_requests(*,
             if not result.get('merged'):
                 log.debug('Merge did not raise but merged is False.')
                 await post_recreate_if_missing(full_name, number)
+                return True
         except gidgethub.HTTPException:
             _log_merge_failure(number, repo['name'])
             await post_recreate_if_missing(full_name, number)
             return False
+        if mark_notifications_done and (thread_id := notification_threads.get(
+            (full_name, number))) is not None:
+            await _mark_notification_done(gh, thread_id, full_name=full_name, number=number)
         return True
 
     async def process_repo(repo: Mapping[str, Any]) -> tuple[str, int]:
@@ -250,6 +284,8 @@ async def _merge_bot_pull_requests(*,
 
     async with niquests.AsyncSession() as session:
         gh = _make_github_api(session, base_url=base_url, limiter=http_limiter, token=token)
+        if mark_notifications_done:
+            notification_threads.update(await _pull_request_notification_threads(gh))
         if repos is None:
             repositories = [
                 repo async for repo in gh.getiter('/user/repos{?visibility,sort,per_page}', {
@@ -284,7 +320,8 @@ async def merge_dependabot_pull_requests(*,
                                          base_url: str | None = None,
                                          concurrency: int | None = None,
                                          max_concurrent_http_requests: int = 3,
-                                         repos: Iterable[str] | None = None) -> None:
+                                         repos: Iterable[str] | None = None,
+                                         mark_notifications_done: bool = False) -> None:
     """
     Merge pull requests made by Dependabot on GitHub.
 
@@ -309,6 +346,9 @@ async def merge_dependabot_pull_requests(*,
         name (resolved against the authenticated user's login) or a fully
         qualified ``owner/name``. When ``None``, every accessible repository
         is processed.
+    mark_notifications_done : bool
+        Mark the GitHub notification thread for each merged pull request as
+        done. Requires a token with the ``notifications`` or ``repo`` scope.
 
     Raises
     ------
@@ -321,6 +361,7 @@ async def merge_dependabot_pull_requests(*,
                                    bot_login='dependabot[bot]',
                                    concurrency=concurrency,
                                    error_class=DependabotMergeError,
+                                   mark_notifications_done=mark_notifications_done,
                                    max_concurrent_http_requests=max_concurrent_http_requests,
                                    recreate_command='@dependabot recreate',
                                    repos=repos,
@@ -333,7 +374,8 @@ async def merge_pre_commit_ci_pull_requests(*,
                                             base_url: str | None = None,
                                             concurrency: int | None = None,
                                             max_concurrent_http_requests: int = 3,
-                                            repos: Iterable[str] | None = None) -> None:
+                                            repos: Iterable[str] | None = None,
+                                            mark_notifications_done: bool = False) -> None:
     """
     Merge pull requests made by `pre-commit.ci <https://pre-commit.ci>`_ on GitHub.
 
@@ -359,6 +401,9 @@ async def merge_pre_commit_ci_pull_requests(*,
         name (resolved against the authenticated user's login) or a fully
         qualified ``owner/name``. When ``None``, every accessible repository
         is processed.
+    mark_notifications_done : bool
+        Mark the GitHub notification thread for each merged pull request as
+        done. Requires a token with the ``notifications`` or ``repo`` scope.
 
     Raises
     ------
@@ -371,6 +416,7 @@ async def merge_pre_commit_ci_pull_requests(*,
                                    bot_login='pre-commit-ci[bot]',
                                    concurrency=concurrency,
                                    error_class=PreCommitCIMergeError,
+                                   mark_notifications_done=mark_notifications_done,
                                    max_concurrent_http_requests=max_concurrent_http_requests,
                                    recreate_command='pre-commit.ci autofix',
                                    repos=repos,

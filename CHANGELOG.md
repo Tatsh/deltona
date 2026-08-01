@@ -9,6 +9,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+### Added
+
+- `merge-dependabot-prs` and `merge-pre-commit-prs` `-N`/`--mark-notifications-done` to mark the
+  GitHub notification thread for each merged pull request as done. Off by default. The
+  `merge_dependabot_pull_requests` and `merge_pre_commit_ci_pull_requests` functions accept a
+  matching `mark_notifications_done` keyword. Requires a token with the `notifications` or `repo`
+  scope; a failure to mark a thread is logged and does not count the pull request as unmerged.
+
 ### Changed
 
 - The GitHub client now uses [gidgethub](https://gidgethub.readthedocs.io/) instead of PyGithub.

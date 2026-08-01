@@ -154,6 +154,10 @@ def _run_bot_merge_with_retry(make_runner: Callable[[tuple[str, ...] | None],
               type=int,
               default=3,
               help='Hard cap on simultaneous in-flight HTTP requests.')
+@click.option('-N',
+              '--mark-notifications-done',
+              is_flag=True,
+              help='Mark the GitHub notification for each merged pull request as done.')
 @click.option('-r',
               '--repo',
               'repos',
@@ -168,7 +172,8 @@ def merge_dependabot_prs_main(username: str,
                               concurrency: int = 1,
                               max_concurrent_http_requests: int = 3,
                               *,
-                              debug: bool = False) -> None:
+                              debug: bool = False,
+                              mark_notifications_done: bool = False) -> None:
     """Merge pull requests made by Dependabot on GitHub."""  # ruff:ignore[docstring-missing-exception]
     import keyring  # ruff:ignore[import-outside-top-level]
 
@@ -189,6 +194,7 @@ def merge_dependabot_prs_main(username: str,
         return partial(merge_dependabot_pull_requests,
                        base_url=base_url,
                        concurrency=concurrency,
+                       mark_notifications_done=mark_notifications_done,
                        max_concurrent_http_requests=max_concurrent_http_requests,
                        repos=current_repos,
                        token=token)
@@ -209,6 +215,10 @@ def merge_dependabot_prs_main(username: str,
               type=int,
               default=3,
               help='Hard cap on simultaneous in-flight HTTP requests.')
+@click.option('-N',
+              '--mark-notifications-done',
+              is_flag=True,
+              help='Mark the GitHub notification for each merged pull request as done.')
 @click.option('-r',
               '--repo',
               'repos',
@@ -223,7 +233,8 @@ def merge_pre_commit_ci_prs_main(username: str,
                                  concurrency: int = 1,
                                  max_concurrent_http_requests: int = 3,
                                  *,
-                                 debug: bool = False) -> None:
+                                 debug: bool = False,
+                                 mark_notifications_done: bool = False) -> None:
     """Merge pull requests made by pre-commit.ci on GitHub."""  # ruff:ignore[docstring-missing-exception]
     import keyring  # ruff:ignore[import-outside-top-level]
 
@@ -236,6 +247,7 @@ def merge_pre_commit_ci_prs_main(username: str,
         return partial(merge_pre_commit_ci_pull_requests,
                        base_url=base_url,
                        concurrency=concurrency,
+                       mark_notifications_done=mark_notifications_done,
                        max_concurrent_http_requests=max_concurrent_http_requests,
                        repos=current_repos,
                        token=token)
