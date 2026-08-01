@@ -259,6 +259,8 @@ local utils = import 'utils.libsonnet';
       },
       ruff+: {
         lint+: {
+          // Executables such as ffmpeg and killall are deliberately resolved through PATH.
+          ignore+: ['S607'],
           pylint+: {
             'max-nested-blocks': 6,
             'max-statements': 150,

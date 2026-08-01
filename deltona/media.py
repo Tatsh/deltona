@@ -85,13 +85,11 @@ def supported_audio_input_formats(
     for format_ in formats:
         for rate in rates:
             log.debug('Checking pcm_%s @ %d.', format_, rate)
-            p = sp.run(
-                (  # ruff:ignore[start-process-with-partial-path]
-                    'ffmpeg', '-hide_banner', '-loglevel', 'info', '-f', 'alsa', '-acodec',
-                    f'pcm_{format_}', '-ar', str(rate), '-i', input_device),
-                text=True,
-                capture_output=True,
-                check=False)
+            p = sp.run(('ffmpeg', '-hide_banner', '-loglevel', 'info', '-f', 'alsa', '-acodec',
+                        f'pcm_{format_}', '-ar', str(rate), '-i', input_device),
+                       text=True,
+                       capture_output=True,
+                       check=False)
             all_output = p.stdout.strip() + p.stderr.strip()
             if 'Device or resource busy' in all_output or 'No such device' in all_output:
                 raise OSError
@@ -168,7 +166,10 @@ def add_info_json_to_media_file(path: StrPath,
             log.debug('No upload date to set.')
             return
         log.debug('Setting date to %s.', upload_date)
-        seconds = datetime.strptime(upload_date, '%Y%m%d').timestamp()
+        # The upload date carries no timezone and is only used to set the modification time.
+        parsed = datetime.strptime(  # ruff:ignore[call-datetime-strptime-without-zone]
+            upload_date, '%Y%m%d')
+        seconds = parsed.timestamp()
         utime(path, times=(seconds, seconds))
 
     def mkvpropedit_add_json() -> None:
@@ -182,12 +183,10 @@ def add_info_json_to_media_file(path: StrPath,
             log.warning('Attachment named info.json already exists. Not modifying file.')
             return
         log.debug('Attaching info.json to MKV.')
-        sp.run(
-            (  # ruff:ignore[start-process-with-partial-path]
-                'mkvpropedit', str(path), '--attachment-name', 'info.json', '--add-attachment',
+        sp.run(('mkvpropedit', str(path), '--attachment-name', 'info.json', '--add-attachment',
                 str(json_path)),
-            check=True,
-            capture_output=not debug)
+               check=True,
+               capture_output=not debug)
         set_date()
 
     def flac_mp3_add_json() -> None:
@@ -197,12 +196,10 @@ def add_info_json_to_media_file(path: StrPath,
                                           encoding='utf-8',
                                           dir=path.parent,
                                           mode='w+') as ffm):
-            sp.run(
-                (  # ruff:ignore[start-process-with-partial-path]
-                    'ffmpeg', '-hide_banner', '-loglevel', 'warning', '-y', '-i', f'file:{path}',
+            sp.run(('ffmpeg', '-hide_banner', '-loglevel', 'warning', '-y', '-i', f'file:{path}',
                     '-f', 'ffmetadata', f'{ffm.name}'),
-                check=True,
-                capture_output=True)
+                   check=True,
+                   capture_output=True)
             lines = Path(ffm.name).read_text(encoding='utf-8').splitlines(keepends=True)
             escaped = re.sub(r'([=;#\\\n])', r'\\\1', json_path.read_text())
             is_mp3 = path.suffix == '.mp3'
@@ -214,13 +211,11 @@ def add_info_json_to_media_file(path: StrPath,
                                              delete=False,
                                              mode='w+') as nfw:
                 nfw.writelines(lines)
-            sp.run(
-                (  # ruff:ignore[start-process-with-partial-path]
-                    'ffmpeg', '-y', '-i', f'file:{path}', '-i', f'file:{nfw.name}', '-map_metadata',
+            sp.run(('ffmpeg', '-y', '-i', f'file:{path}', '-i', f'file:{nfw.name}', '-map_metadata',
                     '1', '-c', 'copy', *(('-write_id3v1', '1') if is_mp3 else
                                          ()), f'file:{tf.name}'),
-                capture_output=not debug,
-                check=True)
+                   capture_output=not debug,
+                   check=True)
             Path(tf.name).rename(path)
             Path(nfw.name).unlink()
         set_date()
@@ -232,13 +227,11 @@ def add_info_json_to_media_file(path: StrPath,
         info_json_path = Path('info.json')
         copyfile(json_path, info_json_path)
         log.debug('Attaching info.json to MP4.')
-        sp.run(
-            (  # ruff:ignore[start-process-with-partial-path]
-                'MP4Box', '-add-item',
+        sp.run(('MP4Box', '-add-item',
                 (f'{info_json_path}:replace:name=youtube-dl metadata:mime=application/json:'
                  'encoding=utf8'), str(path)),
-            check=True,
-            capture_output=not debug)
+               check=True,
+               capture_output=not debug)
         info_json_path.unlink()
         set_date()
 
@@ -275,9 +268,8 @@ def ffprobe(path: StrPath) -> ProbeDict:
         'ProbeDict',
         json.loads(
             sp.run(
-                (  # ruff:ignore[start-process-with-partial-path]
-                    'ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_format',
-                    '-show_streams', str(path)),
+                ('ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams',
+                 str(path)),
                 check=True,
                 capture_output=True,
                 text=True).stdout.strip()))
@@ -373,13 +365,11 @@ def create_static_text_video(audio_file: StrPath,
            (Path(audio_file.parent) / f'{audio_file.stem}-video.mkv'))
     with tempfile.NamedTemporaryFile(suffix='.png', delete=False, dir=Path.cwd()) as tf:
         try:
-            sp.run(
-                (  # ruff:ignore[start-process-with-partial-path]
-                    'magick', '-font',
+            sp.run(('magick', '-font',
                     font, '-size', '1920x1080', 'xc:black', '-fill', 'white', '-pointsize',
                     str(font_size), '-draw', f"gravity Center text 0,0 '{text}'", tf.name),
-                capture_output=not debug,
-                check=True)
+                   capture_output=not debug,
+                   check=True)
         except sp.CalledProcessError:
             Path(tf.name).unlink()
             raise

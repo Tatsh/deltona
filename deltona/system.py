@@ -15,6 +15,7 @@ import re
 import subprocess as sp
 import sys
 
+from binaryornot.helpers import is_binary_string
 from typing_extensions import override
 
 from .io import context_os_open
@@ -394,9 +395,6 @@ def _iter_config_sections(file: StrPath) -> Iterator[tuple[str, str, str]]:
             log.debug('Ignoring section "%s".', section)
             continue
         for key, value in config[section].items():
-            from binaryornot.helpers import (
-                is_binary_string,)
-
             if is_binary_string(value.encode()):
                 log.debug('Ignoring binary value in key %s.', key)
                 continue

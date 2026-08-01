@@ -116,7 +116,7 @@ def _get_pydbus_system_bus_callable() -> Callable[[], Bus[Any]]:  # pragma: no c
 
 
 def _get_gi_repository_glib() -> ModuleType:  # pragma: no cover
-    from gi.repository import (
+    from gi.repository import (  # ruff:ignore[import-outside-top-level]
         GLib,  # type: ignore[unused-ignore]
     )
 
@@ -141,7 +141,7 @@ def connect_g603_main(device_name: str = 'hci0', *, debug: bool = False) -> None
     if not IS_LINUX:
         click.echo('Only Linux is supported.', err=True)
         raise click.Abort
-    from gi.repository import (
+    from gi.repository import (  # ruff:ignore[import-outside-top-level]
         Gio,  # pyright: ignore[reportMissingModuleSource]
     )
 

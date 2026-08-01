@@ -169,7 +169,8 @@ def test_is_bin_main_empty_not_binary(runner: CliRunner, tmp_path: Path) -> None
 def test_fullwidth2ascii_main(runner: CliRunner, tmp_path: Path) -> None:
     input_file = tmp_path / 'test_fullwidth2ascii.txt'
     # cspell: disable-next-line  # ruff:ignore[commented-out-code]
-    input_file.write_text('ｈｅｌｌｏ\n', encoding='utf-8')
+    fullwidth = 'ｈｅｌｌｏ\n'  # ruff:ignore[ambiguous-unicode-character-string]
+    input_file.write_text(fullwidth, encoding='utf-8')
     result = runner.invoke(fullwidth2ascii_main, [str(input_file)])
     assert 'hello' in result.output
 

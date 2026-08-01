@@ -284,6 +284,7 @@ ignore = [
   "RUF201",
   "S404",
   "S603",
+  "S607",
   "TD002",
 ]
 preview = true
