@@ -142,9 +142,16 @@ def _run_bot_merge_with_retry(make_runner: Callable[[tuple[str, ...] | None],
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
+@click.option('-A',
+              '--archive-email',
+              is_flag=True,
+              help='Archive the Gmail thread for each merged pull request.')
 @click.option('-b', '--base-url', help='Base URL for enterprise.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('--delay', type=float, default=120, help='Delay in seconds between attempts.')
+@click.option('-E',
+              '--email',
+              help='Email address to archive mail for. Defaults to the GitHub account address.')
 @click.option('--concurrency',
               type=int,
               default=os.cpu_count() or 1,
@@ -171,7 +178,9 @@ def merge_dependabot_prs_main(username: str,
                               delay: float = 120,
                               concurrency: int = 1,
                               max_concurrent_http_requests: int = 3,
+                              email: str | None = None,
                               *,
+                              archive_email: bool = False,
                               debug: bool = False,
                               mark_notifications_done: bool = False) -> None:
     """Merge pull requests made by Dependabot on GitHub."""  # ruff:ignore[docstring-missing-exception]
@@ -192,8 +201,10 @@ def merge_dependabot_prs_main(username: str,
 
     def make_runner(current_repos: tuple[str, ...] | None) -> Callable[[], Awaitable[None]]:
         return partial(merge_dependabot_pull_requests,
+                       archive_email=archive_email,
                        base_url=base_url,
                        concurrency=concurrency,
+                       email=email,
                        mark_notifications_done=mark_notifications_done,
                        max_concurrent_http_requests=max_concurrent_http_requests,
                        repos=current_repos,
@@ -203,9 +214,16 @@ def merge_dependabot_prs_main(username: str,
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
+@click.option('-A',
+              '--archive-email',
+              is_flag=True,
+              help='Archive the Gmail thread for each merged pull request.')
 @click.option('-b', '--base-url', help='Base URL for enterprise.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('--delay', type=float, default=120, help='Delay in seconds between attempts.')
+@click.option('-E',
+              '--email',
+              help='Email address to archive mail for. Defaults to the GitHub account address.')
 @click.option('--concurrency',
               type=int,
               default=os.cpu_count() or 1,
@@ -232,7 +250,9 @@ def merge_pre_commit_ci_prs_main(username: str,
                                  delay: float = 120,
                                  concurrency: int = 1,
                                  max_concurrent_http_requests: int = 3,
+                                 email: str | None = None,
                                  *,
+                                 archive_email: bool = False,
                                  debug: bool = False,
                                  mark_notifications_done: bool = False) -> None:
     """Merge pull requests made by pre-commit.ci on GitHub."""  # ruff:ignore[docstring-missing-exception]
@@ -245,8 +265,10 @@ def merge_pre_commit_ci_prs_main(username: str,
 
     def make_runner(current_repos: tuple[str, ...] | None) -> Callable[[], Awaitable[None]]:
         return partial(merge_pre_commit_ci_pull_requests,
+                       archive_email=archive_email,
                        base_url=base_url,
                        concurrency=concurrency,
+                       email=email,
                        mark_notifications_done=mark_notifications_done,
                        max_concurrent_http_requests=max_concurrent_http_requests,
                        repos=current_repos,

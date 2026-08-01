@@ -11,6 +11,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `merge-dependabot-prs` and `merge-pre-commit-prs` `-A`/`--archive-email` to archive the Gmail
+  thread notifying about each merged pull request, and `-E`/`--email` to choose the address.
+  Without `-E` the address on the authenticated GitHub account is used. Credentials are read from
+  the keyring under the service `deltona:mpr:google` keyed on the address, and must be an
+  authorized user JSON containing `client_id`, `client_secret`, and `refresh_token`. Threads are
+  matched on the GitHub `List-ID` and the `(PR #N)` subject suffix, then archived by removing the
+  `INBOX` label. Only Gmail is supported. A failure to archive is logged and does not count the
+  pull request as unmerged.
+- `deltona.gmail` module with `archive_github_pull_request_email` and `get_access_token`.
 - `merge-dependabot-prs` and `merge-pre-commit-prs` `-N`/`--mark-notifications-done` to mark the
   GitHub notification thread for each merged pull request as done. Off by default. The
   `merge_dependabot_pull_requests` and `merge_pre_commit_ci_pull_requests` functions accept a

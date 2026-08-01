@@ -83,6 +83,55 @@ class _FakeResponse:
         self.status_code = status_code
         self.headers = {'content-type': 'application/json; charset=utf-8'}
         self.content = b'' if payload is None else json.dumps(payload).encode()
+        self._payload = payload
+
+    @property
+    def ok(self) -> bool:
+        return self.status_code < 400
+
+    def json(self) -> Any:
+        return self._payload
+
+
+class FakeGmail:
+    """In-memory Gmail API used to drive :py:mod:`deltona.gmail` through niquests."""
+
+    _MODIFY = re.compile(r'/users/me/threads/(?P<id>[^/]+)/modify$')
+
+    def __init__(self) -> None:
+        self.access_token = 'fake_access_token'
+        self.token_status = 200
+        self.token_payload: Any = None
+        self.search_status = 200
+        self.modify_status = 200
+        self.thread_ids: list[str] = []
+        self.thread_ids_by_query: dict[str, list[str]] | None = None
+        self.queries: list[str] = []
+        self.archived_threads: list[str] = []
+        self.token_requests: list[Mapping[str, str]] = []
+
+    def route(self, method: str, url: str, params: Mapping[str, str] | None,
+              data: Mapping[str, str] | None) -> tuple[int, Any]:
+        if url.startswith('https://oauth2.googleapis.com/token'):
+            self.token_requests.append(dict(data or {}))
+            if self.token_payload is not None:
+                return self.token_status, self.token_payload
+            return self.token_status, {'access_token': self.access_token}
+        if (match := self._MODIFY.search(url)):
+            if self.modify_status >= 400:
+                return self.modify_status, {'error': {'message': 'modify failed'}}
+            self.archived_threads.append(match['id'])
+            return self.modify_status, {'id': match['id']}
+        if url.endswith('/users/me/threads'):
+            query = (params or {}).get('q', '')
+            self.queries.append(query)
+            if self.search_status >= 400:
+                return self.search_status, {'error': {'message': 'search failed'}}
+            thread_ids = (self.thread_ids if self.thread_ids_by_query is None else
+                          self.thread_ids_by_query.get(query, []))
+            return 200, {'threads': [{'id': thread_id} for thread_id in thread_ids]}
+        msg = f'Unhandled Gmail route: {method} {url}'
+        raise AssertionError(msg)
 
 
 class _FakeAsyncSession:
@@ -104,6 +153,23 @@ class _FakeAsyncSession:
         status, payload = self._fake.route(method, url, data)
         return _FakeResponse(status, payload)
 
+    async def get(self,
+                  url: str,
+                  *,
+                  headers: Mapping[str, str] | None = None,
+                  params: Mapping[str, str] | None = None) -> _FakeResponse:
+        status, payload = self._fake.gmail.route('GET', url, params, None)
+        return _FakeResponse(status, payload)
+
+    async def post(self,
+                   url: str,
+                   *,
+                   headers: Mapping[str, str] | None = None,
+                   data: Mapping[str, str] | None = None,
+                   json: Mapping[str, Any] | None = None) -> _FakeResponse:
+        status, payload = self._fake.gmail.route('POST', url, None, data)
+        return _FakeResponse(status, payload)
+
 
 class FakeGitHub:
     """In-memory GitHub API used to drive :py:mod:`deltona.git` through niquests."""
@@ -118,6 +184,7 @@ class FakeGitHub:
 
     def __init__(self) -> None:
         self.user_login = 'tatsh'
+        self.user_email: str | None = 'tatsh@example.com'
         self.repos: dict[str, FakeRepo] = {}
         self.listing: list[str] = []
         self.requests: list[tuple[str, str]] = []
@@ -127,6 +194,7 @@ class FakeGitHub:
         self.user_endpoint_hit = False
         self.list_repos_hit = False
         self.list_repos_query: dict[str, str] = {}
+        self.gmail = FakeGmail()
         self.notifications: list[dict[str, Any]] = []
         self.threads_marked_done: list[str] = []
         self.thread_delete_error: int | None = None
@@ -171,7 +239,7 @@ class FakeGitHub:
         self.requests.append((method, path))
         if path == '/user':
             self.user_endpoint_hit = True
-            return 200, {'login': self.user_login}
+            return 200, {'email': self.user_email, 'login': self.user_login}
         if path == '/user/repos':
             self.list_repos_hit = True
             self.list_repos_query = {k: v[0] for k, v in parse_qs(parts.query).items()}

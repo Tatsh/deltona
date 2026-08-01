@@ -140,12 +140,42 @@ def test_merge_dependabot_prs_main_forwards_concurrency_options(mocker: MockerFi
     result = runner.invoke(merge_dependabot_prs_main,
                            ['--concurrency', '7', '--max-concurrent-http-requests', '5'])
     assert result.exit_code == 0
-    mock_merge.assert_called_once_with(base_url=None,
+    mock_merge.assert_called_once_with(archive_email=False,
+                                       base_url=None,
                                        concurrency=7,
+                                       email=None,
                                        mark_notifications_done=False,
                                        max_concurrent_http_requests=5,
                                        repos=None,
                                        token='dummy_token')
+
+
+@pytest.mark.parametrize('flag', ['-A', '--archive-email'])
+def test_merge_dependabot_prs_main_forwards_archive_email(flag: str, mocker: MockerFixture,
+                                                          runner: CliRunner) -> None:
+    mock_merge = mocker.patch('deltona.commands.git.merge_dependabot_pull_requests',
+                              new_callable=mocker.AsyncMock,
+                              return_value=None)
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+
+    result = runner.invoke(merge_dependabot_prs_main, [flag, '-E', 'me@example.com'])
+    assert result.exit_code == 0
+    assert mock_merge.call_args.kwargs['archive_email'] is True
+    assert mock_merge.call_args.kwargs['email'] == 'me@example.com'
+
+
+@pytest.mark.parametrize('flag', ['-A', '--archive-email'])
+def test_merge_pre_commit_prs_main_forwards_archive_email(flag: str, mocker: MockerFixture,
+                                                          runner: CliRunner) -> None:
+    mock_merge = mocker.patch('deltona.commands.git.merge_pre_commit_ci_pull_requests',
+                              new_callable=mocker.AsyncMock,
+                              return_value=None)
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+
+    result = runner.invoke(merge_pre_commit_ci_prs_main, [flag, '--email', 'me@example.com'])
+    assert result.exit_code == 0
+    assert mock_merge.call_args.kwargs['archive_email'] is True
+    assert mock_merge.call_args.kwargs['email'] == 'me@example.com'
 
 
 @pytest.mark.parametrize('flag', ['-N', '--mark-notifications-done'])

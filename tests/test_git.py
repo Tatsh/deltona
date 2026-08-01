@@ -17,6 +17,9 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
     from tests.conftest import FakeGitHub
 
+CREDENTIALS_JSON = ('{"client_id": "id", "client_secret": "secret", "refresh_token": "refresh", '
+                    '"type": "authorized_user"}')
+
 
 def test_convert_git_ssh_url_to_https() -> None:
     assert (convert_git_ssh_url_to_https('git@github.com:user/repo.git') ==
@@ -128,6 +131,94 @@ async def test_merge_pre_commit_ci_pull_requests_marks_notification_done(
     fake_github.add_notification('tatsh/repo', 7, thread_id='99')
     await merge_pre_commit_ci_pull_requests(token='fake_token', mark_notifications_done=True)
     assert fake_github.threads_marked_done == ['99']
+
+
+@pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_archives_email(fake_github: FakeGitHub,
+                                                             mocker: MockerFixture) -> None:
+    mocker.patch('keyring.get_password', return_value=CREDENTIALS_JSON)
+    fake_github.add_repo('tatsh/repo', security_status='enabled')
+    fake_github.add_pull('tatsh/repo', 478)
+    fake_github.gmail.thread_ids = ['t1']
+    await merge_dependabot_pull_requests(token='fake_token', archive_email=True)
+    assert fake_github.gmail.archived_threads == ['t1']
+    assert fake_github.gmail.queries == ['list:repo.tatsh.github.com subject:"(PR #478)"']
+
+
+@pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_archives_email_uses_explicit_address(
+        fake_github: FakeGitHub, mocker: MockerFixture) -> None:
+    get_password = mocker.patch('keyring.get_password', return_value=CREDENTIALS_JSON)
+    fake_github.add_repo('tatsh/repo', security_status='enabled')
+    fake_github.add_pull('tatsh/repo', 1)
+    fake_github.gmail.thread_ids = ['t1']
+    await merge_dependabot_pull_requests(token='fake_token',
+                                         archive_email=True,
+                                         email='other@example.com')
+    get_password.assert_called_once_with('deltona:mpr:google', 'other@example.com')
+    assert not fake_github.user_endpoint_hit
+
+
+@pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_archives_email_falls_back_to_github_address(
+        fake_github: FakeGitHub, mocker: MockerFixture) -> None:
+    get_password = mocker.patch('keyring.get_password', return_value=CREDENTIALS_JSON)
+    fake_github.add_repo('tatsh/repo', security_status='enabled')
+    fake_github.add_pull('tatsh/repo', 1)
+    await merge_dependabot_pull_requests(token='fake_token', archive_email=True)
+    get_password.assert_called_once_with('deltona:mpr:google', 'tatsh@example.com')
+
+
+@pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_does_not_archive_email_by_default(
+        fake_github: FakeGitHub, mocker: MockerFixture) -> None:
+    mocker.patch('keyring.get_password', return_value=CREDENTIALS_JSON)
+    fake_github.add_repo('tatsh/repo', security_status='enabled')
+    fake_github.add_pull('tatsh/repo', 1)
+    fake_github.gmail.thread_ids = ['t1']
+    await merge_dependabot_pull_requests(token='fake_token')
+    assert fake_github.gmail.archived_threads == []
+    assert fake_github.gmail.token_requests == []
+
+
+@pytest.mark.parametrize(('user_email', 'credentials'), [(None, CREDENTIALS_JSON),
+                                                         ('tatsh@example.com', None)])
+@pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_archives_email_missing_configuration(
+        credentials: str | None, fake_github: FakeGitHub, mocker: MockerFixture,
+        user_email: str | None) -> None:
+    mocker.patch('keyring.get_password', return_value=credentials)
+    fake_github.user_email = user_email
+    fake_github.add_repo('tatsh/repo', security_status='enabled')
+    fake_github.add_pull('tatsh/repo', 1)
+    await merge_dependabot_pull_requests(token='fake_token', archive_email=True)
+    assert fake_github.merge_calls == [('tatsh/repo', 1, {'merge_method': 'rebase'})]
+    assert fake_github.gmail.archived_threads == []
+
+
+@pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_archive_email_failure_does_not_fail_merge(
+        caplog: pytest.LogCaptureFixture, fake_github: FakeGitHub, mocker: MockerFixture) -> None:
+    mocker.patch('keyring.get_password', return_value=CREDENTIALS_JSON)
+    fake_github.add_repo('tatsh/repo', security_status='enabled')
+    fake_github.add_pull('tatsh/repo', 1)
+    fake_github.gmail.thread_ids = ['t1']
+    fake_github.gmail.modify_status = 500
+    with caplog.at_level(logging.WARNING, logger='deltona.git'):
+        await merge_dependabot_pull_requests(token='fake_token', archive_email=True)
+    assert fake_github.merge_calls == [('tatsh/repo', 1, {'merge_method': 'rebase'})]
+    assert any('archive the email' in record.getMessage() for record in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_merge_pre_commit_ci_pull_requests_archives_email(fake_github: FakeGitHub,
+                                                                mocker: MockerFixture) -> None:
+    mocker.patch('keyring.get_password', return_value=CREDENTIALS_JSON)
+    fake_github.add_repo('tatsh/repo', files={'.pre-commit-config.yaml'})
+    fake_github.add_pull('tatsh/repo', 9, user_login='pre-commit-ci[bot]')
+    fake_github.gmail.thread_ids = ['t9']
+    await merge_pre_commit_ci_pull_requests(token='fake_token', archive_email=True)
+    assert fake_github.gmail.archived_threads == ['t9']
 
 
 @pytest.mark.asyncio

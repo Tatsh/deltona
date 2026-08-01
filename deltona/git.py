@@ -12,7 +12,10 @@ import re
 
 from typing_extensions import override
 import anyio
+import keyring
 import niquests
+
+from .gmail import GmailError, archive_github_pull_request_email, get_access_token
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable, Mapping
@@ -210,6 +213,52 @@ async def _mark_notification_done(gh: gidgethub.abc.GitHubAPI, thread_id: str, *
         log.debug('Marked the notification for PR %s in `%s` as done.', number, full_name)
 
 
+async def _archive_email(session: niquests.AsyncSession, *, access_token: str, full_name: str,
+                         number: int) -> None:
+    try:
+        archived = await archive_github_pull_request_email(session,
+                                                           access_token=access_token,
+                                                           full_name=full_name,
+                                                           number=number)
+    except GmailError:
+        log.warning('Could not archive the email for PR %s in `%s`.', number, full_name)
+    else:
+        if archived:
+            log.debug('Archived %s email thread(s) for PR %s in `%s`.', archived, number, full_name)
+        else:
+            log.debug('No email thread found for PR %s in `%s`.', number, full_name)
+
+
+async def _resolve_gmail_access_token(session: niquests.AsyncSession, gh: gidgethub.abc.GitHubAPI,
+                                      email: str | None) -> str | None:
+    if not (address := email or (await gh.getitem('/user')).get('email')):
+        log.warning('No email address is available, so emails will not be archived. Pass one '
+                    'explicitly.')
+        return None
+    if not (credentials := keyring.get_password('deltona:mpr:google', address)):
+        log.warning('No Google credentials are stored for `%s`, so emails will not be archived.',
+                    address)
+        return None
+    try:
+        token = await get_access_token(session, credentials=credentials)
+    except GmailError:
+        log.warning(
+            'Could not obtain a Gmail access token for `%s`, so emails will not be '
+            'archived.', address)
+        return None
+    log.debug('Archiving emails as `%s`.', address)
+    return token
+
+
+async def _after_merge(gh: gidgethub.abc.GitHubAPI, session: niquests.AsyncSession, *,
+                       access_token: str | None, full_name: str, number: int,
+                       thread_id: str | None) -> None:
+    if thread_id is not None:
+        await _mark_notification_done(gh, thread_id, full_name=full_name, number=number)
+    if access_token is not None:
+        await _archive_email(session, access_token=access_token, full_name=full_name, number=number)
+
+
 async def _merge_bot_pull_requests(*,
                                    token: str,
                                    bot_login: str,
@@ -221,12 +270,15 @@ async def _merge_bot_pull_requests(*,
                                    concurrency: int | None = None,
                                    max_concurrent_http_requests: int = 3,
                                    repos: Iterable[str] | None = None,
-                                   mark_notifications_done: bool = False) -> None:
+                                   mark_notifications_done: bool = False,
+                                   archive_email: bool = False,
+                                   email: str | None = None) -> None:
     import gidgethub  # ruff:ignore[import-outside-top-level]
 
     http_limiter = anyio.CapacityLimiter(max_concurrent_http_requests)
     task_limiter = anyio.CapacityLimiter(concurrency or os.cpu_count() or 1)
     notification_threads: dict[tuple[str, int], str] = {}
+    access_token: str | None = None
 
     async def post_recreate_if_missing(full_name: str, number: int) -> None:
         comments = [c async for c in gh.getiter(f'/repos/{full_name}/issues/{number}/comments')]
@@ -252,9 +304,12 @@ async def _merge_bot_pull_requests(*,
             _log_merge_failure(number, repo['name'])
             await post_recreate_if_missing(full_name, number)
             return False
-        if mark_notifications_done and (thread_id := notification_threads.get(
-            (full_name, number))) is not None:
-            await _mark_notification_done(gh, thread_id, full_name=full_name, number=number)
+        await _after_merge(gh,
+                           session,
+                           access_token=access_token,
+                           full_name=full_name,
+                           number=number,
+                           thread_id=notification_threads.get((full_name, number)))
         return True
 
     async def process_repo(repo: Mapping[str, Any]) -> tuple[str, int]:
@@ -286,6 +341,8 @@ async def _merge_bot_pull_requests(*,
         gh = _make_github_api(session, base_url=base_url, limiter=http_limiter, token=token)
         if mark_notifications_done:
             notification_threads.update(await _pull_request_notification_threads(gh))
+        if archive_email:
+            access_token = await _resolve_gmail_access_token(session, gh, email)
         if repos is None:
             repositories = [
                 repo async for repo in gh.getiter('/user/repos{?visibility,sort,per_page}', {
@@ -321,7 +378,9 @@ async def merge_dependabot_pull_requests(*,
                                          concurrency: int | None = None,
                                          max_concurrent_http_requests: int = 3,
                                          repos: Iterable[str] | None = None,
-                                         mark_notifications_done: bool = False) -> None:
+                                         mark_notifications_done: bool = False,
+                                         archive_email: bool = False,
+                                         email: str | None = None) -> None:
     """
     Merge pull requests made by Dependabot on GitHub.
 
@@ -349,6 +408,13 @@ async def merge_dependabot_pull_requests(*,
     mark_notifications_done : bool
         Mark the GitHub notification thread for each merged pull request as
         done. Requires a token with the ``notifications`` or ``repo`` scope.
+    archive_email : bool
+        Archive the Gmail thread notifying about each merged pull request.
+        Credentials are read from the keyring under the service
+        ``deltona:mpr:google`` keyed on the email address.
+    email : str | None
+        The email address to archive mail for. Defaults to the address on the
+        authenticated GitHub account.
 
     Raises
     ------
@@ -357,7 +423,9 @@ async def merge_dependabot_pull_requests(*,
         attribute maps each affected repository's full name to the number of
         Dependabot pull requests still unmerged.
     """  # ruff:ignore[docstring-extraneous-exception]
-    await _merge_bot_pull_requests(base_url=base_url,
+    await _merge_bot_pull_requests(archive_email=archive_email,
+                                   base_url=base_url,
+                                   email=email,
                                    bot_login='dependabot[bot]',
                                    concurrency=concurrency,
                                    error_class=DependabotMergeError,
@@ -375,7 +443,9 @@ async def merge_pre_commit_ci_pull_requests(*,
                                             concurrency: int | None = None,
                                             max_concurrent_http_requests: int = 3,
                                             repos: Iterable[str] | None = None,
-                                            mark_notifications_done: bool = False) -> None:
+                                            mark_notifications_done: bool = False,
+                                            archive_email: bool = False,
+                                            email: str | None = None) -> None:
     """
     Merge pull requests made by `pre-commit.ci <https://pre-commit.ci>`_ on GitHub.
 
@@ -404,6 +474,13 @@ async def merge_pre_commit_ci_pull_requests(*,
     mark_notifications_done : bool
         Mark the GitHub notification thread for each merged pull request as
         done. Requires a token with the ``notifications`` or ``repo`` scope.
+    archive_email : bool
+        Archive the Gmail thread notifying about each merged pull request.
+        Credentials are read from the keyring under the service
+        ``deltona:mpr:google`` keyed on the email address.
+    email : str | None
+        The email address to archive mail for. Defaults to the address on the
+        authenticated GitHub account.
 
     Raises
     ------
@@ -412,7 +489,9 @@ async def merge_pre_commit_ci_pull_requests(*,
         attribute maps each affected repository's full name to the number of
         pre-commit.ci pull requests still unmerged.
     """  # ruff:ignore[docstring-extraneous-exception]
-    await _merge_bot_pull_requests(base_url=base_url,
+    await _merge_bot_pull_requests(archive_email=archive_email,
+                                   base_url=base_url,
+                                   email=email,
                                    bot_login='pre-commit-ci[bot]',
                                    concurrency=concurrency,
                                    error_class=PreCommitCIMergeError,
