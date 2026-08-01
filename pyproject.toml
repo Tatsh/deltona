@@ -246,7 +246,10 @@ venv = ".venv"
 venvPath = "."
 
 [tool.pytest.ini_options]
-filterwarnings = ["ignore::async_lru.AlruCacheLoopResetWarning"]
+filterwarnings = [
+  "ignore::async_lru.AlruCacheLoopResetWarning",
+  "ignore:GLib.unix_signal_add_full is deprecated:",
+]
 mock_use_standalone_module = true
 norecursedirs = ["node_modules"]
 python_files = ["tests.py", "test_*.py", "*_tests.py"]

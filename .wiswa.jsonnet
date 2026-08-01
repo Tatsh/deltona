@@ -251,7 +251,10 @@ local utils = import 'utils.libsonnet';
       },
       pytest+: {
         ini_options+: {
-          filterwarnings+: ['ignore::async_lru.AlruCacheLoopResetWarning'],
+          filterwarnings+: [
+            'ignore::async_lru.AlruCacheLoopResetWarning',
+            'ignore:GLib.unix_signal_add_full is deprecated:',
+          ],
         },
       },
       ruff+: {
