@@ -127,6 +127,7 @@ gogextract
 gpac
 hable
 halfwidth
+handoff
 hangul
 headofhousehold
 hexstr
@@ -287,10 +288,10 @@ sirikit
 slugified
 snapcore
 snapcraft
-softprops
 soupsieve
 sphinxcontrib
 spouseblindness
+statusline
 strptime
 suppressmsgboxes
 syft
@@ -349,6 +350,7 @@ wineprefixes
 wineserver
 wineshell
 wingdi
+winget
 wiswa
 wiswa's
 wkwebview
@@ -359,4 +361,5 @@ xcrun
 yapf
 yapfignore
 yarnrc
+zizmor
 zscale
