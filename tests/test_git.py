@@ -111,6 +111,36 @@ async def test_merge_dependabot_pull_requests_ignores_non_pull_request_notificat
 
 
 @pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_ignores_notification_without_a_number(
+        fake_github: FakeGitHub) -> None:
+    fake_github.add_repo('tatsh/repo', security_status='enabled')
+    fake_github.add_pull('tatsh/repo', 1)
+    fake_github.add_notification('tatsh/repo',
+                                 1,
+                                 subject_url='https://api.github.com/repos/tatsh/repo/pulls',
+                                 thread_id='4321')
+    await merge_dependabot_pull_requests(token='fake_token', mark_notifications_done=True)
+    assert fake_github.merge_calls == [('tatsh/repo', 1, {'merge_method': 'rebase'})]
+    assert fake_github.threads_marked_done == []
+
+
+@pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_archives_email_token_failure(
+        caplog: pytest.LogCaptureFixture, fake_github: FakeGitHub, mocker: MockerFixture) -> None:
+    mocker.patch('keyring.get_password', return_value=CREDENTIALS_JSON)
+    fake_github.add_repo('tatsh/repo', security_status='enabled')
+    fake_github.add_pull('tatsh/repo', 1)
+    fake_github.gmail.thread_ids = ['t1']
+    fake_github.gmail.token_status = 400
+    fake_github.gmail.token_payload = {'error': 'invalid_grant'}
+    with caplog.at_level(logging.WARNING, logger='deltona.git'):
+        await merge_dependabot_pull_requests(token='fake_token', archive_email=True)
+    assert fake_github.merge_calls == [('tatsh/repo', 1, {'merge_method': 'rebase'})]
+    assert fake_github.gmail.archived_threads == []
+    assert any('access token' in record.getMessage() for record in caplog.records)
+
+
+@pytest.mark.asyncio
 async def test_merge_dependabot_pull_requests_notification_failure_does_not_fail_merge(
         caplog: pytest.LogCaptureFixture, fake_github: FakeGitHub) -> None:
     fake_github.add_repo('tatsh/repo', security_status='enabled')

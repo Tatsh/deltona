@@ -221,15 +221,18 @@ class FakeGitHub:
                          number: int,
                          *,
                          thread_id: str,
-                         subject_type: str = 'PullRequest') -> None:
+                         subject_type: str = 'PullRequest',
+                         subject_url: str | None = None) -> None:
         self.notifications.append({
             'id': thread_id,
             'repository': {
                 'full_name': full_name
             },
             'subject': {
-                'type': subject_type,
-                'url': f'https://api.github.com/repos/{full_name}/pulls/{number}'
+                'type':
+                    subject_type,
+                'url': (f'https://api.github.com/repos/{full_name}/pulls/{number}'
+                        if subject_url is None else subject_url)
             }
         })
 
