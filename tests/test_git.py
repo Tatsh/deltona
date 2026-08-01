@@ -60,7 +60,17 @@ async def test_merge_dependabot_pull_requests_success_get_pull_fails(
 async def test_merge_dependabot_pull_requests_success_alt(fake_github: FakeGitHub) -> None:
     fake_github.add_repo('tatsh/repo',
                          security_status='not enabled',
-                         files={'.github/workflows/dependabot.yml'})
+                         files={'.github/dependabot.yml'})
+    fake_github.add_pull('tatsh/repo', 1)
+    await merge_dependabot_pull_requests(token='fake_token')
+    assert fake_github.merge_calls == [('tatsh/repo', 1, {'merge_method': 'rebase'})]
+
+
+@pytest.mark.parametrize('path', ['.github/dependabot.yml', '.github/dependabot.yaml'])
+@pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_config_without_security_and_analysis(
+        fake_github: FakeGitHub, path: str) -> None:
+    fake_github.add_repo('tatsh/repo', security_status=None, files={path})
     fake_github.add_pull('tatsh/repo', 1)
     await merge_dependabot_pull_requests(token='fake_token')
     assert fake_github.merge_calls == [('tatsh/repo', 1, {'merge_method': 'rebase'})]
@@ -152,10 +162,9 @@ async def test_merge_dependabot_pull_requests_does_not_add_duplicate_recreate_co
 @pytest.mark.asyncio
 async def test_merge_dependabot_pull_requests_logs_unexpected_error_and_continues(
         fake_github: FakeGitHub) -> None:
-    fake_github.add_repo(
-        'tatsh/boom',
-        security_status='disabled',
-        contents_exc={'.github/workflows/dependabot.yml': RuntimeError('unexpected')})
+    fake_github.add_repo('tatsh/boom',
+                         security_status='disabled',
+                         contents_exc={'.github/dependabot.yml': RuntimeError('unexpected')})
     fake_github.add_repo('tatsh/healthy', security_status='enabled')
     fake_github.add_pull('tatsh/healthy', 1)
     await merge_dependabot_pull_requests(token='fake_token')

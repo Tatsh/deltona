@@ -15,6 +15,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   This makes the GitHub helpers natively asynchronous (no thread pool) and replaces the `pygithub`
   optional dependency with `gidgethub`. `get_github_default_branch` is now a coroutine.
 
+### Fixed
+
+- `merge-dependabot-prs` no longer skips repositories that are configured with a Dependabot
+  configuration file. Detection probed `.github/workflows/dependabot.yml`, which is not a path
+  GitHub recognises; `.github/dependabot.yml` and `.github/dependabot.yaml` are now checked
+  instead. Private repositories were affected the most, because GitHub omits
+  `security_and_analysis` for them and the file probe was the only remaining signal.
+- `merge-dependabot-prs` and `merge-pre-commit-prs` now log at debug level when a repository is
+  skipped, so `-d` reports why a repository was passed over instead of omitting it silently.
+
 ## [0.2.4] - 2026-05-23
 
 ### Added

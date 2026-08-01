@@ -26,6 +26,9 @@ __all__ = ('BotMergeError', 'DependabotMergeError', 'PreCommitCIMergeError',
 
 log = logging.getLogger(__name__)
 
+# Paths GitHub accepts for a Dependabot configuration file.
+_DEPENDABOT_CONFIG_PATHS = ('.github/dependabot.yml', '.github/dependabot.yaml')
+
 
 class BotMergeError(RuntimeError):
     """Raised when one or more bot pull requests could not be merged."""
@@ -154,18 +157,19 @@ async def _uses_dependabot(gh: gidgethub.abc.GitHubAPI, repo: Mapping[str, Any])
     import gidgethub  # ruff:ignore[import-outside-top-level]
 
     full_name = repo['full_name']
-    # The /user/repos list endpoint omits security_and_analysis, so fetch the full repository to
-    # read the Dependabot security-updates status when the field is absent.
+    for path in _DEPENDABOT_CONFIG_PATHS:
+        try:
+            await gh.getitem(f'/repos/{full_name}/contents/{path}')
+        except gidgethub.HTTPException:
+            continue
+        return True
+    # GitHub omits security_and_analysis from the /user/repos list endpoint, and from the
+    # single-repository endpoint for repositories the token has no admin rights on, so only fetch
+    # the full repository once no configuration file has been found.
     if 'security_and_analysis' not in repo:
         repo = await gh.getitem(f'/repos/{full_name}')
     updates = (repo.get('security_and_analysis') or {}).get('dependabot_security_updates') or {}
-    if updates.get('status') == 'enabled':
-        return True
-    try:
-        await gh.getitem(f'/repos/{full_name}/contents/.github/workflows/dependabot.yml')
-    except gidgethub.HTTPException:
-        return False
-    return True
+    return updates.get('status') == 'enabled'
 
 
 async def _uses_pre_commit_ci(gh: gidgethub.abc.GitHubAPI, repo: Mapping[str, Any]) -> bool:
@@ -222,10 +226,13 @@ async def _merge_bot_pull_requests(*,
     async def process_repo(repo: Mapping[str, Any]) -> tuple[str, int]:
         async with task_limiter:
             full_name = repo['full_name']
+            if repo['archived']:
+                log.debug('Skipping archived repository `%s`.', full_name)
+                return full_name, 0
             try:
-                if repo['archived']:
-                    return full_name, 0
                 if not await uses_bot(gh, repo):
+                    log.debug('Skipping repository `%s`: no %s configuration detected.', full_name,
+                              bot_login)
                     return full_name, 0
                 log.info('Repository: %s', repo['name'])
                 pull_numbers = [
