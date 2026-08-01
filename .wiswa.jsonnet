@@ -294,7 +294,10 @@ local utils = import 'utils.libsonnet';
     include_only: ['deltona'],
     test_commands: ['add-cdda-times --help'],
     uv_sync_args: ['--all-extras', '--all-groups'],
-    requirements_filter: 'beautifulsoup4|gidgethub|gitpython|html5lib|mutagen|paramiko|pexpect|pillow|platformdirs|psutil|pydbus|pygobject|pyperclip|python-xz|pyyaml|unidecode|yt-dlp',
+    // Every package named by an entry in pyproject.optional-dependencies, so that the AppImage
+    // carries all of them. Omitting one breaks `deltona --help`, which imports every command
+    // module.
+    requirements_filter: 'beautifulsoup4|gidgethub|gitpython|html5lib|keyring|mutagen|paramiko|pexpect|pillow|platformdirs|psutil|pydbus|pygobject|pyperclip|python-xz|pyyaml|send2trash|unidecode|yt-dlp',
   },
   local apt_packages = ['libcairo2-dev', 'libgirepository-2.0-dev'],
   github+: {
