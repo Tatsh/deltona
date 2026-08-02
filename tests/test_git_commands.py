@@ -10,9 +10,13 @@ from deltona.commands.git import (
     merge_pre_commit_ci_prs_main,
 )
 from deltona.git import DependabotMergeError, PreCommitCIMergeError
+from deltona.gmail import GmailConfigurationError
+import click
 import pytest
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from click.testing import CliRunner
     from pytest_mock import MockerFixture
 
@@ -148,6 +152,68 @@ def test_merge_dependabot_prs_main_forwards_concurrency_options(mocker: MockerFi
                                        max_concurrent_http_requests=5,
                                        repos=None,
                                        token='dummy_token')
+
+
+def test_merge_dependabot_prs_main_gmail_not_configured_aborts(mocker: MockerFixture,
+                                                               runner: CliRunner) -> None:
+    mocker.patch('deltona.commands.git.merge_dependabot_pull_requests',
+                 new_callable=mocker.AsyncMock,
+                 side_effect=GmailConfigurationError('No Google credentials are stored.'))
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+
+    result = runner.invoke(merge_dependabot_prs_main, ['-A'])
+    assert result.exit_code != 0
+    assert 'No Google credentials are stored.' in result.output
+    assert 'Google Cloud console' in result.output
+    assert '--authorize-gmail' in result.output
+
+
+def test_merge_dependabot_prs_main_authorize_gmail(mocker: MockerFixture, runner: CliRunner,
+                                                   tmp_path: Path) -> None:
+    mock_authorize = mocker.patch('deltona.commands.git.authorize', return_value='{"stored": 1}')
+    mock_set = mocker.patch('keyring.set_password')
+    mock_merge = mocker.patch('deltona.commands.git.merge_dependabot_pull_requests',
+                              new_callable=mocker.AsyncMock)
+    client_secret = tmp_path / 'client_secret.json'
+    client_secret.write_text('{"installed": {}}')
+
+    result = runner.invoke(
+        merge_dependabot_prs_main,
+        ['--authorize-gmail', '--client-secret',
+         str(client_secret), '-E', 'me@example.com'])
+    assert result.exit_code == 0
+    assert mock_authorize.call_args.args == ('{"installed": {}}',)
+    # The URL is echoed rather than opened, so it is visible over SSH.
+    assert mock_authorize.call_args.kwargs['notify'] is click.echo
+    mock_set.assert_called_once_with('deltona:mpr:google', 'me@example.com', '{"stored": 1}')
+    # The merge must not run when only authorising.
+    mock_merge.assert_not_called()
+
+
+def test_merge_dependabot_prs_main_authorize_gmail_requires_options(mocker: MockerFixture,
+                                                                    runner: CliRunner) -> None:
+    mock_authorize = mocker.patch('deltona.commands.git.authorize')
+
+    result = runner.invoke(merge_dependabot_prs_main, ['--authorize-gmail'])
+    assert result.exit_code != 0
+    assert '--client-secret' in result.output
+    mock_authorize.assert_not_called()
+
+
+def test_merge_dependabot_prs_main_authorize_gmail_reports_failure(mocker: MockerFixture,
+                                                                   runner: CliRunner,
+                                                                   tmp_path: Path) -> None:
+    mocker.patch('deltona.commands.git.authorize',
+                 side_effect=GmailConfigurationError('Google returned no refresh token.'))
+    client_secret = tmp_path / 'client_secret.json'
+    client_secret.write_text('{}')
+
+    result = runner.invoke(
+        merge_dependabot_prs_main,
+        ['--authorize-gmail', '--client-secret',
+         str(client_secret), '-E', 'me@example.com'])
+    assert result.exit_code != 0
+    assert 'Google returned no refresh token.' in result.output
 
 
 @pytest.mark.parametrize('flag', ['-A', '--archive-email'])

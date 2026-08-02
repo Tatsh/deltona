@@ -2,25 +2,61 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
+from urllib.parse import parse_qs, urlencode, urlparse
 import json
 import logging
+import urllib.error
+import urllib.request
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Callable
 
     import niquests
 
-__all__ = ('GmailError', 'archive_github_pull_request_email', 'get_access_token')
+__all__ = ('KEYRING_SERVICE', 'REDIRECT_URI', 'SCOPE', 'GmailConfigurationError', 'GmailError',
+           'archive_github_pull_request_email', 'authorize', 'get_access_token')
 
 log = logging.getLogger(__name__)
 
+KEYRING_SERVICE = 'deltona:mpr:google'
+"""Keyring service the authorized user credential is stored under, keyed on the email address.
+
+:meta hide-value:
+"""
+REDIRECT_URI = 'http://127.0.0.1:45678'
+"""Loopback address Google sends the browser to after consent.
+
+Nothing listens on it. The browser fails to connect and the authorisation code stays visible in
+the address bar, which is what makes the flow work when the browser is on another machine.
+
+:meta hide-value:
+"""
+SCOPE = 'https://www.googleapis.com/auth/gmail.modify'
+"""The OAuth scope required to remove the ``INBOX`` label from a thread.
+
+:meta hide-value:
+"""
+
+# A rejected or insufficiently scoped token is a setup problem and must stop the run, whereas any
+# other status is treated as transient.
+_REJECTED_STATUSES = (HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN)
+_SCOPE_HINT = (' The token was rejected, so the credentials or the granted scope are wrong. The '
+               f'scope must include {SCOPE}.')
+
 _API_BASE_URL = 'https://gmail.googleapis.com/gmail/v1/users/me'
-_TOKEN_URL = 'https://oauth2.googleapis.com/token'  # noqa: S105
+_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
+_TOKEN_URL = 'https://oauth2.googleapis.com/token'  # ruff:ignore[hardcoded-password-string]
 
 
 class GmailError(RuntimeError):
     """Raised when the Gmail API or the OAuth token endpoint returns an error."""
+
+
+class GmailConfigurationError(GmailError):
+    """Raised when Gmail support is requested but is not set up correctly."""
 
 
 async def get_access_token(session: niquests.AsyncSession, *, credentials: str) -> str:
@@ -42,14 +78,20 @@ async def get_access_token(session: niquests.AsyncSession, *, credentials: str) 
 
     Raises
     ------
-    GmailError
+    GmailConfigurationError
         If the credential JSON is unusable or the token endpoint fails.
     """
     try:
         data: Mapping[str, Any] = json.loads(credentials)
     except json.JSONDecodeError as e:
         msg = 'The stored Google credentials are not valid JSON.'
-        raise GmailError(msg) from e
+        raise GmailConfigurationError(msg) from e
+    # A client secret downloaded from the Google Cloud console nests everything under `installed`
+    # or `web`, so unwrap it before looking for the fields.
+    for wrapper in ('installed', 'web'):
+        if isinstance(data.get(wrapper), Mapping):
+            data = data[wrapper]
+            break
     try:
         payload = {
             'client_id': data['client_id'],
@@ -58,17 +100,117 @@ async def get_access_token(session: niquests.AsyncSession, *, credentials: str) 
             'refresh_token': data['refresh_token']
         }
     except KeyError as e:
-        msg = f'The stored Google credentials are missing `{e.args[0]}`.'
-        raise GmailError(msg) from e
+        msg = (f'The stored Google credentials are missing `{e.args[0]}`. The keys present are '
+               f'{", ".join(sorted(data)) or "(none)"}. A client secret downloaded from the Google '
+               'Cloud console is not enough on its own; an authorized user credential containing '
+               'a refresh token is required.')
+        raise GmailConfigurationError(msg) from e
     response = await session.post(_TOKEN_URL, data=payload)
     if not response.ok:
-        msg = f'The Google token endpoint returned HTTP {response.status_code}.'
-        raise GmailError(msg)
+        msg = (f'The Google token endpoint returned HTTP {response.status_code}. The stored '
+               'refresh token is probably expired or revoked.')
+        raise GmailConfigurationError(msg)
     token = (response.json() or {}).get('access_token')
     if not token:
         msg = 'The Google token endpoint did not return an access token.'
-        raise GmailError(msg)
+        raise GmailConfigurationError(msg)
     return str(token)
+
+
+def authorize(client_secret: str,
+              *,
+              read_redirect: Callable[[], str],
+              notify: Callable[[str], None] | None = None) -> str:
+    """
+    Run the installed application OAuth flow and return an authorized user credential.
+
+    The consent URL is handed to ``notify`` and the redirected URL is read back
+    through ``read_redirect``. Nothing is served locally and no browser is
+    started, so the browser may run on a different machine to this code. The
+    redirect deliberately points at a loopback address nothing listens on: the
+    browser fails to connect, but the authorisation code is in the address bar
+    either way, which is what has to be pasted back.
+
+    Parameters
+    ----------
+    client_secret : str
+        The client secret JSON downloaded from the Google Cloud console.
+    read_redirect : Callable[[], str]
+        Returns the URL the browser was redirected to, as pasted by the user.
+    notify : Callable[[str], None] | None
+        Called with the consent URL. Defaults to logging it.
+
+    Returns
+    -------
+    str
+        The authorized user JSON to store in the keyring.
+
+    Raises
+    ------
+    GmailConfigurationError
+        If the client secret is unusable, consent does not complete, or Google
+        returns no refresh token.
+    """
+    try:
+        raw = json.loads(client_secret)
+    except json.JSONDecodeError as e:
+        msg = 'The client secret is not valid JSON.'
+        raise GmailConfigurationError(msg) from e
+    config = raw.get('installed') or raw.get('web') or raw
+    try:
+        client_id, secret = config['client_id'], config['client_secret']
+    except KeyError as e:
+        msg = f'The client secret is missing `{e.args[0]}`.'
+        raise GmailConfigurationError(msg) from e
+    url = f'{_AUTH_URL}?' + urlencode({
+        'access_type': 'offline',
+        'client_id': client_id,
+        'prompt': 'consent',
+        'redirect_uri': REDIRECT_URI,
+        'response_type': 'code',
+        'scope': SCOPE
+    })
+    message = (f'Open this URL in a browser on any machine:\n\n{url}\n\nAfter granting access the '
+               f'browser is sent to {REDIRECT_URI} and fails to connect, which is expected. Copy '
+               'the whole address it ended up at and paste it here.')
+    if notify is None:
+        log.info('%s', message)
+    else:
+        notify(message)
+    received = {k: v[0] for k, v in parse_qs(urlparse(read_redirect().strip()).query).items()}
+    if 'code' not in received:
+        msg = (f'The pasted URL has no authorisation code in it. It carried '
+               f'{", ".join(sorted(received)) or "no query string at all"}.')
+        raise GmailConfigurationError(msg)
+    request = urllib.request.Request(_TOKEN_URL,
+                                     data=urlencode({
+                                         'client_id': client_id,
+                                         'client_secret': secret,
+                                         'code': received['code'],
+                                         'grant_type': 'authorization_code',
+                                         'redirect_uri': REDIRECT_URI
+                                     }).encode(),
+                                     headers={'Content-Type': 'application/x-www-form-urlencoded'})
+    try:
+        # The URL is the module-level token endpoint constant, so the scheme is always HTTPS.
+        with urllib.request.urlopen(request) as response:  # ruff:ignore[suspicious-url-open-usage]
+            payload = json.load(response)
+    except urllib.error.URLError as e:
+        msg = f'The Google token endpoint rejected the authorisation code: {e}'
+        raise GmailConfigurationError(msg) from e
+    if 'refresh_token' not in payload:
+        msg = ('Google returned no refresh token. Revoke the application at '
+               'https://myaccount.google.com/permissions and authorise again.')
+        raise GmailConfigurationError(msg)
+    return json.dumps(
+        {
+            'client_id': client_id,
+            'client_secret': secret,
+            'refresh_token': payload['refresh_token'],
+            'type': 'authorized_user'
+        },
+        indent=2,
+        sort_keys=True)
 
 
 def _search_query(full_name: str, number: int) -> str:
@@ -78,6 +220,9 @@ def _search_query(full_name: str, number: int) -> str:
     # <owner/repository/pull/number@github.com> instead would be narrower, not broader: Gmail's
     # rfc822msgid operator matches the Message-ID header only, never the References header that
     # carries that identifier on replies.
+    #
+    # Deliberately not restricted to the inbox. Gmail searches all mail bar spam and trash, so a
+    # thread that was archived earlier is still found and can still be marked read.
     owner, name = full_name.split('/', 1)
     return f'list:{name}.{owner}.github.com subject:"(PR #{number})"'
 
@@ -85,13 +230,18 @@ def _search_query(full_name: str, number: int) -> str:
 async def archive_github_pull_request_email(session: niquests.AsyncSession, *, access_token: str,
                                             full_name: str, number: int) -> int:
     """
-    Archive the Gmail threads for a GitHub pull request notification.
+    Archive and mark read the Gmail threads for a GitHub pull request notification.
 
     Threads are matched on the ``List-ID`` GitHub sets per repository together
     with the pull request number carried in the subject, so any message in the
-    thread is enough to find it. Threads are archived by removing the ``INBOX``
-    label, which is what the Gmail web interface calls archiving. Messages are
-    not deleted and stay searchable.
+    thread is enough to find it. The search covers all mail rather than only the
+    inbox, so a thread archived by an earlier run is still found and still gets
+    marked read.
+
+    The ``INBOX`` and ``UNREAD`` labels are removed, which is what the Gmail web
+    interface calls archiving and marking as read. Removing a label a thread does
+    not carry is not an error, so this is safe whatever state the thread is in.
+    Messages are not deleted and stay searchable.
 
     Parameters
     ----------
@@ -111,8 +261,11 @@ async def archive_github_pull_request_email(session: niquests.AsyncSession, *, a
 
     Raises
     ------
+    GmailConfigurationError
+        If Gmail rejects the token, which means the credentials or the granted
+        scope are wrong.
     GmailError
-        If Gmail returns an error for the search or for a modification.
+        If Gmail returns any other error for the search or for a modification.
     """
     headers = {'Authorization': f'Bearer {access_token}'}
     response = await session.get(f'{_API_BASE_URL}/threads',
@@ -120,16 +273,20 @@ async def archive_github_pull_request_email(session: niquests.AsyncSession, *, a
                                  params={'q': _search_query(full_name, number)})
     if not response.ok:
         msg = f'Gmail returned HTTP {response.status_code} searching for PR {number}.'
+        if response.status_code in _REJECTED_STATUSES:
+            raise GmailConfigurationError(msg + _SCOPE_HINT)
         raise GmailError(msg)
     threads = (response.json() or {}).get('threads') or []
     archived = 0
     for thread in threads:
         modified = await session.post(f'{_API_BASE_URL}/threads/{thread["id"]}/modify',
                                       headers=headers,
-                                      json={'removeLabelIds': ['INBOX']})
+                                      json={'removeLabelIds': ['INBOX', 'UNREAD']})
         if not modified.ok:
             msg = (f'Gmail returned HTTP {modified.status_code} archiving thread '
                    f'`{thread["id"]}`.')
+            if modified.status_code in _REJECTED_STATUSES:
+                raise GmailConfigurationError(msg + _SCOPE_HINT)
             raise GmailError(msg)
         archived += 1
     return archived

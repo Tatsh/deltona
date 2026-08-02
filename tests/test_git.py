@@ -11,6 +11,7 @@ from deltona.git import (
     merge_dependabot_pull_requests,
     merge_pre_commit_ci_pull_requests,
 )
+from deltona.gmail import GmailConfigurationError
 import pytest
 
 if TYPE_CHECKING:
@@ -133,11 +134,9 @@ async def test_merge_dependabot_pull_requests_archives_email_token_failure(
     fake_github.gmail.thread_ids = ['t1']
     fake_github.gmail.token_status = 400
     fake_github.gmail.token_payload = {'error': 'invalid_grant'}
-    with caplog.at_level(logging.WARNING, logger='deltona.git'):
+    with pytest.raises(GmailConfigurationError, match='HTTP 400'):
         await merge_dependabot_pull_requests(token='fake_token', archive_email=True)
-    assert fake_github.merge_calls == [('tatsh/repo', 1, {'merge_method': 'rebase'})]
     assert fake_github.gmail.archived_threads == []
-    assert any('access token' in record.getMessage() for record in caplog.records)
 
 
 @pytest.mark.asyncio
@@ -221,9 +220,22 @@ async def test_merge_dependabot_pull_requests_archives_email_missing_configurati
     fake_github.user_email = user_email
     fake_github.add_repo('tatsh/repo', security_status='enabled')
     fake_github.add_pull('tatsh/repo', 1)
-    await merge_dependabot_pull_requests(token='fake_token', archive_email=True)
-    assert fake_github.merge_calls == [('tatsh/repo', 1, {'merge_method': 'rebase'})]
+    with pytest.raises(GmailConfigurationError):
+        await merge_dependabot_pull_requests(token='fake_token', archive_email=True)
     assert fake_github.gmail.archived_threads == []
+
+
+@pytest.mark.parametrize('status', [401, 403])
+@pytest.mark.asyncio
+async def test_merge_dependabot_pull_requests_rejected_token_stops_the_run(
+        fake_github: FakeGitHub, mocker: MockerFixture, status: int) -> None:
+    mocker.patch('keyring.get_password', return_value=CREDENTIALS_JSON)
+    fake_github.add_repo('tatsh/repo', security_status='enabled')
+    fake_github.add_pull('tatsh/repo', 1)
+    fake_github.gmail.thread_ids = ['t1']
+    fake_github.gmail.modify_status = status
+    with pytest.raises(GmailConfigurationError, match='scope'):
+        await merge_dependabot_pull_requests(token='fake_token', archive_email=True)
 
 
 @pytest.mark.asyncio

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from functools import partial
+from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING
 import getpass
@@ -20,6 +21,12 @@ from deltona.git import (
     get_github_default_branch,
     merge_dependabot_pull_requests,
     merge_pre_commit_ci_pull_requests,
+)
+from deltona.gmail import (
+    KEYRING_SERVICE as GMAIL_KEYRING_SERVICE,
+    SCOPE as GMAIL_SCOPE,
+    GmailError,
+    authorize,
 )
 import anyio
 import click
@@ -141,16 +148,69 @@ def _run_bot_merge_with_retry(make_runner: Callable[[tuple[str, ...] | None],
             repos = tuple(sorted(e.remaining))
 
 
+_GMAIL_SETUP_HELP = f"""Gmail archiving is not set up. To set it up:
+
+  1. In the Google Cloud console, enable the Gmail API for a project.
+  2. Configure the OAuth consent screen and add the scope {GMAIL_SCOPE}. Publish the
+     application, otherwise the refresh token expires after seven days.
+  3. Create an OAuth client ID of type "Desktop app" and download its JSON.
+  4. Run this command again with --authorize-gmail --client-secret PATH --email ADDRESS."""
+
+
+def _authorize_gmail(ctx: click.Context, _param: click.Parameter,
+                     value: bool) -> None:  # noqa: FBT001
+    import keyring  # ruff:ignore[import-outside-top-level]
+
+    if not value or ctx.resilient_parsing:
+        return
+    setup_logging(debug=ctx.params.get('debug', False), loggers={'deltona': {}, 'keyring': {}})
+    client_secret: Path | None = ctx.params.get('client_secret')
+    email: str | None = ctx.params.get('email')
+    if not client_secret or not email:
+        msg = '--authorize-gmail requires --client-secret and --email.'
+        raise click.UsageError(msg, ctx=ctx)
+    try:
+        credentials = authorize(client_secret.read_text(),
+                                notify=click.echo,
+                                read_redirect=partial(click.prompt, '\nPasted URL'))
+    except GmailError as e:
+        raise click.ClickException(str(e)) from e
+    keyring.set_password(GMAIL_KEYRING_SERVICE, email, credentials)
+    click.echo(f'Stored Google credentials for {email}.')
+    ctx.exit()
+
+
+def _run_bot_merge_or_abort(make_runner: Callable[[tuple[str, ...] | None],
+                                                  Callable[[], Awaitable[None]]],
+                            initial_repos: tuple[str, ...] | None, error_class: type[BotMergeError],
+                            delay: float) -> None:
+    try:
+        _run_bot_merge_with_retry(make_runner, initial_repos, error_class, delay)
+    except GmailError as e:
+        click.echo(f'{e}\n\n{_GMAIL_SETUP_HELP}', err=True)
+        raise click.Abort from e
+
+
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('-A',
               '--archive-email',
               is_flag=True,
               help='Archive the Gmail thread for each merged pull request.')
+@click.option('--authorize-gmail',
+              callback=_authorize_gmail,
+              expose_value=False,
+              is_flag=True,
+              help='Only authorise Gmail access and store the credentials, then exit.')
 @click.option('-b', '--base-url', help='Base URL for enterprise.')
-@click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
+@click.option('--client-secret',
+              is_eager=True,
+              type=click.Path(dir_okay=False, exists=True, path_type=Path),
+              help='Client secret JSON from the Google Cloud console, for --authorize-gmail.')
+@click.option('-d', '--debug', is_eager=True, is_flag=True, help='Enable debug output.')
 @click.option('--delay', type=float, default=120, help='Delay in seconds between attempts.')
 @click.option('-E',
               '--email',
+              is_eager=True,
               help='Email address to archive mail for. Defaults to the GitHub account address.')
 @click.option('--concurrency',
               type=int,
@@ -172,17 +232,20 @@ def _run_bot_merge_with_retry(make_runner: Callable[[tuple[str, ...] | None],
               help='Specific repository to process as NAME or OWNER/NAME. '
               'May be passed multiple times.')
 @click.option('-u', '--username', default=getpass.getuser(), help='Username.')
-def merge_dependabot_prs_main(username: str,
-                              repos: tuple[str, ...] = (),
-                              base_url: str | None = None,
-                              delay: float = 120,
-                              concurrency: int = 1,
-                              max_concurrent_http_requests: int = 3,
-                              email: str | None = None,
-                              *,
-                              archive_email: bool = False,
-                              debug: bool = False,
-                              mark_notifications_done: bool = False) -> None:
+def merge_dependabot_prs_main(
+        username: str,
+        repos: tuple[str, ...] = (),
+        base_url: str | None = None,
+        delay: float = 120,
+        concurrency: int = 1,
+        max_concurrent_http_requests: int = 3,
+        email: str | None = None,
+        # Consumed by the --authorize-gmail callback.
+        client_secret: Path | None = None,  # ruff:ignore[unused-function-argument]
+        *,
+        archive_email: bool = False,
+        debug: bool = False,
+        mark_notifications_done: bool = False) -> None:
     """Merge pull requests made by Dependabot on GitHub."""  # ruff:ignore[docstring-missing-exception]
     import keyring  # ruff:ignore[import-outside-top-level]
 
@@ -210,7 +273,7 @@ def merge_dependabot_prs_main(username: str,
                        repos=current_repos,
                        token=token)
 
-    _run_bot_merge_with_retry(make_runner, repos or None, DependabotMergeError, delay)
+    _run_bot_merge_or_abort(make_runner, repos or None, DependabotMergeError, delay)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -218,11 +281,21 @@ def merge_dependabot_prs_main(username: str,
               '--archive-email',
               is_flag=True,
               help='Archive the Gmail thread for each merged pull request.')
+@click.option('--authorize-gmail',
+              callback=_authorize_gmail,
+              expose_value=False,
+              is_flag=True,
+              help='Only authorise Gmail access and store the credentials, then exit.')
 @click.option('-b', '--base-url', help='Base URL for enterprise.')
-@click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
+@click.option('--client-secret',
+              is_eager=True,
+              type=click.Path(dir_okay=False, exists=True, path_type=Path),
+              help='Client secret JSON from the Google Cloud console, for --authorize-gmail.')
+@click.option('-d', '--debug', is_eager=True, is_flag=True, help='Enable debug output.')
 @click.option('--delay', type=float, default=120, help='Delay in seconds between attempts.')
 @click.option('-E',
               '--email',
+              is_eager=True,
               help='Email address to archive mail for. Defaults to the GitHub account address.')
 @click.option('--concurrency',
               type=int,
@@ -244,17 +317,20 @@ def merge_dependabot_prs_main(username: str,
               help='Specific repository to process as NAME or OWNER/NAME. '
               'May be passed multiple times.')
 @click.option('-u', '--username', default=getpass.getuser(), help='Username.')
-def merge_pre_commit_ci_prs_main(username: str,
-                                 repos: tuple[str, ...] = (),
-                                 base_url: str | None = None,
-                                 delay: float = 120,
-                                 concurrency: int = 1,
-                                 max_concurrent_http_requests: int = 3,
-                                 email: str | None = None,
-                                 *,
-                                 archive_email: bool = False,
-                                 debug: bool = False,
-                                 mark_notifications_done: bool = False) -> None:
+def merge_pre_commit_ci_prs_main(
+        username: str,
+        repos: tuple[str, ...] = (),
+        base_url: str | None = None,
+        delay: float = 120,
+        concurrency: int = 1,
+        max_concurrent_http_requests: int = 3,
+        email: str | None = None,
+        # Consumed by the --authorize-gmail callback.
+        client_secret: Path | None = None,  # ruff:ignore[unused-function-argument]
+        *,
+        archive_email: bool = False,
+        debug: bool = False,
+        mark_notifications_done: bool = False) -> None:
     """Merge pull requests made by pre-commit.ci on GitHub."""  # ruff:ignore[docstring-missing-exception]
     import keyring  # ruff:ignore[import-outside-top-level]
 
@@ -274,4 +350,4 @@ def merge_pre_commit_ci_prs_main(username: str,
                        repos=current_repos,
                        token=token)
 
-    _run_bot_merge_with_retry(make_runner, repos or None, PreCommitCIMergeError, delay)
+    _run_bot_merge_or_abort(make_runner, repos or None, PreCommitCIMergeError, delay)

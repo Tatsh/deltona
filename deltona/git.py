@@ -15,7 +15,13 @@ import anyio
 import keyring
 import niquests
 
-from .gmail import GmailError, archive_github_pull_request_email, get_access_token
+from .gmail import (
+    KEYRING_SERVICE as GMAIL_KEYRING_SERVICE,
+    GmailConfigurationError,
+    GmailError,
+    archive_github_pull_request_email,
+    get_access_token,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable, Mapping
@@ -220,32 +226,29 @@ async def _archive_email(session: niquests.AsyncSession, *, access_token: str, f
                                                            access_token=access_token,
                                                            full_name=full_name,
                                                            number=number)
-    except GmailError:
-        log.warning('Could not archive the email for PR %s in `%s`.', number, full_name)
+    except GmailConfigurationError:
+        # A rejected token will not fix itself on the next pull request, so let it stop the run.
+        raise
+    except GmailError as e:
+        log.warning('Could not archive the email for PR %s in `%s`. %s', number, full_name, e)
     else:
         if archived:
-            log.debug('Archived %s email thread(s) for PR %s in `%s`.', archived, number, full_name)
+            log.debug('Archived and marked read %s email thread(s) for PR %s in `%s`.', archived,
+                      number, full_name)
         else:
             log.debug('No email thread found for PR %s in `%s`.', number, full_name)
 
 
 async def _resolve_gmail_access_token(session: niquests.AsyncSession, gh: gidgethub.abc.GitHubAPI,
-                                      email: str | None) -> str | None:
+                                      email: str | None) -> str:
     if not (address := email or (await gh.getitem('/user')).get('email')):
-        log.warning('No email address is available, so emails will not be archived. Pass one '
-                    'explicitly.')
-        return None
-    if not (credentials := keyring.get_password('deltona:mpr:google', address)):
-        log.warning('No Google credentials are stored for `%s`, so emails will not be archived.',
-                    address)
-        return None
-    try:
-        token = await get_access_token(session, credentials=credentials)
-    except GmailError:
-        log.warning(
-            'Could not obtain a Gmail access token for `%s`, so emails will not be '
-            'archived.', address)
-        return None
+        msg = ('No email address is available. The authenticated GitHub account has no public '
+               'address, so pass one explicitly.')
+        raise GmailConfigurationError(msg)
+    if not (credentials := keyring.get_password(GMAIL_KEYRING_SERVICE, address)):
+        msg = f'No Google credentials are stored for `{address}`.'
+        raise GmailConfigurationError(msg)
+    token = await get_access_token(session, credentials=credentials)
     log.debug('Archiving emails as `%s`.', address)
     return token
 
@@ -363,6 +366,10 @@ async def _merge_bot_pull_requests(*,
     remaining: dict[str, int] = {}
     for repo, outcome in zip(repositories, gathered, strict=True):
         if isinstance(outcome, BaseException):
+            # Gmail being misconfigured affects every repository, so report it rather than
+            # burying one copy of it per repository in the log.
+            if isinstance(outcome, GmailConfigurationError):
+                raise outcome
             log.error('Unexpected error processing `%s`: %s', repo['full_name'], outcome)
             continue
         full_name, count = outcome

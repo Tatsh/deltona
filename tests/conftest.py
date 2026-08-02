@@ -108,6 +108,7 @@ class FakeGmail:
         self.thread_ids_by_query: dict[str, list[str]] | None = None
         self.queries: list[str] = []
         self.archived_threads: list[str] = []
+        self.modify_bodies: list[Mapping[str, Any]] = []
         self.token_requests: list[Mapping[str, str]] = []
 
     def route(self, method: str, url: str, params: Mapping[str, str] | None,
@@ -121,6 +122,7 @@ class FakeGmail:
             if self.modify_status >= 400:
                 return self.modify_status, {'error': {'message': 'modify failed'}}
             self.archived_threads.append(match['id'])
+            self.modify_bodies.append(dict(data or {}))
             return self.modify_status, {'id': match['id']}
         if url.endswith('/users/me/threads'):
             query = (params or {}).get('q', '')
@@ -167,7 +169,7 @@ class _FakeAsyncSession:
                    headers: Mapping[str, str] | None = None,
                    data: Mapping[str, str] | None = None,
                    json: Mapping[str, Any] | None = None) -> _FakeResponse:
-        status, payload = self._fake.gmail.route('POST', url, None, data)
+        status, payload = self._fake.gmail.route('POST', url, None, data if json is None else json)
         return _FakeResponse(status, payload)
 
 

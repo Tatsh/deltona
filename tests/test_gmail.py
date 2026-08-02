@@ -1,12 +1,24 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+import io
+import json
+import logging
+import urllib.error
 
-from deltona.gmail import GmailError, archive_github_pull_request_email, get_access_token
+from deltona.gmail import (
+    REDIRECT_URI,
+    GmailConfigurationError,
+    GmailError,
+    archive_github_pull_request_email,
+    authorize,
+    get_access_token,
+)
 import niquests
 import pytest
 
 if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
     from tests.conftest import FakeGitHub
 
 CREDENTIALS_JSON = ('{"client_id": "id", "client_secret": "secret", "refresh_token": "refresh", '
@@ -36,8 +48,30 @@ async def test_get_access_token_invalid_json(fake_github: FakeGitHub) -> None:
 @pytest.mark.asyncio
 async def test_get_access_token_missing_field(fake_github: FakeGitHub) -> None:
     async with niquests.AsyncSession() as session:
-        with pytest.raises(GmailError, match='missing'):
+        with pytest.raises(GmailError, match='missing') as exc_info:
             await get_access_token(session, credentials='{"client_id": "id"}')
+    # The keys present are named so that the wrong credential shape is obvious.
+    assert 'client_id' in str(exc_info.value)
+
+
+@pytest.mark.parametrize('wrapper', ['installed', 'web'])
+@pytest.mark.asyncio
+async def test_get_access_token_unwraps_client_secret(fake_github: FakeGitHub,
+                                                      wrapper: str) -> None:
+    credentials = json.dumps({wrapper: json.loads(CREDENTIALS_JSON)})
+    async with niquests.AsyncSession() as session:
+        token = await get_access_token(session, credentials=credentials)
+    assert token == fake_github.gmail.access_token
+
+
+@pytest.mark.asyncio
+async def test_get_access_token_client_secret_without_refresh_token(
+        fake_github: FakeGitHub) -> None:
+    credentials = json.dumps({'installed': {'client_id': 'id', 'client_secret': 'secret'}})
+    async with niquests.AsyncSession() as session:
+        with pytest.raises(GmailError, match='refresh_token') as exc_info:
+            await get_access_token(session, credentials=credentials)
+    assert 'client secret' in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -57,6 +91,88 @@ async def test_get_access_token_no_token_in_response(fake_github: FakeGitHub) ->
             await get_access_token(session, credentials=CREDENTIALS_JSON)
 
 
+REDIRECTED_URL = f'{REDIRECT_URI}/?code=the-code&scope=https://mail.google.com/'
+
+
+def _fake_token_response(mocker: MockerFixture, payload: dict[str, Any]) -> None:
+    response = mocker.MagicMock()
+    response.__enter__.return_value = io.StringIO(json.dumps(payload))
+    mocker.patch('deltona.gmail.urllib.request.urlopen', return_value=response)
+
+
+def test_authorize(mocker: MockerFixture) -> None:
+    _fake_token_response(mocker, {'refresh_token': 'the-refresh-token'})
+    result = json.loads(authorize(CREDENTIALS_JSON, read_redirect=lambda: REDIRECTED_URL))
+    assert result == {
+        'client_id': 'id',
+        'client_secret': 'secret',
+        'refresh_token': 'the-refresh-token',
+        'type': 'authorized_user'
+    }
+
+
+def test_authorize_accepts_a_pasted_url_with_surrounding_space(mocker: MockerFixture) -> None:
+    _fake_token_response(mocker, {'refresh_token': 'the-refresh-token'})
+    credentials = authorize(CREDENTIALS_JSON, read_redirect=lambda: f'  {REDIRECTED_URL}  \n')
+    assert json.loads(credentials)['refresh_token'] == 'the-refresh-token'
+
+
+def test_authorize_reports_the_url_to_notify(mocker: MockerFixture) -> None:
+    _fake_token_response(mocker, {'refresh_token': 'the-refresh-token'})
+    notified: list[str] = []
+    authorize(CREDENTIALS_JSON, notify=notified.append, read_redirect=lambda: REDIRECTED_URL)
+    assert len(notified) == 1
+    assert 'accounts.google.com' in notified[0]
+    assert 'access_type=offline' in notified[0]
+    assert 'prompt=consent' in notified[0]
+    # The user has to be told that the failed connection is expected.
+    assert REDIRECT_URI in notified[0]
+
+
+def test_authorize_unwraps_client_secret(mocker: MockerFixture) -> None:
+    _fake_token_response(mocker, {'refresh_token': 'the-refresh-token'})
+    credentials = json.dumps({'installed': {'client_id': 'id', 'client_secret': 'secret'}})
+    result = authorize(credentials, read_redirect=lambda: REDIRECTED_URL)
+    assert json.loads(result)['refresh_token'] == 'the-refresh-token'
+
+
+def test_authorize_invalid_json() -> None:
+    with pytest.raises(GmailConfigurationError, match='valid JSON'):
+        authorize('not json', read_redirect=lambda: REDIRECTED_URL)
+
+
+def test_authorize_missing_field() -> None:
+    with pytest.raises(GmailConfigurationError, match='missing'):
+        authorize('{"client_id": "id"}', read_redirect=lambda: REDIRECTED_URL)
+
+
+@pytest.mark.parametrize('pasted', [f'{REDIRECT_URI}/?error=access_denied', 'nonsense', ''])
+def test_authorize_pasted_url_without_a_code(pasted: str) -> None:
+    with pytest.raises(GmailConfigurationError, match='no authorisation code'):
+        authorize(CREDENTIALS_JSON, read_redirect=lambda: pasted)
+
+
+def test_authorize_no_refresh_token(mocker: MockerFixture) -> None:
+    _fake_token_response(mocker, {'access_token': 'only-an-access-token'})
+    with pytest.raises(GmailConfigurationError, match='no refresh token'):
+        authorize(CREDENTIALS_JSON, read_redirect=lambda: REDIRECTED_URL)
+
+
+def test_authorize_token_endpoint_rejects_code(mocker: MockerFixture) -> None:
+    mocker.patch('deltona.gmail.urllib.request.urlopen',
+                 side_effect=urllib.error.URLError('bad request'))
+    with pytest.raises(GmailConfigurationError, match='rejected the authorisation code'):
+        authorize(CREDENTIALS_JSON, read_redirect=lambda: REDIRECTED_URL)
+
+
+def test_authorize_logs_the_url_without_notify(caplog: pytest.LogCaptureFixture,
+                                               mocker: MockerFixture) -> None:
+    _fake_token_response(mocker, {'refresh_token': 'the-refresh-token'})
+    with caplog.at_level(logging.INFO, logger='deltona.gmail'):
+        authorize(CREDENTIALS_JSON, read_redirect=lambda: REDIRECTED_URL)
+    assert any('Open this URL' in record.getMessage() for record in caplog.records)
+
+
 @pytest.mark.asyncio
 async def test_archive_github_pull_request_email(fake_github: FakeGitHub) -> None:
     fake_github.gmail.thread_ids = ['a', 'b']
@@ -68,6 +184,12 @@ async def test_archive_github_pull_request_email(fake_github: FakeGitHub) -> Non
     assert archived == 2
     assert fake_github.gmail.archived_threads == ['a', 'b']
     assert fake_github.gmail.queries == ['list:repo.tatsh.github.com subject:"(PR #478)"']
+    # Marking read as well as archiving, and never restricted to the inbox, so a thread archived
+    # by an earlier run is still found and still gets marked read.
+    assert all(
+        body == {'removeLabelIds': ['INBOX', 'UNREAD']} for body in fake_github.gmail.modify_bodies)
+    assert 'in:inbox' not in fake_github.gmail.queries[0]
+    assert 'label:' not in fake_github.gmail.queries[0]
 
 
 @pytest.mark.asyncio
@@ -98,9 +220,24 @@ async def test_archive_github_pull_request_email_no_match(fake_github: FakeGitHu
 
 @pytest.mark.asyncio
 async def test_archive_github_pull_request_email_search_error(fake_github: FakeGitHub) -> None:
-    fake_github.gmail.search_status = 403
+    fake_github.gmail.search_status = 500
     async with niquests.AsyncSession() as session:
-        with pytest.raises(GmailError, match='HTTP 403'):
+        with pytest.raises(GmailError, match='HTTP 500') as exc_info:
+            await archive_github_pull_request_email(session,
+                                                    access_token='token',
+                                                    full_name='tatsh/repo',
+                                                    number=1)
+    # A server-side failure is transient, so it must not be reported as misconfiguration.
+    assert not isinstance(exc_info.value, GmailConfigurationError)
+
+
+@pytest.mark.parametrize('status', [401, 403])
+@pytest.mark.asyncio
+async def test_archive_github_pull_request_email_rejected_token(fake_github: FakeGitHub,
+                                                                status: int) -> None:
+    fake_github.gmail.search_status = status
+    async with niquests.AsyncSession() as session:
+        with pytest.raises(GmailConfigurationError, match='scope'):
             await archive_github_pull_request_email(session,
                                                     access_token='token',
                                                     full_name='tatsh/repo',
