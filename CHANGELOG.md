@@ -28,6 +28,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   keyring, and exits without merging anything. It prints a URL to open in a browser on any
   machine and reads back the address the browser was redirected to, so nothing is served locally
   and no browser is started. That is what makes it usable over SSH.
+- `deltona.string.pluralize` to select a noun's singular or plural form for a count, with an
+  optional irregular plural. Messages that used to write `thread(s)` or `repository(ies)` now read
+  correctly for the number they report.
 - `deltona.gmail` module with `archive_github_pull_request_email`, `authorize`, and
   `get_access_token`, plus the `KEYRING_SERVICE` and `SCOPE` constants and a
   `GmailConfigurationError` raised when Gmail support is requested but is not set up correctly.

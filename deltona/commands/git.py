@@ -28,6 +28,7 @@ from deltona.gmail import (
     GmailError,
     authorize,
 )
+from deltona.string import pluralize
 import anyio
 import click
 
@@ -142,7 +143,7 @@ def _run_bot_merge_with_retry(make_runner: Callable[[tuple[str, ...] | None],
             click.echo(f'Repositories with remaining {e.bot_label} pull requests:')
             for full_name in sorted(e.remaining):
                 count = e.remaining[full_name]
-                click.echo(f'  {full_name}: {count} pull request{"" if count == 1 else "s"}')
+                click.echo(f'  {full_name}: {count} {pluralize(count, "pull request")}')
             click.echo(f'Sleeping for {delay} seconds.')
             sleep(delay)
             repos = tuple(sorted(e.remaining))

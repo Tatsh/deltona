@@ -22,6 +22,7 @@ from deltona.io import (
     verify_sfv,
 )
 from deltona.refactor import remove_trailing_commas_in_paths
+from deltona.string import pluralize
 from deltona.typing import INCITS38Code, assert_not_none
 import click
 import tomlkit
@@ -222,7 +223,8 @@ def _project_root() -> Path | None:
 def _add_patterns(patterns: list[str], source: str, new: list[str]) -> None:
     if not new:
         return
-    log.debug('Adding %d exclude pattern(s) from `%s`: %s.', len(new), source, new)
+    log.debug('Adding %d exclude %s from `%s`: %s.', len(new), pluralize(len(new), 'pattern'),
+              source, new)
     patterns.extend(new)
 
 

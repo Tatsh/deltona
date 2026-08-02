@@ -22,6 +22,7 @@ from .gmail import (
     archive_github_pull_request_email,
     get_access_token,
 )
+from .string import pluralize
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable, Mapping
@@ -50,8 +51,9 @@ class BotMergeError(RuntimeError):
         self.remaining = dict(remaining)
         self.bot_label = bot_label
         total = sum(self.remaining.values())
-        super().__init__(f'{total} {bot_label} pull request(s) remain across '
-                         f'{len(self.remaining)} repository(ies).')
+        super().__init__(f'{total} {bot_label} {pluralize(total, "pull request")} remain across '
+                         f'{len(self.remaining)} '
+                         f'{pluralize(len(self.remaining), "repository", "repositories")}.')
 
 
 class DependabotMergeError(BotMergeError):
@@ -233,8 +235,8 @@ async def _archive_email(session: niquests.AsyncSession, *, access_token: str, f
         log.warning('Could not archive the email for PR %s in `%s`. %s', number, full_name, e)
     else:
         if archived:
-            log.debug('Archived and marked read %s email thread(s) for PR %s in `%s`.', archived,
-                      number, full_name)
+            log.debug('Archived and marked read %s email %s for PR %s in `%s`.', archived,
+                      pluralize(archived, 'thread'), number, full_name)
         else:
             log.debug('No email thread found for PR %s in `%s`.', number, full_name)
 

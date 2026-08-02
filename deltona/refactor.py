@@ -12,6 +12,8 @@ import tokenize
 import anyio
 import pathspec
 
+from .string import pluralize
+
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterable, Iterator
 
@@ -222,7 +224,7 @@ async def _gitignore_patterns(start: anyio.Path, repo_root: anyio.Path) -> list[
             except OSError as e:
                 log.debug('Could not read `%s`: %s.', gi, e)
                 continue
-            log.debug('Adding %d pattern(s) from `%s`.', len(lines), gi)
+            log.debug('Adding %d %s from `%s`.', len(lines), pluralize(len(lines), 'pattern'), gi)
             patterns.extend(lines)
     return patterns
 
@@ -235,7 +237,8 @@ async def _combined_spec(
         patterns.extend(await _gitignore_patterns(start, repo_root))
     extra_list = list(extra_excludes)
     if extra_list:
-        log.debug('Adding %d extra exclude pattern(s): %s.', len(extra_list), extra_list)
+        log.debug('Adding %d extra exclude %s: %s.', len(extra_list),
+                  pluralize(len(extra_list), 'pattern'), extra_list)
     patterns.extend(extra_list)
     if not patterns:
         log.debug('No exclude patterns; skipping spec construction.')

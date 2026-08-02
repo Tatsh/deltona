@@ -20,8 +20,8 @@ if TYPE_CHECKING:
 
 __all__ = ('add_unidecode_custom_replacement', 'cssq', 'cssq_one', 'fix_apostrophes',
            'fullwidth_to_narrow', 'hexstr2bytes', 'hexstr2bytes_generator', 'is_ascii',
-           'is_roman_numeral', 'is_url', 'rev_sentences', 'sanitize', 'slugify', 'strip_ansi',
-           'strip_ansi_if_no_colors', 'underscorize', 'unix_path_to_wine')
+           'is_roman_numeral', 'is_url', 'pluralize', 'rev_sentences', 'sanitize', 'slugify',
+           'strip_ansi', 'strip_ansi_if_no_colors', 'underscorize', 'unix_path_to_wine')
 
 ORD_MAX = 128
 STRIP_ANSI_PATTERN = re.compile(r'\x1B\[\d+(;\d+){0,2}m')
@@ -103,6 +103,30 @@ def is_ascii(s: Sequence[str]) -> bool:
         ``True`` if all characters are ASCII.
     """
     return len(s) == len(list(takewhile(lambda x: ord(x) < ORD_MAX, s)))
+
+
+def pluralize(count: int, singular: str, plural: str | None = None) -> str:
+    """
+    Choose the singular or plural form of a noun for a count.
+
+    Parameters
+    ----------
+    count : int
+        The number the noun describes.
+    singular : str
+        The singular form, such as ``'repository'``.
+    plural : str | None
+        The plural form. Defaults to ``singular`` with ``'s'`` appended, which is
+        wrong for irregular nouns, so pass it for those.
+
+    Returns
+    -------
+    str
+        The form matching ``count``.
+    """
+    if count == 1:
+        return singular
+    return f'{singular}s' if plural is None else plural
 
 
 def hexstr2bytes_generator(s: str) -> Iterator[int]:

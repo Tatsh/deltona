@@ -390,3 +390,14 @@ def test_cssq_returns_text_content(mocker: MockerFixture) -> None:
     mock_iselect.assert_called_once_with('selector', mocker.ANY, flags=0, limit=0)
     fake_tag1.get_text.assert_called_once_with(strip=True)
     fake_tag2.get_text.assert_called_once_with(strip=True)
+
+
+@pytest.mark.parametrize(('count', 'expected'), [(0, 'threads'), (1, 'thread'), (2, 'threads')])
+def test_pluralize(count: int, expected: str) -> None:
+    assert string.pluralize(count, 'thread') == expected
+
+
+@pytest.mark.parametrize(('count', 'expected'), [(0, 'repositories'), (1, 'repository'),
+                                                 (2, 'repositories')])
+def test_pluralize_irregular(count: int, expected: str) -> None:
+    assert string.pluralize(count, 'repository', 'repositories') == expected
