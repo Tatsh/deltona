@@ -218,6 +218,7 @@ norecursedirs
 norestart
 notarytool
 noto
+nullglob
 numpy
 nvenc
 nwinemenubuilder
@@ -281,6 +282,7 @@ setwinsize
 shellcheck
 shellformat
 shiftjis
+shopt
 signtool
 sigwinch
 siri

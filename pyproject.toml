@@ -4,12 +4,12 @@ requires = ["hatchling"]
 
 [dependency-groups]
 dev = [
-  "commitizen>=4.16.5",
+  "commitizen>=4.17.0",
   "cz-path>=0.0.7",
   "mypy>=2.3.0",
   "pydbus-stubs>=0; sys_platform == 'linux'",
   "ruff==0.16.1",
-  "ty>=0.0.63",
+  "ty>=0.0.65",
   "types-beautifulsoup4>=4.12.0.20250516",
   "types-binaryornot>=0.4.0.20260712",
   "types-paramiko>=5.0.0.20260724",
@@ -76,7 +76,7 @@ dependencies = [
   "bascom>=0.1.3",
   "binaryornot>=0.6.0",
   "click>=8.4.2",
-  "niquests>=3.20.1",
+  "niquests>=3.21.0",
   "pathspec>=1.1.1",
   "tomlkit>=0.15.1",
   "typing-extensions>=4.16.0",
@@ -100,7 +100,7 @@ desktop = [
   "pygobject>=3.56.3; sys_platform == 'linux'",
   "pyperclip>=1.11.0",
 ]
-git = ["gidgethub>=5.4.0", "gitpython>=3.1.56", "keyring>=25.7.0"]
+git = ["gidgethub>=5.4.0", "gitpython>=3.1.57", "keyring>=25.7.0"]
 media = ["keyring>=25.7.0", "mutagen>=1.48.1", "platformdirs>=4.11.0", "send2trash>=2.1.0"]
 string = ["pyyaml>=6.0.3", "unidecode>=1.4.0", "yt-dlp>=2026.7.4"]
 wine = ["pexpect>=4.9.0", "platformdirs>=4.11.0", "psutil>=7.2.2", "python-xz>=0.6.0"]
@@ -284,8 +284,8 @@ ignore = [
   "RUF201",
   "S404",
   "S603",
-  "S607",
   "TD002",
+  "S607",
 ]
 preview = true
 
