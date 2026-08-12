@@ -164,6 +164,7 @@ keyslots
 khtml
 killall
 kwargs
+kwrite
 kwriteconfig
 lahu
 laka
@@ -191,6 +192,7 @@ maskable
 maxrate
 mcdonalds
 metaflac
+mimeapps
 mimeinfo
 minhu
 minka

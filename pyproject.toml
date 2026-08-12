@@ -9,7 +9,7 @@ dev = [
   "mypy>=2.3.0",
   "pydbus-stubs>=0; sys_platform == 'linux'",
   "ruff==0.16.1",
-  "ty>=0.0.65",
+  "ty>=0.0.66",
   "types-beautifulsoup4>=4.12.0.20250516",
   "types-binaryornot>=0.4.0.20260712",
   "types-paramiko>=5.0.0.20260724",
@@ -100,7 +100,7 @@ desktop = [
   "pygobject>=3.56.3; sys_platform == 'linux'",
   "pyperclip>=1.11.0",
 ]
-git = ["gidgethub>=5.4.0", "gitpython>=3.1.57", "keyring>=25.7.0"]
+git = ["gidgethub>=5.4.0", "gitpython>=3.1.58", "keyring>=25.7.0"]
 media = ["keyring>=25.7.0", "mutagen>=1.48.1", "platformdirs>=4.11.0", "send2trash>=2.1.0"]
 string = ["pyyaml>=6.0.3", "unidecode>=1.4.0", "yt-dlp>=2026.7.4"]
 wine = ["pexpect>=4.9.0", "platformdirs>=4.11.0", "psutil>=7.2.2", "python-xz>=0.6.0"]
@@ -121,6 +121,7 @@ cssq = "deltona.commands.string:cssq_main"
 deltona = "deltona.commands.main:main"
 display-info-json = "deltona.commands.media:display_info_json_main"
 encode-dashcam = "deltona.commands.media:encode_dashcam_main"
+fix-mime-assocs = "deltona.commands.desktop:fix_mime_associations_main"
 fix-pwa-icon = "deltona.commands.www:fix_chromium_pwa_icon_main"
 flac-dir-finalize = "deltona.commands.media:flac_dir_finalize_main"
 fullwidth2ascii = "deltona.commands.string:fullwidth2ascii_main"

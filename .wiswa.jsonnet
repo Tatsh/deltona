@@ -49,6 +49,7 @@ local utils = import 'utils.libsonnet';
         'systemd-reset-tpm-cryptenroll': 'deltona.commands.admin:reset_tpm_enrollments_main',
         // desktop
         'connect-g603': 'deltona.commands.desktop:connect_g603_main',
+        'fix-mime-assocs': 'deltona.commands.desktop:fix_mime_associations_main',
         'inhibit-notifications': 'deltona.commands.desktop:inhibit_notifications_main',
         'kill-gamescope': 'deltona.commands.desktop:kill_gamescope_main',
         'mpv-sbs': 'deltona.commands.desktop:mpv_sbs_main',

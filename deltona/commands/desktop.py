@@ -18,6 +18,7 @@ import webbrowser
 
 from bascom import setup_logging
 from deltona.constants import CONTEXT_SETTINGS
+from deltona.desktop import fix_mime_associations
 from deltona.media import ffprobe
 from deltona.string import is_url
 from deltona.system import (
@@ -41,6 +42,56 @@ if TYPE_CHECKING:
     from pydbus.bus import Bus
 
 log = logging.getLogger(__name__)
+_APPLICATIONS_DIR = Path('/usr/share/applications')
+_MIME_TYPES_FILE = Path('/usr/share/mime/types')
+_MIMEAPPS_FILE = Path.home() / '.config/mimeapps.list'
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option('-a',
+              '--application',
+              'applications',
+              multiple=True,
+              required=True,
+              help='Desktop application ID to reconcile. May be repeated.',
+              metavar='DESKTOP_ID')
+@click.option('--applications-dir',
+              default=_APPLICATIONS_DIR,
+              type=click.Path(exists=True, file_okay=False, path_type=Path),
+              help='Directory containing desktop entry files.',
+              show_default=True)
+@click.option('-d', '--debug', is_flag=True, help='Enable debug logging.')
+@click.option('--dry-run', is_flag=True, help='Report changes without writing the file.')
+@click.option('--mime-types',
+              'mime_types_file',
+              default=_MIME_TYPES_FILE,
+              type=click.Path(exists=True, dir_okay=False, path_type=Path),
+              help='File containing known MIME types.',
+              show_default=True)
+@click.option('--mimeapps',
+              'mimeapps_file',
+              default=_MIMEAPPS_FILE,
+              type=click.Path(exists=True, dir_okay=False, path_type=Path, resolve_path=True),
+              help='MIME applications file to update.',
+              show_default='~/.config/mimeapps.list')
+def fix_mime_associations_main(applications: Sequence[str],
+                               applications_dir: Path = _APPLICATIONS_DIR,
+                               mime_types_file: Path = _MIME_TYPES_FILE,
+                               mimeapps_file: Path = _MIMEAPPS_FILE,
+                               *,
+                               debug: bool = False,
+                               dry_run: bool = False) -> None:
+    """Reconcile removed associations for selected desktop applications."""
+    setup_logging(debug=debug, loggers={'deltona': {}})
+    added, removed = fix_mime_associations(applications,
+                                           applications_dir=applications_dir,
+                                           dry_run=dry_run,
+                                           mime_types_file=mime_types_file,
+                                           mimeapps_file=mimeapps_file)
+    if dry_run:
+        click.echo(f'Would add {added} and remove {removed} MIME associations.')
+    else:
+        click.echo(f'Added {added} and removed {removed} MIME associations.')
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

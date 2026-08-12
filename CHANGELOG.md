@@ -11,6 +11,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `fix-mime-assocs` to reconcile selected desktop applications in the `[Removed Associations]`
+  section of `mimeapps.list`, with options to choose the desktop-entry directory, MIME-types file,
+  and `mimeapps.list` path, plus a dry-run mode.
 - `merge-dependabot-prs` and `merge-pre-commit-prs` `-A`/`--archive-email` to archive the Gmail
   thread notifying about each merged pull request, and `-E`/`--email` to choose the address.
   Without `-E` the address on the authenticated GitHub account is used. Credentials are read from

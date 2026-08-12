@@ -6,6 +6,7 @@ import errno
 
 from deltona.commands.desktop import (
     connect_g603_main,
+    fix_mime_associations_main,
     inhibit_notifications_main,
     kill_gamescope_main,
     mpv_sbs_main,
@@ -39,6 +40,60 @@ def _mpv_sbs_probe(width: int, height: int) -> dict[str, Any]:
             }
         }]
     }
+
+
+def test_fix_mime_associations_main(mocker: MockerFixture, runner: CliRunner,
+                                    tmp_path: Path) -> None:
+    applications_dir = tmp_path / 'applications'
+    applications_dir.mkdir()
+    mime_types_file = tmp_path / 'types'
+    mime_types_file.touch()
+    mimeapps_file = tmp_path / 'mimeapps.list'
+    mimeapps_file.touch()
+    fix_associations = mocker.patch('deltona.commands.desktop.fix_mime_associations',
+                                    return_value=(2, 1))
+
+    result = runner.invoke(fix_mime_associations_main, [
+        '--application', 'viewer', '--applications-dir',
+        str(applications_dir), '--mime-types',
+        str(mime_types_file), '--mimeapps',
+        str(mimeapps_file), '--dry-run'
+    ])
+
+    assert result.exit_code == 0
+    assert result.output == 'Would add 2 and remove 1 MIME associations.\n'
+    fix_associations.assert_called_once_with(('viewer',),
+                                             applications_dir=applications_dir,
+                                             dry_run=True,
+                                             mime_types_file=mime_types_file,
+                                             mimeapps_file=mimeapps_file)
+
+
+def test_fix_mime_associations_main_requires_application(runner: CliRunner) -> None:
+    result = runner.invoke(fix_mime_associations_main, [])
+    assert result.exit_code != 0
+    assert 'Missing option' in result.output
+
+
+def test_fix_mime_associations_main_reports_changes(mocker: MockerFixture, runner: CliRunner,
+                                                    tmp_path: Path) -> None:
+    applications_dir = tmp_path / 'applications'
+    applications_dir.mkdir()
+    mime_types_file = tmp_path / 'types'
+    mime_types_file.touch()
+    mimeapps_file = tmp_path / 'mimeapps.list'
+    mimeapps_file.touch()
+    mocker.patch('deltona.commands.desktop.fix_mime_associations', return_value=(2, 1))
+
+    result = runner.invoke(fix_mime_associations_main, [
+        '--application', 'viewer', '--applications-dir',
+        str(applications_dir), '--mime-types',
+        str(mime_types_file), '--mimeapps',
+        str(mimeapps_file)
+    ])
+
+    assert result.exit_code == 0
+    assert result.output == 'Added 2 and removed 1 MIME associations.\n'
 
 
 def test_inhibit_notifications_main_success(mocker: MockerFixture, runner: CliRunner) -> None:

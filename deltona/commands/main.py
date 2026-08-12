@@ -24,6 +24,7 @@ _COMMANDS: dict[str, str] = {
     'cssq': 'deltona.commands.string:cssq_main',
     'display-info-json': 'deltona.commands.media:display_info_json_main',
     'encode-dashcam': 'deltona.commands.media:encode_dashcam_main',
+    'fix-mime-assocs': 'deltona.commands.desktop:fix_mime_associations_main',
     'fix-pwa-icon': 'deltona.commands.www:fix_chromium_pwa_icon_main',
     'flac-dir-finalize': 'deltona.commands.media:flac_dir_finalize_main',
     'fullwidth2ascii': 'deltona.commands.string:fullwidth2ascii_main',
@@ -80,8 +81,8 @@ _COMMANDS: dict[str, str] = {
     'wineshell': 'deltona.commands.wine:wineshell_main'
 }
 _LINUX_ONLY: frozenset[str] = frozenset({
-    'clean-old-kernels-modules', 'connect-g603', 'inhibit-notifications', 'kill-gamescope',
-    'systemd-reset-tpm-cryptenroll', 'wait-for-disc'
+    'clean-old-kernels-modules', 'connect-g603', 'fix-mime-assocs', 'inhibit-notifications',
+    'kill-gamescope', 'systemd-reset-tpm-cryptenroll', 'wait-for-disc'
 })
 _NOT_WINDOWS: frozenset[str] = _LINUX_ONLY | frozenset(
     {'kill-wine', 'set-wine-fonts', 'unregister-wine-assocs', 'winegoginstall', 'wineshell'})
