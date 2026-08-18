@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 import re
 
@@ -618,7 +618,7 @@ def test_retry_gh_jobs_main_defaults_since_to_a_day_ago(mocker: MockerFixture,
 
     assert runner.invoke(retry_gh_jobs_main, []).exit_code == 0
     since = mock_find.call_args.kwargs['since']
-    assert since == (datetime.now(tz=UTC) - timedelta(days=1)).strftime('%Y-%m-%d')
+    assert since == (datetime.now(tz=timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%d')
 
 
 def test_retry_gh_jobs_main_passes_since_through(mocker: MockerFixture, runner: CliRunner) -> None:

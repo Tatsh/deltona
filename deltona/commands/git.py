@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import partial
 from pathlib import Path
 from time import sleep
@@ -445,7 +445,7 @@ def retry_gh_jobs_main(username: str,
         click.echo('No token.', err=True)
         raise click.Abort
     if since is None:
-        since = (datetime.now(tz=UTC) - timedelta(days=1)).strftime('%Y-%m-%d')
+        since = (datetime.now(tz=timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%d')
     candidates = anyio.run(
         partial(find_retryable_runs,
                 base_url=base_url,
