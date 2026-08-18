@@ -51,7 +51,6 @@ commitizen
 conftest
 connecttimeout
 consolas
-cooldown
 coveragerc
 coverallsapp
 cryptenroll
@@ -80,6 +79,7 @@ dyear
 econnrefused
 eeyore
 elif
+endswith
 enoent
 enotblk
 enrollment
@@ -145,7 +145,6 @@ ilong
 imagename
 imgbb
 incits
-intersphinx
 inul
 ioctl
 iselect
