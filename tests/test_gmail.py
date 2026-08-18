@@ -8,6 +8,7 @@ import urllib.error
 
 from deltona.gmail import (
     REDIRECT_URI,
+    GmailAuthorizationError,
     GmailConfigurationError,
     GmailError,
     archive_github_pull_request_email,
@@ -18,6 +19,8 @@ import niquests
 import pytest
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from pytest_mock import MockerFixture
     from tests.conftest import FakeGitHub
 
@@ -77,9 +80,45 @@ async def test_get_access_token_client_secret_without_refresh_token(
 @pytest.mark.asyncio
 async def test_get_access_token_endpoint_error(fake_github: FakeGitHub) -> None:
     fake_github.gmail.token_status = 400
-    fake_github.gmail.token_payload = {'error': 'invalid_grant'}
+    fake_github.gmail.token_payload = {
+        'error': 'invalid_grant',
+        'error_description': 'Token has been expired or revoked.'
+    }
     async with niquests.AsyncSession() as session:
-        with pytest.raises(GmailError, match='HTTP 400'):
+        with pytest.raises(GmailAuthorizationError) as exc_info:
+            await get_access_token(session, credentials=CREDENTIALS_JSON)
+    # What Google said, not a guess about it, and its own full stop must not double up.
+    assert str(exc_info.value) == ('The Google token endpoint returned HTTP 400: Token has been '
+                                   'expired or revoked.')
+
+
+@pytest.mark.asyncio
+async def test_get_access_token_endpoint_error_without_a_description(
+        fake_github: FakeGitHub) -> None:
+    fake_github.gmail.token_status = 400
+    fake_github.gmail.token_payload = {'error': 'invalid_client'}
+    async with niquests.AsyncSession() as session:
+        with pytest.raises(GmailAuthorizationError, match='invalid_client'):
+            await get_access_token(session, credentials=CREDENTIALS_JSON)
+
+
+@pytest.mark.asyncio
+async def test_get_access_token_endpoint_error_with_a_non_json_body(
+        fake_github: FakeGitHub, raw_body: Callable[[str], dict[str, str]]) -> None:
+    fake_github.gmail.token_status = 500
+    fake_github.gmail.token_payload = raw_body('<html>Gateway Timeout</html>')
+    async with niquests.AsyncSession() as session:
+        with pytest.raises(GmailAuthorizationError, match='HTTP 500'):
+            await get_access_token(session, credentials=CREDENTIALS_JSON)
+
+
+@pytest.mark.asyncio
+async def test_get_access_token_endpoint_error_with_an_unexpected_body(
+        fake_github: FakeGitHub) -> None:
+    fake_github.gmail.token_status = 500
+    fake_github.gmail.token_payload = ['unexpected']
+    async with niquests.AsyncSession() as session:
+        with pytest.raises(GmailAuthorizationError, match='HTTP 500'):
             await get_access_token(session, credentials=CREDENTIALS_JSON)
 
 

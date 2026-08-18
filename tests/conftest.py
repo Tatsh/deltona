@@ -13,7 +13,7 @@ from click.testing import CliRunner
 import pytest
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Callable, Mapping
 
     from pytest_mock import MockerFixture
     from typing_extensions import Self
@@ -33,6 +33,11 @@ if os.getenv('_PYTEST_RAISE', '0') != '0':  # pragma no cover
 @pytest.fixture
 def runner() -> CliRunner:
     return CliRunner()
+
+
+@pytest.fixture
+def raw_body() -> Callable[[str], dict[str, str]]:
+    return lambda text: {RAW_BODY_KEY: text}
 
 
 @dataclass
@@ -78,11 +83,24 @@ class FakeRepo:
         return data
 
 
+RAW_BODY_KEY = '__raw_body__'
+"""Payloads carrying this key are sent verbatim, so that ``json()`` raises as niquests would.
+
+A key rather than a marker class, because pytest imports this file as a top level ``conftest``
+module while tests refer to it as ``tests.conftest``, and the two copies of any class defined
+here would fail ``isinstance`` against each other.
+"""
+
+
 class _FakeResponse:
     def __init__(self, status_code: int, payload: Any) -> None:
         self.status_code = status_code
         self.headers = {'content-type': 'application/json; charset=utf-8'}
-        self.content = b'' if payload is None else json.dumps(payload).encode()
+        self._raw = isinstance(payload, dict) and RAW_BODY_KEY in payload
+        if self._raw:
+            self.content = str(payload[RAW_BODY_KEY]).encode()
+        else:
+            self.content = b'' if payload is None else json.dumps(payload).encode()
         self._payload = payload
 
     @property
@@ -90,6 +108,8 @@ class _FakeResponse:
         return self.status_code < 400
 
     def json(self) -> Any:
+        if self._raw:
+            return json.loads(self.content)
         return self._payload
 
 

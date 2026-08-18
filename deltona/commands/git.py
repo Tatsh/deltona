@@ -25,6 +25,7 @@ from deltona.git import (
 from deltona.gmail import (
     KEYRING_SERVICE as GMAIL_KEYRING_SERVICE,
     SCOPE as GMAIL_SCOPE,
+    GmailAuthorizationError,
     GmailError,
     authorize,
 )
@@ -149,13 +150,24 @@ def _run_bot_merge_with_retry(make_runner: Callable[[tuple[str, ...] | None],
             repos = tuple(sorted(e.remaining))
 
 
-_GMAIL_SETUP_HELP = f"""Gmail archiving is not set up. To set it up:
+def _gmail_reauthorize_help(command: str, email: str) -> str:
+    return ('Authorise again with:\n\n'
+            f'  {command} --authorize-gmail --email {email}\n\n'
+            'The OAuth client already stored for that address is reused, so there is nothing to '
+            'create or download. Consent expires after seven days while the publishing status of '
+            'the application is Testing; publishing it in the Google Cloud console stops that.')
 
-  1. In the Google Cloud console, enable the Gmail API for a project.
-  2. Configure the OAuth consent screen and add the scope {GMAIL_SCOPE}. Publish the
-     application, otherwise the refresh token expires after seven days.
-  3. Create an OAuth client ID of type "Desktop app" and download its JSON.
-  4. Run this command again with --authorize-gmail --client-secret PATH --email ADDRESS."""
+
+def _gmail_setup_help(command: str, email: str) -> str:
+    return (f'Gmail archiving has never been set up for {email}. Once only:\n\n'
+            '  1. In the Google Cloud console, enable the Gmail API for a project.\n'
+            f'  2. Configure the OAuth consent screen and add the scope {GMAIL_SCOPE}.\n'
+            '     Publish the application, otherwise consent expires after seven days.\n'
+            '  3. Create an OAuth client ID of type "Desktop app" and download its JSON.\n\n'
+            'Then authorise with:\n\n'
+            f'  {command} --authorize-gmail --client-secret PATH --email {email}\n\n'
+            'Later authorisations need only --authorize-gmail --email, since the client is '
+            'stored.')
 
 
 def _authorize_gmail(ctx: click.Context, _param: click.Parameter,
@@ -166,12 +178,19 @@ def _authorize_gmail(ctx: click.Context, _param: click.Parameter,
         return
     setup_logging(debug=ctx.params.get('debug', False), loggers={'deltona': {}, 'keyring': {}})
     client_secret: Path | None = ctx.params.get('client_secret')
-    email: str | None = ctx.params.get('email')
-    if not client_secret or not email:
-        msg = '--authorize-gmail requires --client-secret and --email.'
+    if not (email := ctx.params.get('email')):
+        msg = '--authorize-gmail requires --email.'
         raise click.UsageError(msg, ctx=ctx)
+    # Re-authorising reuses the client already stored beside the refresh token. Only the very
+    # first authorisation needs the JSON from the Google Cloud console.
+    client = (client_secret.read_text() if client_secret else keyring.get_password(
+        GMAIL_KEYRING_SERVICE, email))
+    if not client:
+        msg = (f'No OAuth client is stored for {email}, so --client-secret is required.\n\n'
+               f'{_gmail_setup_help(ctx.command_path, email)}')
+        raise click.ClickException(msg)
     try:
-        credentials = authorize(client_secret.read_text(),
+        credentials = authorize(client,
                                 notify=click.echo,
                                 read_redirect=partial(click.prompt, '\nPasted URL'))
     except GmailError as e:
@@ -184,11 +203,17 @@ def _authorize_gmail(ctx: click.Context, _param: click.Parameter,
 def _run_bot_merge_or_abort(make_runner: Callable[[tuple[str, ...] | None],
                                                   Callable[[], Awaitable[None]]],
                             initial_repos: tuple[str, ...] | None, error_class: type[BotMergeError],
-                            delay: float) -> None:
+                            delay: float, email: str | None) -> None:
     try:
         _run_bot_merge_with_retry(make_runner, initial_repos, error_class, delay)
     except GmailError as e:
-        click.echo(f'{e}\n\n{_GMAIL_SETUP_HELP}', err=True)
+        command = click.get_current_context().command_path
+        address = email or 'ADDRESS'
+        # An OAuth client is already stored whenever the authorisation itself was refused, so
+        # nothing has to be created again.
+        help_text = (_gmail_reauthorize_help(command, address) if isinstance(
+            e, GmailAuthorizationError) else _gmail_setup_help(command, address))
+        click.echo(f'{e}\n\n{help_text}', err=True)
         raise click.Abort from e
 
 
@@ -274,7 +299,7 @@ def merge_dependabot_prs_main(
                        repos=current_repos,
                        token=token)
 
-    _run_bot_merge_or_abort(make_runner, repos or None, DependabotMergeError, delay)
+    _run_bot_merge_or_abort(make_runner, repos or None, DependabotMergeError, delay, email)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -351,4 +376,4 @@ def merge_pre_commit_ci_prs_main(
                        repos=current_repos,
                        token=token)
 
-    _run_bot_merge_or_abort(make_runner, repos or None, PreCommitCIMergeError, delay)
+    _run_bot_merge_or_abort(make_runner, repos or None, PreCommitCIMergeError, delay, email)

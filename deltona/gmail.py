@@ -16,8 +16,9 @@ if TYPE_CHECKING:
 
     import niquests
 
-__all__ = ('KEYRING_SERVICE', 'REDIRECT_URI', 'SCOPE', 'GmailConfigurationError', 'GmailError',
-           'archive_github_pull_request_email', 'authorize', 'get_access_token')
+__all__ = ('KEYRING_SERVICE', 'REDIRECT_URI', 'SCOPE', 'GmailAuthorizationError',
+           'GmailConfigurationError', 'GmailError', 'archive_github_pull_request_email',
+           'authorize', 'get_access_token')
 
 log = logging.getLogger(__name__)
 
@@ -59,6 +60,14 @@ class GmailConfigurationError(GmailError):
     """Raised when Gmail support is requested but is not set up correctly."""
 
 
+class GmailAuthorizationError(GmailConfigurationError):
+    """
+    Raised when the stored authorisation is refused.
+
+    The OAuth client itself is fine, so authorising again is all that is needed.
+    """
+
+
 async def get_access_token(session: niquests.AsyncSession, *, credentials: str) -> str:
     """
     Exchange a stored authorized user credential for an access token.
@@ -78,8 +87,10 @@ async def get_access_token(session: niquests.AsyncSession, *, credentials: str) 
 
     Raises
     ------
+    GmailAuthorizationError
+        If the token endpoint refuses the stored refresh token.
     GmailConfigurationError
-        If the credential JSON is unusable or the token endpoint fails.
+        If the credential JSON is unusable.
     """
     try:
         data: Mapping[str, Any] = json.loads(credentials)
@@ -107,13 +118,22 @@ async def get_access_token(session: niquests.AsyncSession, *, credentials: str) 
         raise GmailConfigurationError(msg) from e
     response = await session.post(_TOKEN_URL, data=payload)
     if not response.ok:
-        msg = (f'The Google token endpoint returned HTTP {response.status_code}. The stored '
-               'refresh token is probably expired or revoked.')
-        raise GmailConfigurationError(msg)
+        # Google explains itself in the body. Quote it rather than guessing, since one status
+        # covers an expired grant, a revoked one, a clock skew, and a mismatched client.
+        try:
+            body = response.json()
+        except ValueError:
+            body = None
+        detail: Mapping[str, Any] = body if isinstance(body, Mapping) else {}
+        # Google ends error_description with a full stop of its own, which would double up.
+        reported = str(detail.get('error_description') or detail.get('error') or '').strip(' .')
+        detail_text = f': {reported}' if reported else ''
+        msg = f'The Google token endpoint returned HTTP {response.status_code}{detail_text}.'
+        raise GmailAuthorizationError(msg)
     token = (response.json() or {}).get('access_token')
     if not token:
         msg = 'The Google token endpoint did not return an access token.'
-        raise GmailConfigurationError(msg)
+        raise GmailAuthorizationError(msg)
     return str(token)
 
 
@@ -261,9 +281,9 @@ async def archive_github_pull_request_email(session: niquests.AsyncSession, *, a
 
     Raises
     ------
-    GmailConfigurationError
-        If Gmail rejects the token, which means the credentials or the granted
-        scope are wrong.
+    GmailAuthorizationError
+        If Gmail rejects the token, which means the authorisation has lapsed or
+        the granted scope is wrong.
     GmailError
         If Gmail returns any other error for the search or for a modification.
     """
@@ -274,7 +294,7 @@ async def archive_github_pull_request_email(session: niquests.AsyncSession, *, a
     if not response.ok:
         msg = f'Gmail returned HTTP {response.status_code} searching for PR {number}.'
         if response.status_code in _REJECTED_STATUSES:
-            raise GmailConfigurationError(msg + _SCOPE_HINT)
+            raise GmailAuthorizationError(msg + _SCOPE_HINT)
         raise GmailError(msg)
     threads = (response.json() or {}).get('threads') or []
     archived = 0
@@ -286,7 +306,7 @@ async def archive_github_pull_request_email(session: niquests.AsyncSession, *, a
             msg = (f'Gmail returned HTTP {modified.status_code} archiving thread '
                    f'`{thread["id"]}`.')
             if modified.status_code in _REJECTED_STATUSES:
-                raise GmailConfigurationError(msg + _SCOPE_HINT)
+                raise GmailAuthorizationError(msg + _SCOPE_HINT)
             raise GmailError(msg)
         archived += 1
     return archived

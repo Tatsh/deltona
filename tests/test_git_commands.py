@@ -10,7 +10,7 @@ from deltona.commands.git import (
     merge_pre_commit_ci_prs_main,
 )
 from deltona.git import DependabotMergeError, PreCommitCIMergeError
-from deltona.gmail import GmailConfigurationError
+from deltona.gmail import GmailAuthorizationError, GmailConfigurationError
 import click
 import pytest
 
@@ -19,6 +19,9 @@ if TYPE_CHECKING:
 
     from click.testing import CliRunner
     from pytest_mock import MockerFixture
+
+GOOGLE_CREDENTIALS_JSON = ('{"client_id": "id", "client_secret": "secret", "refresh_token": '
+                           '"refresh", "type": "authorized_user"}')
 
 
 def test_git_checkout_default_branch_success(mocker: MockerFixture, runner: CliRunner) -> None:
@@ -168,6 +171,37 @@ def test_merge_dependabot_prs_main_gmail_not_configured_aborts(mocker: MockerFix
     assert '--authorize-gmail' in result.output
 
 
+def test_merge_dependabot_prs_main_lapsed_authorization_says_only_to_authorize_again(
+        mocker: MockerFixture, runner: CliRunner) -> None:
+    mocker.patch('deltona.commands.git.merge_dependabot_pull_requests',
+                 new_callable=mocker.AsyncMock,
+                 side_effect=GmailAuthorizationError('HTTP 400: Token has been expired.'))
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+
+    result = runner.invoke(merge_dependabot_prs_main, ['-A', '-E', 'me@example.com'])
+    assert result.exit_code != 0
+    # The client is unchanged, so nothing in the Google Cloud console has to be touched and no
+    # client secret has to be found again.
+    assert 'Authorise again with' in result.output
+    assert '--authorize-gmail --email me@example.com' in result.output
+    assert '--client-secret' not in result.output
+    assert 'Create an OAuth client ID' not in result.output
+
+
+def test_merge_dependabot_prs_main_names_the_command_to_run(mocker: MockerFixture,
+                                                            runner: CliRunner) -> None:
+    mocker.patch('deltona.commands.git.merge_dependabot_pull_requests',
+                 new_callable=mocker.AsyncMock,
+                 side_effect=GmailAuthorizationError('HTTP 400.'))
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+
+    result = runner.invoke(merge_dependabot_prs_main, ['-A', '-E', 'me@example.com'],
+                           prog_name='merge-dependabot-prs')
+    assert result.exit_code != 0
+    # The whole command has to be shown, not just the options, since two commands share this help.
+    assert 'merge-dependabot-prs --authorize-gmail --email me@example.com' in result.output
+
+
 def test_merge_dependabot_prs_main_authorize_gmail(mocker: MockerFixture, runner: CliRunner,
                                                    tmp_path: Path) -> None:
     mock_authorize = mocker.patch('deltona.commands.git.authorize', return_value='{"stored": 1}')
@@ -190,13 +224,39 @@ def test_merge_dependabot_prs_main_authorize_gmail(mocker: MockerFixture, runner
     mock_merge.assert_not_called()
 
 
-def test_merge_dependabot_prs_main_authorize_gmail_requires_options(mocker: MockerFixture,
-                                                                    runner: CliRunner) -> None:
+def test_merge_dependabot_prs_main_authorize_gmail_requires_an_email(mocker: MockerFixture,
+                                                                     runner: CliRunner) -> None:
     mock_authorize = mocker.patch('deltona.commands.git.authorize')
 
     result = runner.invoke(merge_dependabot_prs_main, ['--authorize-gmail'])
     assert result.exit_code != 0
-    assert '--client-secret' in result.output
+    assert '--email' in result.output
+    mock_authorize.assert_not_called()
+
+
+def test_merge_dependabot_prs_main_authorize_gmail_reuses_the_stored_client(
+        mocker: MockerFixture, runner: CliRunner) -> None:
+    mock_authorize = mocker.patch('deltona.commands.git.authorize', return_value='{"new": 1}')
+    mocker.patch('keyring.get_password', return_value=GOOGLE_CREDENTIALS_JSON)
+    mock_set = mocker.patch('keyring.set_password')
+
+    result = runner.invoke(merge_dependabot_prs_main, ['--authorize-gmail', '-E', 'me@example.com'])
+    assert result.exit_code == 0
+    # No --client-secret was passed, so the client stored beside the refresh token is reused and
+    # nothing has to be downloaded from the Google Cloud console again.
+    assert mock_authorize.call_args.args == (GOOGLE_CREDENTIALS_JSON,)
+    mock_set.assert_called_once_with('deltona:mpr:google', 'me@example.com', '{"new": 1}')
+
+
+def test_merge_dependabot_prs_main_authorize_gmail_without_a_stored_client(
+        mocker: MockerFixture, runner: CliRunner) -> None:
+    mock_authorize = mocker.patch('deltona.commands.git.authorize')
+    mocker.patch('keyring.get_password', return_value=None)
+
+    result = runner.invoke(merge_dependabot_prs_main, ['--authorize-gmail', '-E', 'me@example.com'])
+    assert result.exit_code != 0
+    assert '--client-secret is required' in result.output
+    assert 'Google Cloud console' in result.output
     mock_authorize.assert_not_called()
 
 
@@ -329,3 +389,137 @@ def test_merge_pre_commit_ci_prs_main_no_token(mocker: MockerFixture, runner: Cl
     mocker.patch('keyring.get_password', return_value=None)
     result = runner.invoke(merge_pre_commit_ci_prs_main)
     assert result.exit_code != 0
+
+
+def test_merge_pre_commit_ci_prs_main_gmail_not_configured_aborts(mocker: MockerFixture,
+                                                                  runner: CliRunner) -> None:
+    mocker.patch('deltona.commands.git.merge_pre_commit_ci_pull_requests',
+                 new_callable=mocker.AsyncMock,
+                 side_effect=GmailConfigurationError('No Google credentials are stored.'))
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+
+    result = runner.invoke(merge_pre_commit_ci_prs_main, ['-A'])
+    assert result.exit_code != 0
+    assert 'No Google credentials are stored.' in result.output
+    assert 'Google Cloud console' in result.output
+    assert '--authorize-gmail' in result.output
+
+
+def test_merge_pre_commit_ci_prs_main_lapsed_authorization_says_only_to_authorize_again(
+        mocker: MockerFixture, runner: CliRunner) -> None:
+    mocker.patch('deltona.commands.git.merge_pre_commit_ci_pull_requests',
+                 new_callable=mocker.AsyncMock,
+                 side_effect=GmailAuthorizationError('HTTP 400: Token has been expired.'))
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+
+    result = runner.invoke(merge_pre_commit_ci_prs_main, ['-A', '-E', 'me@example.com'])
+    assert result.exit_code != 0
+    # The client is unchanged, so nothing in the Google Cloud console has to be touched and no
+    # client secret has to be found again.
+    assert 'Authorise again with' in result.output
+    assert '--authorize-gmail --email me@example.com' in result.output
+    assert '--client-secret' not in result.output
+    assert 'Create an OAuth client ID' not in result.output
+
+
+def test_merge_pre_commit_ci_prs_main_names_the_command_to_run(mocker: MockerFixture,
+                                                               runner: CliRunner) -> None:
+    mocker.patch('deltona.commands.git.merge_pre_commit_ci_pull_requests',
+                 new_callable=mocker.AsyncMock,
+                 side_effect=GmailAuthorizationError('HTTP 400.'))
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+
+    result = runner.invoke(merge_pre_commit_ci_prs_main, ['-A', '-E', 'me@example.com'],
+                           prog_name='merge-pre-commit-ci-prs')
+    assert result.exit_code != 0
+    # The whole command has to be shown, not just the options, since two commands share this help.
+    assert 'merge-pre-commit-ci-prs --authorize-gmail --email me@example.com' in result.output
+
+
+def test_merge_pre_commit_ci_prs_main_no_email_uses_a_placeholder_address(
+        mocker: MockerFixture, runner: CliRunner) -> None:
+    mocker.patch('deltona.commands.git.merge_pre_commit_ci_pull_requests',
+                 new_callable=mocker.AsyncMock,
+                 side_effect=GmailAuthorizationError('HTTP 401.'))
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+
+    result = runner.invoke(merge_pre_commit_ci_prs_main, ['-A'],
+                           prog_name='merge-pre-commit-ci-prs')
+    assert result.exit_code != 0
+    assert 'merge-pre-commit-ci-prs --authorize-gmail --email ADDRESS' in result.output
+
+
+def test_merge_pre_commit_ci_prs_main_authorize_gmail(mocker: MockerFixture, runner: CliRunner,
+                                                      tmp_path: Path) -> None:
+    mock_authorize = mocker.patch('deltona.commands.git.authorize', return_value='{"stored": 1}')
+    mock_set = mocker.patch('keyring.set_password')
+    mock_merge = mocker.patch('deltona.commands.git.merge_pre_commit_ci_pull_requests',
+                              new_callable=mocker.AsyncMock)
+    client_secret = tmp_path / 'client_secret.json'
+    client_secret.write_text('{"installed": {}}')
+
+    result = runner.invoke(
+        merge_pre_commit_ci_prs_main,
+        ['--authorize-gmail', '--client-secret',
+         str(client_secret), '-E', 'me@example.com'])
+    assert result.exit_code == 0
+    assert mock_authorize.call_args.args == ('{"installed": {}}',)
+    # The URL is echoed rather than opened, so it is visible over SSH.
+    assert mock_authorize.call_args.kwargs['notify'] is click.echo
+    mock_set.assert_called_once_with('deltona:mpr:google', 'me@example.com', '{"stored": 1}')
+    # The merge must not run when only authorising.
+    mock_merge.assert_not_called()
+
+
+def test_merge_pre_commit_ci_prs_main_authorize_gmail_requires_an_email(
+        mocker: MockerFixture, runner: CliRunner) -> None:
+    mock_authorize = mocker.patch('deltona.commands.git.authorize')
+
+    result = runner.invoke(merge_pre_commit_ci_prs_main, ['--authorize-gmail'])
+    assert result.exit_code != 0
+    assert '--email' in result.output
+    mock_authorize.assert_not_called()
+
+
+def test_merge_pre_commit_ci_prs_main_authorize_gmail_reuses_the_stored_client(
+        mocker: MockerFixture, runner: CliRunner) -> None:
+    mock_authorize = mocker.patch('deltona.commands.git.authorize', return_value='{"new": 1}')
+    mocker.patch('keyring.get_password', return_value=GOOGLE_CREDENTIALS_JSON)
+    mock_set = mocker.patch('keyring.set_password')
+
+    result = runner.invoke(merge_pre_commit_ci_prs_main,
+                           ['--authorize-gmail', '-E', 'me@example.com'])
+    assert result.exit_code == 0
+    # No --client-secret was passed, so the client stored beside the refresh token is reused and
+    # nothing has to be downloaded from the Google Cloud console again.
+    assert mock_authorize.call_args.args == (GOOGLE_CREDENTIALS_JSON,)
+    mock_set.assert_called_once_with('deltona:mpr:google', 'me@example.com', '{"new": 1}')
+
+
+def test_merge_pre_commit_ci_prs_main_authorize_gmail_without_a_stored_client(
+        mocker: MockerFixture, runner: CliRunner) -> None:
+    mock_authorize = mocker.patch('deltona.commands.git.authorize')
+    mocker.patch('keyring.get_password', return_value=None)
+
+    result = runner.invoke(merge_pre_commit_ci_prs_main,
+                           ['--authorize-gmail', '-E', 'me@example.com'])
+    assert result.exit_code != 0
+    assert '--client-secret is required' in result.output
+    assert 'Google Cloud console' in result.output
+    mock_authorize.assert_not_called()
+
+
+def test_merge_pre_commit_ci_prs_main_authorize_gmail_reports_failure(mocker: MockerFixture,
+                                                                      runner: CliRunner,
+                                                                      tmp_path: Path) -> None:
+    mocker.patch('deltona.commands.git.authorize',
+                 side_effect=GmailConfigurationError('Google returned no refresh token.'))
+    client_secret = tmp_path / 'client_secret.json'
+    client_secret.write_text('{}')
+
+    result = runner.invoke(
+        merge_pre_commit_ci_prs_main,
+        ['--authorize-gmail', '--client-secret',
+         str(client_secret), '-E', 'me@example.com'])
+    assert result.exit_code != 0
+    assert 'Google returned no refresh token.' in result.output

@@ -23,14 +23,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   by removing the `INBOX` and `UNREAD` labels. The search covers all mail rather than only the
   inbox, so a thread archived by an earlier run is still marked read. Only Gmail is supported.
   Requesting `-A` without working credentials is an error that stops the run and prints how to set
-  them up, as is a token Gmail rejects, since neither fixes itself on the next pull request. Any
-  other archiving failure is logged and does not count
-  the pull request as unmerged.
+  them up, as is a token Gmail rejects, since neither fixes itself on the next pull request. The
+  message quotes what Google reported rather than guessing at it, and names the full command to
+  run. A lapsed authorisation only asks for `--authorize-gmail --email`, since nothing about the
+  OAuth client has to change. Any other archiving failure is logged and does not count the pull
+  request as unmerged.
 - `merge-dependabot-prs` and `merge-pre-commit-prs` `--authorize-gmail`, which runs the Google
-  consent flow with `--client-secret` and `--email`, stores the resulting credentials in the
-  keyring, and exits without merging anything. It prints a URL to open in a browser on any
-  machine and reads back the address the browser was redirected to, so nothing is served locally
-  and no browser is started. That is what makes it usable over SSH.
+  consent flow with `--email` and stores the resulting credentials. `--client-secret` is needed
+  only the first time; afterwards the OAuth client stored beside the refresh token is reused, so
+  authorising again requires nothing from the Google Cloud console. The credentials go into the
+  keyring and the command exits without merging anything. It prints a URL to open in a browser on
+  any machine and reads back the address the browser was redirected to, so nothing is served
+  locally and no browser is started. That is what makes it usable over SSH.
 - `deltona.string.pluralize` to select a noun's singular or plural form for a count, with an
   optional irregular plural. Messages that used to write `thread(s)` or `repository(ies)` now read
   correctly for the number they report.
