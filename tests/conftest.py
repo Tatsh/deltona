@@ -13,7 +13,7 @@ from click.testing import CliRunner
 import pytest
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping
+    from collections.abc import Callable, Mapping, Sequence
 
     from pytest_mock import MockerFixture
     from typing_extensions import Self
@@ -107,6 +107,10 @@ class _FakeResponse:
     def ok(self) -> bool:
         return self.status_code < 400
 
+    @property
+    def text(self) -> str:
+        return self.content.decode()
+
     def json(self) -> Any:
         if self._raw:
             return json.loads(self.content)
@@ -180,6 +184,11 @@ class _FakeAsyncSession:
                   *,
                   headers: Mapping[str, str] | None = None,
                   params: Mapping[str, str] | None = None) -> _FakeResponse:
+        # Job logs are plain text rather than JSON, so they do not go through gidgethub and land
+        # here instead of in route().
+        if (log := self._fake.job_log_route(url)) is not None:
+            status, text = log
+            return _FakeResponse(status, {RAW_BODY_KEY: text})
         status, payload = self._fake.gmail.route('GET', url, params, None)
         return _FakeResponse(status, payload)
 
@@ -203,6 +212,11 @@ class FakeGitHub:
     _COMMENTS = re.compile(r'^/repos/(?P<full>[^/]+/[^/]+)/issues/(?P<num>\d+)/comments$')
     _REPO = re.compile(r'^/repos/(?P<full>[^/]+/[^/]+)$')
     _THREAD = re.compile(r'^/notifications/threads/(?P<id>[^/]+)$')
+    _RUNS = re.compile(r'^/repos/(?P<full>[^/]+/[^/]+)/actions/runs$')
+    _RUN_JOBS = re.compile(r'^/repos/(?P<full>[^/]+/[^/]+)/actions/runs/(?P<run>\d+)/jobs$')
+    _RERUN = re.compile(
+        r'^/repos/(?P<full>[^/]+/[^/]+)/actions/runs/(?P<run>\d+)/rerun-failed-jobs$')
+    _JOB_LOG = re.compile(r'^/repos/(?P<full>[^/]+/[^/]+)/actions/jobs/(?P<job>\d+)/logs$')
 
     def __init__(self) -> None:
         self.user_login = 'tatsh'
@@ -220,6 +234,14 @@ class FakeGitHub:
         self.notifications: list[dict[str, Any]] = []
         self.threads_marked_done: list[str] = []
         self.thread_delete_error: int | None = None
+        self.runs: dict[str, list[dict[str, Any]]] = {}
+        self.jobs: dict[int, list[dict[str, Any]]] = {}
+        self.job_logs: dict[int, str] = {}
+        self.job_log_errors: dict[int, int] = {}
+        self.runs_query: dict[str, str] = {}
+        self.rerun_calls: list[tuple[str, int]] = []
+        self.rerun_errors: dict[int, int] = {}
+        self.runs_errors: dict[str, int] = {}
 
     def add_repo(self, full_name: str, *, listed: bool = True, **kwargs: Any) -> FakeRepo:
         repo = FakeRepo(full_name, **kwargs)
@@ -258,10 +280,79 @@ class FakeGitHub:
             }
         })
 
+    def add_run(self,
+                full_name: str,
+                run_id: int,
+                *,
+                attempt: int = 1,
+                event: str = 'push',
+                workflow: str = 'Tests') -> None:
+        self.runs.setdefault(full_name, []).append({
+            'event': event,
+            'html_url': f'https://github.com/{full_name}/actions/runs/{run_id}',
+            'id': run_id,
+            'name': workflow,
+            'run_attempt': attempt
+        })
+        self.jobs.setdefault(run_id, [])
+
+    def add_job(self,
+                run_id: int,
+                job_id: int,
+                *,
+                conclusion: str = 'failure',
+                failed_steps: Sequence[str] = (),
+                log: str = '',
+                name: str = 'test',
+                passed_steps: Sequence[str] = ()) -> None:
+        self.jobs.setdefault(run_id, []).append({
+            'conclusion':
+                conclusion,
+            'id':
+                job_id,
+            'name':
+                name,
+            'steps': [{
+                'conclusion': 'success',
+                'name': step
+            } for step in passed_steps] + [{
+                'conclusion': 'failure',
+                'name': step
+            } for step in failed_steps]
+        })
+        self.job_logs[job_id] = log
+
+    def job_log_route(self, url: str) -> tuple[int, str] | None:
+        if not (match := self._JOB_LOG.match(urlsplit(url).path)):
+            return None
+        job_id = int(match['job'])
+        self.requests.append(('GET', urlsplit(url).path))
+        if (status := self.job_log_errors.get(job_id)) is not None:
+            return status, ''
+        return 200, self.job_logs.get(job_id, '')
+
+    def _route_actions(self, path: str, query: str) -> tuple[int, Any] | None:
+        if (match := self._RUNS.match(path)):
+            self.runs_query = {k: v[0] for k, v in parse_qs(query).items()}
+            if (status := self.runs_errors.get(match['full'])) is not None:
+                return status, {'message': 'Nope.'}
+            return 200, {'workflow_runs': self.runs.get(match['full'], [])}
+        if (match := self._RUN_JOBS.match(path)):
+            return 200, {'jobs': self.jobs.get(int(match['run']), [])}
+        if (match := self._RERUN.match(path)):
+            run_id = int(match['run'])
+            if (status := self.rerun_errors.get(run_id)) is not None:
+                return status, {'message': 'Nope.'}
+            self.rerun_calls.append((match['full'], run_id))
+            return 201, {}
+        return None
+
     def route(self, method: str, url: str, data: bytes | None) -> tuple[int, Any]:
         parts = urlsplit(url)
         path = parts.path
         self.requests.append((method, path))
+        if (result := self._route_actions(path, parts.query)) is not None:
+            return result
         if path == '/user':
             self.user_endpoint_hit = True
             return 200, {'email': self.user_email, 'login': self.user_login}

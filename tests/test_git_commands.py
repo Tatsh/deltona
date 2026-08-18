@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
+import re
 
+from deltona.actions import RetryCandidate, RetryRule
 from deltona.commands.git import (
     git_checkout_default_branch_main,
     git_open_main,
     git_rebase_default_branch_main,
     merge_dependabot_prs_main,
     merge_pre_commit_ci_prs_main,
+    retry_gh_jobs_main,
 )
 from deltona.git import DependabotMergeError, PreCommitCIMergeError
 from deltona.gmail import GmailAuthorizationError, GmailConfigurationError
@@ -22,6 +26,16 @@ if TYPE_CHECKING:
 
 GOOGLE_CREDENTIALS_JSON = ('{"client_id": "id", "client_secret": "secret", "refresh_token": '
                            '"refresh", "type": "authorized_user"}')
+CANDIDATE = RetryCandidate(attempt=1,
+                           job='coverage',
+                           repo='tatsh/deltona',
+                           rule=RetryRule(step=re.compile(r'coveralls', re.IGNORECASE),
+                                          error=re.compile(r'internal server error', re.IGNORECASE),
+                                          reason='Coveralls returned a server error.'),
+                           run_id=7,
+                           step='Coveralls',
+                           url='https://github.com/tatsh/deltona/actions/runs/7',
+                           workflow='Tests')
 
 
 def test_git_checkout_default_branch_success(mocker: MockerFixture, runner: CliRunner) -> None:
@@ -523,3 +537,93 @@ def test_merge_pre_commit_ci_prs_main_authorize_gmail_reports_failure(mocker: Mo
          str(client_secret), '-E', 'me@example.com'])
     assert result.exit_code != 0
     assert 'Google returned no refresh token.' in result.output
+
+
+def test_retry_gh_jobs_main_no_token(mocker: MockerFixture, runner: CliRunner) -> None:
+    mocker.patch('keyring.get_password', return_value=None)
+
+    result = runner.invoke(retry_gh_jobs_main, [])
+    assert result.exit_code != 0
+    assert 'No token.' in result.output
+
+
+def test_retry_gh_jobs_main_nothing_to_do(mocker: MockerFixture, runner: CliRunner) -> None:
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+    mocker.patch('deltona.commands.git.find_retryable_runs', return_value=[])
+    mock_rerun = mocker.patch('deltona.commands.git.rerun_failed_jobs')
+
+    result = runner.invoke(retry_gh_jobs_main, [])
+    assert result.exit_code == 0
+    assert 'No failed runs worth starting again.' in result.output
+    mock_rerun.assert_not_called()
+
+
+@pytest.mark.parametrize('args', [[], ['--yes'], ['-y']])
+def test_retry_gh_jobs_main_starts_runs_by_default(mocker: MockerFixture, runner: CliRunner,
+                                                   args: list[str]) -> None:
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+    mocker.patch('deltona.commands.git.find_retryable_runs', return_value=[CANDIDATE])
+    mock_rerun = mocker.patch('deltona.commands.git.rerun_failed_jobs', return_value=1)
+
+    result = runner.invoke(retry_gh_jobs_main, args)
+    assert result.exit_code == 0
+    assert 'tatsh/deltona run 7' in result.output
+    assert "step 'Coveralls'" in result.output
+    assert 'Coveralls returned a server error.' in result.output
+    assert 'Started 1 of 1 run again.' in result.output
+    mock_rerun.assert_called_once()
+
+
+@pytest.mark.parametrize('flag', ['--dry-run', '-n'])
+def test_retry_gh_jobs_main_reports_without_acting_on_dry_run(mocker: MockerFixture,
+                                                              runner: CliRunner, flag: str) -> None:
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+    mocker.patch('deltona.commands.git.find_retryable_runs', return_value=[CANDIDATE])
+    mock_rerun = mocker.patch('deltona.commands.git.rerun_failed_jobs')
+
+    result = runner.invoke(retry_gh_jobs_main, [flag])
+    assert result.exit_code == 0
+    assert 'tatsh/deltona run 7' in result.output
+    assert '1 run would be started again' in result.output
+    assert '--dry-run' in result.output
+    mock_rerun.assert_not_called()
+
+
+def test_retry_gh_jobs_main_dry_run_wins_over_yes(mocker: MockerFixture, runner: CliRunner) -> None:
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+    mocker.patch('deltona.commands.git.find_retryable_runs', return_value=[CANDIDATE])
+    mock_rerun = mocker.patch('deltona.commands.git.rerun_failed_jobs')
+
+    result = runner.invoke(retry_gh_jobs_main, ['--dry-run', '--yes'])
+    assert result.exit_code == 0
+    mock_rerun.assert_not_called()
+
+
+def test_retry_gh_jobs_main_exits_non_zero_when_a_run_is_refused(mocker: MockerFixture,
+                                                                 runner: CliRunner) -> None:
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+    mocker.patch('deltona.commands.git.find_retryable_runs',
+                 return_value=[CANDIDATE, CANDIDATE._replace(run_id=8)])
+    mocker.patch('deltona.commands.git.rerun_failed_jobs', return_value=1)
+
+    result = runner.invoke(retry_gh_jobs_main, [])
+    assert result.exit_code == 1
+    assert 'Started 1 of 2 runs again.' in result.output
+
+
+def test_retry_gh_jobs_main_defaults_since_to_a_day_ago(mocker: MockerFixture,
+                                                        runner: CliRunner) -> None:
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+    mock_find = mocker.patch('deltona.commands.git.find_retryable_runs', return_value=[])
+
+    assert runner.invoke(retry_gh_jobs_main, []).exit_code == 0
+    since = mock_find.call_args.kwargs['since']
+    assert since == (datetime.now(tz=UTC) - timedelta(days=1)).strftime('%Y-%m-%d')
+
+
+def test_retry_gh_jobs_main_passes_since_through(mocker: MockerFixture, runner: CliRunner) -> None:
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+    mock_find = mocker.patch('deltona.commands.git.find_retryable_runs', return_value=[])
+
+    assert runner.invoke(retry_gh_jobs_main, ['--since', '2026-01-02']).exit_code == 0
+    assert mock_find.call_args.kwargs['since'] == '2026-01-02'

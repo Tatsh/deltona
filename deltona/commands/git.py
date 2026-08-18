@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from functools import partial
 from pathlib import Path
 from time import sleep
@@ -12,6 +13,7 @@ import re
 import webbrowser
 
 from bascom import setup_logging
+from deltona.actions import find_retryable_runs, rerun_failed_jobs
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.git import (
     BotMergeError,
@@ -36,6 +38,7 @@ import click
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
+    from deltona.actions import RetryCandidate
     from git import Repo
 
 
@@ -377,3 +380,92 @@ def merge_pre_commit_ci_prs_main(
                        token=token)
 
     _run_bot_merge_or_abort(make_runner, repos or None, PreCommitCIMergeError, delay, email)
+
+
+def _describe(candidate: RetryCandidate) -> str:
+    return (f'{candidate.repo} run {candidate.run_id} ({candidate.workflow or "unnamed"}): '
+            f'job {candidate.job or "unnamed"}, step {candidate.step!r}. {candidate.rule.reason}')
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option('-b', '--base-url', help='Base URL for enterprise.')
+@click.option('--concurrency',
+              type=int,
+              default=4,
+              help='Maximum number of repositories examined in parallel.')
+@click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
+@click.option('-n',
+              '--dry-run',
+              is_flag=True,
+              help='Only report what would be started again, without starting anything.')
+@click.option('-m',
+              '--max-attempts',
+              type=int,
+              default=2,
+              help='Leave a run alone once it has been attempted this many times.')
+@click.option('-r',
+              '--repo',
+              'repos',
+              multiple=True,
+              help='Specific repository to examine as NAME or OWNER/NAME. '
+              'May be passed multiple times.')
+@click.option('-s',
+              '--since',
+              default=None,
+              help='Only consider runs created on or after this date, as YYYY-MM-DD. '
+              'Defaults to a day ago.')
+@click.option('-u', '--username', default=getpass.getuser(), help='Username.')
+@click.option('-y',
+              '--yes',
+              expose_value=False,
+              is_flag=True,
+              help='Accepted and ignored. Starting the runs again is already the default.')
+def retry_gh_jobs_main(username: str,
+                       repos: tuple[str, ...] = (),
+                       base_url: str | None = None,
+                       concurrency: int = 4,
+                       max_attempts: int = 2,
+                       since: str | None = None,
+                       *,
+                       debug: bool = False,
+                       dry_run: bool = False) -> None:
+    """
+    Run failed GitHub Actions jobs again where the failure was not the code's fault.
+
+    Only failures matching a known transient signature are considered, such as a Coveralls server
+    error or a package source refusing a request. A test failure, a type error, or anything under
+    Dependabot is left alone.
+
+    Matching runs are started again unless --dry-run is passed.
+    """  # ruff:ignore[docstring-missing-exception]
+    import keyring  # ruff:ignore[import-outside-top-level]
+
+    setup_logging(debug=debug, loggers={'deltona': {}, 'keyring': {}, 'urllib3': {}})
+    if not (token := keyring.get_password('tmu-github-api', username)):
+        click.echo('No token.', err=True)
+        raise click.Abort
+    if since is None:
+        since = (datetime.now(tz=UTC) - timedelta(days=1)).strftime('%Y-%m-%d')
+    candidates = anyio.run(
+        partial(find_retryable_runs,
+                base_url=base_url,
+                concurrency=concurrency,
+                max_attempts=max_attempts,
+                repos=repos or None,
+                since=since,
+                token=token))
+    if not candidates:
+        click.echo('No failed runs worth starting again.')
+        return
+    for candidate in candidates:
+        click.echo(_describe(candidate))
+    count = len(candidates)
+    if dry_run:
+        click.echo(f'\n{count} {pluralize(count, "run")} would be started again. '
+                   'Drop --dry-run to do it.')
+        return
+    started = anyio.run(
+        partial(rerun_failed_jobs, base_url=base_url, candidates=candidates, token=token))
+    click.echo(f'\nStarted {started} of {count} {pluralize(count, "run")} again.')
+    if started != count:
+        raise click.exceptions.Exit(1)

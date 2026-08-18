@@ -207,6 +207,7 @@ mojosetup
 monkeypatch
 movflags
 msgbox
+msys
 mvid
 myproject
 mypy
