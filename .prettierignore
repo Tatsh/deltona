@@ -18,6 +18,7 @@
 .directory
 .eslintignore
 .pnp.*
+.sbclaude-venv/
 .shellcheckrc
 .venv/
 /.bash_profile

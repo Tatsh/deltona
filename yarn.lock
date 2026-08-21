@@ -704,9 +704,9 @@ __metadata:
   linkType: hard
 
 "ansi-regex@npm:^6.2.2":
-  version: 6.2.2
-  resolution: "ansi-regex@npm:6.2.2"
-  checksum: 10c0/05d4acb1d2f59ab2cf4b794339c7b168890d44dda4bf0ce01152a8da0213aca207802f930442ce8cd22d7a92f44907664aac6508904e75e038fa944d2601b30f
+  version: 6.3.0
+  resolution: "ansi-regex@npm:6.3.0"
+  checksum: 10c0/bc047786d0531f1f22d1e22e9863e8554488a399f1ee5270b753efa6de938a788d27456f2b256770f11fdd8b1e847483bc1b55ddc2b3ffe82ec45c875292c651
   languageName: node
   linkType: hard
 
@@ -984,7 +984,7 @@ __metadata:
     prettier-plugin-ini: "npm:^1.3.0"
     prettier-plugin-sort-json: "npm:^4.2.0"
     prettier-plugin-toml: "npm:^2.0.6"
-    pyright: "npm:^1.1.411"
+    pyright: "npm:^1.1.412"
   languageName: unknown
   linkType: soft
 
@@ -1843,9 +1843,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pyright@npm:^1.1.411":
-  version: 1.1.411
-  resolution: "pyright@npm:1.1.411"
+"pyright@npm:^1.1.412":
+  version: 1.1.412
+  resolution: "pyright@npm:1.1.412"
   dependencies:
     fsevents: "npm:~2.3.3"
   dependenciesMeta:
@@ -1854,7 +1854,7 @@ __metadata:
   bin:
     pyright: index.js
     pyright-langserver: langserver.index.js
-  checksum: 10c0/cb4a8c127ad94753b38623d7f078cf01dca220663b2e5790218aa0c198d0890a34c9dfb0f82dc252ff81ab55705310951eba102271f79c4610acd73bb9d5153e
+  checksum: 10c0/f5b551d4f76c42244327f1a2b4eb0ed9849ac8ccc8ebfe3a5d9e3f1127657c27148b58d656d7092f218f671905d12071013047220e4a4ff9005b1c77331b5902
   languageName: node
   linkType: hard
 
@@ -1919,9 +1919,9 @@ __metadata:
   linkType: hard
 
 "smol-toml@npm:^1.6.1":
-  version: 1.7.1
-  resolution: "smol-toml@npm:1.7.1"
-  checksum: 10c0/c2494e19e748578cf9f81f918dd66a548dfe5a0e581ab9f980d5420f2319c882c661a62d01d216a43f2db490faaccd2185bcdb6f2ba0658eb303eda9db871d76
+  version: 1.8.0
+  resolution: "smol-toml@npm:1.8.0"
+  checksum: 10c0/4e01dbfb7c7af142176b037ebedaccccafb8229cc873feaa47c184ee31073d86e30b4b1b0fe9a5a6d083ed3ce21615eda9e81d1f5d779ad8b2e2e9459b900aea
   languageName: node
   linkType: hard
 

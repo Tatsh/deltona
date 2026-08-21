@@ -8,8 +8,8 @@ dev = [
   "cz-path>=0.0.7",
   "mypy>=2.3.0",
   "pydbus-stubs>=0; sys_platform == 'linux'",
-  "ruff==0.16.2",
-  "ty>=0.0.70",
+  "ruff==0.16.3",
+  "ty>=0.0.71",
   "types-beautifulsoup4>=4.12.0.20250516",
   "types-binaryornot>=0.4.0.20260712",
   "types-paramiko>=5.0.0.20260724",
@@ -101,9 +101,9 @@ desktop = [
   "pyperclip>=1.11.0",
 ]
 git = ["gidgethub>=5.4.0", "gitpython>=3.1.59", "keyring>=25.7.0"]
-media = ["keyring>=25.7.0", "mutagen>=1.48.1", "platformdirs>=4.11.2", "send2trash>=2.1.0"]
+media = ["keyring>=25.7.0", "mutagen>=1.48.1", "platformdirs>=4.11.3", "send2trash>=2.1.0"]
 string = ["pyyaml>=6.0.3", "unidecode>=1.4.0", "yt-dlp>=2026.7.4"]
-wine = ["pexpect>=4.9.0", "platformdirs>=4.11.2", "psutil>=7.2.2", "python-xz>=0.6.0"]
+wine = ["pexpect>=4.9.0", "platformdirs>=4.11.3", "psutil>=7.2.2", "python-xz>=0.6.0"]
 www = ["beautifulsoup4>=4.15.0", "html5lib>=1.1", "keyring>=25.7.0", "pillow>=12.3.0"]
 
 [project.scripts]
@@ -233,7 +233,7 @@ warn_unreachable = true
 [tool.pyright]
 deprecateTypingAliases = true
 enableExperimentalFeatures = true
-exclude = [".venv", "**/node_modules", "**/__pycache__", "**/.*"]
+exclude = [".sbclaude-venv", ".venv", "**/node_modules", "**/__pycache__", "**/.*"]
 include = ["./deltona", "./tests"]
 pythonPlatform = "Linux"
 pythonVersion = "3.10"
@@ -378,4 +378,4 @@ split_penalty_logical_operator = 300
 use_tabs = false
 
 [tool.yapfignore]
-ignore_patterns = [".venv", ".wiswa-ci", "node_modules"]
+ignore_patterns = [".sbclaude-venv", ".venv", ".wiswa-ci", "node_modules"]

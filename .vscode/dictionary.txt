@@ -274,6 +274,7 @@ rockridge
 rssi
 rstcheck
 rstuvwxyz
+sbclaude
 schemafile
 sdist
 segoe
