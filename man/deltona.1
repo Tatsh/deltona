@@ -27,9 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "DELTONA" "1" "May 24, 2026" "0.2.4" "deltona"
+.TH "DELTONA" "1" "Aug 21, 2026" "0.3.0" "deltona"
 .SH NAME
-deltona \- deltona v0.2.4
+deltona \- deltona v0.3.0
 .sp
 A lot of uncategorised utilities.
 .SH CLEAN-OLD-KERNELS-MODULES
@@ -423,6 +423,99 @@ Enable debug output.
 .B \-\-device <device_name>
 Bluetooth device (defaults to hci0).
 .UNINDENT
+.SH FIX-MIME-ASSOCS
+.sp
+Reconcile removed associations for selected desktop applications.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+fix\-mime\-assocs [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-a, \-\-application <DESKTOP_ID>
+\fBRequired\fP Desktop application ID to reconcile. May be repeated.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-applications\-dir <applications_dir>
+Directory containing desktop entry files.
+.INDENT 7.0
+.TP
+.B Default
+\fBPosixPath(\(aq/usr/share/applications\(aq)\fP
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug logging.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-dry\-run
+Report changes without writing the file.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-mime\-types <mime_types_file>
+File containing known MIME types.
+.INDENT 7.0
+.TP
+.B Default
+\fBPosixPath(\(aq/usr/share/mime/types\(aq)\fP
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-mimeapps <mimeapps_file>
+MIME applications file to update.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aq~/.config/mimeapps.list\(aq\fP
+.UNINDENT
+.UNINDENT
+.SH EXAMPLES
+.sp
+Reconcile one application using the standard desktop and MIME databases:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+fix\-mime\-assocs \-\-application vim
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Pass the option more than once to reconcile several applications:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+fix\-mime\-assocs \-\-application vim \-\-application org.kde.kwrite.desktop
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Preview changes or use alternate files for testing:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+fix\-mime\-assocs \-\-application vim \-\-dry\-run
+fix\-mime\-assocs \-\-application vim \-\-applications\-dir ./applications \e
+  \-\-mime\-types ./mime/types \-\-mimeapps ./mimeapps.list
+.EE
+.UNINDENT
+.UNINDENT
 .SH INHIBIT-NOTIFICATIONS
 .sp
 Disable notifications state for a time.
@@ -764,8 +857,23 @@ merge\-dependabot\-prs [OPTIONS]
 Options
 .INDENT 0.0
 .TP
+.B \-A, \-\-archive\-email
+Archive the Gmail thread for each merged pull request.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-authorize\-gmail
+Only authorise Gmail access and store the credentials, then exit.
+.UNINDENT
+.INDENT 0.0
+.TP
 .B \-b, \-\-base\-url <base_url>
 Base URL for enterprise.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-client\-secret <client_secret>
+Client secret JSON from the Google Cloud console, for \-\-authorize\-gmail.
 .UNINDENT
 .INDENT 0.0
 .TP
@@ -779,6 +887,11 @@ Delay in seconds between attempts.
 .UNINDENT
 .INDENT 0.0
 .TP
+.B \-E, \-\-email <email>
+Email address to archive mail for. Defaults to the GitHub account address.
+.UNINDENT
+.INDENT 0.0
+.TP
 .B \-\-concurrency <concurrency>
 Maximum number of repositories processed in parallel.
 .UNINDENT
@@ -786,6 +899,11 @@ Maximum number of repositories processed in parallel.
 .TP
 .B \-M, \-\-max\-concurrent\-http\-requests <max_concurrent_http_requests>
 Hard cap on simultaneous in\-flight HTTP requests.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-N, \-\-mark\-notifications\-done
+Mark the GitHub notification for each merged pull request as done.
 .UNINDENT
 .INDENT 0.0
 .TP

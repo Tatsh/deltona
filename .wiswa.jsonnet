@@ -7,7 +7,7 @@ local utils = import 'utils.libsonnet';
   description: 'A lot of uncategorised utilities.',
   keywords: ['bluetooth', 'command line', 'file management', 'git', 'multimedia'],
   project_name: 'deltona',
-  version: '0.2.4',
+  version: '0.3.0',
   want_claude: true,
   want_main: false,  // Multiple entry points.
   want_flatpak: true,
@@ -249,7 +249,9 @@ local utils = import 'utils.libsonnet';
         },
       },
       commitizen+: {
-        version_files+: ['docs/badges.rst'],
+        // The generated man page carries the version in its .TH line and in the NAME section, so
+        // cz must rewrite it too.
+        version_files+: ['docs/badges.rst', 'man/' + settings.project_name + '.1'],
       },
       pytest+: {
         ini_options+: {

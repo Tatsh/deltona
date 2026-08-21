@@ -9,8 +9,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+## [0.3.0] - 2026-08-21
+
 ### Added
 
+- `retry-gh-jobs` to run failed GitHub Actions jobs again where the failure was not the code's
+  fault. Only the jobs that failed are restarted. A failure qualifies only when both the name of
+  the failing step and the text of the job's log match the same rule, because a step name on its
+  own is too coarse: `Install dependencies` covers a rate limit, a stale lockfile, and a build
+  failure, and only the first is worth another run. The rules cover a Coveralls server error, a
+  package source refusing a request, and python-appimage hitting an anonymous API rate limit.
+  Dependabot update runs are never restarted; they are recreated with `@dependabot recreate`
+  instead. Options: `-b`/`--base-url` for enterprise, `-c`/`--concurrency` to cap repositories
+  examined in parallel, `-n`/`--dry-run` to report without starting anything, `-m`/`--max-attempts`
+  to leave a run alone once it has been attempted that many times, `-r`/`--repo` (repeatable) to
+  limit the repositories examined, `-s`/`--since` to bound how far back runs are considered
+  (defaults to a day ago), and `-u`/`--username` for the keyring lookup.
+- `deltona.actions` module with `find_retryable_runs` and `rerun_failed_jobs`, the `RetryRule` and
+  `RetryCandidate` named tuples, and the `RETRY_RULES` and `NEVER_RETRY_EVENTS` constants. The
+  rules live in code rather than in configuration, since deciding that a failure was not the code's
+  fault deserves review.
 - `fix-mime-assocs` to reconcile selected desktop applications in the `[Removed Associations]`
   section of `mimeapps.list`, with options to choose the desktop-entry directory, MIME-types file,
   and `mimeapps.list` path, plus a dry-run mode.
@@ -360,7 +378,8 @@ Minor release for testing the release process.
 
 First version. `check_bookmarks_html_urls` may have unresolved issues.
 
-[unreleased]: https://github.com/Tatsh/deltona/compare/v0.2.4...HEAD
+[unreleased]: https://github.com/Tatsh/deltona/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Tatsh/deltona/compare/v0.2.4...v0.3.0
 [0.2.4]: https://github.com/Tatsh/deltona/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/Tatsh/deltona/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/Tatsh/deltona/compare/v0.2.1...v0.2.2
