@@ -27,6 +27,8 @@ biha
 bihi
 bika
 binaryornot
+bisync
+bisyncd
 bluez
 bootfile
 bootinfotable
@@ -115,9 +117,12 @@ functools
 gamescope
 gamescopereaper
 gbrpf
+gdocs
+gdrive
 genindex
 gethostname
 getiter
+getuid
 getxattr
 gidgethub
 gitpython
@@ -145,6 +150,8 @@ ilong
 imagename
 imgbb
 incits
+inotify
+inotifywait
 inul
 ioctl
 iselect

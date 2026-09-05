@@ -9,6 +9,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+### Added
+
+- `make-rclone-bisync-service` to generate, install, and enable a service that keeps a local
+  directory in bidirectional sync with an rclone remote, defaulting to a Google Drive directory of
+  the same name. It targets launchd on macOS and both the user and system instances of systemd,
+  choosing whichever is native to the platform unless `-k`/`--kind` says otherwise. Options:
+  `-a`/`--rclone-arg` (repeatable) to append arguments to `rclone bisync`, `-n`/`--dry-run` to
+  print the service definition instead of writing it, `--idle` and `--poll` to tune the daemon,
+  `--name` to override the generated service name, `--no-enable` to write the definition without
+  starting anything, and `--user` for the account a systemd system service runs as.
+- `rclone-bisyncd`, the command the generated service runs. It watches the local directory
+  recursively and synchronises once the tree has been quiet for `--idle` seconds, so that a burst
+  of writes produces one run rather than one per file, and it synchronises every `--poll` seconds
+  regardless, since a change made on the remote produces no local event. Only one instance per
+  directory runs at a time, enforced with an advisory lock that is released even if the process is
+  killed, so a manual run cannot race the service. `--once` and `--resync` cover a single run and
+  rebuilding the baseline listings.
+- `deltona.rclone` module with `bisync`, `sync_once`, `watch_and_sync`, `single_instance`,
+  `generate_service`, `install_service`, `enable_service`, `service_path`, `default_remote`,
+  `default_service_kind`, and `default_service_name`, the `AlreadyRunning` exception, the
+  `ServiceKind` alias, and the `DEFAULT_BISYNC_ARGS`, `DEFAULT_IDLE_SECONDS`, and
+  `DEFAULT_POLL_SECONDS` constants. Watching uses watchdog, which reaches inotify on Linux and
+  FSEvents on macOS in-process rather than through `inotifywait`. `rclone bisync` refuses to run
+  before its baseline listings exist, so the first run passes `--resync` and records that it did.
+
 ## [0.3.0] - 2026-08-21
 
 ### Added

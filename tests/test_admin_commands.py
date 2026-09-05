@@ -3,17 +3,21 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 import logging
+import subprocess as sp
 
 from deltona.commands.admin import (
     clean_old_kernels_and_modules_main,
     generate_html_dir_tree_main,
     kconfig_to_commands_main,
     kconfig_to_json_main,
+    make_rclone_bisync_service_main,
     patch_bundle_main,
+    rclone_bisyncd_main,
     reset_tpm_enrollments_main,
     slug_rename_main,
     smv_main,
 )
+from deltona.rclone import AlreadyRunning
 from deltona.system import MultipleKeySlots
 
 if TYPE_CHECKING:
@@ -634,3 +638,127 @@ def test_smv_main_explicit_j_beats_o_proxyjump(mocker: MockerFixture, runner: Cl
     assert result.exit_code == 0, result.output
     jump_client, _ = clients
     assert jump_client.connect.call_args.args[:3] == ('explicit.jump', 22, None)
+
+
+def test_make_rclone_bisync_service_main_dry_run(mocker: MockerFixture, runner: CliRunner,
+                                                 tmp_path: Path) -> None:
+    mocker.patch('deltona.commands.admin.shutil.which', return_value='/usr/bin/rclone-bisyncd')
+    mock_install = mocker.patch('deltona.commands.admin.install_service')
+
+    result = runner.invoke(make_rclone_bisync_service_main,
+                           [str(tmp_path), '-k', 'systemd-user', '-n'])
+    assert result.exit_code == 0, result.output
+    assert '[Unit]' in result.output
+    assert '/usr/bin/rclone-bisyncd' in result.output
+    mock_install.assert_not_called()
+
+
+def test_make_rclone_bisync_service_main_installs(mocker: MockerFixture, runner: CliRunner,
+                                                  tmp_path: Path) -> None:
+    mocker.patch('deltona.commands.admin.shutil.which', return_value='/usr/bin/rclone-bisyncd')
+    mock_install = mocker.patch('deltona.commands.admin.install_service')
+    mock_install.return_value = tmp_path / 'x.service'
+
+    result = runner.invoke(
+        make_rclone_bisync_service_main,
+        [str(tmp_path), 'gdrive:Docs', '-k', 'systemd-user', '-a', '--transfers=8'])
+    assert result.exit_code == 0, result.output
+    command = mock_install.call_args.args[2]
+    assert command[:3] == ['/usr/bin/rclone-bisyncd', str(tmp_path.resolve()), 'gdrive:Docs']
+    assert command[-2:] == ['--rclone-arg', '--transfers=8']
+    assert mock_install.call_args.kwargs['enable'] is True
+
+
+def test_make_rclone_bisync_service_main_no_enable(mocker: MockerFixture, runner: CliRunner,
+                                                   tmp_path: Path) -> None:
+    mocker.patch('deltona.commands.admin.shutil.which', return_value=None)
+    mock_install = mocker.patch('deltona.commands.admin.install_service')
+    mock_install.return_value = tmp_path / 'x.service'
+
+    result = runner.invoke(make_rclone_bisync_service_main, [str(tmp_path), '--no-enable'])
+    assert result.exit_code == 0, result.output
+    assert mock_install.call_args.kwargs['enable'] is False
+
+
+def test_make_rclone_bisync_service_main_enable_fails(mocker: MockerFixture, runner: CliRunner,
+                                                      tmp_path: Path) -> None:
+    mocker.patch('deltona.commands.admin.shutil.which', return_value=None)
+    mocker.patch('deltona.commands.admin.install_service',
+                 side_effect=sp.CalledProcessError(1, 'systemctl'))
+
+    result = runner.invoke(make_rclone_bisync_service_main, [str(tmp_path)])
+    assert result.exit_code == 1
+
+
+def test_rclone_bisyncd_main_watches(mocker: MockerFixture, runner: CliRunner,
+                                     tmp_path: Path) -> None:
+    mocker.patch('deltona.commands.admin.single_instance')
+    mock_watch = mocker.patch('deltona.commands.admin.watch_and_sync')
+
+    result = runner.invoke(rclone_bisyncd_main, [str(tmp_path)])
+    assert result.exit_code == 0, result.output
+    assert mock_watch.call_args.args[1] == f'gdrive:{tmp_path.resolve().name}'
+
+
+def test_rclone_bisyncd_main_once(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
+    mocker.patch('deltona.commands.admin.single_instance')
+    mock_sync = mocker.patch('deltona.commands.admin.sync_once')
+    mock_watch = mocker.patch('deltona.commands.admin.watch_and_sync')
+
+    result = runner.invoke(rclone_bisyncd_main, [str(tmp_path), 'gdrive:D', '--once'])
+    assert result.exit_code == 0, result.output
+    mock_sync.assert_called_once_with(tmp_path, 'gdrive:D', ())
+    mock_watch.assert_not_called()
+
+
+def test_rclone_bisyncd_main_resync(mocker: MockerFixture, runner: CliRunner,
+                                    tmp_path: Path) -> None:
+    mocker.patch('deltona.commands.admin.single_instance')
+    mock_bisync = mocker.patch('deltona.commands.admin.bisync')
+
+    result = runner.invoke(rclone_bisyncd_main, [str(tmp_path), 'gdrive:D', '--resync'])
+    assert result.exit_code == 0, result.output
+    assert mock_bisync.call_args.kwargs['resync'] is True
+
+
+def test_rclone_bisyncd_main_already_running(mocker: MockerFixture, runner: CliRunner,
+                                             tmp_path: Path) -> None:
+    mocker.patch('deltona.commands.admin.single_instance',
+                 side_effect=AlreadyRunning('Already syncing.'))
+
+    result = runner.invoke(rclone_bisyncd_main, [str(tmp_path)])
+    assert result.exit_code == 1
+    assert 'Already syncing.' in result.output
+
+
+def test_rclone_bisyncd_main_rclone_fails(mocker: MockerFixture, runner: CliRunner,
+                                          tmp_path: Path) -> None:
+    mocker.patch('deltona.commands.admin.single_instance')
+    mocker.patch('deltona.commands.admin.watch_and_sync',
+                 side_effect=sp.CalledProcessError(7, 'rclone'))
+
+    result = runner.invoke(rclone_bisyncd_main, [str(tmp_path)])
+    assert result.exit_code == 1
+    assert 'status 7' in result.output
+
+
+def test_rclone_bisyncd_main_rclone_missing(mocker: MockerFixture, runner: CliRunner,
+                                            tmp_path: Path) -> None:
+    mocker.patch('deltona.commands.admin.single_instance')
+    mocker.patch('deltona.commands.admin.watch_and_sync',
+                 side_effect=FileNotFoundError(2, 'No such file or directory', 'rclone'))
+
+    result = runner.invoke(rclone_bisyncd_main, [str(tmp_path)])
+    assert result.exit_code == 1
+    assert 'rclone is not installed.' in result.output
+
+
+def test_make_rclone_bisync_service_main_systemctl_missing(mocker: MockerFixture, runner: CliRunner,
+                                                           tmp_path: Path) -> None:
+    mocker.patch('deltona.commands.admin.shutil.which', return_value=None)
+    mocker.patch('deltona.commands.admin.install_service',
+                 side_effect=FileNotFoundError(2, 'No such file or directory', 'systemctl'))
+
+    result = runner.invoke(make_rclone_bisync_service_main, [str(tmp_path)])
+    assert result.exit_code == 1
+    assert 'systemctl is not installed.' in result.output

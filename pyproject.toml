@@ -94,7 +94,7 @@ email = "audvare@gmail.com"
 name = "Andrew Udvare"
 
 [project.optional-dependencies]
-admin = ["paramiko>=5.0.0"]
+admin = ["paramiko>=5.0.0", "watchdog>=6.0.0"]
 desktop = [
   "pydbus>=0.6.0; sys_platform == 'linux'",
   "pygobject>=3.56.3; sys_platform == 'linux'",
@@ -141,6 +141,7 @@ kconfig-to-json = "deltona.commands.admin:kconfig_to_json_main"
 ke-ebook-ex = "deltona.commands.media:ke_ebook_ex_main"
 kill-gamescope = "deltona.commands.desktop:kill_gamescope_main"
 kill-wine = "deltona.commands.wine:kill_wine_main"
+make-rclone-bisync-service = "deltona.commands.admin:make_rclone_bisync_service_main"
 merge-dependabot-prs = "deltona.commands.git:merge_dependabot_prs_main"
 merge-pre-commit-prs = "deltona.commands.git:merge_pre_commit_ci_prs_main"
 mp4json = "deltona.commands.media:add_info_json_main"
@@ -151,6 +152,7 @@ netloc = "deltona.commands.string:urldecode_main"
 patch-bundle = "deltona.commands.admin:patch_bundle_main"
 patch-uiso-font = "deltona.commands.wine:patch_ultraiso_font_main"
 pl2json = "deltona.commands.string:pl2json_main"
+rclone-bisyncd = "deltona.commands.admin:rclone_bisyncd_main"
 remove-trailing-commas = "deltona.commands.misc:remove_trailing_commas_main"
 retry-gh-jobs = "deltona.commands.git:retry_gh_jobs_main"
 sanitize = "deltona.commands.string:sanitize_main"

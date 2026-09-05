@@ -43,7 +43,9 @@ local utils = import 'utils.libsonnet';
         htmltree: 'deltona.commands.admin:generate_html_dir_tree_main',
         'kconfig-to-commands': 'deltona.commands.admin:kconfig_to_commands_main',
         'kconfig-to-json': 'deltona.commands.admin:kconfig_to_json_main',
+        'make-rclone-bisync-service': 'deltona.commands.admin:make_rclone_bisync_service_main',
         'patch-bundle': 'deltona.commands.admin:patch_bundle_main',
+        'rclone-bisyncd': 'deltona.commands.admin:rclone_bisyncd_main',
         'slug-rename': 'deltona.commands.admin:slug_rename_main',
         smv: 'deltona.commands.admin:smv_main',
         'systemd-reset-tpm-cryptenroll': 'deltona.commands.admin:reset_tpm_enrollments_main',
@@ -206,13 +208,17 @@ local utils = import 'utils.libsonnet';
             optional: true,
             version: utils.latestPypiPackageVersionCaret('unidecode'),
           },
+          watchdog: {
+            optional: true,
+            version: utils.latestPypiPackageVersionCaret('watchdog'),
+          },
           'yt-dlp': {
             optional: true,
             version: utils.latestPypiPackageVersionCaret('yt-dlp'),
           },
         },
         extras: {
-          admin: ['paramiko'],
+          admin: ['paramiko', 'watchdog'],
           desktop: ['pydbus', 'pygobject', 'pyperclip'],
           git: ['gidgethub', 'gitpython', 'keyring'],
           media: ['keyring', 'mutagen', 'platformdirs', 'send2trash'],
@@ -301,7 +307,7 @@ local utils = import 'utils.libsonnet';
     // Every package named by an entry in pyproject.optional-dependencies, so that the AppImage
     // carries all of them. Omitting one breaks `deltona --help`, which imports every command
     // module.
-    requirements_filter: 'beautifulsoup4|gidgethub|gitpython|html5lib|keyring|mutagen|paramiko|pexpect|pillow|platformdirs|psutil|pydbus|pygobject|pyperclip|python-xz|pyyaml|send2trash|unidecode|yt-dlp',
+    requirements_filter: 'beautifulsoup4|gidgethub|gitpython|html5lib|keyring|mutagen|paramiko|pexpect|pillow|platformdirs|psutil|pydbus|pygobject|pyperclip|python-xz|pyyaml|send2trash|unidecode|watchdog|yt-dlp',
   },
   local apt_packages = ['libcairo2-dev', 'libgirepository-2.0-dev'],
   github+: {

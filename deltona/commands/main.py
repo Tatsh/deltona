@@ -44,6 +44,7 @@ _COMMANDS: dict[str, str] = {
     'ke-ebook-ex': 'deltona.commands.media:ke_ebook_ex_main',
     'kill-gamescope': 'deltona.commands.desktop:kill_gamescope_main',
     'kill-wine': 'deltona.commands.wine:kill_wine_main',
+    'make-rclone-bisync-service': 'deltona.commands.admin:make_rclone_bisync_service_main',
     'merge-dependabot-prs': 'deltona.commands.git:merge_dependabot_prs_main',
     'merge-pre-commit-prs': 'deltona.commands.git:merge_pre_commit_ci_prs_main',
     'mp4json': 'deltona.commands.media:add_info_json_main',
@@ -54,6 +55,7 @@ _COMMANDS: dict[str, str] = {
     'patch-bundle': 'deltona.commands.admin:patch_bundle_main',
     'patch-uiso-font': 'deltona.commands.wine:patch_ultraiso_font_main',
     'pl2json': 'deltona.commands.string:pl2json_main',
+    'rclone-bisyncd': 'deltona.commands.admin:rclone_bisyncd_main',
     'remove-trailing-commas': 'deltona.commands.misc:remove_trailing_commas_main',
     'sanitize': 'deltona.commands.string:sanitize_main',
     'set-wine-fonts': 'deltona.commands.wine:set_wine_fonts_main',
@@ -84,8 +86,10 @@ _LINUX_ONLY: frozenset[str] = frozenset({
     'clean-old-kernels-modules', 'connect-g603', 'fix-mime-assocs', 'inhibit-notifications',
     'kill-gamescope', 'systemd-reset-tpm-cryptenroll', 'wait-for-disc'
 })
-_NOT_WINDOWS: frozenset[str] = _LINUX_ONLY | frozenset(
-    {'kill-wine', 'set-wine-fonts', 'unregister-wine-assocs', 'winegoginstall', 'wineshell'})
+_NOT_WINDOWS: frozenset[str] = _LINUX_ONLY | frozenset({
+    'kill-wine', 'make-rclone-bisync-service', 'rclone-bisyncd', 'set-wine-fonts',
+    'unregister-wine-assocs', 'winegoginstall', 'wineshell'
+})
 
 
 def _excluded() -> frozenset[str]:

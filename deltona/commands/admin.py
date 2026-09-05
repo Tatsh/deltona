@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Any, NamedTuple, TextIO
 import json
 import logging
 import re
+import shutil
+import subprocess as sp
 import sys
 
 from bascom import setup_logging
@@ -17,6 +19,20 @@ from deltona.gentoo import (
     DEFAULT_KERNEL_LOCATION,
     DEFAULT_MODULES_PATH,
     clean_old_kernels_and_modules,
+)
+from deltona.rclone import (
+    DEFAULT_IDLE_SECONDS,
+    DEFAULT_POLL_SECONDS,
+    AlreadyRunning,
+    bisync,
+    default_remote,
+    default_service_kind,
+    default_service_name,
+    generate_service,
+    install_service,
+    single_instance,
+    sync_once,
+    watch_and_sync,
 )
 from deltona.system import (
     MultipleKeySlots,
@@ -33,6 +49,7 @@ import click
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
+    from deltona.rclone import ServiceKind
     from paramiko import SSHClient
 
 
@@ -426,3 +443,150 @@ def generate_html_dir_tree_main(path: Path,
     """Generate an HTML directory listing."""
     click.echo(generate_html_dir_tree(path, follow_symlinks=follow_symlinks, depth=depth),
                output_file)
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument('local',
+                type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path))
+@click.argument('remote', required=False)
+@click.option('-a',
+              '--rclone-arg',
+              'rclone_args',
+              multiple=True,
+              help='Extra argument passed to rclone bisync. May be repeated.')
+@click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
+@click.option('-k',
+              '--kind',
+              type=click.Choice(('launchd', 'systemd-system', 'systemd-user')),
+              help='Service manager to target. Defaults to the one native to this platform.')
+@click.option('-n', '--dry-run', is_flag=True, help='Print the service definition and exit.')
+@click.option('--idle',
+              default=DEFAULT_IDLE_SECONDS,
+              type=float,
+              help='Seconds of quiet before a burst of writes is synchronised.')
+@click.option('--name', help='Service name. Defaults to a name based on LOCAL.')
+@click.option('--no-enable', is_flag=True, help='Do not enable and start the service.')
+@click.option('--poll',
+              default=DEFAULT_POLL_SECONDS,
+              type=float,
+              help='Longest wait between synchronisations.')
+@click.option('--user', help='Account the service runs as. Only used with systemd-system.')
+def make_rclone_bisync_service_main(local: Path,
+                                    remote: str | None = None,
+                                    rclone_args: Sequence[str] = (),
+                                    kind: ServiceKind | None = None,
+                                    name: str | None = None,
+                                    user: str | None = None,
+                                    idle: float = DEFAULT_IDLE_SECONDS,
+                                    poll: float = DEFAULT_POLL_SECONDS,
+                                    *,
+                                    debug: bool = False,
+                                    dry_run: bool = False,
+                                    no_enable: bool = False) -> None:
+    """
+    Install a service that keeps LOCAL in bidirectional sync with REMOTE.
+
+    REMOTE defaults to a Google Drive directory of the same name as LOCAL. Installing a
+    systemd-system service requires root privileges.
+
+    Raises
+    ------
+    click.Abort
+        If the service could not be enabled, or the service manager is not installed.
+    """
+    setup_logging(debug=debug, loggers={'deltona': {}})
+    kind = kind or default_service_kind()
+    name = name or default_service_name(local)
+    remote = remote or default_remote(local)
+    command = [
+        shutil.which('rclone-bisyncd') or 'rclone-bisyncd',
+        str(local.resolve()), remote, '--idle',
+        str(idle), '--poll',
+        str(poll)
+    ]
+    for arg in rclone_args:
+        command += ['--rclone-arg', arg]
+    description = f'Bidirectional rclone sync of {local} with {remote}.'
+    if dry_run:
+        click.echo(generate_service(kind, name, command, description=description, user=user))
+        return
+    try:
+        path = install_service(kind,
+                               name,
+                               command,
+                               description=description,
+                               enable=not no_enable,
+                               user=user)
+    except sp.CalledProcessError as e:
+        click.echo(f'Failed to enable {name}.', err=True)
+        raise click.Abort from e
+    except FileNotFoundError as e:
+        click.echo(f'{e.filename} is not installed.', err=True)
+        raise click.Abort from e
+    click.echo(f'Installed {path}.')
+
+
+def _run_bisyncd(local: Path, remote: str, rclone_args: Sequence[str], *, idle: float, once: bool,
+                 poll: float, resync: bool) -> None:
+    if resync:
+        bisync(local, remote, rclone_args, resync=True)
+    elif once:
+        sync_once(local, remote, rclone_args)
+    else:
+        watch_and_sync(local, remote, rclone_args, idle=idle, poll=poll)
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument('local',
+                type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path))
+@click.argument('remote', required=False)
+@click.option('-a',
+              '--rclone-arg',
+              'rclone_args',
+              multiple=True,
+              help='Extra argument passed to rclone bisync. May be repeated.')
+@click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
+@click.option('--idle',
+              default=DEFAULT_IDLE_SECONDS,
+              type=float,
+              help='Seconds of quiet before a burst of writes is synchronised.')
+@click.option('--once', is_flag=True, help='Synchronise once and exit.')
+@click.option('--poll',
+              default=DEFAULT_POLL_SECONDS,
+              type=float,
+              help='Longest wait between synchronisations.')
+@click.option('--resync', is_flag=True, help='Rebuild the baseline listings and exit.')
+def rclone_bisyncd_main(local: Path,
+                        remote: str | None = None,
+                        rclone_args: Sequence[str] = (),
+                        idle: float = DEFAULT_IDLE_SECONDS,
+                        poll: float = DEFAULT_POLL_SECONDS,
+                        *,
+                        debug: bool = False,
+                        once: bool = False,
+                        resync: bool = False) -> None:
+    """
+    Keep LOCAL in bidirectional sync with REMOTE, synchronising whenever LOCAL is written to.
+
+    REMOTE defaults to a Google Drive directory of the same name as LOCAL. Only one instance per
+    directory runs at a time.
+
+    Raises
+    ------
+    click.Abort
+        If another instance is already running, or if rclone fails or is not installed.
+    """
+    setup_logging(debug=debug, loggers={'deltona': {}})
+    remote = remote or default_remote(local)
+    try:
+        with single_instance(local):
+            _run_bisyncd(local, remote, rclone_args, idle=idle, once=once, poll=poll, resync=resync)
+    except AlreadyRunning as e:
+        click.echo(str(e), err=True)
+        raise click.Abort from e
+    except sp.CalledProcessError as e:
+        click.echo(f'rclone exited with status {e.returncode}.', err=True)
+        raise click.Abort from e
+    except FileNotFoundError as e:
+        click.echo(f'{e.filename} is not installed.', err=True)
+        raise click.Abort from e
