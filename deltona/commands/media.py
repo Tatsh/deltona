@@ -14,6 +14,9 @@ import subprocess as sp
 import unicodedata
 
 from bascom import setup_logging
+from typing_extensions import override
+import click
+
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.io import make_sfv, unpack_ebook
 from deltona.media import (
@@ -30,8 +33,6 @@ from deltona.string import underscorize
 from deltona.system import IS_WINDOWS, wait_for_disc
 from deltona.ultraiso import InsufficientArguments, run_ultraiso
 from deltona.utils import TIMES_RE, add_cdda_times
-from typing_extensions import override
-import click
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

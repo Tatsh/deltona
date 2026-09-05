@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from deltona import windows
 import pytest
+
+from deltona import windows
 
 
 def test_make_font_entry_basic() -> None:

@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING, Any
 from unittest import mock
 import os
 
+from typing_extensions import Never
+import pytest
+
 from deltona.system import (
     POSITION_RE,
     STATE_RE,
@@ -24,8 +27,6 @@ from deltona.system import (
     wait_for_disc,
 )
 from deltona.typing import CDStatus
-from typing_extensions import Never
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

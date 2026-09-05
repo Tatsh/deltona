@@ -4,8 +4,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-from deltona import string
 import pytest
+
+from deltona import string
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

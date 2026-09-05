@@ -5,6 +5,8 @@ import datetime
 import os
 import subprocess as sp
 
+import pytest
+
 from deltona.io import (
     RARInfo,
     SFVVerificationError,
@@ -18,7 +20,6 @@ from deltona.io import (
     unpack_ebook,
     verify_sfv,
 )
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

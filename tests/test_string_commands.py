@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import plistlib
 
+import pytest
+
 from deltona.commands.string import (
     cssq_main,
     fullwidth2ascii_main,
@@ -18,7 +20,6 @@ from deltona.commands.string import (
     underscorize_main,
     urldecode_main,
 )
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

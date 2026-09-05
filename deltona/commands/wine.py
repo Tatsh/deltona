@@ -13,13 +13,14 @@ import signal
 import subprocess as sp
 
 from bascom import setup_logging
+import click
+
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.string import unix_path_to_wine
 from deltona.system import IS_WINDOWS, kill_wine
 from deltona.ultraiso import patch_ultraiso_font
 from deltona.utils import unregister_wine_file_associations
 from deltona.windows import DEFAULT_DPI, Field, make_font_entry
-import click
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

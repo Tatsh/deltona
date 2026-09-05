@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
 import tokenize
 
+import pytest
+
 from deltona.commands.misc import (
     adp_main,
     burnrariso_main,
@@ -13,7 +15,6 @@ from deltona.commands.misc import (
     unpack_0day_main,
 )
 from deltona.io import SFVVerificationError, UnRARExtractionTestFailed
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

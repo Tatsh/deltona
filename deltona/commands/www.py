@@ -9,13 +9,14 @@ import asyncio
 import json
 
 from bascom import setup_logging
+import anyio
+import click
+
 from deltona.chromium import fix_chromium_pwa_icon
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.system import CHROME_DEFAULT_CONFIG_PATH, CHROME_DEFAULT_LOCAL_STATE_PATH, IS_WINDOWS
 from deltona.utils import kill_processes_by_name
 from deltona.www import check_bookmarks_html_urls, where_from
-import anyio
-import click
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

@@ -17,6 +17,10 @@ import subprocess as sp
 import webbrowser
 
 from bascom import setup_logging
+from niquests import AsyncSession, HTTPError, Response
+import anyio
+import click
+
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.desktop import fix_mime_associations
 from deltona.media import ffprobe
@@ -29,17 +33,15 @@ from deltona.system import (
 )
 from deltona.typing import assert_not_none
 from deltona.www import upload_to_imgbb
-from niquests import AsyncSession, HTTPError, Response
-import anyio
-import click
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from types import ModuleType
 
-    from deltona.typing import ProbeDict, StreamDispositionDict
     from gi.repository import GLib  # pyright: ignore[reportMissingModuleSource]
     from pydbus.bus import Bus
+
+    from deltona.typing import ProbeDict, StreamDispositionDict
 
 log = logging.getLogger(__name__)
 _APPLICATIONS_DIR = Path('/usr/share/applications')

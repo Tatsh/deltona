@@ -11,6 +11,10 @@ import shutil
 import subprocess as sp
 
 from bascom import setup_logging
+import click
+import tomlkit
+import tomlkit.exceptions
+
 from deltona.adp import calculate_salary
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.io import (
@@ -24,9 +28,6 @@ from deltona.io import (
 from deltona.refactor import remove_trailing_commas_in_paths
 from deltona.string import pluralize
 from deltona.typing import INCITS38Code, assert_not_none
-import click
-import tomlkit
-import tomlkit.exceptions
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

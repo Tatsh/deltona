@@ -5,6 +5,8 @@ from unittest.mock import AsyncMock
 import enum
 import subprocess as sp
 
+import pytest
+
 from deltona.commands.media import (
     add_cdda_times_main,
     add_info_json_main,
@@ -22,7 +24,6 @@ from deltona.commands.media import (
     wait_for_disc_main,
 )
 from deltona.ultraiso import InsufficientArguments
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

@@ -4,8 +4,9 @@ from __future__ import annotations
 from typing import Union
 import os
 
-from deltona.typing import assert_not_none, contains_type_path_like_str
 import pytest
+
+from deltona.typing import assert_not_none, contains_type_path_like_str
 
 
 @pytest.mark.parametrize(

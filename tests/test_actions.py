@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from deltona.actions import find_retryable_runs, rerun_failed_jobs
 import pytest
+
+from deltona.actions import find_retryable_runs, rerun_failed_jobs
 
 if TYPE_CHECKING:
     from .conftest import FakeGitHub

@@ -4,22 +4,22 @@ requires = ["hatchling"]
 
 [dependency-groups]
 dev = [
-  "commitizen>=4.17.0",
+  "commitizen>=4.18.0",
   "cz-path>=0.0.7",
-  "mypy>=2.3.0",
+  "mypy>=2.3.1",
   "pydbus-stubs>=0; sys_platform == 'linux'",
   "ruff==0.16.5",
-  "ty>=0.0.71",
+  "ty>=0.0.75",
   "types-beautifulsoup4>=4.12.0.20250516",
   "types-binaryornot>=0.4.0.20260712",
   "types-paramiko>=5.0.0.20260724",
   "types-pexpect>=4.9.0.20260518",
   "types-pillow>=10.2.0.20240822",
-  "types-psutil>=7.2.2.20260518",
+  "types-psutil>=7.2.2.20260827",
   "types-pyperclip>=1.11.0.20260508",
-  "types-pyyaml>=6.0.12.20260724",
+  "types-pyyaml>=6.0.12.20260815",
   "types-send2trash>=2.1.0.20260408",
-  "types-yt-dlp>=2026.7.4.20260807",
+  "types-yt-dlp>=2026.8.19.20260827",
   "yapf>=0.43.0",
 ]
 docs = [
@@ -75,8 +75,8 @@ dependencies = [
   "async-lru>=2.3.0",
   "bascom>=0.2.0",
   "binaryornot>=0.6.0",
-  "click>=8.4.2",
-  "niquests>=3.21.0",
+  "click>=8.5.0",
+  "niquests>=3.21.1",
   "pathspec>=1.1.1",
   "tomlkit>=0.15.1",
   "typing-extensions>=4.16.0",
@@ -97,13 +97,13 @@ name = "Andrew Udvare"
 admin = ["paramiko>=5.0.0", "watchdog>=6.0.0"]
 desktop = [
   "pydbus>=0.6.0; sys_platform == 'linux'",
-  "pygobject>=3.56.3; sys_platform == 'linux'",
+  "pygobject>=3.58.0; sys_platform == 'linux'",
   "pyperclip>=1.11.0",
 ]
-git = ["gidgethub>=5.4.0", "gitpython>=3.1.59", "keyring>=25.7.0"]
-media = ["keyring>=25.7.0", "mutagen>=1.48.1", "platformdirs>=4.11.3", "send2trash>=2.1.0"]
-string = ["pyyaml>=6.0.3", "unidecode>=1.4.0", "yt-dlp>=2026.7.4"]
-wine = ["pexpect>=4.9.0", "platformdirs>=4.11.3", "psutil>=7.2.2", "python-xz>=0.6.0"]
+git = ["gidgethub>=5.4.0", "gitpython>=3.1.61", "keyring>=25.7.0"]
+media = ["keyring>=25.7.0", "mutagen>=1.48.1", "platformdirs>=4.11.5", "send2trash>=2.1.0"]
+string = ["pyyaml>=6.0.3", "unidecode>=1.4.0", "yt-dlp>=2026.8.19"]
+wine = ["pexpect>=4.9.0", "platformdirs>=4.11.5", "psutil>=7.2.2", "python-xz>=0.6.0"]
 www = ["beautifulsoup4>=4.15.0", "html5lib>=1.1", "keyring>=25.7.0", "pillow>=12.3.0"]
 
 [project.scripts]
@@ -264,6 +264,7 @@ cache-dir = "~/.cache/ruff"
 force-exclude = true
 line-length = 100
 namespace-packages = ["docs", "tests"]
+output-prefer-rule-codes = true
 target-version = "py310"
 unsafe-fixes = true
 
@@ -304,8 +305,9 @@ multiline-quotes = "double"
 case-sensitive = true
 combine-as-imports = true
 from-first = true
+known-first-party = ["deltona"]
 required-imports = ["from __future__ import annotations"]
-section-order = ["future", "standard-library", "third-party", "local-folder"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 20

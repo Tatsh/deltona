@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from deltona.gentoo import InvalidActiveKernelSourcePath, clean_old_kernels_and_modules
 import pytest
+
+from deltona.gentoo import InvalidActiveKernelSourcePath, clean_old_kernels_and_modules
 
 if TYPE_CHECKING:
     from unittest.mock import Mock

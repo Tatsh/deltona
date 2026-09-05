@@ -13,6 +13,8 @@ import subprocess as sp
 import sys
 
 from bascom import setup_logging
+import click
+
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.gentoo import (
     DEFAULT_ACTIVE_KERNEL_NAME,
@@ -44,13 +46,13 @@ from deltona.system import (
 )
 from deltona.utils import secure_move_path
 from deltona.www import generate_html_dir_tree
-import click
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
-    from deltona.rclone import ServiceKind
     from paramiko import SSHClient
+
+    from deltona.rclone import ServiceKind
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -488,12 +490,7 @@ def make_rclone_bisync_service_main(local: Path,
 
     REMOTE defaults to a Google Drive directory of the same name as LOCAL. Installing a
     systemd-system service requires root privileges.
-
-    Raises
-    ------
-    click.Abort
-        If the service could not be enabled, or the service manager is not installed.
-    """
+    """  # noqa: DOC501
     setup_logging(debug=debug, loggers={'deltona': {}})
     kind = kind or default_service_kind()
     name = name or default_service_name(local)
@@ -570,12 +567,7 @@ def rclone_bisyncd_main(local: Path,
 
     REMOTE defaults to a Google Drive directory of the same name as LOCAL. Only one instance per
     directory runs at a time.
-
-    Raises
-    ------
-    click.Abort
-        If another instance is already running, or if rclone fails or is not installed.
-    """
+    """  # noqa: DOC501
     setup_logging(debug=debug, loggers={'deltona': {}})
     remote = remote or default_remote(local)
     try:

@@ -14,6 +14,7 @@ import sys
 import tempfile
 import threading
 
+from typing_extensions import override
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
@@ -356,6 +357,7 @@ class _WriteFlag(FileSystemEventHandler):
     def __init__(self, flag: threading.Event) -> None:
         self._flag = flag
 
+    @override
     def on_any_event(self, event: FileSystemEvent) -> None:
         """Record that the tree changed."""
         log.debug('Change detected at `%s`.', event.src_path)

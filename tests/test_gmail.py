@@ -6,6 +6,9 @@ import json
 import logging
 import urllib.error
 
+import niquests
+import pytest
+
 from deltona.gmail import (
     REDIRECT_URI,
     GmailAuthorizationError,
@@ -15,13 +18,12 @@ from deltona.gmail import (
     authorize,
     get_access_token,
 )
-import niquests
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from pytest_mock import MockerFixture
+
     from tests.conftest import FakeGitHub
 
 CREDENTIALS_JSON = ('{"client_id": "id", "client_secret": "secret", "refresh_token": "refresh", '

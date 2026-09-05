@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 import plistlib
 
+import pytest
+
 from deltona.rclone import (
     AlreadyRunning,
     bisync,
@@ -18,7 +20,6 @@ from deltona.rclone import (
     sync_once,
     watch_and_sync,
 )
-import pytest
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
@@ -77,7 +78,7 @@ def test_generate_service_launchd() -> None:
 def test_enable_service(mocker: MockerFixture, tmp_path: Path, kind: str, expected: str) -> None:
     mocker.patch('deltona.rclone.Path.home', return_value=tmp_path)
     mock_run = mocker.patch('deltona.rclone.sp.run')
-    enable_service(kind, 'x')  # type: ignore[arg-type]
+    enable_service(kind, 'x')  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
     assert mock_run.call_args_list[-1].args[0][0] == expected
 
 

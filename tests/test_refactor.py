@@ -3,8 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import tokenize
 
-from deltona.refactor import find_removable_trailing_commas, remove_trailing_commas
 import pytest
+
+from deltona.refactor import find_removable_trailing_commas, remove_trailing_commas
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture

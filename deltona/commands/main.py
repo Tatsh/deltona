@@ -6,9 +6,10 @@ from importlib import import_module
 from typing import Any
 import sys
 
-from deltona.constants import CONTEXT_SETTINGS
 from typing_extensions import override
 import click
+
+from deltona.constants import CONTEXT_SETTINGS
 
 _COMMANDS: dict[str, str] = {
     'add-cdda-times': 'deltona.commands.media:add_cdda_times_main',

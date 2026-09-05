@@ -3,6 +3,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import niquests
+import pytest
+
 from deltona.utils import (
     CD_FRAMES,
     DataAdapter,
@@ -11,8 +14,6 @@ from deltona.utils import (
     secure_move_path,
     unregister_wine_file_associations,
 )
-import niquests
-import pytest
 
 if TYPE_CHECKING:
     from _pytest.monkeypatch import MonkeyPatch

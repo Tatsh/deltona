@@ -6,7 +6,6 @@ alayya
 alru
 alsa
 anchore
-Ångström
 anhu
 anni
 anyio
@@ -223,6 +222,7 @@ niquests
 nocancel
 nonantialiased
 nonblock
+noqa
 norecursedirs
 norestart
 notarytool
@@ -375,3 +375,4 @@ yapfignore
 yarnrc
 zizmor
 zscale
+Ångström

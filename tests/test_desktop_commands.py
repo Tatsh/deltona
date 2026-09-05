@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock
 import errno
 
+from niquests import HTTPError
+import pytest
+
 from deltona.commands.desktop import (
     connect_g603_main,
     fix_mime_associations_main,
@@ -13,8 +16,6 @@ from deltona.commands.desktop import (
     umpv_main,
     upload_to_imgbb_main,
 )
-from niquests import HTTPError
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable

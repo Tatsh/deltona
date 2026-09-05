@@ -4,6 +4,9 @@ from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 import re
 
+import click
+import pytest
+
 from deltona.actions import RetryCandidate, RetryRule
 from deltona.commands.git import (
     git_checkout_default_branch_main,
@@ -15,8 +18,6 @@ from deltona.commands.git import (
 )
 from deltona.git import DependabotMergeError, PreCommitCIMergeError
 from deltona.gmail import GmailAuthorizationError, GmailConfigurationError
-import click
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

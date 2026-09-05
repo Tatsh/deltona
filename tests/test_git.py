@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import logging
 
+import pytest
+
 from deltona.git import (
     DependabotMergeError,
     PreCommitCIMergeError,
@@ -12,10 +14,10 @@ from deltona.git import (
     merge_pre_commit_ci_pull_requests,
 )
 from deltona.gmail import GmailConfigurationError
-import pytest
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
+
     from tests.conftest import FakeGitHub
 
 CREDENTIALS_JSON = ('{"client_id": "id", "client_secret": "secret", "refresh_token": "refresh", '

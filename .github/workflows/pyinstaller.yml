@@ -163,7 +163,7 @@ jobs:
             & $file.FullName --help
             & $file.FullName add-cdda-times --help
           }
-      - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && env.APPLE_SIGNING_CERT != ''
+      - if: (matrix.os == 'macos-15-intel' || matrix.os == 'macos-latest') && env.APPLE_SIGNING_CERT != ''
         name: 'Sign and notarise macOS binaries'
         env:
           APPLE_CERT_BASE64: ${{ secrets.APPLE_SIGNING_CERTIFICATE }}
@@ -206,7 +206,7 @@ jobs:
           rm -f "$cert_path" "$zip_path"
           security delete-keychain "$keychain"
         shell: 'bash'
-      - if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
+      - if: matrix.os == 'macos-15-intel' || matrix.os == 'macos-latest'
         name: 'Test binary'
         run: |
           dist_files=(dist/*)
@@ -245,7 +245,7 @@ jobs:
         with:
           subject-path: '${{ matrix.dist_path }}'
           sbom-path: 'sbom.spdx.json'
-      - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && github.ref_type == 'tag'
+      - if: (matrix.os == 'macos-15-intel' || matrix.os == 'macos-latest') && github.ref_type == 'tag'
         name: 'Zip files'
         env:
           DIST_PATH: ${{ matrix.dist_path }}
@@ -278,6 +278,18 @@ jobs:
         with:
           subject-path: '_out/*.zip'
           sbom-path: 'sbom.spdx.json'
+      # The archives, not the binaries, are what a release carries. Every matrix job builds a
+      # binary under the same name, so uploading those directly would collide once merged and
+      # silently drop every architecture but the last. An archive carries the version and the
+      # architecture in its own name, and keeps the executable bit and any notarisation that a
+      # bare release asset would lose.
+      - if: github.ref_type == 'tag'
+        name: 'Upload release archives'
+        uses: 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a'
+        with:
+          if-no-files-found: error
+          name: deltona-release-${{ matrix.suffix }}
+          path: '_out/*.zip'
     strategy:
       matrix:
         include:
@@ -309,7 +321,7 @@ jobs:
         with:
           merge-multiple: true
           path: '_release_assets'
-          pattern: deltona-binaries-*
+          pattern: deltona-release-*
       - name: 'Create or update draft release'
         env:
           GH_REPO: ${{ github.repository }}

@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 import subprocess as sp
 
+import pytest
+
 from deltona.ultraiso import (
     ULTRAISO_FONT_REPLACEMENT_MAX_LENGTH,
     InsufficientArguments,
@@ -14,7 +16,6 @@ from deltona.ultraiso import (
     run_ultraiso,
     unix_path_to_wine,
 )
-import pytest
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture

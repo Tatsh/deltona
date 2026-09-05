@@ -3,6 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 import subprocess as sp
 
+from niquests import HTTPError
+import pytest
+
 from deltona.media import (
     add_info_json_to_media_file,
     archive_dashcam_footage,
@@ -18,8 +21,6 @@ from deltona.media import (
     parse_timestamp,
     supported_audio_input_formats,
 )
-from niquests import HTTPError
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

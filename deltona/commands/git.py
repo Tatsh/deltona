@@ -13,6 +13,9 @@ import re
 import webbrowser
 
 from bascom import setup_logging
+import anyio
+import click
+
 from deltona.actions import find_retryable_runs, rerun_failed_jobs
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.git import (
@@ -32,14 +35,13 @@ from deltona.gmail import (
     authorize,
 )
 from deltona.string import pluralize
-import anyio
-import click
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-    from deltona.actions import RetryCandidate
     from git import Repo
+
+    from deltona.actions import RetryCandidate
 
 
 def _get_git_repo() -> Repo:  # pragma: no cover

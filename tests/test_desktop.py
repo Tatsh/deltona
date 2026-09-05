@@ -3,8 +3,9 @@ from __future__ import annotations
 from configparser import ConfigParser
 from typing import TYPE_CHECKING
 
-from deltona.desktop import fix_mime_associations
 import pytest
+
+from deltona.desktop import fix_mime_associations
 
 if TYPE_CHECKING:
     from pathlib import Path

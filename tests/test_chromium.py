@@ -3,13 +3,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 from unittest.mock import AsyncMock
 
+import pytest
+
 from deltona.chromium import (
     fix_chromium_pwa_icon,
     generate_chrome_user_agent,
     get_last_chrome_major_version,
     get_latest_chrome_major_version,
 )
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

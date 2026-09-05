@@ -11,11 +11,12 @@ import plistlib
 import sys
 
 from bascom import setup_logging
+import click
+
 from deltona import naming
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.string import cssq, fullwidth_to_narrow, is_ascii, sanitize, slugify, underscorize
 from deltona.typing import DecodeErrorsOption
-import click
 
 if TYPE_CHECKING:
     from io import BytesIO

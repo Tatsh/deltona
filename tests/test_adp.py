@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from deltona.adp import SalaryResponse, calculate_salary
 from niquests.exceptions import HTTPError
 import pytest
+
+from deltona.adp import SalaryResponse, calculate_salary
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
