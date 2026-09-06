@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 import json
 import logging
 import plistlib
@@ -322,7 +322,10 @@ def _mock_config_dump(mocker: MockerFixture, **overrides: Any) -> Any:
 def _mock_drive_api(mocker: MockerFixture,
                     pages: list[Any] | None = None,
                     folders: dict[str, Any] | None = None,
-                    status_code: int = 200) -> Any:
+                    status_code: int = 200,
+                    files: tuple[Any, ...] = ({
+                        'id': 'ROOT'
+                    },)) -> Any:
     session = mocker.patch('deltona.rclone.niquests.Session').return_value.__enter__.return_value
     feed = iter(pages or [])
 
@@ -333,7 +336,7 @@ def _mock_drive_api(mocker: MockerFixture,
         elif url.endswith('/files/root'):
             response.json.return_value = {'id': 'ROOT'}
         elif url.endswith('/files'):
-            response.json.return_value = {'files': [{'id': 'ROOT'}]}
+            response.json.return_value = {'files': list(files)}
         elif '/files/' in url:
             response.json.return_value = (folders or {})[url.rsplit('/', 1)[1]]
         else:
@@ -1024,3 +1027,144 @@ def test_watch_and_sync_refreshes_expired_token(mocker: MockerFixture, tmp_path:
     mocker.patch('deltona.rclone.sync_once', side_effect=KeyboardInterrupt)
     watch_and_sync(tmp_path, 'gdrive:D', idle=0.01, poll=0.3, remote_poll=0.01)
     assert mock_check.call_count > 1
+
+
+def test_watch_and_sync_leaves_an_unchanged_remote_alone(mocker: MockerFixture,
+                                                         tmp_path: Path) -> None:
+    mocker.patch('deltona.rclone.Observer')
+    mocker.patch('deltona.rclone.is_drive_remote', return_value=True)
+    mocker.patch('deltona.rclone.check_credentials')
+    reader = mocker.patch('deltona.rclone.DriveChanges').return_value
+    reader.poll.return_value = False
+    mock_sync = mocker.patch('deltona.rclone.sync_once', side_effect=KeyboardInterrupt)
+    watch_and_sync(tmp_path, 'gdrive:D', dedupe_interval=0, idle=0.01, poll=0.3, remote_poll=0.01)
+    # The feed was read repeatedly and reported nothing, so the sync came from the local poll
+    # interval.
+    assert reader.poll.call_count > 1
+    mock_sync.assert_called_once_with(tmp_path, 'gdrive:D', ())
+
+
+def test_service_path_unknown_kind() -> None:
+    # None of the three service functions take a kind outside ServiceKind, so nothing matches.
+    assert service_path(cast('Any', 'nonsense'), 'x') is None
+
+
+def test_enable_service_unknown_kind(mocker: MockerFixture) -> None:
+    mock_run = mocker.patch('deltona.rclone.sp.run')
+    enable_service(cast('Any', 'nonsense'), 'x')
+    mock_run.assert_not_called()
+
+
+def test_disable_service_unknown_kind(mocker: MockerFixture) -> None:
+    mock_run = mocker.patch('deltona.rclone.sp.run')
+    with pytest.raises(UnboundLocalError):
+        disable_service(cast('Any', 'nonsense'), 'x')
+    mock_run.assert_not_called()
+
+
+def test_rclone_config_path_without_output(mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch,
+                                           tmp_path: Path) -> None:
+    monkeypatch.delenv('RCLONE_CONFIG', raising=False)
+    mocker.patch('deltona.rclone.sp.run', return_value=mocker.MagicMock(stdout=''))
+    mocker.patch('deltona.rclone.platformdirs.user_config_path', return_value=tmp_path)
+    assert rclone_config_path() == tmp_path / 'rclone.conf'
+
+
+def test_access_token_with_an_unreadable_expiry(mocker: MockerFixture) -> None:
+    # A timestamp that has the right shape but names no real instant says nothing about the token.
+    _mock_config_dump(mocker, token=_token('2020-13-45T99:99:99Z'))
+    assert access_token('gdrive:D') == 'stored'
+
+
+def _mock_refresh(mocker: MockerFixture, granted: dict[str, Any]) -> None:
+    _mock_config_dump(mocker,
+                      client_id='an-id',
+                      client_secret='a-secret',
+                      token=_token('2020-01-01T00:00:00Z'))
+    session = mocker.patch('deltona.rclone.niquests.Session').return_value.__enter__.return_value
+    session.post.return_value = mocker.MagicMock(ok=True)
+    session.post.return_value.json.return_value = granted
+
+
+def test_access_token_refresh_survives_an_unreadable_config(
+        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+        caplog: pytest.LogCaptureFixture) -> None:
+    monkeypatch.setenv('RCLONE_CONFIG', str(tmp_path / 'gone' / 'rclone.conf'))
+    _mock_refresh(mocker, {'access_token': 'fresh', 'expires_in': 3600})
+    with caplog.at_level(logging.WARNING, logger='deltona.rclone'):
+        assert access_token('gdrive:D') == 'fresh'
+    assert 'Could not read' in caplog.text
+
+
+def test_access_token_refresh_without_a_token_line(mocker: MockerFixture,
+                                                   monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+                                                   caplog: pytest.LogCaptureFixture) -> None:
+    config = tmp_path / 'rclone.conf'
+    config.write_text('[other]\ntoken = {}\n\n[gdrive]\ntype = drive\n', encoding='utf-8')
+    monkeypatch.setenv('RCLONE_CONFIG', str(config))
+    _mock_refresh(mocker, {'access_token': 'fresh', 'expires_in': 3600})
+    with caplog.at_level(logging.WARNING, logger='deltona.rclone'):
+        assert access_token('gdrive:D') == 'fresh'
+    assert 'No token to replace' in caplog.text
+    # The section that does have one belongs to another remote and is left alone.
+    assert config.read_text(encoding='utf-8').count('token = ') == 1
+
+
+def test_access_token_stores_a_rotated_refresh_token(mocker: MockerFixture,
+                                                     monkeypatch: pytest.MonkeyPatch,
+                                                     tmp_path: Path) -> None:
+    config = tmp_path / 'rclone.conf'
+    config.write_text(f'[gdrive]\ntype = drive\ntoken = {_token("2020-01-01T00:00:00Z")}\n',
+                      encoding='utf-8')
+    monkeypatch.setenv('RCLONE_CONFIG', str(config))
+    _mock_refresh(mocker, {
+        'access_token': 'fresh',
+        'expires_in': 3600,
+        'refresh_token': 'a-rotated-one'
+    })
+    assert access_token('gdrive:D') == 'fresh'
+    stored = json.loads(config.read_text(encoding='utf-8').split('token = ', 1)[1])
+    assert stored['refresh_token'] == 'a-rotated-one'
+
+
+def test_drive_changes_remote() -> None:
+    assert DriveChanges('gdrive:D').remote == 'gdrive:D'
+
+
+def test_drive_changes_gives_up_on_a_path_it_cannot_place(mocker: MockerFixture) -> None:
+    # A chain of parents longer than the lookup limit never reaches the remote, so where the change
+    # happened stays unknown and the change is not counted.
+    reader = _drive_reader(mocker,
+                           pages=[{
+                               'changes': [_change('deep.txt', 'D0')],
+                               'newStartPageToken': '11'
+                           }],
+                           folders={
+                               f'D{index}': {
+                                   'name': f'd{index}',
+                                   'parents': [f'D{index + 1}']
+                               }
+                               for index in range(128)
+                           })
+    assert reader.poll() is False
+
+
+def test_drive_changes_skips_empty_path_parts(mocker: MockerFixture) -> None:
+    _mock_config_dump(mocker)
+    session = _mock_drive_api(mocker, [{'changes': [], 'newStartPageToken': '11'}])
+    reader = DriveChanges('gdrive:D//E')
+    assert reader.poll() is False
+    assert reader.poll() is False
+    # Only the two named directories are looked up.
+    assert sum(1 for call in session.get.call_args_list if call.args[0].endswith('/files')) == 2
+
+
+def test_drive_changes_remote_directory_absent(mocker: MockerFixture,
+                                               caplog: pytest.LogCaptureFixture) -> None:
+    _mock_config_dump(mocker)
+    _mock_drive_api(mocker, [{'changes': [], 'newStartPageToken': '11'}], files=())
+    reader = DriveChanges('gdrive:D')
+    assert reader.poll() is False
+    with caplog.at_level(logging.WARNING, logger='deltona.rclone'):
+        assert reader.poll() is False
+    assert 'does not exist on the remote yet' in caplog.text

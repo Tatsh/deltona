@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 import logging
+import os
 import subprocess as sp
 
 import pytest
@@ -724,6 +725,37 @@ def test_make_rclone_bisync_service_main_enable_fails(mocker: MockerFixture, run
 
     result = runner.invoke(make_rclone_bisync_service_main, [str(tmp_path)])
     assert result.exit_code == 1
+
+
+def test_make_rclone_bisync_service_main_rclone_config(mocker: MockerFixture,
+                                                       monkeypatch: pytest.MonkeyPatch,
+                                                       runner: CliRunner, tmp_path: Path) -> None:
+    monkeypatch.setenv('RCLONE_CONFIG', 'a-placeholder')
+    mocker.patch('deltona.commands.admin.shutil.which', return_value='/usr/bin/rclone-bisyncd')
+    mock_install = mocker.patch('deltona.commands.admin.install_service')
+    mock_install.return_value = tmp_path / 'x.service'
+    config = tmp_path / 'rclone.conf'
+
+    result = runner.invoke(make_rclone_bisync_service_main,
+                           [str(tmp_path), '-k', 'systemd-user', '--rclone-config',
+                            str(config)])
+    assert result.exit_code == 0, result.output
+    # The daemon the service starts is pointed at the same file.
+    assert mock_install.call_args.args[2][-2:] == ['--rclone-config', str(config.resolve())]
+    assert os.environ['RCLONE_CONFIG'] == str(config.resolve())
+
+
+def test_rclone_bisyncd_main_rclone_config(mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch,
+                                           runner: CliRunner, tmp_path: Path) -> None:
+    monkeypatch.setenv('RCLONE_CONFIG', 'a-placeholder')
+    mocker.patch('deltona.commands.admin.single_instance')
+    mocker.patch('deltona.commands.admin.watch_and_sync')
+    config = tmp_path / 'rclone.conf'
+
+    result = runner.invoke(rclone_bisyncd_main, [str(tmp_path), '--rclone-config', str(config)])
+    assert result.exit_code == 0, result.output
+    # rclone reads this too, so every rclone the daemon starts uses the same file.
+    assert os.environ['RCLONE_CONFIG'] == str(config.resolve())
 
 
 def test_rclone_bisyncd_main_watches(mocker: MockerFixture, runner: CliRunner,
