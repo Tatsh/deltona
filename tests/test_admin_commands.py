@@ -28,11 +28,14 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 
-def test_reset_tpm_enrollments_main_success(mocker: MockerFixture, runner: CliRunner) -> None:
+def test_reset_tpm_enrollments_main_success(mocker: MockerFixture, runner: CliRunner,
+                                            tmp_path: Path) -> None:
     mock_reset = mocker.patch('deltona.commands.admin.reset_tpm_enrollment')
     mock_reset.return_value = 0
+    fake_crypttab = tmp_path / 'crypttab'
+    fake_crypttab.touch()
 
-    result = runner.invoke(reset_tpm_enrollments_main, ['uuid1'])
+    result = runner.invoke(reset_tpm_enrollments_main, ['uuid1', '--crypttab', str(fake_crypttab)])
     assert result.exit_code == 0
     mock_reset.assert_called_once()
 
@@ -54,21 +57,26 @@ def test_reset_tpm_enrollments_main_all(mocker: MockerFixture, runner: CliRunner
          mocker.call('uuid2', dry_run=True)])
 
 
-def test_reset_tpm_enrollments_main_exception(mocker: MockerFixture, runner: CliRunner) -> None:
+def test_reset_tpm_enrollments_main_exception(mocker: MockerFixture, runner: CliRunner,
+                                              tmp_path: Path) -> None:
     mock_reset = mocker.patch('deltona.commands.admin.reset_tpm_enrollment')
     mock_reset.side_effect = MultipleKeySlots('Unexpected error')
+    fake_crypttab = tmp_path / 'crypttab'
+    fake_crypttab.touch()
 
-    result = runner.invoke(reset_tpm_enrollments_main, ['uuid1'])
+    result = runner.invoke(reset_tpm_enrollments_main, ['uuid1', '--crypttab', str(fake_crypttab)])
     assert result.exit_code == 0
     assert 'Cannot reset TPM enrolment for' in result.output
 
 
-def test_clean_old_kernels_and_modules_main_success(mocker: MockerFixture,
-                                                    runner: CliRunner) -> None:
+def test_clean_old_kernels_and_modules_main_success(mocker: MockerFixture, runner: CliRunner,
+                                                    tmp_path: Path) -> None:
     mock_clean = mocker.patch('deltona.commands.admin.clean_old_kernels_and_modules')
     mock_clean.return_value = ['a']
+    modules = tmp_path / 'modules'
+    modules.mkdir()
 
-    result = runner.invoke(clean_old_kernels_and_modules_main)
+    result = runner.invoke(clean_old_kernels_and_modules_main, [str(tmp_path), '-m', str(modules)])
     assert result.exit_code == 0
     mock_clean.assert_called_once()
 
