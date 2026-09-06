@@ -68,6 +68,7 @@ datatable
 datatables
 debugpy
 dedupe
+delenv
 demibold
 desat
 dgenre

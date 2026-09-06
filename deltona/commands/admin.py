@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple, TextIO
 import json
 import logging
+import os
 import re
 import shutil
 import subprocess as sp
@@ -30,6 +31,7 @@ from deltona.rclone import (
     DEFAULT_POLL_SECONDS,
     DEFAULT_REMOTE_NAME,
     DEFAULT_REMOTE_POLL_SECONDS,
+    RCLONE_CONFIG_ENV,
     AlreadyRunning,
     InvalidCredentials,
     bisync,
@@ -497,6 +499,9 @@ def generate_html_dir_tree_main(path: Path,
               '--remote-name',
               default=DEFAULT_REMOTE_NAME,
               help='rclone remote to use when REMOTE is not given.')
+@click.option('--rclone-config',
+              type=click.Path(dir_okay=False, path_type=Path),
+              help='Configuration file rclone reads. Defaults to the one rclone reports.')
 @click.option('--remote-poll',
               default=DEFAULT_REMOTE_POLL_SECONDS,
               type=float,
@@ -507,6 +512,7 @@ def make_rclone_bisync_service_main(local: Path,
                                     rclone_args: Sequence[str] = (),
                                     kind: ServiceKind | None = None,
                                     name: str | None = None,
+                                    rclone_config: Path | None = None,
                                     remote_name: str = DEFAULT_REMOTE_NAME,
                                     user: str | None = None,
                                     dedupe_interval: float = DEFAULT_DEDUPE_SECONDS,
@@ -526,6 +532,8 @@ def make_rclone_bisync_service_main(local: Path,
     --remote-name. Installing a systemd-system service requires root privileges.
     """  # noqa: DOC501
     setup_logging(debug=debug, loggers={'deltona': {}})
+    if rclone_config:
+        os.environ[RCLONE_CONFIG_ENV] = str(rclone_config.resolve())
     kind = kind or default_service_kind()
     name = name or default_service_name(local)
     remote = remote or default_remote(local, remote_name)
@@ -538,6 +546,8 @@ def make_rclone_bisync_service_main(local: Path,
         str(poll), '--remote-poll',
         str(remote_poll)
     ]
+    if rclone_config:
+        command += ['--rclone-config', str(rclone_config.resolve())]
     for arg in rclone_args:
         command += ['--rclone-arg', arg]
     description = f'Bidirectional rclone sync of {local} with {remote}.'
@@ -666,6 +676,9 @@ def _run_bisyncd(local: Path, remote: str, rclone_args: Sequence[str], *, dedupe
               '--remote-name',
               default=DEFAULT_REMOTE_NAME,
               help='rclone remote to use when REMOTE is not given.')
+@click.option('--rclone-config',
+              type=click.Path(dir_okay=False, path_type=Path),
+              help='Configuration file rclone reads. Defaults to the one rclone reports.')
 @click.option('--remote-poll',
               default=DEFAULT_REMOTE_POLL_SECONDS,
               type=float,
@@ -674,6 +687,7 @@ def _run_bisyncd(local: Path, remote: str, rclone_args: Sequence[str], *, dedupe
 def rclone_bisyncd_main(local: Path,
                         remote: str | None = None,
                         rclone_args: Sequence[str] = (),
+                        rclone_config: Path | None = None,
                         remote_name: str = DEFAULT_REMOTE_NAME,
                         dedupe_interval: float = DEFAULT_DEDUPE_SECONDS,
                         dedupe_mode: DedupeMode = DEFAULT_DEDUPE_MODE,
@@ -700,6 +714,9 @@ def rclone_bisyncd_main(local: Path,
                   handlers=syslog,
                   loggers={'deltona': {}},
                   root={'handlers': ('console', *syslog)})
+    # rclone reads this too, so every rclone the daemon starts uses the same file.
+    if rclone_config:
+        os.environ[RCLONE_CONFIG_ENV] = str(rclone_config.resolve())
     remote = remote or default_remote(local, remote_name)
     try:
         with single_instance(local):

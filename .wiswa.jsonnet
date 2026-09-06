@@ -219,7 +219,7 @@ local utils = import 'utils.libsonnet';
           },
         },
         extras: {
-          admin: ['paramiko', 'watchdog'],
+          admin: ['paramiko', 'platformdirs', 'watchdog'],
           desktop: ['pydbus', 'pygobject', 'pyperclip'],
           git: ['gidgethub', 'gitpython', 'keyring'],
           media: ['keyring', 'mutagen', 'platformdirs', 'send2trash'],

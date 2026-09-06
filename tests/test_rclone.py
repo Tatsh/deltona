@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 import json
@@ -14,6 +15,7 @@ from deltona.rclone import (
     AlreadyRunning,
     DriveChanges,
     InvalidCredentials,
+    access_token,
     bisync,
     check_credentials,
     dedupe,
@@ -28,6 +30,7 @@ from deltona.rclone import (
     install_service,
     is_drive_remote,
     launchd_label,
+    rclone_config_path,
     service_path,
     single_instance,
     sync_once,
@@ -348,6 +351,114 @@ def _drive_reader(mocker: MockerFixture, **kwargs: Any) -> Any:
     # The first read only records where the feed has reached.
     assert reader.poll() is False
     return reader
+
+
+def test_rclone_config_path_from_environment(monkeypatch: pytest.MonkeyPatch,
+                                             tmp_path: Path) -> None:
+    monkeypatch.setenv('RCLONE_CONFIG', str(tmp_path / 'custom.conf'))
+    assert rclone_config_path() == tmp_path / 'custom.conf'
+
+
+def test_rclone_config_path_from_rclone(mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch,
+                                        tmp_path: Path) -> None:
+    monkeypatch.delenv('RCLONE_CONFIG', raising=False)
+    mocker.patch('deltona.rclone.sp.run',
+                 return_value=mocker.MagicMock(
+                     stdout=f'Configuration file is stored at:\n{tmp_path / "rclone.conf"}\n'))
+    assert rclone_config_path() == tmp_path / 'rclone.conf'
+
+
+def test_rclone_config_path_default(mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch,
+                                    tmp_path: Path) -> None:
+    monkeypatch.delenv('RCLONE_CONFIG', raising=False)
+    mocker.patch('deltona.rclone.sp.run', side_effect=FileNotFoundError)
+    mocker.patch('deltona.rclone.platformdirs.user_config_path', return_value=tmp_path)
+    assert rclone_config_path() == tmp_path / 'rclone.conf'
+
+
+def _token(expiry: str, **extra: Any) -> str:
+    return json.dumps({
+        'access_token': 'stored',
+        'expiry': expiry,
+        'refresh_token': 'a-refresh-token',
+        **extra
+    })
+
+
+def _in(seconds: float) -> str:
+    return (datetime.now(timezone.utc) + timedelta(seconds=seconds)).isoformat().replace(
+        '+00:00', 'Z')
+
+
+def test_access_token_uses_a_current_one(mocker: MockerFixture) -> None:
+    _mock_config_dump(mocker, token=_token(_in(3600)))
+    assert access_token('gdrive:D') == 'stored'
+
+
+@pytest.mark.parametrize('expiry', ['2020-01-01T00:00:00.123456789Z', '2020-01-01T00:00:00Z'])
+def test_access_token_refreshes_an_expired_one(mocker: MockerFixture,
+                                               monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+                                               expiry: str) -> None:
+    config = tmp_path / 'rclone.conf'
+    config.write_text(f'[gdrive]\ntype = drive\ntoken = {_token(expiry)}\n', encoding='utf-8')
+    monkeypatch.setenv('RCLONE_CONFIG', str(config))
+    _mock_config_dump(mocker, client_id='an-id', client_secret='a-secret', token=_token(expiry))
+    session = mocker.patch('deltona.rclone.niquests.Session').return_value.__enter__.return_value
+    session.post.return_value = mocker.MagicMock(ok=True)
+    session.post.return_value.json.return_value = {'access_token': 'fresh', 'expires_in': 3600}
+
+    assert access_token('gdrive:D') == 'fresh'
+    assert session.post.call_args.kwargs['data']['grant_type'] == 'refresh_token'
+    # The refreshed token is written back so that rclone sees it too.
+    stored = json.loads(config.read_text(encoding='utf-8').split('token = ', 1)[1])
+    assert stored['access_token'] == 'fresh'
+    assert stored['refresh_token'] == 'a-refresh-token'
+
+
+def test_access_token_leaves_the_refresh_to_rclone(mocker: MockerFixture) -> None:
+    # rclone compiles its own client credentials in, so without a client id there is no exchange
+    # to make here.
+    dump = mocker.patch('deltona.rclone.sp.run')
+    dump.side_effect = [
+        mocker.MagicMock(stdout=json.dumps(
+            {'gdrive': {
+                'type': 'drive',
+                'token': _token('2020-01-01T00:00:00Z')
+            }})),
+        mocker.MagicMock(),
+        mocker.MagicMock(stdout=json.dumps({
+            'gdrive': {
+                'type': 'drive',
+                'token': _token(_in(3600), access_token='rclone-refreshed')
+            }
+        }))
+    ]
+    assert access_token('gdrive:D') == 'rclone-refreshed'
+    assert dump.call_args_list[1].args[0][:2] == ('rclone', 'about')
+
+
+def test_access_token_refusal(mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch,
+                              tmp_path: Path) -> None:
+    monkeypatch.setenv('RCLONE_CONFIG', str(tmp_path / 'rclone.conf'))
+    _mock_config_dump(mocker,
+                      client_id='an-id',
+                      client_secret='a-secret',
+                      token=_token('2020-01-01T00:00:00Z'))
+    session = mocker.patch('deltona.rclone.niquests.Session').return_value.__enter__.return_value
+    session.post.return_value = mocker.MagicMock(ok=False)
+    with pytest.raises(InvalidCredentials, match='refused'):
+        access_token('gdrive:D')
+
+
+def test_access_token_without_an_expiry(mocker: MockerFixture) -> None:
+    _mock_config_dump(mocker, token=json.dumps({'access_token': 'stored'}))
+    assert access_token('gdrive:D') == 'stored'
+
+
+def test_access_token_none_stored(mocker: MockerFixture) -> None:
+    _mock_config_dump(mocker, token='')
+    with pytest.raises(InvalidCredentials, match='no stored credentials'):
+        access_token('gdrive:D')
 
 
 @pytest.mark.parametrize(('type_', 'expected'), [('drive', True), ('s3', False)])

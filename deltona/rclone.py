@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import deque
 from contextlib import contextmanager, suppress
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from shlex import quote
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias
@@ -11,6 +12,7 @@ import json
 import logging
 import os
 import plistlib
+import re
 import subprocess as sp
 import sys
 import tempfile
@@ -27,6 +29,7 @@ from watchdog.events import (
 from watchdog.observers import Observer
 import niquests
 import pathspec
+import platformdirs
 
 from .string import pluralize, slugify
 
@@ -41,13 +44,14 @@ if TYPE_CHECKING:
 
 __all__ = ('DEFAULT_BISYNC_ARGS', 'DEFAULT_DEDUPE_MODE', 'DEFAULT_DEDUPE_SECONDS',
            'DEFAULT_IDLE_SECONDS', 'DEFAULT_MAX_SYNCS_PER_MINUTE', 'DEFAULT_POLL_SECONDS',
-           'DEFAULT_REMOTE_NAME', 'DEFAULT_REMOTE_POLL_SECONDS', 'GRIVEIGNORE_NAME',
-           'LAUNCHD_LABEL_PREFIX', 'AlreadyRunning', 'DedupeMode', 'DriveChanges',
-           'InvalidCredentials', 'ServiceKind', 'bisync', 'check_credentials', 'dedupe',
-           'default_remote', 'default_service_kind', 'default_service_name', 'disable_service',
-           'enable_service', 'generate_service', 'griveignore_filters', 'griveignore_spec',
-           'install_service', 'is_drive_remote', 'launchd_label', 'service_path', 'single_instance',
-           'sync_once', 'uninstall_service', 'watch_and_sync')
+           'DEFAULT_REMOTE_NAME', 'DEFAULT_REMOTE_POLL_SECONDS', 'DEFAULT_TOKEN_MARGIN_SECONDS',
+           'GRIVEIGNORE_NAME', 'LAUNCHD_LABEL_PREFIX', 'RCLONE_CONFIG_ENV', 'AlreadyRunning',
+           'DedupeMode', 'DriveChanges', 'InvalidCredentials', 'ServiceKind', 'access_token',
+           'bisync', 'check_credentials', 'dedupe', 'default_remote', 'default_service_kind',
+           'default_service_name', 'disable_service', 'enable_service', 'generate_service',
+           'griveignore_filters', 'griveignore_spec', 'install_service', 'is_drive_remote',
+           'launchd_label', 'rclone_config_path', 'service_path', 'single_instance', 'sync_once',
+           'uninstall_service', 'watch_and_sync')
 
 DedupeMode: TypeAlias = Literal['first', 'largest', 'newest', 'oldest', 'rename', 'skip',
                                 'smallest']
@@ -129,6 +133,15 @@ cheap enough to repeat at this interval.
 
 :meta hide-value:
 """
+DEFAULT_TOKEN_MARGIN_SECONDS = 60.0
+"""
+How long before a stored access token expires it is treated as already expired.
+
+An hour is all one lasts, and a read that starts just inside the margin can still be answered
+after it, so refreshing early costs nothing and a refused request costs a round trip.
+
+:meta hide-value:
+"""
 GRIVEIGNORE_NAME = '.griveignore'
 """
 Name of the ignore file read from the top of a local directory.
@@ -143,6 +156,18 @@ Reverse-DNS prefix given to launchd labels.
 
 :meta hide-value:
 """
+RCLONE_CONFIG_ENV = 'RCLONE_CONFIG'
+"""
+Environment variable naming the rclone configuration file to use.
+
+rclone reads it too, so setting it points this and every rclone it starts at the same file.
+
+:meta hide-value:
+"""
+_GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'  # noqa: S105
+# Go writes RFC 3339 with nanoseconds, which datetime only reads to microseconds, and only reads
+# the trailing Z at all from 3.11.
+_EXPIRY_RE = re.compile(r'^(?P<stamp>.+?T[^.+Z-]+)(?:\.(?P<fraction>\d+))?(?P<zone>Z|[+-].+)?$')
 _QUIET_EVENTS = frozenset({EVENT_TYPE_CLOSED_NO_WRITE, EVENT_TYPE_OPENED})
 _SYNC_WINDOW_SECONDS = 60.0
 _DRIVE_CHANGES_FIELDS = ('changes/file(id,mimeType,name,parents),newStartPageToken,nextPageToken')
@@ -640,6 +665,147 @@ def _remote_config(remote: str) -> dict[str, Any]:
     return config
 
 
+def rclone_config_path() -> Path:
+    """
+    Get the configuration file rclone reads.
+
+    Returns
+    -------
+    Path
+        The file named by :py:data:`RCLONE_CONFIG_ENV`, else the one rclone reports, else the
+        platform's own configuration directory. Only a machine without a working rclone reaches
+        that last one, where rclone's macOS location differs from the platform default.
+    """
+    if from_environment := os.environ.get(RCLONE_CONFIG_ENV):
+        return Path(from_environment)
+    with suppress(OSError, sp.SubprocessError):
+        # rclone prints a sentence and then the path, so the path is the last line.
+        reported = sp.run(('rclone', 'config', 'file'), capture_output=True, check=True,
+                          text=True).stdout.splitlines()
+        if reported:
+            return Path(reported[-1].strip())
+    return platformdirs.user_config_path('rclone') / 'rclone.conf'
+
+
+def _expiry(token: Mapping[str, Any]) -> datetime | None:
+    if not (raw := token.get('expiry')) or not (parts := _EXPIRY_RE.match(str(raw))):
+        return None
+    fraction = (parts['fraction'] or '')[:6].ljust(6, '0')
+    zone = '+00:00' if parts['zone'] in {'Z', None} else parts['zone']
+    with suppress(ValueError):
+        return datetime.fromisoformat(f'{parts["stamp"]}.{fraction}{zone}')
+    return None
+
+
+def _stored_token(config: Mapping[str, Any], remote: str) -> dict[str, Any]:
+    if not (token := config.get('token')):
+        msg = (f'rclone has no stored credentials for `{_remote_name(remote)}`. Run `rclone config`'
+               ' to authorise it.')
+        raise InvalidCredentials(msg)
+    # rclone keeps the token as JSON inside a string field.
+    parsed: dict[str, Any] = json.loads(token) if isinstance(token, str) else dict(token)
+    return parsed
+
+
+def _store_token(path: Path, section: str, token: Mapping[str, Any]) -> None:
+    # Only the one line is replaced. Rewriting the file from a parsed form would drop comments and
+    # reorder what rclone wrote, and rclone may be part way through its own run against another
+    # remote in it.
+    try:
+        lines = path.read_text(encoding='utf-8').splitlines(keepends=True)
+    except OSError as e:
+        log.warning('Could not read `%s` to store the refreshed token: %s', path, e)
+        return
+    current = ''
+    for index, line in enumerate(lines):
+        if (stripped := line.strip()).startswith('[') and stripped.endswith(']'):
+            current = stripped[1:-1]
+        elif current == section and re.match(r'token\s*=', stripped):
+            lines[index] = f'token = {json.dumps(token)}\n'
+            break
+    else:
+        log.warning('No token to replace for `%s` in `%s`.', section, path)
+        return
+    with tempfile.NamedTemporaryFile('w',
+                                     delete=False,
+                                     dir=path.parent,
+                                     encoding='utf-8',
+                                     prefix='.rclone.conf-') as file:
+        file.write(''.join(lines))
+        replacement = Path(file.name)
+    replacement.chmod(path.stat().st_mode & 0o777)
+    replacement.replace(path)
+    log.debug('Stored a refreshed token for `%s`.', section)
+
+
+def _refreshed(remote: str, config: Mapping[str, Any], token: Mapping[str, Any]) -> dict[str, Any]:
+    name = _remote_name(remote)
+    client_id, secret = config.get('client_id'), config.get('client_secret')
+    if not (client_id and secret and (refresh_token := token.get('refresh_token'))):
+        # rclone compiles its own client credentials in rather than storing them, so the exchange
+        # cannot be made here. Reaching the remote through rclone makes rclone refresh and store.
+        log.debug('Leaving the refresh of `%s` to rclone.', name)
+        check_credentials(remote)
+        return _stored_token(_remote_config(remote), remote)
+    log.debug('Refreshing the access token of `%s`.', name)
+    with niquests.Session() as session:
+        response = session.post(_GOOGLE_TOKEN_URL,
+                                data={
+                                    'client_id': client_id,
+                                    'client_secret': secret,
+                                    'grant_type': 'refresh_token',
+                                    'refresh_token': refresh_token
+                                })
+    if not response.ok:
+        msg = (f'Refreshing the access token of `{name}` was refused. Run `rclone config reconnect'
+               f' {name}:` to authorise it again.')
+        raise InvalidCredentials(msg)
+    granted = response.json()
+    expiry = datetime.now(timezone.utc) + timedelta(seconds=float(granted.get('expires_in', 3600)))
+    # The refresh token is kept: a refresh does not return one unless it has been rotated.
+    updated = dict(token) | {
+        'access_token': granted['access_token'],
+        'expiry': expiry.isoformat().replace('+00:00', 'Z')
+    }
+    if refreshed := granted.get('refresh_token'):
+        updated['refresh_token'] = refreshed
+    _store_token(rclone_config_path(), name, updated)
+    return updated
+
+
+def access_token(remote: str, margin: float = DEFAULT_TOKEN_MARGIN_SECONDS) -> str:
+    """
+    Get an access token for a remote, refreshing the stored one when it is about to expire.
+
+    A token rclone stored lasts an hour and is only renewed when rclone itself reaches the remote,
+    so one read straight out of the configuration is not necessarily still good. A refresh is
+    written back so that rclone sees it too.
+
+    Parameters
+    ----------
+    remote : str
+        rclone remote, such as ``gdrive:Documents``.
+    margin : float
+        Seconds before expiry at which the token counts as expired.
+
+    Returns
+    -------
+    str
+        A token that is current as far as its recorded expiry says.
+
+    Raises
+    ------
+    InvalidCredentials
+        If rclone holds no token for the remote, or refreshing it is refused.
+    """  # noqa: DOC502
+    config = _remote_config(remote)
+    token = _stored_token(config, remote)
+    expiry = _expiry(token)
+    if expiry is not None and expiry - timedelta(seconds=margin) <= datetime.now(timezone.utc):
+        token = _refreshed(remote, config, token)
+    return str(token['access_token'])
+
+
 def is_drive_remote(remote: str) -> bool:
     """
     Determine whether a remote is backed by Google Drive.
@@ -754,9 +920,10 @@ class DriveChanges:
     directory it has had to look up. A change is then matched by its path relative to the remote,
     and one that turns out to sit outside the remote is not a change at all.
     """
-    def __init__(self, remote: str) -> None:
+    def __init__(self, remote: str, margin: float = DEFAULT_TOKEN_MARGIN_SECONDS) -> None:
         self._directories: dict[str, tuple[str, str | None]] = {}
         self._headers: dict[str, str] = {}
+        self._margin = margin
         self._page_token: str | None = None
         self._remote = remote
         self._root: str | None = None
@@ -813,17 +980,9 @@ class DriveChanges:
         return self._remote
 
     def _authorise(self) -> None:
-        config = _remote_config(self._remote)
-        if not (token := config.get('token')):
-            msg = (f'rclone has no stored credentials for `{_remote_name(self._remote)}`. Run'
-                   ' `rclone config` to authorise it.')
-            raise InvalidCredentials(msg)
-        # rclone keeps the OAuth token as JSON inside a string field and rewrites it with a fresh
-        # access token every time it reaches the remote.
-        access_token = (json.loads(token) if isinstance(token, str) else token)['access_token']
-        self._headers = {'Authorization': f'Bearer {access_token}'}
+        self._headers = {'Authorization': f'Bearer {access_token(self._remote, self._margin)}'}
         self._shared = {'supportsAllDrives': 'true'}
-        if drive_id := config.get('team_drive'):
+        if drive_id := _remote_config(self._remote).get('team_drive'):
             self._shared['driveId'] = str(drive_id)
 
     def _feed_params(self) -> dict[str, str]:

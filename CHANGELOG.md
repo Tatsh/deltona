@@ -19,7 +19,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the name of the plist, since launchctl addresses a job by its label. Options:
   `-a`/`--rclone-arg` (repeatable) to append arguments to `rclone bisync`, `-n`/`--dry-run` to
   print the service definition instead of writing it, `--dedupe-interval`, `--dedupe-mode`,
-  `--idle`, `--max-syncs-per-minute`, `--poll`, and `--remote-poll` to tune the daemon, `--name` to
+  `--idle`, `--max-syncs-per-minute`, `--poll`, and `--remote-poll` to tune the daemon,
+  `--rclone-config` to name the configuration file, `--name` to
   override the generated service name, `--no-enable` to write the definition without starting
   anything, and `--user` for the account a systemd system service runs as.
 - `remove-rclone-bisync-service` to stop such a service and delete its definition, taking the same
@@ -35,7 +36,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the remote, so one outside the synchronised directory is not a change at all, and the identifiers
   of the directories walked through to build that path are remembered. The credentials rclone holds
   are checked before watching starts, so a remote that cannot be reached is reported once rather
-  than every `--remote-poll` seconds forever. A `.griveignore` file at the top of the directory,
+  than every `--remote-poll` seconds forever, and the stored access token is refreshed before it
+  expires rather than after a request has already been refused. `--rclone-config` names the
+  configuration file to read, which is otherwise the one rclone reports. A `.griveignore` file at
+  the top of the directory,
   holding `.gitignore` patterns, is excluded from both sides and from the watching, and is re-read
   when it changes rather than at startup only. `rclone dedupe` runs after a synchronisation, no
   more often than `--dedupe-interval`, since Google Drive lets two files in a directory share a
@@ -47,13 +51,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `--resync` cover a single run and rebuilding the baseline listings.
 - `deltona.rclone` module with `bisync`, `dedupe`, `sync_once`, `watch_and_sync`,
   `single_instance`, `check_credentials`, `is_drive_remote`, `griveignore_spec`,
-  `griveignore_filters`, `launchd_label`, `generate_service`, `install_service`, `enable_service`,
+  `griveignore_filters`, `launchd_label`, `access_token`, `rclone_config_path`,
+  `generate_service`, `install_service`, `enable_service`,
   `disable_service`, `uninstall_service`, `service_path`, `default_remote`, `default_service_kind`,
   and `default_service_name`, the `DriveChanges` reader, the `AlreadyRunning` and
   `InvalidCredentials` exceptions, the `DedupeMode` and `ServiceKind` aliases, and the
   `DEFAULT_BISYNC_ARGS`, `DEFAULT_DEDUPE_MODE`, `DEFAULT_DEDUPE_SECONDS`, `DEFAULT_IDLE_SECONDS`,
   `DEFAULT_MAX_SYNCS_PER_MINUTE`, `DEFAULT_POLL_SECONDS`, `DEFAULT_REMOTE_NAME`,
-  `DEFAULT_REMOTE_POLL_SECONDS`, `GRIVEIGNORE_NAME`, and `LAUNCHD_LABEL_PREFIX` constants. Watching
+  `DEFAULT_REMOTE_POLL_SECONDS`, `DEFAULT_TOKEN_MARGIN_SECONDS`, `GRIVEIGNORE_NAME`,
+  `LAUNCHD_LABEL_PREFIX`, and `RCLONE_CONFIG_ENV` constants. Watching
   uses watchdog, which reaches inotify on Linux and FSEvents on macOS in-process rather than
   through `inotifywait`. Reading a file reports an event of its own, and rclone reads every file it
   compares, so only the events that mean something changed are acted on. `rclone bisync` refuses to
