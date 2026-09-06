@@ -12,27 +12,53 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - `make-rclone-bisync-service` to generate, install, and enable a service that keeps a local
-  directory in bidirectional sync with an rclone remote, defaulting to a Google Drive directory of
-  the same name. It targets launchd on macOS and both the user and system instances of systemd,
-  choosing whichever is native to the platform unless `-k`/`--kind` says otherwise. Options:
+  directory in bidirectional sync with an rclone remote, defaulting to a directory of the same name
+  under the remote named by `-r`/`--remote-name` (`gdrive`). It targets launchd on macOS and both
+  the user and system instances of systemd, choosing whichever is native to the platform unless
+  `-k`/`--kind` says otherwise. A launchd job is labelled under `sh.tat.deltona.`, which is also
+  the name of the plist, since launchctl addresses a job by its label. Options:
   `-a`/`--rclone-arg` (repeatable) to append arguments to `rclone bisync`, `-n`/`--dry-run` to
-  print the service definition instead of writing it, `--idle` and `--poll` to tune the daemon,
-  `--name` to override the generated service name, `--no-enable` to write the definition without
-  starting anything, and `--user` for the account a systemd system service runs as.
-- `rclone-bisyncd`, the command the generated service runs. It watches the local directory
-  recursively and synchronises once the tree has been quiet for `--idle` seconds, so that a burst
-  of writes produces one run rather than one per file, and it synchronises every `--poll` seconds
-  regardless, since a change made on the remote produces no local event. Only one instance per
-  directory runs at a time, enforced with an advisory lock that is released even if the process is
-  killed, so a manual run cannot race the service. `--once` and `--resync` cover a single run and
-  rebuilding the baseline listings.
-- `deltona.rclone` module with `bisync`, `sync_once`, `watch_and_sync`, `single_instance`,
-  `generate_service`, `install_service`, `enable_service`, `service_path`, `default_remote`,
-  `default_service_kind`, and `default_service_name`, the `AlreadyRunning` exception, the
-  `ServiceKind` alias, and the `DEFAULT_BISYNC_ARGS`, `DEFAULT_IDLE_SECONDS`, and
-  `DEFAULT_POLL_SECONDS` constants. Watching uses watchdog, which reaches inotify on Linux and
-  FSEvents on macOS in-process rather than through `inotifywait`. `rclone bisync` refuses to run
-  before its baseline listings exist, so the first run passes `--resync` and records that it did.
+  print the service definition instead of writing it, `--dedupe-interval`, `--dedupe-mode`,
+  `--idle`, `--max-syncs-per-minute`, `--poll`, and `--remote-poll` to tune the daemon, `--name` to
+  override the generated service name, `--no-enable` to write the definition without starting
+  anything, and `--user` for the account a systemd system service runs as.
+- `remove-rclone-bisync-service` to stop such a service and delete its definition, taking the same
+  local directory the service was made for. The directory does not have to still exist, which is
+  usually why the service is being removed. It reports having found nothing rather than treating a
+  missing definition as success.
+- `rclone-bisyncd`, the command the generated service runs. It synchronises once either side has
+  been quiet for `--idle` seconds, so that a burst produces one run rather than one per file, and
+  every `--poll` seconds regardless. A change made on a Google Drive remote is noticed by reading
+  its changes feed every `--remote-poll` seconds instead of waiting for the schedule: Drive
+  delivers notifications only to a public HTTPS endpoint, so the feed is read, which is a single
+  request returning nothing while the drive is idle. Each change is matched by its path relative to
+  the remote, so one outside the synchronised directory is not a change at all, and the identifiers
+  of the directories walked through to build that path are remembered. The credentials rclone holds
+  are checked before watching starts, so a remote that cannot be reached is reported once rather
+  than every `--remote-poll` seconds forever. A `.griveignore` file at the top of the directory,
+  holding `.gitignore` patterns, is excluded from both sides and from the watching, and is re-read
+  when it changes rather than at startup only. `rclone dedupe` runs after a synchronisation, no
+  more often than `--dedupe-interval`, since Google Drive lets two files in a directory share a
+  name and a local directory cannot represent that. Synchronisations are capped at
+  `--max-syncs-per-minute` and the cap is logged, so anything that never settles cannot run flat
+  out. Warnings and worse always reach the system log, which is the only place a launchd job's
+  output goes. Only one instance per directory runs at a time, enforced with an advisory lock that
+  is released even if the process is killed, so a manual run cannot race the service. `--once` and
+  `--resync` cover a single run and rebuilding the baseline listings.
+- `deltona.rclone` module with `bisync`, `dedupe`, `sync_once`, `watch_and_sync`,
+  `single_instance`, `check_credentials`, `is_drive_remote`, `griveignore_spec`,
+  `griveignore_filters`, `launchd_label`, `generate_service`, `install_service`, `enable_service`,
+  `disable_service`, `uninstall_service`, `service_path`, `default_remote`, `default_service_kind`,
+  and `default_service_name`, the `DriveChanges` reader, the `AlreadyRunning` and
+  `InvalidCredentials` exceptions, the `DedupeMode` and `ServiceKind` aliases, and the
+  `DEFAULT_BISYNC_ARGS`, `DEFAULT_DEDUPE_MODE`, `DEFAULT_DEDUPE_SECONDS`, `DEFAULT_IDLE_SECONDS`,
+  `DEFAULT_MAX_SYNCS_PER_MINUTE`, `DEFAULT_POLL_SECONDS`, `DEFAULT_REMOTE_NAME`,
+  `DEFAULT_REMOTE_POLL_SECONDS`, `GRIVEIGNORE_NAME`, and `LAUNCHD_LABEL_PREFIX` constants. Watching
+  uses watchdog, which reaches inotify on Linux and FSEvents on macOS in-process rather than
+  through `inotifywait`. Reading a file reports an event of its own, and rclone reads every file it
+  compares, so only the events that mean something changed are acted on. `rclone bisync` refuses to
+  run before its baseline listings exist, so the first run passes `--resync` and records that it
+  did.
 
 ## [0.3.0] - 2026-08-21
 

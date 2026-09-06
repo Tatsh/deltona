@@ -46,6 +46,7 @@ local utils = import 'utils.libsonnet';
         'make-rclone-bisync-service': 'deltona.commands.admin:make_rclone_bisync_service_main',
         'patch-bundle': 'deltona.commands.admin:patch_bundle_main',
         'rclone-bisyncd': 'deltona.commands.admin:rclone_bisyncd_main',
+        'remove-rclone-bisync-service': 'deltona.commands.admin:remove_rclone_bisync_service_main',
         'slug-rename': 'deltona.commands.admin:slug_rename_main',
         smv: 'deltona.commands.admin:smv_main',
         'systemd-reset-tpm-cryptenroll': 'deltona.commands.admin:reset_tpm_enrollments_main',

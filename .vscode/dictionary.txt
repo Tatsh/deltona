@@ -31,6 +31,7 @@ bisyncd
 bluez
 bootfile
 bootinfotable
+bootout
 bsky
 burnfree
 burnrariso
@@ -66,6 +67,7 @@ dataoffset
 datatable
 datatables
 debugpy
+dedupe
 demibold
 desat
 dgenre
@@ -129,6 +131,7 @@ globaltoc
 gnudb
 gogextract
 gpac
+griveignore
 hable
 halfwidth
 handoff

@@ -15,7 +15,7 @@ import sys
 from bascom import setup_logging
 import click
 
-from deltona.constants import CONTEXT_SETTINGS
+from deltona.constants import CONTEXT_SETTINGS, SYSLOG_SOCKETS
 from deltona.gentoo import (
     DEFAULT_ACTIVE_KERNEL_NAME,
     DEFAULT_KERNEL_LOCATION,
@@ -23,10 +23,17 @@ from deltona.gentoo import (
     clean_old_kernels_and_modules,
 )
 from deltona.rclone import (
+    DEFAULT_DEDUPE_MODE,
+    DEFAULT_DEDUPE_SECONDS,
     DEFAULT_IDLE_SECONDS,
+    DEFAULT_MAX_SYNCS_PER_MINUTE,
     DEFAULT_POLL_SECONDS,
+    DEFAULT_REMOTE_NAME,
+    DEFAULT_REMOTE_POLL_SECONDS,
     AlreadyRunning,
+    InvalidCredentials,
     bisync,
+    dedupe,
     default_remote,
     default_service_kind,
     default_service_name,
@@ -34,6 +41,7 @@ from deltona.rclone import (
     install_service,
     single_instance,
     sync_once,
+    uninstall_service,
     watch_and_sync,
 )
 from deltona.system import (
@@ -52,7 +60,7 @@ if TYPE_CHECKING:
 
     from paramiko import SSHClient
 
-    from deltona.rclone import ServiceKind
+    from deltona.rclone import DedupeMode, ServiceKind
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -462,25 +470,51 @@ def generate_html_dir_tree_main(path: Path,
               type=click.Choice(('launchd', 'systemd-system', 'systemd-user')),
               help='Service manager to target. Defaults to the one native to this platform.')
 @click.option('-n', '--dry-run', is_flag=True, help='Print the service definition and exit.')
+@click.option('--dedupe-interval',
+              default=DEFAULT_DEDUPE_SECONDS,
+              type=float,
+              help='Shortest wait between deduplications. 0 disables them.')
+@click.option('--dedupe-mode',
+              default=DEFAULT_DEDUPE_MODE,
+              type=click.Choice(
+                  ('first', 'largest', 'newest', 'oldest', 'rename', 'skip', 'smallest')),
+              help='What deduplication keeps out of the files that share a name.')
 @click.option('--idle',
               default=DEFAULT_IDLE_SECONDS,
               type=float,
               help='Seconds of quiet before a burst of writes is synchronised.')
+@click.option('--max-syncs-per-minute',
+              default=DEFAULT_MAX_SYNCS_PER_MINUTE,
+              type=int,
+              help='Synchronisations allowed in a minute. 0 allows any rate.')
 @click.option('--name', help='Service name. Defaults to a name based on LOCAL.')
 @click.option('--no-enable', is_flag=True, help='Do not enable and start the service.')
 @click.option('--poll',
               default=DEFAULT_POLL_SECONDS,
               type=float,
               help='Longest wait between synchronisations.')
+@click.option('-r',
+              '--remote-name',
+              default=DEFAULT_REMOTE_NAME,
+              help='rclone remote to use when REMOTE is not given.')
+@click.option('--remote-poll',
+              default=DEFAULT_REMOTE_POLL_SECONDS,
+              type=float,
+              help='Wait between reads of the Google Drive changes feed. 0 disables them.')
 @click.option('--user', help='Account the service runs as. Only used with systemd-system.')
 def make_rclone_bisync_service_main(local: Path,
                                     remote: str | None = None,
                                     rclone_args: Sequence[str] = (),
                                     kind: ServiceKind | None = None,
                                     name: str | None = None,
+                                    remote_name: str = DEFAULT_REMOTE_NAME,
                                     user: str | None = None,
+                                    dedupe_interval: float = DEFAULT_DEDUPE_SECONDS,
+                                    dedupe_mode: DedupeMode = DEFAULT_DEDUPE_MODE,
                                     idle: float = DEFAULT_IDLE_SECONDS,
+                                    max_syncs_per_minute: int = DEFAULT_MAX_SYNCS_PER_MINUTE,
                                     poll: float = DEFAULT_POLL_SECONDS,
+                                    remote_poll: float = DEFAULT_REMOTE_POLL_SECONDS,
                                     *,
                                     debug: bool = False,
                                     dry_run: bool = False,
@@ -488,18 +522,21 @@ def make_rclone_bisync_service_main(local: Path,
     """
     Install a service that keeps LOCAL in bidirectional sync with REMOTE.
 
-    REMOTE defaults to a Google Drive directory of the same name as LOCAL. Installing a
-    systemd-system service requires root privileges.
+    REMOTE defaults to a directory of the same name as LOCAL under the remote named by
+    --remote-name. Installing a systemd-system service requires root privileges.
     """  # noqa: DOC501
     setup_logging(debug=debug, loggers={'deltona': {}})
     kind = kind or default_service_kind()
     name = name or default_service_name(local)
-    remote = remote or default_remote(local)
+    remote = remote or default_remote(local, remote_name)
     command = [
         shutil.which('rclone-bisyncd') or 'rclone-bisyncd',
-        str(local.resolve()), remote, '--idle',
-        str(idle), '--poll',
-        str(poll)
+        str(local.resolve()), remote, '--dedupe-interval',
+        str(dedupe_interval), '--dedupe-mode', dedupe_mode, '--idle',
+        str(idle), '--max-syncs-per-minute',
+        str(max_syncs_per_minute), '--poll',
+        str(poll), '--remote-poll',
+        str(remote_poll)
     ]
     for arg in rclone_args:
         command += ['--rclone-arg', arg]
@@ -523,14 +560,74 @@ def make_rclone_bisync_service_main(local: Path,
     click.echo(f'Installed {path}.')
 
 
-def _run_bisyncd(local: Path, remote: str, rclone_args: Sequence[str], *, idle: float, once: bool,
-                 poll: float, resync: bool) -> None:
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument('local', type=click.Path(dir_okay=True, file_okay=False, path_type=Path))
+@click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
+@click.option('-k',
+              '--kind',
+              type=click.Choice(('launchd', 'systemd-system', 'systemd-user')),
+              help='Service manager to target. Defaults to the one native to this platform.')
+@click.option('--name', help='Service name. Defaults to a name based on LOCAL.')
+def remove_rclone_bisync_service_main(local: Path,
+                                      kind: ServiceKind | None = None,
+                                      name: str | None = None,
+                                      *,
+                                      debug: bool = False) -> None:
+    """
+    Uninstall the service that keeps LOCAL in bidirectional sync.
+
+    LOCAL does not have to exist. Removing a systemd-system service requires root privileges.
+    """  # noqa: DOC501
+    setup_logging(debug=debug, loggers={'deltona': {}})
+    kind = kind or default_service_kind()
+    name = name or default_service_name(local)
+    try:
+        path = uninstall_service(kind, name)
+    except sp.CalledProcessError as e:
+        click.echo(f'Failed to remove {name}.', err=True)
+        raise click.Abort from e
+    except FileNotFoundError as e:
+        click.echo(f'{e.filename} is not installed.', err=True)
+        raise click.Abort from e
+    if path is None:
+        click.echo(f'No {kind} service named {name}.', err=True)
+        raise click.exceptions.Exit(1)
+    click.echo(f'Removed {path}.')
+
+
+def _syslog_handler() -> dict[str, Any]:
+    # The daemon runs unattended and launchd sends its output nowhere by default, so warnings have
+    # to reach the system log to be seen at all. There is no socket in a container, where the
+    # console is all there is.
+    return next(({
+        'syslog': {
+            'address': path,
+            'class': 'logging.handlers.SysLogHandler',
+            'formatter': 'syslog',
+            'level': 'WARNING'
+        }
+    } for path in SYSLOG_SOCKETS if Path(path).exists()), {})
+
+
+def _run_bisyncd(local: Path, remote: str, rclone_args: Sequence[str], *, dedupe_interval: float,
+                 dedupe_mode: DedupeMode, idle: float, max_syncs_per_minute: int, once: bool,
+                 poll: float, remote_poll: float, resync: bool) -> None:
     if resync:
         bisync(local, remote, rclone_args, resync=True)
     elif once:
         sync_once(local, remote, rclone_args)
+        if dedupe_interval > 0:
+            dedupe(remote, dedupe_mode)
     else:
-        watch_and_sync(local, remote, rclone_args, idle=idle, poll=poll)
+        watch_and_sync(local,
+                       remote,
+                       rclone_args,
+                       dedupe_interval=dedupe_interval,
+                       dedupe_mode=dedupe_mode,
+                       idle=idle,
+                       max_syncs_per_minute=max_syncs_per_minute,
+                       poll=poll,
+                       remote_poll=remote_poll)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -543,37 +640,81 @@ def _run_bisyncd(local: Path, remote: str, rclone_args: Sequence[str], *, idle: 
               multiple=True,
               help='Extra argument passed to rclone bisync. May be repeated.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
+@click.option('--dedupe-interval',
+              default=DEFAULT_DEDUPE_SECONDS,
+              type=float,
+              help='Shortest wait between deduplications. 0 disables them.')
+@click.option('--dedupe-mode',
+              default=DEFAULT_DEDUPE_MODE,
+              type=click.Choice(
+                  ('first', 'largest', 'newest', 'oldest', 'rename', 'skip', 'smallest')),
+              help='What deduplication keeps out of the files that share a name.')
 @click.option('--idle',
               default=DEFAULT_IDLE_SECONDS,
               type=float,
               help='Seconds of quiet before a burst of writes is synchronised.')
+@click.option('--max-syncs-per-minute',
+              default=DEFAULT_MAX_SYNCS_PER_MINUTE,
+              type=int,
+              help='Synchronisations allowed in a minute. 0 allows any rate.')
 @click.option('--once', is_flag=True, help='Synchronise once and exit.')
 @click.option('--poll',
               default=DEFAULT_POLL_SECONDS,
               type=float,
               help='Longest wait between synchronisations.')
+@click.option('-r',
+              '--remote-name',
+              default=DEFAULT_REMOTE_NAME,
+              help='rclone remote to use when REMOTE is not given.')
+@click.option('--remote-poll',
+              default=DEFAULT_REMOTE_POLL_SECONDS,
+              type=float,
+              help='Wait between reads of the Google Drive changes feed. 0 disables them.')
 @click.option('--resync', is_flag=True, help='Rebuild the baseline listings and exit.')
 def rclone_bisyncd_main(local: Path,
                         remote: str | None = None,
                         rclone_args: Sequence[str] = (),
+                        remote_name: str = DEFAULT_REMOTE_NAME,
+                        dedupe_interval: float = DEFAULT_DEDUPE_SECONDS,
+                        dedupe_mode: DedupeMode = DEFAULT_DEDUPE_MODE,
                         idle: float = DEFAULT_IDLE_SECONDS,
+                        max_syncs_per_minute: int = DEFAULT_MAX_SYNCS_PER_MINUTE,
                         poll: float = DEFAULT_POLL_SECONDS,
+                        remote_poll: float = DEFAULT_REMOTE_POLL_SECONDS,
                         *,
                         debug: bool = False,
                         once: bool = False,
                         resync: bool = False) -> None:
     """
-    Keep LOCAL in bidirectional sync with REMOTE, synchronising whenever LOCAL is written to.
+    Keep LOCAL in bidirectional sync with REMOTE, synchronising whenever either side changes.
 
-    REMOTE defaults to a Google Drive directory of the same name as LOCAL. Only one instance per
-    directory runs at a time.
+    REMOTE defaults to a directory of the same name as LOCAL under the remote named by
+    --remote-name. Changes made on a Google Drive remote are noticed by reading its changes feed.
+    Warnings and worse always go to the system log. Only one instance per directory runs at a time.
     """  # noqa: DOC501
-    setup_logging(debug=debug, loggers={'deltona': {}})
-    remote = remote or default_remote(local)
+    syslog = _syslog_handler()
+    setup_logging(debug=debug,
+                  formatters={'syslog': {
+                      'format': '%(name)s: %(levelname)s: %(message)s'
+                  }},
+                  handlers=syslog,
+                  loggers={'deltona': {}},
+                  root={'handlers': ('console', *syslog)})
+    remote = remote or default_remote(local, remote_name)
     try:
         with single_instance(local):
-            _run_bisyncd(local, remote, rclone_args, idle=idle, once=once, poll=poll, resync=resync)
-    except AlreadyRunning as e:
+            _run_bisyncd(local,
+                         remote,
+                         rclone_args,
+                         dedupe_interval=dedupe_interval,
+                         dedupe_mode=dedupe_mode,
+                         idle=idle,
+                         max_syncs_per_minute=max_syncs_per_minute,
+                         once=once,
+                         poll=poll,
+                         remote_poll=remote_poll,
+                         resync=resync)
+    except (AlreadyRunning, InvalidCredentials) as e:
         click.echo(str(e), err=True)
         raise click.Abort from e
     except sp.CalledProcessError as e:
