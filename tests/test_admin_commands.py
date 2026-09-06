@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+import json
 import logging
 import os
 import subprocess as sp
@@ -16,6 +18,7 @@ from deltona.commands.admin import (
     make_rclone_bisync_service_main,
     patch_bundle_main,
     rclone_bisyncd_main,
+    rclone_drive_changes_main,
     remove_rclone_bisync_service_main,
     reset_tpm_enrollments_main,
     slug_rename_main,
@@ -1020,3 +1023,127 @@ def test_make_rclone_bisync_service_main_systemctl_missing(mocker: MockerFixture
     result = runner.invoke(make_rclone_bisync_service_main, [str(tmp_path)])
     assert result.exit_code == 1
     assert 'systemctl is not installed.' in result.output
+
+
+def test_rclone_drive_changes_main_table(mocker: MockerFixture, runner: CliRunner) -> None:
+    mocker.patch('deltona.commands.admin.recent_changes',
+                 return_value=[{
+                     'createdTime': '2026-09-05T10:00:00.000Z',
+                     'lastModifyingUser': {
+                         'displayName': 'Ann'
+                     },
+                     'modifiedTime': '2026-09-06T11:30:00.000Z',
+                     'name': 'report.txt',
+                     'size': '2048'
+                 }])
+
+    result = runner.invoke(rclone_drive_changes_main, [])
+    assert result.exit_code == 0, result.output
+    assert 'report.txt' in result.output
+    assert 'modified' in result.output
+    assert 'Ann' in result.output
+
+
+@pytest.mark.parametrize(('file', 'expected'), [
+    ({
+        'modifiedTime': '2026-09-06T11:00:00.000Z',
+        'trashed': True
+    }, 'trashed'),
+    ({
+        'createdTime': '2026-09-06T11:00:00.000Z',
+        'modifiedTime': '2026-09-06T11:00:00.000Z'
+    }, 'created'),
+    ({
+        'createdTime': '2026-09-05T11:00:00.000Z',
+        'modifiedTime': '2026-09-06T11:00:00.000Z'
+    }, 'modified'),
+    ({}, 'created'),
+])
+def test_rclone_drive_changes_main_action(mocker: MockerFixture, runner: CliRunner,
+                                          file: dict[str, Any], expected: str) -> None:
+    mocker.patch('deltona.commands.admin.recent_changes', return_value=[file])
+
+    result = runner.invoke(rclone_drive_changes_main, [])
+    assert result.exit_code == 0, result.output
+    assert expected in result.output
+
+
+def test_rclone_drive_changes_main_json(mocker: MockerFixture, runner: CliRunner) -> None:
+    files = [{'id': '1', 'name': 'a.txt'}]
+    mocker.patch('deltona.commands.admin.recent_changes', return_value=files)
+
+    result = runner.invoke(rclone_drive_changes_main, ['--json'])
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output) == files
+
+
+def test_rclone_drive_changes_main_nothing(mocker: MockerFixture, runner: CliRunner) -> None:
+    mocker.patch('deltona.commands.admin.recent_changes', return_value=[])
+
+    result = runner.invoke(rclone_drive_changes_main, [])
+    assert result.exit_code == 0, result.output
+    assert 'Nothing changed.' in result.output
+
+
+def test_rclone_drive_changes_main_times(mocker: MockerFixture, runner: CliRunner) -> None:
+    mock_recent = mocker.patch('deltona.commands.admin.recent_changes', return_value=[])
+
+    result = runner.invoke(rclone_drive_changes_main,
+                           ['--since', '2h', '--until', '2026-09-01T00:00:00+00:00'])
+    assert result.exit_code == 0, result.output
+    start, end = mock_recent.call_args.args[1:3]
+    assert (datetime.now(timezone.utc) - start).total_seconds() == pytest.approx(7200, abs=60)
+    assert end == datetime(2026, 9, 1, tzinfo=timezone.utc)
+
+
+@pytest.mark.parametrize('value', ['2026-09-01T08:00', '2026-09-06T11:30:00.000Z'])
+def test_rclone_drive_changes_main_timestamp(mocker: MockerFixture, runner: CliRunner,
+                                             value: str) -> None:
+    mock_recent = mocker.patch('deltona.commands.admin.recent_changes', return_value=[])
+
+    result = runner.invoke(rclone_drive_changes_main, ['--since', value])
+    assert result.exit_code == 0, result.output
+    # One given without a zone is read as a time on this machine; the trailing Z Google prints is
+    # accepted, so a stamp out of --json can be passed straight back in.
+    assert mock_recent.call_args.args[1].tzinfo is not None
+
+
+@pytest.mark.parametrize('option', ['--since', '--until'])
+def test_rclone_drive_changes_main_bad_time(runner: CliRunner, option: str) -> None:
+    result = runner.invoke(rclone_drive_changes_main, [option, 'yesterday'])
+    # Click reports a bad parameter value as a usage error.
+    assert result.exit_code == 2
+    assert 'is not a duration or a timestamp' in result.output
+    assert option in result.output
+
+
+@pytest.mark.parametrize(('error', 'expected'), [
+    (InvalidCredentials('rclone has no stored credentials'), 'no stored credentials'),
+    (sp.CalledProcessError(3, 'rclone'), 'rclone exited with status 3.'),
+    (FileNotFoundError(2, 'No such file or directory', 'rclone'), 'rclone is not installed.'),
+    (OSError('name or service not known'), 'Google Drive could not be reached'),
+])
+def test_rclone_drive_changes_main_errors(mocker: MockerFixture, runner: CliRunner,
+                                          error: Exception, expected: str) -> None:
+    mocker.patch('deltona.commands.admin.recent_changes', side_effect=error)
+
+    result = runner.invoke(rclone_drive_changes_main, [])
+    assert result.exit_code == 1
+    assert expected in result.output
+
+
+def test_rclone_drive_changes_main_options(mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch,
+                                           runner: CliRunner, tmp_path: Path) -> None:
+    monkeypatch.setenv('RCLONE_CONFIG', 'a-placeholder')
+    mock_recent = mocker.patch('deltona.commands.admin.recent_changes', return_value=[])
+    config = tmp_path / 'rclone.conf'
+
+    result = runner.invoke(
+        rclone_drive_changes_main,
+        ['gdrive:X', '--access-token', 'tok', '--rclone-config',
+         str(config), '-n', '5'])
+    assert result.exit_code == 0, result.output
+    assert os.environ['RCLONE_CONFIG'] == str(config.resolve())
+    assert mock_recent.call_args.args[0] == 'gdrive:X'
+    assert mock_recent.call_args.args[3] == 5
+    assert mock_recent.call_args.args[4] == 'tok'

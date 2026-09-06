@@ -974,6 +974,7 @@ dependencies = [
 admin = [
     { name = "paramiko" },
     { name = "platformdirs" },
+    { name = "rich" },
     { name = "watchdog" },
 ]
 desktop = [
@@ -1079,6 +1080,7 @@ requires-dist = [
     { name = "pyperclip", marker = "extra == 'desktop'", specifier = ">=1.11.0" },
     { name = "python-xz", marker = "extra == 'wine'", specifier = ">=0.6.0" },
     { name = "pyyaml", marker = "extra == 'string'", specifier = ">=6.0.3" },
+    { name = "rich", marker = "extra == 'admin'", specifier = ">=15.0.0" },
     { name = "send2trash", marker = "extra == 'media'", specifier = ">=2.1.0" },
     { name = "tomlkit", specifier = ">=0.15.1" },
     { name = "typing-extensions", specifier = ">=4.16.0" },

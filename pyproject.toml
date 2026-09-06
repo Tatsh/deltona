@@ -94,7 +94,7 @@ email = "audvare@gmail.com"
 name = "Andrew Udvare"
 
 [project.optional-dependencies]
-admin = ["paramiko>=5.0.0", "platformdirs>=4.11.5", "watchdog>=6.0.0"]
+admin = ["paramiko>=5.0.0", "platformdirs>=4.11.5", "rich>=15.0.0", "watchdog>=6.0.0"]
 desktop = [
   "pydbus>=0.6.0; sys_platform == 'linux'",
   "pygobject>=3.58.0; sys_platform == 'linux'",
@@ -153,6 +153,7 @@ patch-bundle = "deltona.commands.admin:patch_bundle_main"
 patch-uiso-font = "deltona.commands.wine:patch_ultraiso_font_main"
 pl2json = "deltona.commands.string:pl2json_main"
 rclone-bisyncd = "deltona.commands.admin:rclone_bisyncd_main"
+rclone-drive-changes = "deltona.commands.admin:rclone_drive_changes_main"
 remove-rclone-bisync-service = "deltona.commands.admin:remove_rclone_bisync_service_main"
 remove-trailing-commas = "deltona.commands.misc:remove_trailing_commas_main"
 retry-gh-jobs = "deltona.commands.git:retry_gh_jobs_main"

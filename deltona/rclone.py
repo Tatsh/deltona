@@ -42,16 +42,17 @@ if TYPE_CHECKING:
 
     IgnoreSpec: TypeAlias = pathspec.PathSpec[GitIgnoreBasicPattern]
 
-__all__ = ('DEFAULT_BISYNC_ARGS', 'DEFAULT_DEDUPE_MODE', 'DEFAULT_DEDUPE_SECONDS',
-           'DEFAULT_IDLE_SECONDS', 'DEFAULT_MAX_SYNCS_PER_MINUTE', 'DEFAULT_POLL_SECONDS',
-           'DEFAULT_REMOTE_NAME', 'DEFAULT_REMOTE_POLL_SECONDS', 'DEFAULT_TOKEN_MARGIN_SECONDS',
-           'GRIVEIGNORE_NAME', 'LAUNCHD_LABEL_PREFIX', 'RCLONE_CONFIG_ENV', 'AlreadyRunning',
-           'DedupeMode', 'DriveChanges', 'InvalidCredentials', 'ServiceKind', 'access_token',
-           'bisync', 'check_credentials', 'dedupe', 'default_remote', 'default_service_kind',
+__all__ = ('DEFAULT_BISYNC_ARGS', 'DEFAULT_CHANGES_LIMIT', 'DEFAULT_CHANGES_SINCE_SECONDS',
+           'DEFAULT_DEDUPE_MODE', 'DEFAULT_DEDUPE_SECONDS', 'DEFAULT_IDLE_SECONDS',
+           'DEFAULT_MAX_SYNCS_PER_MINUTE', 'DEFAULT_POLL_SECONDS', 'DEFAULT_REMOTE_NAME',
+           'DEFAULT_REMOTE_POLL_SECONDS', 'DEFAULT_TOKEN_MARGIN_SECONDS', 'GRIVEIGNORE_NAME',
+           'LAUNCHD_LABEL_PREFIX', 'RCLONE_CONFIG_ENV', 'AlreadyRunning', 'DedupeMode',
+           'DriveChanges', 'InvalidCredentials', 'ServiceKind', 'access_token', 'bisync',
+           'check_credentials', 'dedupe', 'default_remote', 'default_service_kind',
            'default_service_name', 'disable_service', 'enable_service', 'generate_service',
            'griveignore_filters', 'griveignore_spec', 'install_service', 'is_drive_remote',
-           'launchd_label', 'rclone_config_path', 'service_path', 'single_instance', 'sync_once',
-           'uninstall_service', 'watch_and_sync')
+           'launchd_label', 'rclone_config_path', 'recent_changes', 'service_path',
+           'single_instance', 'sync_once', 'uninstall_service', 'watch_and_sync')
 
 DedupeMode: TypeAlias = Literal['first', 'largest', 'newest', 'oldest', 'rename', 'skip',
                                 'smallest']
@@ -74,6 +75,18 @@ Arguments always passed to ``rclone bisync``.
 ``--resilient`` and ``--recover`` keep a transient failure from locking out later runs, and
 ``--max-lock`` lets an abandoned lock expire. ``--drive-skip-gdocs`` omits Google Docs, which
 report a size of ``-1`` and carry no checksum.
+
+:meta hide-value:
+"""
+DEFAULT_CHANGES_LIMIT = 100
+"""
+Number of files a listing of recent changes reports when no limit is given.
+
+:meta hide-value:
+"""
+DEFAULT_CHANGES_SINCE_SECONDS = 86400.0
+"""
+How far back a listing of recent changes reaches when no start is given.
 
 :meta hide-value:
 """
@@ -175,7 +188,11 @@ _DRIVE_CHANGES_URL = 'https://www.googleapis.com/drive/v3/changes'
 _DRIVE_FILE_PARAMS = {'supportsAllDrives': 'true'}
 _DRIVE_FILES_URL = 'https://www.googleapis.com/drive/v3/files'
 _DRIVE_FOLDER_MIME = 'application/vnd.google-apps.folder'
+_DRIVE_LIST_FIELDS = ('files(createdTime,explicitlyTrashed,id,'
+                      'lastModifyingUser(displayName,emailAddress),mimeType,modifiedTime,name,'
+                      'parents,size,trashed,webViewLink),nextPageToken')
 _DRIVE_MAX_DEPTH = 64
+_DRIVE_PAGE_SIZE = 1000
 _SYSTEMD_SYSTEM_PATH = Path('/etc/systemd/system')
 log = logging.getLogger(__name__)
 
@@ -849,6 +866,93 @@ def check_credentials(remote: str) -> None:
         raise InvalidCredentials(msg) from e
 
 
+def _refused_message(remote: str) -> str:
+    name = _remote_name(remote)
+    return (f'Google Drive refused the credentials rclone holds for `{name}`. Run `rclone config'
+            f' reconnect {name}:` to authorise it again.')
+
+
+def _drive_get(session: niquests.Session, headers: Mapping[str, str], url: str,
+               params: Mapping[str, str], refused: str) -> Any:
+    response = session.get(url, headers=dict(headers), params=dict(params))
+    if response.status_code in {401, 403}:
+        raise InvalidCredentials(refused)
+    response.raise_for_status()
+    return response.json()
+
+
+def _rfc3339(when: datetime) -> str:
+    return when.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
+def recent_changes(remote: str = DEFAULT_REMOTE_NAME,
+                   since: datetime | None = None,
+                   until: datetime | None = None,
+                   limit: int = DEFAULT_CHANGES_LIMIT,
+                   token: str | None = None) -> Iterator[dict[str, Any]]:
+    """
+    List the files most recently changed on the Google Drive account behind a remote.
+
+    The whole account is listed, not the directory the remote points at, and the newest change comes
+    first. Deletions do not appear. Google serves those only through the changes feed
+    :py:class:`DriveChanges` reads, which begins at the moment it is opened and cannot be asked
+    about a time already past.
+
+    Parameters
+    ----------
+    remote : str
+        rclone remote, such as ``gdrive:Documents``. Any path on it is ignored.
+    since : datetime | None
+        Report only files modified after this. Defaults to
+        :py:data:`DEFAULT_CHANGES_SINCE_SECONDS` seconds ago.
+    until : datetime | None
+        Report only files modified before this.
+    limit : int
+        Maximum number of files to report.
+    token : str | None
+        Access token to send instead of the one rclone holds.
+
+    Yields
+    ------
+    dict[str, Any]
+        A Drive file resource as Google sends it.
+
+    Raises
+    ------
+    InvalidCredentials
+        If rclone holds no token for the remote, or Google Drive refuses the one it is sent.
+    """  # noqa: DOC502
+    since = since or (datetime.now(timezone.utc) - timedelta(seconds=DEFAULT_CHANGES_SINCE_SECONDS))
+    query = [f"modifiedTime > '{_rfc3339(since)}'"]
+    if until is not None:
+        query.append(f"modifiedTime < '{_rfc3339(until)}'")
+    params = {
+        'fields': _DRIVE_LIST_FIELDS,
+        'orderBy': 'modifiedTime desc',
+        'pageSize': str(min(max(limit, 1), _DRIVE_PAGE_SIZE)),
+        'q': ' and '.join(query),
+        'supportsAllDrives': 'true'
+    }
+    if drive_id := _remote_config(remote).get('team_drive'):
+        params |= {'driveId': str(drive_id), 'includeItemsFromAllDrives': 'true'}
+    headers = {'Authorization': f'Bearer {token or access_token(remote)}'}
+    refused = ('Google Drive refused the access token given on the command line.'
+               if token else _refused_message(remote))
+    reported = 0
+    page: str | None = None
+    with niquests.Session() as session:
+        while True:
+            data = _drive_get(session, headers, _DRIVE_FILES_URL,
+                              params | {'pageToken': page} if page else params, refused)
+            for file in data.get('files') or ():
+                yield dict(file)
+                reported += 1
+                if reported >= limit:
+                    return
+            if not (page := data.get('nextPageToken')):
+                return
+
+
 class _Ignore:
     """
     The ignore file of a local directory.
@@ -988,14 +1092,7 @@ class DriveChanges:
         return self._shared | {'includeItemsFromAllDrives': 'true'}
 
     def _get(self, session: niquests.Session, url: str, params: Mapping[str, str]) -> Any:
-        response = session.get(url, headers=self._headers, params=dict(params))
-        if response.status_code in {401, 403}:
-            name = _remote_name(self._remote)
-            msg = (f'Google Drive refused the credentials rclone holds for `{name}`. Run `rclone'
-                   f' config reconnect {name}:` to authorise it again.')
-            raise InvalidCredentials(msg)
-        response.raise_for_status()
-        return response.json()
+        return _drive_get(session, self._headers, url, params, _refused_message(self._remote))
 
     def _path(self, session: niquests.Session, file: Mapping[str, Any]) -> str | None:
         parts = [str(file['name'])]

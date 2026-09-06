@@ -9,6 +9,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+### Added
+
+- `rclone-drive-changes` to list what has recently changed on a Google Drive account. What was done
+  to a file is inferred from the times Google reports, so a rename or a move reads as an edit.
+  Deletions are not reported, since Google serves those only through the changes feed
+  `rclone-bisyncd` watches, which cannot be asked about a time already past.
+- `deltona.rclone.recent_changes`, with the `DEFAULT_CHANGES_LIMIT` and
+  `DEFAULT_CHANGES_SINCE_SECONDS` constants.
+
+### Changed
+
+- The `admin` extra now requires `rich`.
+
 ## [0.4.0] - 2026-09-06
 
 ### Added

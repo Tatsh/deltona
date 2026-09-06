@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import ExitStack, contextmanager
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple, TextIO
 import json
@@ -14,6 +15,10 @@ import subprocess as sp
 import sys
 
 from bascom import setup_logging
+from rich.console import Console
+from rich.filesize import decimal
+from rich.table import Table
+from rich.text import Text
 import click
 
 from deltona.constants import CONTEXT_SETTINGS, SYSLOG_SOCKETS
@@ -24,6 +29,7 @@ from deltona.gentoo import (
     clean_old_kernels_and_modules,
 )
 from deltona.rclone import (
+    DEFAULT_CHANGES_LIMIT,
     DEFAULT_DEDUPE_MODE,
     DEFAULT_DEDUPE_SECONDS,
     DEFAULT_IDLE_SECONDS,
@@ -41,6 +47,7 @@ from deltona.rclone import (
     default_service_name,
     generate_service,
     install_service,
+    recent_changes,
     single_instance,
     sync_once,
     uninstall_service,
@@ -58,7 +65,7 @@ from deltona.utils import secure_move_path
 from deltona.www import generate_html_dir_tree
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Iterable, Iterator, Mapping, Sequence
 
     from paramiko import SSHClient
 
@@ -740,3 +747,137 @@ def rclone_bisyncd_main(local: Path,
     except FileNotFoundError as e:
         click.echo(f'{e.filename} is not installed.', err=True)
         raise click.Abort from e
+
+
+_ACTION_STYLES = {'created': 'green', 'modified': 'yellow', 'trashed': 'red'}
+_DEFAULT_SINCE = '1d'
+_DURATION_RE = re.compile(r'^(?P<count>\d+(?:\.\d+)?)(?P<unit>d|h|m|s|w)$')
+_DURATION_SECONDS = {'d': 86400.0, 'h': 3600.0, 'm': 60.0, 's': 1.0, 'w': 604800.0}
+
+
+def _iso(value: str) -> datetime:
+    # Python 3.10 does not accept the trailing Z that Google sends.
+    return datetime.fromisoformat(value.replace('Z', '+00:00'))
+
+
+def _when(value: str) -> datetime:
+    if parts := _DURATION_RE.match(value.strip()):
+        seconds = float(parts['count']) * _DURATION_SECONDS[parts['unit']]
+        return datetime.now(timezone.utc) - timedelta(seconds=seconds)
+    parsed = _iso(value.strip())
+    return parsed if parsed.tzinfo else parsed.astimezone()
+
+
+def _bound(value: str, hint: str) -> datetime:
+    try:
+        return _when(value)
+    except ValueError as e:
+        msg = f'{value!r} is not a duration or a timestamp'
+        raise click.BadParameter(msg, param_hint=hint) from e
+
+
+def _modified(file: Mapping[str, Any]) -> str:
+    if not (raw := file.get('modifiedTime')):
+        return ''
+    return _iso(str(raw)).astimezone().strftime('%Y-%m-%d %H:%M')
+
+
+def _action(file: Mapping[str, Any]) -> str:
+    # Google reports the state a file is in, not what was done to it, so the action is inferred
+    # from the creation and modification times and the trashed flag. A rename or a move is reported
+    # as an edit, since either only moves modifiedTime along.
+    if file.get('trashed'):
+        return 'trashed'
+    if file.get('createdTime') == file.get('modifiedTime'):
+        return 'created'
+    return 'modified'
+
+
+def _changes_table(files: Iterable[Mapping[str, Any]]) -> Table:
+    table = Table()
+    table.add_column('Modified')
+    table.add_column('Action')
+    table.add_column('Who')
+    table.add_column('Size', justify='right')
+    table.add_column('Name', overflow='fold')
+    for file in files:
+        action = _action(file)
+        table.add_row(_modified(file), Text(action, style=_ACTION_STYLES[action]),
+                      (file.get('lastModifyingUser') or {}).get('displayName') or '',
+                      decimal(int(file['size'])) if file.get('size') is not None else '',
+                      Text(str(file.get('name', ''))))
+    return table
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument('remote', required=False)
+@click.option('--access-token', help='Access token to send instead of the one rclone holds.')
+@click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
+@click.option('-j',
+              '--json',
+              'as_json',
+              is_flag=True,
+              help='Print the file resources as Google sends them.')
+@click.option('-n',
+              '--limit',
+              default=DEFAULT_CHANGES_LIMIT,
+              type=int,
+              help='Maximum number of files to report.')
+@click.option('--rclone-config',
+              type=click.Path(dir_okay=False, path_type=Path),
+              help='Configuration file rclone reads. Defaults to the one rclone reports.')
+@click.option('-s',
+              '--since',
+              default=_DEFAULT_SINCE,
+              help='Report only what changed after this. A duration (30m, 2h, 7d) or a timestamp'
+              ' (2026-09-01T08:00).')
+@click.option('-u', '--until', help='Report only what changed before this. Same forms as --since.')
+def rclone_drive_changes_main(remote: str | None = None,
+                              access_token: str | None = None,
+                              limit: int = DEFAULT_CHANGES_LIMIT,
+                              rclone_config: Path | None = None,
+                              since: str = _DEFAULT_SINCE,
+                              until: str | None = None,
+                              *,
+                              as_json: bool = False,
+                              debug: bool = False) -> None:
+    """
+    List files recently changed on the Google Drive account behind REMOTE.
+
+    REMOTE defaults to gdrive. Any path on it is ignored, since the whole account is listed.
+
+    The action is inferred from what Google reports about the file rather than stated by Google:
+    one whose creation and modification times match was created, one in the bin was trashed, and
+    anything else was edited. A rename or a move therefore reads as an edit, since either only
+    moves the modification time along.
+
+    Deletions are not reported. Google serves those only through the feed rclone-bisyncd watches,
+    which starts at the moment it is opened and cannot be asked about a time already past.
+    """  # noqa: DOC501
+    setup_logging(debug=debug, loggers={'deltona': {}})
+    if rclone_config:
+        os.environ[RCLONE_CONFIG_ENV] = str(rclone_config.resolve())
+    start = _bound(since, '--since')
+    end = _bound(until, '--until') if until else None
+    try:
+        changes = list(
+            recent_changes(remote or DEFAULT_REMOTE_NAME, start, end, limit, access_token))
+    except InvalidCredentials as e:
+        click.echo(str(e), err=True)
+        raise click.Abort from e
+    except sp.CalledProcessError as e:
+        click.echo(f'rclone exited with status {e.returncode}.', err=True)
+        raise click.Abort from e
+    except FileNotFoundError as e:
+        click.echo(f'{e.filename} is not installed.', err=True)
+        raise click.Abort from e
+    except OSError as e:
+        click.echo(f'Google Drive could not be reached: {e}', err=True)
+        raise click.Abort from e
+    if as_json:
+        click.echo(json.dumps(changes, indent=2, sort_keys=True))
+        return
+    if not changes:
+        click.echo('Nothing changed.')
+        return
+    Console().print(_changes_table(changes))

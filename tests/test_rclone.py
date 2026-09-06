@@ -31,6 +31,7 @@ from deltona.rclone import (
     is_drive_remote,
     launchd_label,
     rclone_config_path,
+    recent_changes,
     service_path,
     single_instance,
     sync_once,
@@ -319,13 +320,14 @@ def _mock_config_dump(mocker: MockerFixture, **overrides: Any) -> Any:
                         })))
 
 
+_ROOT_ONLY = ({'id': 'ROOT'},)
+
+
 def _mock_drive_api(mocker: MockerFixture,
                     pages: list[Any] | None = None,
                     folders: dict[str, Any] | None = None,
                     status_code: int = 200,
-                    files: tuple[Any, ...] = ({
-                        'id': 'ROOT'
-                    },)) -> Any:
+                    files: tuple[Any, ...] = _ROOT_ONLY) -> Any:
     session = mocker.patch('deltona.rclone.niquests.Session').return_value.__enter__.return_value
     feed = iter(pages or [])
 
@@ -341,6 +343,19 @@ def _mock_drive_api(mocker: MockerFixture,
             response.json.return_value = (folders or {})[url.rsplit('/', 1)[1]]
         else:
             response.json.return_value = next(feed)
+        return response
+
+    session.get.side_effect = get
+    return session
+
+
+def _mock_drive_pages(mocker: MockerFixture, pages: list[Any]) -> Any:
+    session = mocker.patch('deltona.rclone.niquests.Session').return_value.__enter__.return_value
+    feed = iter(pages)
+
+    def get(_url: str, **_kwargs: Any) -> Any:
+        response = mocker.MagicMock(status_code=200)
+        response.json.return_value = next(feed)
         return response
 
     session.get.side_effect = get
@@ -1168,3 +1183,90 @@ def test_drive_changes_remote_directory_absent(mocker: MockerFixture,
     with caplog.at_level(logging.WARNING, logger='deltona.rclone'):
         assert reader.poll() is False
     assert 'does not exist on the remote yet' in caplog.text
+
+
+def test_recent_changes(mocker: MockerFixture) -> None:
+    _mock_config_dump(mocker)
+    session = _mock_drive_api(mocker, files=({'id': '1', 'name': 'a.txt'},))
+
+    assert list(recent_changes('gdrive')) == [{'id': '1', 'name': 'a.txt'}]
+    params = session.get.call_args.kwargs['params']
+    assert params['orderBy'] == 'modifiedTime desc'
+    assert params['q'].startswith("modifiedTime > '")
+    assert 'modifiedTime <' not in params['q']
+    assert session.get.call_args.kwargs['headers']['Authorization'] == 'Bearer a-token'
+
+
+def test_recent_changes_until(mocker: MockerFixture) -> None:
+    _mock_config_dump(mocker)
+    session = _mock_drive_api(mocker)
+
+    list(recent_changes('gdrive', until=datetime(2026, 9, 1, tzinfo=timezone.utc)))
+    assert "modifiedTime < '2026-09-01T00:00:00Z'" in session.get.call_args.kwargs['params']['q']
+
+
+def test_recent_changes_supplied_token(mocker: MockerFixture) -> None:
+    _mock_config_dump(mocker)
+    session = _mock_drive_api(mocker)
+
+    list(recent_changes('gdrive', token='supplied'))
+    assert session.get.call_args.kwargs['headers']['Authorization'] == 'Bearer supplied'
+
+
+def test_recent_changes_shared_drive(mocker: MockerFixture) -> None:
+    _mock_config_dump(mocker, team_drive='T')
+    session = _mock_drive_api(mocker)
+
+    list(recent_changes('gdrive'))
+    params = session.get.call_args.kwargs['params']
+    assert params['driveId'] == 'T'
+    assert params['includeItemsFromAllDrives'] == 'true'
+
+
+def test_recent_changes_refused(mocker: MockerFixture) -> None:
+    _mock_config_dump(mocker)
+    _mock_drive_api(mocker, status_code=403)
+
+    with pytest.raises(InvalidCredentials, match='rclone config reconnect'):
+        list(recent_changes('gdrive'))
+
+
+def test_recent_changes_refused_with_supplied_token(mocker: MockerFixture) -> None:
+    _mock_config_dump(mocker)
+    _mock_drive_api(mocker, status_code=401)
+
+    with pytest.raises(InvalidCredentials, match='given on the command line'):
+        list(recent_changes('gdrive', token='supplied'))
+
+
+def test_recent_changes_follows_pages(mocker: MockerFixture) -> None:
+    _mock_config_dump(mocker)
+    session = _mock_drive_pages(mocker, [{
+        'files': [{
+            'id': '1'
+        }],
+        'nextPageToken': 'p2'
+    }, {
+        'files': [{
+            'id': '2'
+        }]
+    }])
+
+    assert [file['id'] for file in recent_changes('gdrive')] == ['1', '2']
+    assert session.get.call_args.kwargs['params']['pageToken'] == 'p2'
+
+
+def test_recent_changes_limit_stops_early(mocker: MockerFixture) -> None:
+    _mock_config_dump(mocker)
+    session = _mock_drive_pages(mocker, [{
+        'files': [{
+            'id': '1'
+        }, {
+            'id': '2'
+        }],
+        'nextPageToken': 'p2'
+    }])
+
+    assert [file['id'] for file in recent_changes('gdrive', limit=1)] == ['1']
+    # The second page is never asked for, since the limit was reached inside the first.
+    assert session.get.call_count == 1
