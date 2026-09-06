@@ -27,9 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "DELTONA" "1" "Aug 21, 2026" "0.3.0" "deltona"
+.TH "DELTONA" "1" "Sep 06, 2026" "0.4.0" "deltona"
 .SH NAME
-deltona \- deltona v0.3.0
+deltona \- deltona v0.4.0
 .sp
 A lot of uncategorised utilities.
 .SH CLEAN-OLD-KERNELS-MODULES
@@ -172,6 +172,121 @@ Arguments
 .B FILES
 Optional argument(s)
 .UNINDENT
+.SH MAKE-RCLONE-BISYNC-SERVICE
+.sp
+Install a service that keeps LOCAL in bidirectional sync with REMOTE.
+.sp
+REMOTE defaults to a directory of the same name as LOCAL under the remote named by
+\-\-remote\-name. Installing a systemd\-system service requires root privileges.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+make\-rclone\-bisync\-service [OPTIONS] LOCAL [REMOTE]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-a, \-\-rclone\-arg <rclone_args>
+Extra argument passed to rclone bisync. May be repeated.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-k, \-\-kind <kind>
+Service manager to target. Defaults to the one native to this platform.
+.INDENT 7.0
+.TP
+.B Options
+launchd | systemd\-system | systemd\-user
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-n, \-\-dry\-run
+Print the service definition and exit.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-dedupe\-interval <dedupe_interval>
+Shortest wait between deduplications. 0 disables them.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-dedupe\-mode <dedupe_mode>
+What deduplication keeps out of the files that share a name.
+.INDENT 7.0
+.TP
+.B Options
+first | largest | newest | oldest | rename | skip | smallest
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-idle <idle>
+Seconds of quiet before a burst of writes is synchronised.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-max\-syncs\-per\-minute <max_syncs_per_minute>
+Synchronisations allowed in a minute. 0 allows any rate.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-name <name>
+Service name. Defaults to a name based on LOCAL.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-enable
+Do not enable and start the service.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-poll <poll>
+Longest wait between synchronisations.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-r, \-\-remote\-name <remote_name>
+rclone remote to use when REMOTE is not given.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-rclone\-config <rclone_config>
+Configuration file rclone reads. Defaults to the one rclone reports.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-remote\-poll <remote_poll>
+Wait between reads of the Google Drive changes feed. 0 disables them.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-user <user>
+Account the service runs as. Only used with systemd\-system.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B LOCAL
+Required argument
+.UNINDENT
+.INDENT 0.0
+.TP
+.B REMOTE
+Optional argument
+.UNINDENT
 .SH PATCH-BUNDLE
 .sp
 Patch a macOS/iOS/etc bundle\(aqs Info.plist file.
@@ -207,6 +322,146 @@ Arguments
 .INDENT 0.0
 .TP
 .B BUNDLE
+Required argument
+.UNINDENT
+.SH RCLONE-BISYNCD
+.sp
+Keep LOCAL in bidirectional sync with REMOTE, synchronising whenever either side changes.
+.sp
+REMOTE defaults to a directory of the same name as LOCAL under the remote named by
+\-\-remote\-name. Changes made on a Google Drive remote are noticed by reading its changes feed.
+Warnings and worse always go to the system log. Only one instance per directory runs at a time.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+rclone\-bisyncd [OPTIONS] LOCAL [REMOTE]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-a, \-\-rclone\-arg <rclone_args>
+Extra argument passed to rclone bisync. May be repeated.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-dedupe\-interval <dedupe_interval>
+Shortest wait between deduplications. 0 disables them.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-dedupe\-mode <dedupe_mode>
+What deduplication keeps out of the files that share a name.
+.INDENT 7.0
+.TP
+.B Options
+first | largest | newest | oldest | rename | skip | smallest
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-idle <idle>
+Seconds of quiet before a burst of writes is synchronised.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-max\-syncs\-per\-minute <max_syncs_per_minute>
+Synchronisations allowed in a minute. 0 allows any rate.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-once
+Synchronise once and exit.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-poll <poll>
+Longest wait between synchronisations.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-r, \-\-remote\-name <remote_name>
+rclone remote to use when REMOTE is not given.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-rclone\-config <rclone_config>
+Configuration file rclone reads. Defaults to the one rclone reports.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-remote\-poll <remote_poll>
+Wait between reads of the Google Drive changes feed. 0 disables them.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-resync
+Rebuild the baseline listings and exit.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B LOCAL
+Required argument
+.UNINDENT
+.INDENT 0.0
+.TP
+.B REMOTE
+Optional argument
+.UNINDENT
+.SH REMOVE-RCLONE-BISYNC-SERVICE
+.sp
+Uninstall the service that keeps LOCAL in bidirectional sync.
+.sp
+LOCAL does not have to exist. Removing a systemd\-system service requires root privileges.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+remove\-rclone\-bisync\-service [OPTIONS] LOCAL
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-k, \-\-kind <kind>
+Service manager to target. Defaults to the one native to this platform.
+.INDENT 7.0
+.TP
+.B Options
+launchd | systemd\-system | systemd\-user
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-name <name>
+Service name. Defaults to a name based on LOCAL.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B LOCAL
 Required argument
 .UNINDENT
 .SH SLUG-RENAME
