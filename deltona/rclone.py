@@ -823,10 +823,6 @@ def is_drive_remote(remote: str) -> bool:
     return _remote_config(remote).get('type') == 'drive'
 
 
-def _refused(response: niquests.Response) -> bool:
-    return response.status_code in {401, 403}
-
-
 def check_credentials(remote: str) -> None:
     """
     Verify that rclone can authorise against a remote, and refresh its stored access token.
