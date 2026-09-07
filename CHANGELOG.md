@@ -20,6 +20,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `rclone-bisyncd` now synchronises hourly rather than every five minutes when nothing is known to
+  have changed, since the periodic run only catches what the watcher and the Google Drive changes
+  feed miss. Where there is no such feed to read, the wait is how long a change made on the remote
+  goes unnoticed.
+- `make-rclone-bisync-service` now restarts a service it replaces, which previously kept running on
+  the definition it started with. On launchd the loaded job is booted out first, since `launchctl`
+  will not bootstrap a label that is already loaded.
 - The `admin` extra now requires `rich`.
 
 ## [0.4.0] - 2026-09-06

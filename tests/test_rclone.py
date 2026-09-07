@@ -96,15 +96,28 @@ def test_generate_service_launchd() -> None:
 
 
 @pytest.mark.parametrize(('kind', 'expected'), [
-    ('launchd', 'launchctl'),
-    ('systemd-system', 'systemctl'),
-    ('systemd-user', 'systemctl'),
+    ('launchd', ('launchctl', 'bootstrap')),
+    ('systemd-system', ('systemctl', 'restart', 'x')),
+    ('systemd-user', ('systemctl', '--user', 'restart', 'x')),
 ])
-def test_enable_service(mocker: MockerFixture, tmp_path: Path, kind: str, expected: str) -> None:
+def test_enable_service(mocker: MockerFixture, tmp_path: Path, kind: str,
+                        expected: tuple[str, ...]) -> None:
     mocker.patch('deltona.rclone.Path.home', return_value=tmp_path)
     mock_run = mocker.patch('deltona.rclone.sp.run')
     enable_service(kind, 'x')  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
-    assert mock_run.call_args_list[-1].args[0][0] == expected
+    # A rewritten definition does not reach the process running the old one.
+    assert mock_run.call_args.args[0][:len(expected)] == expected
+
+
+def test_enable_service_launchd_replaces_loaded_job(mocker: MockerFixture, tmp_path: Path) -> None:
+    mocker.patch('deltona.rclone.Path.home', return_value=tmp_path)
+    mock_run = mocker.patch('deltona.rclone.sp.run',
+                            side_effect=[sp.CalledProcessError(1, 'launchctl'),
+                                         mocker.MagicMock()])
+    enable_service('launchd', 'x')
+    # Nothing was loaded, so booting out failed, which is the wanted state rather than a failure.
+    assert mock_run.call_args_list[0].args[0][1] == 'bootout'
+    assert mock_run.call_args_list[-1].args[0][1] == 'bootstrap'
 
 
 def test_install_service(mocker: MockerFixture, tmp_path: Path) -> None:

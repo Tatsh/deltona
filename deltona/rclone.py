@@ -124,9 +124,13 @@ as ``idle`` allows, so the rate is capped and the cap is logged.
 
 :meta hide-value:
 """
-DEFAULT_POLL_SECONDS = 300.0
+DEFAULT_POLL_SECONDS = 3600.0
 """
 Longest wait between synchronisations, regardless of whether anything is known to have changed.
+
+This is only a backstop, since a local write is noticed by the watcher, and a change on a Google
+Drive remote is noticed within :py:data:`DEFAULT_REMOTE_POLL_SECONDS`. A synchronisation costs a
+full listing of both sides, which is not worth paying every few minutes to catch a dropped event.
 
 :meta hide-value:
 """
@@ -426,7 +430,10 @@ def generate_service(kind: ServiceKind,
 
 def enable_service(kind: ServiceKind, name: str) -> None:
     """
-    Enable and start an installed service.
+    Enable an installed service and start it, replacing it if it is already running.
+
+    A rewritten definition does not reach the process running the old one, so the service is
+    restarted rather than started.
 
     Parameters
     ----------
@@ -437,14 +444,21 @@ def enable_service(kind: ServiceKind, name: str) -> None:
     """
     match kind:
         case 'launchd':
+            # launchctl will not bootstrap a label that is already loaded, and booting out one that
+            # was never loaded exits non-zero, which is the wanted state rather than a failure.
+            with suppress(sp.CalledProcessError):
+                sp.run(('launchctl', 'bootout', f'gui/{os.getuid()}/{launchd_label(name)}'),
+                       check=True)
             sp.run(('launchctl', 'bootstrap', f'gui/{os.getuid()}', str(service_path(kind, name))),
                    check=True)
         case 'systemd-system':
             sp.run(('systemctl', 'daemon-reload'), check=True)
-            sp.run(('systemctl', 'enable', '--now', name), check=True)
+            sp.run(('systemctl', 'enable', name), check=True)
+            sp.run(('systemctl', 'restart', name), check=True)
         case 'systemd-user':
             sp.run(('systemctl', '--user', 'daemon-reload'), check=True)
-            sp.run(('systemctl', '--user', 'enable', '--now', name), check=True)
+            sp.run(('systemctl', '--user', 'enable', name), check=True)
+            sp.run(('systemctl', '--user', 'restart', name), check=True)
 
 
 def install_service(kind: ServiceKind,
@@ -468,7 +482,7 @@ def install_service(kind: ServiceKind,
     description : str
         Human-readable description.
     enable : bool
-        Enable and start the service once it is written.
+        Enable and start the service once it is written, restarting it if it is already running.
     user : str | None
         Account the service runs as. Only used by ``systemd-system``.
 
