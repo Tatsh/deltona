@@ -6,10 +6,12 @@ from datetime import datetime, timedelta, timezone
 from functools import partial
 from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, NamedTuple, get_args
 import getpass
 import os
 import re
+import shutil
+import subprocess as sp
 import webbrowser
 
 from bascom import setup_logging
@@ -19,13 +21,20 @@ import click
 from deltona.actions import find_retryable_runs, rerun_failed_jobs
 from deltona.constants import CONTEXT_SETTINGS
 from deltona.git import (
+    DEFAULT_SWEEP_SECONDS,
+    DEPENDABOT_LOGIN,
+    PRE_COMMIT_CI_LOGIN,
     BotMergeError,
     DependabotMergeError,
     PreCommitCIMergeError,
     convert_git_ssh_url_to_https,
     get_github_default_branch,
+    github_token,
     merge_dependabot_pull_requests,
     merge_pre_commit_ci_pull_requests,
+    store_token,
+    token_path,
+    watch_and_merge,
 )
 from deltona.gmail import (
     KEYRING_SERVICE as GMAIL_KEYRING_SERVICE,
@@ -34,10 +43,18 @@ from deltona.gmail import (
     GmailError,
     authorize,
 )
-from deltona.string import pluralize
+from deltona.services import (
+    ServiceKind,
+    default_service_kind,
+    generate_service,
+    install_service,
+    service_path,
+    uninstall_service,
+)
+from deltona.string import pluralize, slugify
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
+    from collections.abc import Awaitable, Callable, Mapping
 
     from git import Repo
 
@@ -205,6 +222,275 @@ def _authorize_gmail(ctx: click.Context, _param: click.Parameter,
     ctx.exit()
 
 
+_SERVICE_KINDS = get_args(ServiceKind)
+_SERVICE_META = 'deltona.service'
+
+
+class _ServiceOptions(NamedTuple):
+    """How the daemon is installed and run."""
+
+    api_key: str | None = None
+    """Token to store for a machine with no keyring."""
+    dry_run: bool = False
+    """Print the definition instead of writing it."""
+    install: bool = False
+    """Install the service."""
+    kind: ServiceKind | None = None
+    """Kind of service manager. Defaults to the one native to this platform."""
+    name: str | None = None
+    """Service name."""
+    no_enable: bool = False
+    """Write the definition without starting anything."""
+    service_group: str | None = None
+    """Group given read access to a stored token."""
+    service_user: str | None = None
+    """Account a ``systemd-system`` service runs as."""
+    sweep: float = DEFAULT_SWEEP_SECONDS
+    """Longest wait between passes over every repository."""
+    uninstall: bool = False
+    """Remove the service."""
+    watch: bool = False
+    """Keep running rather than making one pass."""
+
+
+def _collect(ctx: click.Context, param: click.Parameter, value: Any) -> Any:
+    # Kept off the command signature, which would otherwise carry eleven more parameters that only
+    # ever travel together.
+    ctx.meta.setdefault(_SERVICE_META, {})[str(param.name)] = value
+    return value
+
+
+def _service_option(*param_decls: str, **kwargs: Any) -> Callable[..., Any]:
+    return click.option(*param_decls, callback=_collect, expose_value=False, **kwargs)
+
+
+def _service_options(func: Callable[..., None]) -> Callable[..., None]:
+    for option in reversed(
+        (_service_option('--api-key',
+                         envvar='DELTONA_GITHUB_API_KEY',
+                         help='GitHub token to store for a machine with no keyring, readable only'
+                         ' by the account and group the service runs as. Giving it as'
+                         ' DELTONA_GITHUB_API_KEY keeps it out of the shell history.'),
+         _service_option('--install-service',
+                         'install',
+                         is_flag=True,
+                         help='Install a service that merges whenever a pull request is notified'
+                         ' about, then exit.'),
+         _service_option('-k',
+                         '--kind',
+                         type=click.Choice(_SERVICE_KINDS),
+                         help='Service manager to target. Defaults to the one native to this'
+                         ' platform.'),
+         _service_option('--dry-run',
+                         is_flag=True,
+                         help='Print what would be written or removed instead of doing it.'),
+         _service_option('--name',
+                         help='Service name. Defaults to a name based on the command and'
+                         ' --username.'),
+         _service_option('--no-enable',
+                         is_flag=True,
+                         help='Write the service definition without starting anything.'),
+         _service_option('--service-group', help='Group given read access to the stored token.'),
+         _service_option('--service-user', help='Account a systemd-system service runs as.'),
+         _service_option('--sweep',
+                         default=DEFAULT_SWEEP_SECONDS,
+                         show_default=True,
+                         type=float,
+                         help='Longest wait in seconds between passes over every repository.'),
+         _service_option('--uninstall-service',
+                         'uninstall',
+                         is_flag=True,
+                         help='Remove the installed service and exit.'),
+         _service_option('-w',
+                         '--watch',
+                         is_flag=True,
+                         help='Keep running, merging whenever the bot opens a pull request.'))):
+        func = option(func)
+    return func
+
+
+def _service_settings() -> _ServiceOptions:
+    return _ServiceOptions(**click.get_current_context().meta.get(_SERVICE_META, {}))
+
+
+def _service_name(name: str | None, program: str, username: str) -> str:
+    # The username is part of the name so that one machine can run a service per GitHub account.
+    return name or f'{program}-{slugify(username)}'
+
+
+def _daemon_command(program: str, username: str, *, forwarded: Mapping[str, Any],
+                    sweep: float) -> list[str]:
+    # The console script name rather than whatever argv[0] happened to be, so that the definition
+    # does not depend on how the command that wrote it was invoked.
+    command = [shutil.which(program) or program, '--watch', '-u', username, '--sweep', str(sweep)]
+    # A match statement reads better here, but yapf and Ruff disagree about the spacing of the
+    # `False | None` pattern, so one of them rejects whatever the other writes.
+    for flag, value in sorted(forwarded.items()):
+        if value is True:
+            command.append(flag)
+        elif isinstance(value, tuple):
+            for item in value:
+                command += [flag, str(item)]
+        elif value is not None and value is not False:
+            command += [flag, str(value)]
+    return command
+
+
+def _remove_service(kind: ServiceKind, name: str, *, dry_run: bool) -> None:
+    if dry_run:
+        click.echo(f'Would remove {service_path(kind, name)}.')
+        return
+    if (removed := uninstall_service(kind, name)) is None:
+        click.echo(f'No {kind} service named {name}.', err=True)
+        raise click.exceptions.Exit(1)
+    click.echo(f'Removed {removed}.')
+
+
+def _resolve_service_token(username: str, kind: ServiceKind, service: _ServiceOptions) -> None:
+    if service.api_key:
+        if service.dry_run:
+            click.echo(f'Would store the token at {token_path(username, kind)}.', err=True)
+            return
+        store_token(service.api_key,
+                    username,
+                    kind,
+                    group=service.service_group,
+                    user=service.service_user)
+        return
+    if github_token(username, kind) is None:
+        click.echo(
+            f'No token for {username} in the keyring or at {token_path(username, kind)}. Pass'
+            ' --api-key to store one.',
+            err=True)
+        raise click.Abort
+
+
+def _add_service(program: str, username: str, kind: ServiceKind, name: str, *,
+                 forwarded: Mapping[str, Any], service: _ServiceOptions) -> None:
+    _resolve_service_token(username, kind, service)
+    command = _daemon_command(program, username, forwarded=forwarded, sweep=service.sweep)
+    description = f'Merge bot pull requests on GitHub for {username}.'
+    if service.dry_run:
+        click.echo(
+            generate_service(kind,
+                             name,
+                             command,
+                             description=description,
+                             user=service.service_user))
+        return
+    path = install_service(kind,
+                           name,
+                           command,
+                           description=description,
+                           enable=not service.no_enable,
+                           user=service.service_user)
+    click.echo(f'Installed {path}.')
+
+
+def _handle_service(program: str, username: str, *, forwarded: Mapping[str, Any],
+                    service: _ServiceOptions) -> bool:
+    """
+    Install or remove the service, if either was asked for.
+
+    Parameters
+    ----------
+    program : str
+        Console script the service runs.
+    username : str
+        Keyring key the service reads its token under.
+    forwarded : Mapping[str, Any]
+        Options passed on to the daemon, keyed on the flag that carries them.
+    service : _ServiceOptions
+        How the service is installed and run.
+
+    Returns
+    -------
+    bool
+        Whether the command has done its work and should stop.
+    """  # noqa: DOC501
+    if service.install and service.uninstall:
+        msg = '--install-service and --uninstall-service cannot both be given.'
+        raise click.UsageError(msg)
+    if not service.install and not service.uninstall:
+        # These do nothing on their own, and --dry-run silently meaning "merge for real" is the
+        # worst of the ways that could be taken.
+        if given := [
+                flag
+                for flag, value in (('--api-key', service.api_key), ('--dry-run', service.dry_run),
+                                    ('--name', service.name), ('--no-enable', service.no_enable),
+                                    ('--service-group', service.service_group),
+                                    ('--service-user', service.service_user)) if value
+        ]:
+            msg = (f'{", ".join(given)} {pluralize(len(given), "is", "are")} only used with'
+                   ' --install-service.')
+            raise click.UsageError(msg)
+        return False
+    kind = service.kind or default_service_kind()
+    name = _service_name(service.name, program, username)
+    try:
+        if service.uninstall:
+            _remove_service(kind, name, dry_run=service.dry_run)
+        else:
+            _add_service(program, username, kind, name, forwarded=forwarded, service=service)
+    except sp.CalledProcessError as e:
+        click.echo(f'Failed to {"remove" if service.uninstall else "enable"} {name}.', err=True)
+        raise click.Abort from e
+    except FileNotFoundError as e:
+        click.echo(f'{e.filename} is not installed.', err=True)
+        raise click.Abort from e
+    except (LookupError, PermissionError) as e:
+        click.echo(str(e), err=True)
+        raise click.Abort from e
+    return True
+
+
+def _run_merge_command(merge: Callable[..., Awaitable[None]], error_class: type[BotMergeError], *,
+                       archive_email: bool, base_url: str | None, bot_login: str, concurrency: int,
+                       delay: float, email: str | None, mark_notifications_done: bool,
+                       max_concurrent_http_requests: int, program: str, repos: tuple[str, ...],
+                       username: str) -> None:
+    service = _service_settings()
+    if _handle_service(program,
+                       username,
+                       forwarded={
+                           '-A': archive_email,
+                           '-b': base_url,
+                           '-E': email,
+                           '-M': max_concurrent_http_requests,
+                           '-N': mark_notifications_done,
+                           '-r': repos or None,
+                           '--concurrency': concurrency,
+                           '--delay': delay
+                       },
+                       service=service):
+        return
+    if not (token := github_token(username, service.kind)):
+        click.echo('No token.', err=True)
+        raise click.Abort
+
+    def make_runner(current_repos: tuple[str, ...] | None) -> Callable[[], Awaitable[None]]:
+        return partial(merge,
+                       archive_email=archive_email,
+                       base_url=base_url,
+                       concurrency=concurrency,
+                       email=email,
+                       mark_notifications_done=mark_notifications_done,
+                       max_concurrent_http_requests=max_concurrent_http_requests,
+                       repos=current_repos,
+                       token=token)
+
+    if service.watch:
+        anyio.run(
+            partial(watch_and_merge,
+                    make_runner(repos or None),
+                    base_url=base_url,
+                    bot_login=bot_login,
+                    sweep=service.sweep,
+                    token=token))
+        return
+    _run_bot_merge_or_abort(make_runner, repos or None, error_class, delay, email)
+
+
 def _run_bot_merge_or_abort(make_runner: Callable[[tuple[str, ...] | None],
                                                   Callable[[], Awaitable[None]]],
                             initial_repos: tuple[str, ...] | None, error_class: type[BotMergeError],
@@ -263,6 +549,7 @@ def _run_bot_merge_or_abort(make_runner: Callable[[tuple[str, ...] | None],
               help='Specific repository to process as NAME or OWNER/NAME. '
               'May be passed multiple times.')
 @click.option('-u', '--username', default=getpass.getuser(), help='Username.')
+@_service_options
 def merge_dependabot_prs_main(
         username: str,
         repos: tuple[str, ...] = (),
@@ -277,9 +564,14 @@ def merge_dependabot_prs_main(
         archive_email: bool = False,
         debug: bool = False,
         mark_notifications_done: bool = False) -> None:
-    """Merge pull requests made by Dependabot on GitHub."""  # ruff:ignore[docstring-missing-exception]
-    import keyring  # ruff:ignore[import-outside-top-level]
+    """
+    Merge pull requests made by Dependabot on GitHub.
 
+    --watch keeps running and merges whenever GitHub notifies about a pull request, and sweeps
+    every repository every --sweep seconds regardless. A notification arrives only for a repository
+    the account is subscribed to and has new pull request notifications enabled for, so the sweep
+    is what makes the daemon correct rather than merely quick.
+    """
     setup_logging(debug=debug,
                   loggers={
                       'deltona': {},
@@ -289,22 +581,19 @@ def merge_dependabot_prs_main(
                           'level': 'WARNING'
                       }
                   })
-    if not (token := keyring.get_password('tmu-github-api', username)):
-        click.echo('No token.', err=True)
-        raise click.Abort
-
-    def make_runner(current_repos: tuple[str, ...] | None) -> Callable[[], Awaitable[None]]:
-        return partial(merge_dependabot_pull_requests,
+    _run_merge_command(merge_dependabot_pull_requests,
+                       DependabotMergeError,
                        archive_email=archive_email,
                        base_url=base_url,
+                       bot_login=DEPENDABOT_LOGIN,
                        concurrency=concurrency,
+                       delay=delay,
                        email=email,
                        mark_notifications_done=mark_notifications_done,
                        max_concurrent_http_requests=max_concurrent_http_requests,
-                       repos=current_repos,
-                       token=token)
-
-    _run_bot_merge_or_abort(make_runner, repos or None, DependabotMergeError, delay, email)
+                       program='merge-dependabot-prs',
+                       repos=repos,
+                       username=username)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -348,6 +637,7 @@ def merge_dependabot_prs_main(
               help='Specific repository to process as NAME or OWNER/NAME. '
               'May be passed multiple times.')
 @click.option('-u', '--username', default=getpass.getuser(), help='Username.')
+@_service_options
 def merge_pre_commit_ci_prs_main(
         username: str,
         repos: tuple[str, ...] = (),
@@ -362,26 +652,28 @@ def merge_pre_commit_ci_prs_main(
         archive_email: bool = False,
         debug: bool = False,
         mark_notifications_done: bool = False) -> None:
-    """Merge pull requests made by pre-commit.ci on GitHub."""  # ruff:ignore[docstring-missing-exception]
-    import keyring  # ruff:ignore[import-outside-top-level]
+    """
+    Merge pull requests made by pre-commit.ci on GitHub.
 
+    --watch keeps running and merges whenever GitHub notifies about a pull request, and sweeps
+    every repository every --sweep seconds regardless. A notification arrives only for a repository
+    the account is subscribed to and has new pull request notifications enabled for, so the sweep
+    is what makes the daemon correct rather than merely quick.
+    """
     setup_logging(debug=debug, loggers={'deltona': {}, 'keyring': {}, 'urllib3': {}})
-    if not (token := keyring.get_password('tmu-github-api', username)):
-        click.echo('No token.', err=True)
-        raise click.Abort
-
-    def make_runner(current_repos: tuple[str, ...] | None) -> Callable[[], Awaitable[None]]:
-        return partial(merge_pre_commit_ci_pull_requests,
+    _run_merge_command(merge_pre_commit_ci_pull_requests,
+                       PreCommitCIMergeError,
                        archive_email=archive_email,
                        base_url=base_url,
+                       bot_login=PRE_COMMIT_CI_LOGIN,
                        concurrency=concurrency,
+                       delay=delay,
                        email=email,
                        mark_notifications_done=mark_notifications_done,
                        max_concurrent_http_requests=max_concurrent_http_requests,
-                       repos=current_repos,
-                       token=token)
-
-    _run_bot_merge_or_abort(make_runner, repos or None, PreCommitCIMergeError, delay, email)
+                       program='merge-pre-commit-prs',
+                       repos=repos,
+                       username=username)
 
 
 def _describe(candidate: RetryCandidate) -> str:

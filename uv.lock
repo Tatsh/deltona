@@ -986,6 +986,7 @@ git = [
     { name = "gidgethub" },
     { name = "gitpython" },
     { name = "keyring" },
+    { name = "platformdirs" },
 ]
 media = [
     { name = "keyring" },
@@ -1072,6 +1073,7 @@ requires-dist = [
     { name = "pexpect", marker = "extra == 'wine'", specifier = ">=4.9.0" },
     { name = "pillow", marker = "extra == 'www'", specifier = ">=12.3.0" },
     { name = "platformdirs", marker = "extra == 'admin'", specifier = ">=4.11.5" },
+    { name = "platformdirs", marker = "extra == 'git'", specifier = ">=4.11.5" },
     { name = "platformdirs", marker = "extra == 'media'", specifier = ">=4.11.5" },
     { name = "platformdirs", marker = "extra == 'wine'", specifier = ">=4.11.5" },
     { name = "psutil", marker = "extra == 'wine'", specifier = ">=7.2.2" },

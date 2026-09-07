@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 import re
+import subprocess as sp
 
 import click
 import pytest
@@ -16,7 +17,12 @@ from deltona.commands.git import (
     merge_pre_commit_ci_prs_main,
     retry_gh_jobs_main,
 )
-from deltona.git import DependabotMergeError, PreCommitCIMergeError
+from deltona.git import (
+    DEPENDABOT_LOGIN,
+    PRE_COMMIT_CI_LOGIN,
+    DependabotMergeError,
+    PreCommitCIMergeError,
+)
 from deltona.gmail import GmailAuthorizationError, GmailConfigurationError
 
 if TYPE_CHECKING:
@@ -628,3 +634,173 @@ def test_retry_gh_jobs_main_passes_since_through(mocker: MockerFixture, runner: 
 
     assert runner.invoke(retry_gh_jobs_main, ['--since', '2026-01-02']).exit_code == 0
     assert mock_find.call_args.kwargs['since'] == '2026-01-02'
+
+
+@pytest.mark.parametrize('command', [merge_dependabot_prs_main, merge_pre_commit_ci_prs_main])
+def test_merge_prs_main_install_service_dry_run(mocker: MockerFixture, runner: CliRunner,
+                                                command: click.Command, tmp_path: Path) -> None:
+    mocker.patch('deltona.git.platformdirs.user_config_path', return_value=tmp_path)
+    mock_install = mocker.patch('deltona.commands.git.install_service')
+    mock_store = mocker.patch('deltona.commands.git.store_token')
+
+    result = runner.invoke(
+        command, ['--install-service', '--dry-run', '-k', 'systemd-user', '--api-key', 'T'])
+    assert result.exit_code == 0, result.output
+    assert 'ExecStart=' in result.output
+    assert '--watch' in result.output
+    # A dry run writes nothing at all, the token included.
+    mock_install.assert_not_called()
+    mock_store.assert_not_called()
+
+
+def test_merge_prs_main_install_service(mocker: MockerFixture, runner: CliRunner,
+                                        tmp_path: Path) -> None:
+    mocker.patch('deltona.git.platformdirs.user_config_path', return_value=tmp_path)
+    mock_store = mocker.patch('deltona.commands.git.store_token')
+    mock_install = mocker.patch('deltona.commands.git.install_service',
+                                return_value=tmp_path / 'x.service')
+
+    result = runner.invoke(merge_dependabot_prs_main, [
+        '--install-service', '-k', 'systemd-user', '-u', 'alice', '--api-key', 'T',
+        '--service-group', 'daemons', '--service-user', 'svc', '-r', 'a/b', '-A'
+    ])
+    assert result.exit_code == 0, result.output
+    assert 'Installed' in result.output
+    assert mock_store.call_args.args[:2] == ('T', 'alice')
+    assert mock_store.call_args.kwargs == {'group': 'daemons', 'user': 'svc'}
+    # One machine can run a service per GitHub account, so the name carries the username.
+    assert mock_install.call_args.args[1] == 'merge-dependabot-prs-alice'
+    forwarded = mock_install.call_args.args[2]
+    assert forwarded[1:4] == ['--watch', '-u', 'alice']
+    assert '-A' in forwarded
+    assert forwarded[forwarded.index('-r') + 1] == 'a/b'
+    assert mock_install.call_args.kwargs['user'] == 'svc'
+
+
+def test_merge_prs_main_install_service_without_a_token(mocker: MockerFixture, runner: CliRunner,
+                                                        tmp_path: Path) -> None:
+    mocker.patch('deltona.git.platformdirs.site_config_path', return_value=tmp_path / 'site')
+    mocker.patch('deltona.git.platformdirs.user_config_path', return_value=tmp_path / 'user')
+    mocker.patch('keyring.get_password', return_value=None)
+
+    result = runner.invoke(merge_dependabot_prs_main,
+                           ['--install-service', '-k', 'systemd-user', '-u', 'alice'])
+    assert result.exit_code == 1
+    assert 'Pass --api-key to store one.' in result.output
+
+
+def test_merge_prs_main_install_service_uses_an_existing_token(mocker: MockerFixture,
+                                                               runner: CliRunner,
+                                                               tmp_path: Path) -> None:
+    mocker.patch('keyring.get_password', return_value='already-there')
+    mock_install = mocker.patch('deltona.commands.git.install_service',
+                                return_value=tmp_path / 'x.service')
+
+    result = runner.invoke(merge_dependabot_prs_main,
+                           ['--install-service', '-k', 'systemd-user', '--no-enable'])
+    assert result.exit_code == 0, result.output
+    assert mock_install.call_args.kwargs['enable'] is False
+
+
+def test_merge_prs_main_uninstall_service(mocker: MockerFixture, runner: CliRunner,
+                                          tmp_path: Path) -> None:
+    mocker.patch('deltona.commands.git.uninstall_service', return_value=tmp_path / 'x.service')
+
+    result = runner.invoke(merge_pre_commit_ci_prs_main,
+                           ['--uninstall-service', '-k', 'systemd-user'])
+    assert result.exit_code == 0, result.output
+    assert 'Removed' in result.output
+
+
+def test_merge_prs_main_uninstall_service_dry_run(mocker: MockerFixture, runner: CliRunner) -> None:
+    mock_uninstall = mocker.patch('deltona.commands.git.uninstall_service')
+
+    result = runner.invoke(merge_dependabot_prs_main,
+                           ['--uninstall-service', '--dry-run', '-k', 'systemd-user'])
+    assert result.exit_code == 0, result.output
+    assert 'Would remove' in result.output
+    # A dry run stops and deletes nothing.
+    mock_uninstall.assert_not_called()
+
+
+def test_merge_prs_main_install_and_uninstall_together(runner: CliRunner) -> None:
+    result = runner.invoke(merge_dependabot_prs_main, ['--install-service', '--uninstall-service'])
+    assert result.exit_code == 2
+    assert 'cannot both be given' in result.output
+
+
+@pytest.mark.parametrize(('flag', 'value'), [('--api-key', 'T'), ('--dry-run', None),
+                                             ('--name', 'x'), ('--no-enable', None),
+                                             ('--service-group', 'g'), ('--service-user', 'u')])
+def test_merge_prs_main_service_option_without_install(runner: CliRunner, flag: str,
+                                                       value: str | None) -> None:
+    result = runner.invoke(merge_dependabot_prs_main, [flag, *([value] if value else [])])
+    # --dry-run quietly meaning "merge for real" is the worst of the ways this could be taken.
+    assert result.exit_code == 2
+    assert f'{flag} is only used with --install-service.' in result.output
+
+
+def test_merge_prs_main_install_service_unknown_group(mocker: MockerFixture, runner: CliRunner,
+                                                      tmp_path: Path) -> None:
+    mocker.patch('deltona.git.platformdirs.user_config_path', return_value=tmp_path)
+    mocker.patch('deltona.git.shutil.chown', side_effect=LookupError('no such group: nope'))
+
+    result = runner.invoke(
+        merge_dependabot_prs_main,
+        ['--install-service', '-k', 'systemd-user', '--api-key', 'T', '--service-group', 'nope'])
+    assert result.exit_code == 1
+    assert 'no such group: nope' in result.output
+
+
+def test_merge_prs_main_uninstall_service_failure(mocker: MockerFixture, runner: CliRunner) -> None:
+    mocker.patch('deltona.commands.git.uninstall_service',
+                 side_effect=sp.CalledProcessError(1, 'systemctl'))
+
+    result = runner.invoke(merge_dependabot_prs_main,
+                           ['--uninstall-service', '-k', 'systemd-user', '--name', 'x'])
+    assert result.exit_code == 1
+    # Removal failing is not an enable failure.
+    assert 'Failed to remove x.' in result.output
+
+
+def test_merge_prs_main_uninstall_service_absent(mocker: MockerFixture, runner: CliRunner) -> None:
+    mocker.patch('deltona.commands.git.uninstall_service', return_value=None)
+
+    result = runner.invoke(merge_dependabot_prs_main,
+                           ['--uninstall-service', '-k', 'systemd-user', '--name', 'x'])
+    assert result.exit_code == 1
+    assert 'No systemd-user service named x.' in result.output
+
+
+@pytest.mark.parametrize(('error', 'expected'), [
+    (sp.CalledProcessError(1, 'systemctl'), 'Failed to enable'),
+    (FileNotFoundError(2, 'No such file or directory', 'systemctl'), 'systemctl is not installed.'),
+    (PermissionError('denied'), 'denied'),
+])
+def test_merge_prs_main_install_service_errors(mocker: MockerFixture, runner: CliRunner,
+                                               error: Exception, expected: str) -> None:
+    mocker.patch('keyring.get_password', return_value='already-there')
+    mocker.patch('deltona.commands.git.install_service', side_effect=error)
+
+    result = runner.invoke(merge_dependabot_prs_main, ['--install-service', '-k', 'systemd-user'])
+    assert result.exit_code == 1
+    assert expected in result.output
+
+
+def test_merge_prs_main_watch(mocker: MockerFixture, runner: CliRunner) -> None:
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+    mock_run = mocker.patch('deltona.commands.git.anyio.run')
+
+    result = runner.invoke(merge_dependabot_prs_main, ['--watch', '--sweep', '30'])
+    assert result.exit_code == 0, result.output
+    assert mock_run.call_args.args[0].keywords['bot_login'] == DEPENDABOT_LOGIN
+    assert mock_run.call_args.args[0].keywords['sweep'] == 30
+
+
+def test_merge_prs_main_watch_uses_the_matching_bot(mocker: MockerFixture,
+                                                    runner: CliRunner) -> None:
+    mocker.patch('keyring.get_password', return_value='dummy_token')
+    mock_run = mocker.patch('deltona.commands.git.anyio.run')
+
+    assert runner.invoke(merge_pre_commit_ci_prs_main, ['--watch']).exit_code == 0
+    assert mock_run.call_args.args[0].keywords['bot_login'] == PRE_COMMIT_CI_LOGIN

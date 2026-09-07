@@ -17,6 +17,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `rclone-bisyncd` watches, which cannot be asked about a time already past.
 - `deltona.rclone.recent_changes`, with the `DEFAULT_CHANGES_LIMIT` and
   `DEFAULT_CHANGES_SINCE_SECONDS` constants.
+- `merge-dependabot-prs` and `merge-pre-commit-prs` `--watch`, `--install-service`, and
+  `--uninstall-service`, which run the merge whenever GitHub notifies about one of the bot's pull
+  requests and sweep every repository every fifteen minutes regardless. A notification arrives only
+  for a repository the account is subscribed to and has new pull request notifications enabled for,
+  so the sweep is what makes the daemon correct rather than merely quick.
+- `merge-dependabot-prs` and `merge-pre-commit-prs` `--api-key`, which stores a token where a
+  machine with no keyring can read it, owned by `--service-user` and `--service-group`, and
+  readable by nobody else. The service name carries `--username`, so one machine can run a service
+  per GitHub account.
+- `deltona.services` module with `default_service_kind`, `disable_service`, `enable_service`,
+  `generate_service`, `install_service`, `launchd_label`, `service_path`, and `uninstall_service`,
+  plus the `ServiceKind` alias and the `LAUNCHD_LABEL_PREFIX` constant.
+- `deltona.git.watch_and_merge`, `github_token`, `store_token`, `stored_token`, and `token_path`,
+  with the `DEFAULT_NOTIFICATION_POLL_SECONDS`, `DEFAULT_SWEEP_SECONDS`, `DEPENDABOT_LOGIN`,
+  `KEYRING_SERVICE`, and `PRE_COMMIT_CI_LOGIN` constants.
 
 ### Changed
 
@@ -27,7 +42,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `make-rclone-bisync-service` now restarts a service it replaces, which previously kept running on
   the definition it started with. On launchd the loaded job is booted out first, since `launchctl`
   will not bootstrap a label that is already loaded.
-- The `admin` extra now requires `rich`.
+- The `admin` extra now requires `rich`, and the `git` extra `platformdirs`.
 
 ## [0.4.0] - 2026-09-06
 

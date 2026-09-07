@@ -226,7 +226,7 @@ local utils = import 'utils.libsonnet';
         extras: {
           admin: ['paramiko', 'platformdirs', 'rich', 'watchdog'],
           desktop: ['pydbus', 'pygobject', 'pyperclip'],
-          git: ['gidgethub', 'gitpython', 'keyring'],
+          git: ['gidgethub', 'gitpython', 'keyring', 'platformdirs'],
           media: ['keyring', 'mutagen', 'platformdirs', 'send2trash'],
           string: ['unidecode', 'pyyaml', 'yt-dlp'],
           wine: ['pexpect', 'platformdirs', 'psutil', 'python-xz'],

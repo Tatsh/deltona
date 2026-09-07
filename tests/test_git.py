@@ -1,24 +1,41 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+import json
 import logging
 
+import keyring.errors
 import pytest
 
 from deltona.git import (
+    DEPENDABOT_LOGIN,
     DependabotMergeError,
     PreCommitCIMergeError,
     convert_git_ssh_url_to_https,
     get_github_default_branch,
+    github_token,
     merge_dependabot_pull_requests,
     merge_pre_commit_ci_pull_requests,
+    store_token,
+    stored_token,
+    token_path,
+    watch_and_merge,
 )
 from deltona.gmail import GmailConfigurationError
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from pathlib import Path
+    from typing import Any
+
     from pytest_mock import MockerFixture
 
     from tests.conftest import FakeGitHub
+
+
+class _StopWatching(Exception):
+    """Ends the watch loop from inside a patched sleep."""
+
 
 CREDENTIALS_JSON = ('{"client_id": "id", "client_secret": "secret", "refresh_token": "refresh", '
                     '"type": "authorized_user"}')
@@ -431,3 +448,269 @@ async def test_merge_pre_commit_ci_pull_requests_should_raise(fake_github: FakeG
     assert exc_info.value.remaining == {'tatsh/some-repo': 1}
     assert exc_info.value.bot_label == 'pre-commit.ci'
     assert fake_github.posted_comments == [('tatsh/some-repo', 3, 'pre-commit.ci autofix')]
+
+
+def test_token_path_system_is_not_under_a_home(mocker: MockerFixture, tmp_path: Path) -> None:
+    mocker.patch('deltona.git.platformdirs.site_config_path', return_value=tmp_path / 'site')
+    mocker.patch('deltona.git.platformdirs.user_config_path', return_value=tmp_path / 'user')
+    # A systemd-system service reads the file as another account, so it cannot live under one home.
+    assert token_path('a', 'systemd-system') == tmp_path / 'site' / 'github-a.token'
+    assert token_path('a') == tmp_path / 'user' / 'github-a.token'
+    assert token_path('Some User') == tmp_path / 'user' / 'github-some-user.token'
+
+
+def test_store_token_permissions(mocker: MockerFixture, tmp_path: Path) -> None:
+    mocker.patch('deltona.git.platformdirs.user_config_path', return_value=tmp_path / 'config')
+
+    path = store_token('  secret  ', 'a')
+    assert path.read_text(encoding='utf-8') == 'secret\n'
+    # The account and its group, and nobody else.
+    assert path.stat().st_mode & 0o777 == 0o640
+    assert path.parent.stat().st_mode & 0o777 == 0o750
+
+
+def test_store_token_sets_ownership(mocker: MockerFixture, tmp_path: Path) -> None:
+    mocker.patch('deltona.git.platformdirs.user_config_path', return_value=tmp_path / 'config')
+    mock_chown = mocker.patch('deltona.git.shutil.chown')
+
+    path = store_token('secret', 'a', group='daemons', user='svc')
+    assert mock_chown.call_args_list[0].args[0] == path
+    assert mock_chown.call_args_list[0].kwargs == {'group': 'daemons', 'user': 'svc'}
+    # The directory too, or the file cannot be reached.
+    assert mock_chown.call_args_list[-1].args[0] == path.parent
+
+
+def test_stored_token_absent(mocker: MockerFixture, tmp_path: Path) -> None:
+    mocker.patch('deltona.git.platformdirs.site_config_path', return_value=tmp_path / 'site')
+    mocker.patch('deltona.git.platformdirs.user_config_path', return_value=tmp_path / 'user')
+    assert stored_token('a') is None
+
+
+def test_stored_token_falls_back_to_the_system_location(mocker: MockerFixture,
+                                                        tmp_path: Path) -> None:
+    mocker.patch('deltona.git.platformdirs.site_config_path', return_value=tmp_path / 'site')
+    mocker.patch('deltona.git.platformdirs.user_config_path', return_value=tmp_path / 'user')
+    store_token('from-site', 'a', 'systemd-system')
+    # A daemon is not told which kind installed it, so both locations are tried.
+    assert stored_token('a') == 'from-site'
+
+
+def test_github_token_prefers_the_keyring(mocker: MockerFixture, tmp_path: Path) -> None:
+    mocker.patch('deltona.git.platformdirs.user_config_path', return_value=tmp_path / 'user')
+    mocker.patch('deltona.git.keyring.get_password', return_value='from-keyring')
+    store_token('from-file', 'a')
+    assert github_token('a') == 'from-keyring'
+
+
+@pytest.mark.parametrize('outcome', [
+    {
+        'return_value': None
+    },
+    {
+        'side_effect': keyring.errors.KeyringError
+    },
+])
+def test_github_token_falls_back_to_the_file(mocker: MockerFixture, tmp_path: Path,
+                                             outcome: dict[str, Any]) -> None:
+    mocker.patch('deltona.git.platformdirs.site_config_path', return_value=tmp_path / 'site')
+    mocker.patch('deltona.git.platformdirs.user_config_path', return_value=tmp_path / 'user')
+    mocker.patch('deltona.git.keyring.get_password', **outcome)
+    store_token('from-file', 'a')
+    # A machine with no keyring backend at all raises rather than returning nothing.
+    assert github_token('a') == 'from-file'
+
+
+def test_github_token_absent(mocker: MockerFixture, tmp_path: Path) -> None:
+    mocker.patch('deltona.git.platformdirs.site_config_path', return_value=tmp_path / 'site')
+    mocker.patch('deltona.git.platformdirs.user_config_path', return_value=tmp_path / 'user')
+    mocker.patch('deltona.git.keyring.get_password', return_value=None)
+    assert github_token('a') is None
+
+
+def _watch_gh(mocker: MockerFixture,
+              pages: Sequence[Sequence[dict[str, Any]]],
+              pulls: dict[str, Any] | None = None,
+              poll_interval: str | None = None,
+              fail_after: int | None = None,
+              fail_on: str | None = None) -> Any:
+    feed = iter(pages)
+    calls = 0
+    # gidgethub only caches a response that carries one of these, which is what makes the
+    # conditional request that costs no rate limit.
+    headers = {'content-type': 'application/json; charset=utf-8', 'etag': '"tag"'}
+    if poll_interval is not None:
+        headers['x-poll-interval'] = poll_interval
+
+    async def request(_method: str, url: str, **_kwargs: Any) -> Any:  # noqa: RUF029
+        nonlocal calls
+        calls += 1
+        if (fail_after is not None and calls > fail_after) or (fail_on and fail_on in url):
+            msg = 'down'
+            raise OSError(msg)
+        body = (pulls or {}).get(url) if 'pulls' in url else next(feed)
+        return mocker.MagicMock(status_code=200, headers=headers, content=json.dumps(body).encode())
+
+    session = mocker.MagicMock()
+    session.request = request
+    session_class = mocker.patch('deltona.git.niquests.AsyncSession')
+    session_class.return_value.__aenter__ = mocker.AsyncMock(return_value=session)
+    session_class.return_value.__aexit__ = mocker.AsyncMock(return_value=None)
+    return session
+
+
+def _thread(id_: str,
+            url: str = 'https://api.github.com/repos/a/b/pulls/1',
+            type_: str = 'PullRequest') -> dict[str, Any]:
+    return {'id': id_, 'subject': {'type': type_, 'url': url}}
+
+
+async def _watch(runs: list[int], **kwargs: Any) -> None:
+    async def run() -> None:  # noqa: RUF029
+        runs.append(1)
+
+    with pytest.raises(_StopWatching):
+        await watch_and_merge(run, bot_login=DEPENDABOT_LOGIN, token='t', **kwargs)
+
+
+@pytest.mark.asyncio
+async def test_watch_and_merge_wakes_on_a_bot_pull_request(mocker: MockerFixture) -> None:
+    _watch_gh(
+        mocker, [[], [_thread('1')]],
+        pulls={'https://api.github.com/repos/a/b/pulls/1': {
+            'user': {
+                'login': DEPENDABOT_LOGIN
+            }
+        }})
+    mocker.patch('deltona.git.anyio.sleep', side_effect=[None, _StopWatching])
+    runs: list[int] = []
+
+    await _watch(runs)
+    # Once at startup and once for the notification.
+    assert len(runs) == 2
+
+
+@pytest.mark.asyncio
+async def test_watch_and_merge_forgets_pull_requests_it_has_read(mocker: MockerFixture) -> None:
+    _watch_gh(
+        mocker, [[], [_thread('1')], [_thread('1')]],
+        pulls={'https://api.github.com/repos/a/b/pulls/1': {
+            'user': {
+                'login': DEPENDABOT_LOGIN
+            }
+        }})
+    mocker.patch('deltona.git.anyio.sleep', side_effect=[None, None, _StopWatching])
+    runs: list[int] = []
+
+    await _watch(runs, sweep=10_000)
+    # The pull request read on the first poll is dropped on the second, since this runs for as long
+    # as the machine is up. Nothing is new by then, so no further pass happens.
+    assert len(runs) == 2
+
+
+@pytest.mark.asyncio
+async def test_watch_and_merge_ignores_another_authors_pull_request(mocker: MockerFixture) -> None:
+    _watch_gh(mocker, [[], [_thread('1')]],
+              pulls={'https://api.github.com/repos/a/b/pulls/1': {
+                  'user': {
+                      'login': 'someone'
+                  }
+              }})
+    mocker.patch('deltona.git.anyio.sleep', side_effect=[None, _StopWatching])
+    runs: list[int] = []
+
+    await _watch(runs, sweep=10_000)
+    # Waking for it would cost a pass over every repository to merge nothing.
+    assert len(runs) == 1
+
+
+@pytest.mark.asyncio
+async def test_watch_and_merge_ignores_what_is_not_a_pull_request(mocker: MockerFixture) -> None:
+    _watch_gh(mocker, [[], [_thread('1', type_='Issue')]])
+    mocker.patch('deltona.git.anyio.sleep', side_effect=[None, _StopWatching])
+    runs: list[int] = []
+
+    await _watch(runs, sweep=10_000)
+    assert len(runs) == 1
+
+
+@pytest.mark.asyncio
+async def test_watch_and_merge_sweeps_when_due(mocker: MockerFixture) -> None:
+    _watch_gh(mocker, [[], []])
+    mocker.patch('deltona.git.anyio.sleep', side_effect=[None, _StopWatching])
+    runs: list[int] = []
+
+    await _watch(runs, sweep=0)
+    # Nothing was notified about, so this pass is the one that makes the daemon correct.
+    assert len(runs) == 2
+
+
+@pytest.mark.asyncio
+async def test_watch_and_merge_survives_a_failed_first_read(
+        mocker: MockerFixture, caplog: pytest.LogCaptureFixture) -> None:
+    _watch_gh(mocker, [[]], fail_after=0)
+    mocker.patch('deltona.git.anyio.sleep', side_effect=[_StopWatching])
+    runs: list[int] = []
+
+    with caplog.at_level(logging.WARNING, logger='deltona.git'):
+        await _watch(runs, sweep=10_000)
+    # Whatever restarts the daemon meets the same blip, so it starts anyway.
+    assert 'Could not read notifications' in caplog.text
+    assert len(runs) == 1
+
+
+@pytest.mark.asyncio
+async def test_watch_and_merge_survives_a_failed_read(mocker: MockerFixture,
+                                                      caplog: pytest.LogCaptureFixture) -> None:
+    _watch_gh(mocker, [[]], fail_after=1)
+    mocker.patch('deltona.git.anyio.sleep', side_effect=[None, _StopWatching])
+    runs: list[int] = []
+
+    with caplog.at_level(logging.WARNING, logger='deltona.git'):
+        await _watch(runs, sweep=10_000)
+    assert 'Could not read notifications' in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_watch_and_merge_obeys_the_poll_interval(mocker: MockerFixture) -> None:
+    _watch_gh(mocker, [[], []], poll_interval='900')
+    mock_sleep = mocker.patch('deltona.git.anyio.sleep', side_effect=[None, _StopWatching])
+    runs: list[int] = []
+
+    await _watch(runs, poll=60, sweep=10_000)
+    # GitHub raises this under load and asks that it be obeyed.
+    assert mock_sleep.call_args.args[0] == pytest.approx(900.0)
+
+
+@pytest.mark.asyncio
+async def test_watch_and_merge_keeps_going_after_a_merge_failure(
+        mocker: MockerFixture, caplog: pytest.LogCaptureFixture) -> None:
+    _watch_gh(mocker, [[]])
+    mocker.patch('deltona.git.anyio.sleep', side_effect=[_StopWatching])
+
+    async def run() -> None:  # noqa: RUF029
+        raise DependabotMergeError({'a/b': 1})
+
+    with caplog.at_level(logging.WARNING, logger='deltona.git'), pytest.raises(_StopWatching):
+        await watch_and_merge(run, bot_login=DEPENDABOT_LOGIN, token='t')
+    assert 'remain across' in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_watch_and_merge_skips_a_pull_request_it_cannot_read(mocker: MockerFixture) -> None:
+    _watch_gh(mocker, [[], [_thread('1')]], fail_on='pulls')
+    mocker.patch('deltona.git.anyio.sleep', side_effect=[None, _StopWatching])
+    runs: list[int] = []
+
+    await _watch(runs, sweep=10_000)
+    # The periodic pass reaches it either way, which beats reading it once a minute forever.
+    assert len(runs) == 1
+
+
+@pytest.mark.asyncio
+async def test_watch_and_merge_ignores_a_notification_with_no_url(mocker: MockerFixture) -> None:
+    _watch_gh(mocker, [[], [_thread('1', url='')]])
+    mocker.patch('deltona.git.anyio.sleep', side_effect=[None, _StopWatching])
+    runs: list[int] = []
+
+    await _watch(runs, sweep=10_000)
+    assert len(runs) == 1

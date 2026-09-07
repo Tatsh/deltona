@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import suppress
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
@@ -9,11 +10,17 @@ import asyncio
 import logging
 import os
 import re
+import shutil
+import time
 
 from typing_extensions import override
 import anyio
+import gidgethub
+import gidgethub.abc
 import keyring
+import keyring.errors
 import niquests
+import platformdirs
 
 from .gmail import (
     KEYRING_SERVICE as GMAIL_KEYRING_SERVICE,
@@ -22,19 +29,65 @@ from .gmail import (
     archive_github_pull_request_email,
     get_access_token,
 )
-from .string import pluralize
+from .string import pluralize, slugify
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Iterable, Mapping
+    from collections.abc import Awaitable, Callable, Iterable, Mapping, MutableMapping
+    from pathlib import Path
 
     from git import Repo
-    import gidgethub.abc
 
-__all__ = ('BotMergeError', 'DependabotMergeError', 'PreCommitCIMergeError',
-           'convert_git_ssh_url_to_https', 'get_github_default_branch',
-           'merge_dependabot_pull_requests', 'merge_pre_commit_ci_pull_requests')
+    from .services import ServiceKind
+
+__all__ = ('DEFAULT_NOTIFICATION_POLL_SECONDS', 'DEFAULT_SWEEP_SECONDS', 'DEPENDABOT_LOGIN',
+           'KEYRING_SERVICE', 'PRE_COMMIT_CI_LOGIN', 'BotMergeError', 'DependabotMergeError',
+           'PreCommitCIMergeError', 'convert_git_ssh_url_to_https', 'get_github_default_branch',
+           'github_token', 'merge_dependabot_pull_requests', 'merge_pre_commit_ci_pull_requests',
+           'store_token', 'stored_token', 'token_path', 'watch_and_merge')
 
 log = logging.getLogger(__name__)
+
+DEFAULT_NOTIFICATION_POLL_SECONDS = 60.0
+"""
+Shortest wait between reads of the notifications feed.
+
+GitHub answers an unchanged feed with ``304 Not Modified``, which costs no rate limit, and names
+the interval it wants in ``X-Poll-Interval``. Whichever is longer is used.
+
+:meta hide-value:
+"""
+DEFAULT_SWEEP_SECONDS = 900.0
+"""
+Longest wait between full passes over every repository.
+
+A notification arrives only for a repository the account is subscribed to and has new pull request
+notifications enabled for, so the feed cannot be relied on to report everything. This is what makes
+the daemon correct rather than merely quick, and it is what reaches every repository the feed says
+nothing about.
+
+:meta hide-value:
+"""
+DEPENDABOT_LOGIN = 'dependabot[bot]'
+"""
+Login that authors Dependabot pull requests.
+
+:meta hide-value:
+"""
+KEYRING_SERVICE = 'tmu-github-api'
+"""
+Keyring service the GitHub token is stored under, keyed on a username.
+
+:meta hide-value:
+"""
+PRE_COMMIT_CI_LOGIN = 'pre-commit-ci[bot]'
+"""
+Login that authors pre-commit.ci pull requests.
+
+:meta hide-value:
+"""
+_NOTIFICATIONS_URL = '/notifications'
+_TOKEN_DIR_MODE = 0o750
+_TOKEN_FILE_MODE = 0o640
 
 # Paths GitHub accepts for a Dependabot configuration file.
 _DEPENDABOT_CONFIG_PATHS = ('.github/dependabot.yml', '.github/dependabot.yaml')
@@ -96,10 +149,11 @@ def _make_github_api(session: niquests.AsyncSession,
                      *,
                      token: str,
                      base_url: str | None = None,
+                     cache: MutableMapping[str, Any] | None = None,
                      limiter: anyio.CapacityLimiter | None = None) -> gidgethub.abc.GitHubAPI:
-    import gidgethub.abc  # ruff:ignore[import-outside-top-level]
-
     class _NiquestsGitHubAPI(gidgethub.abc.GitHubAPI):
+        poll_interval = 0.0
+        """Seconds GitHub last said to wait before polling again."""
         @override
         async def _request(self,
                            method: str,
@@ -111,6 +165,12 @@ def _make_github_api(session: niquests.AsyncSession,
             else:
                 async with limiter:
                     response = await session.request(method, url, headers=dict(headers), data=body)
+            # GitHub increases this under load and asks that it be obeyed rather than assumed. Only
+            # the notifications feed carries it, so anything else must leave it alone rather than
+            # reset it to nothing.
+            if interval := response.headers.get('x-poll-interval'):
+                with suppress(ValueError):
+                    self.poll_interval = float(interval)
             return response.status_code or 0, response.headers, response.content or b''
 
         @override
@@ -120,6 +180,7 @@ def _make_github_api(session: niquests.AsyncSession,
 
     return _NiquestsGitHubAPI('deltona',
                               base_url=base_url or 'https://api.github.com',
+                              cache=cache,
                               oauth_token=token)
 
 
@@ -165,8 +226,6 @@ def _log_merge_failure(number: int, name: str) -> None:
 
 
 async def _uses_dependabot(gh: gidgethub.abc.GitHubAPI, repo: Mapping[str, Any]) -> bool:
-    import gidgethub  # ruff:ignore[import-outside-top-level]
-
     full_name = repo['full_name']
     for path in _DEPENDABOT_CONFIG_PATHS:
         try:
@@ -184,8 +243,6 @@ async def _uses_dependabot(gh: gidgethub.abc.GitHubAPI, repo: Mapping[str, Any])
 
 
 async def _uses_pre_commit_ci(gh: gidgethub.abc.GitHubAPI, repo: Mapping[str, Any]) -> bool:
-    import gidgethub  # ruff:ignore[import-outside-top-level]
-
     try:
         await gh.getitem(f'/repos/{repo["full_name"]}/contents/.pre-commit-config.yaml')
     except gidgethub.HTTPException:
@@ -211,8 +268,6 @@ async def _pull_request_notification_threads(
 
 async def _mark_notification_done(gh: gidgethub.abc.GitHubAPI, thread_id: str, *, full_name: str,
                                   number: int) -> None:
-    import gidgethub  # ruff:ignore[import-outside-top-level]
-
     try:
         await gh.delete(f'/notifications/threads/{thread_id}')
     except gidgethub.HTTPException:
@@ -278,8 +333,6 @@ async def _merge_bot_pull_requests(*,
                                    mark_notifications_done: bool = False,
                                    archive_email: bool = False,
                                    email: str | None = None) -> None:
-    import gidgethub  # ruff:ignore[import-outside-top-level]
-
     http_limiter = anyio.CapacityLimiter(max_concurrent_http_requests)
     task_limiter = anyio.CapacityLimiter(concurrency or os.cpu_count() or 1)
     notification_threads: dict[tuple[str, int], str] = {}
@@ -435,7 +488,7 @@ async def merge_dependabot_pull_requests(*,
     await _merge_bot_pull_requests(archive_email=archive_email,
                                    base_url=base_url,
                                    email=email,
-                                   bot_login='dependabot[bot]',
+                                   bot_login=DEPENDABOT_LOGIN,
                                    concurrency=concurrency,
                                    error_class=DependabotMergeError,
                                    mark_notifications_done=mark_notifications_done,
@@ -501,7 +554,7 @@ async def merge_pre_commit_ci_pull_requests(*,
     await _merge_bot_pull_requests(archive_email=archive_email,
                                    base_url=base_url,
                                    email=email,
-                                   bot_login='pre-commit-ci[bot]',
+                                   bot_login=PRE_COMMIT_CI_LOGIN,
                                    concurrency=concurrency,
                                    error_class=PreCommitCIMergeError,
                                    mark_notifications_done=mark_notifications_done,
@@ -510,3 +563,247 @@ async def merge_pre_commit_ci_pull_requests(*,
                                    repos=repos,
                                    token=token,
                                    uses_bot=_uses_pre_commit_ci)
+
+
+def token_path(key: str, kind: ServiceKind | None = None) -> Path:
+    """
+    Get where the token for a keyring key is kept when there is no keyring to keep it in.
+
+    Parameters
+    ----------
+    key : str
+        Keyring key the token belongs to, which is a username.
+    kind : ServiceKind | None
+        Kind of service the token is for. A ``systemd-system`` service reads the file as another
+        account, so its token belongs where the whole machine can reach it rather than under one
+        home directory.
+
+    Returns
+    -------
+    Path
+        Path to the token file, which does not have to exist.
+    """
+    directory = (platformdirs.site_config_path('deltona')
+                 if kind == 'systemd-system' else platformdirs.user_config_path('deltona'))
+    return directory / f'github-{slugify(key)}.token'
+
+
+def store_token(token: str,
+                key: str,
+                kind: ServiceKind | None = None,
+                *,
+                group: str | None = None,
+                user: str | None = None) -> Path:
+    """
+    Write a token where a daemon without a keyring can read it.
+
+    The file is readable by its owner and its group, and by nobody else, so that a service running
+    as another account can be given the token by group membership alone.
+
+    Parameters
+    ----------
+    token : str
+        The GitHub token.
+    key : str
+        Keyring key the token belongs to, which is a username.
+    kind : ServiceKind | None
+        Kind of service the token is for.
+    group : str | None
+        Group given read access. Defaults to the group the file would be created with.
+    user : str | None
+        Account given ownership. Defaults to the account writing the file.
+
+    Returns
+    -------
+    Path
+        Path the token was written to.
+
+    Raises
+    ------
+    LookupError
+        If ``group`` or ``user`` names an account or group that does not exist.
+    PermissionError
+        If the file cannot be written or its ownership cannot be set. Setting an owner other than
+        the one writing requires privileges.
+    """  # noqa: DOC502
+    path = token_path(key, kind)
+    path.parent.mkdir(mode=_TOKEN_DIR_MODE, parents=True, exist_ok=True)
+    path.parent.chmod(_TOKEN_DIR_MODE)
+    # Created, narrowed, and given away before anything is written to it, so the token is never
+    # readable by anyone it was not meant for, not even for the moment between being written and
+    # being given away. mkdir and touch both have the umask applied to the mode they are given,
+    # which can only remove bits, and neither touches the mode of a file that already exists.
+    path.touch(mode=_TOKEN_FILE_MODE)
+    path.chmod(_TOKEN_FILE_MODE)
+    if owner := {name: value for name, value in (('user', user), ('group', group)) if value}:
+        shutil.chown(path, **owner)
+    if group:
+        # The directory has to be traversable by the group for the file inside it to be reachable,
+        # but it is shared, so it is given the group without being given away.
+        shutil.chown(path.parent, group=group)
+    path.write_text(f'{token.strip()}\n', encoding='utf-8')
+    log.info('Wrote `%s`.', path)
+    return path
+
+
+def stored_token(key: str, kind: ServiceKind | None = None) -> str | None:
+    """
+    Read a token written by :py:func:`store_token`.
+
+    Parameters
+    ----------
+    key : str
+        Keyring key the token belongs to, which is a username.
+    kind : ServiceKind | None
+        Kind of service the token is for. Both locations are tried when this is not given, since a
+        daemon is not told which kind installed it.
+
+    Returns
+    -------
+    str | None
+        The token, or ``None`` if there is no readable file holding one.
+    """
+    for one in ((kind,) if kind is not None else (None, 'systemd-system')):
+        with suppress(OSError):
+            if token := token_path(key, one).read_text(encoding='utf-8').strip():
+                return token
+    return None
+
+
+def github_token(key: str, kind: ServiceKind | None = None) -> str | None:
+    """
+    Get the GitHub token for a keyring key, from the keyring or from where it was stored.
+
+    The keyring is asked first, so a machine that has one behaves as it always has. A machine
+    without one, which is the usual case for a service running as another account, falls back to
+    the file :py:func:`store_token` wrote.
+
+    Parameters
+    ----------
+    key : str
+        Keyring key the token belongs to, which is a username.
+    kind : ServiceKind | None
+        Kind of service the token is for.
+
+    Returns
+    -------
+    str | None
+        The token, or ``None`` if neither source has one.
+    """
+    with suppress(keyring.errors.KeyringError):
+        if token := keyring.get_password(KEYRING_SERVICE, key):
+            return token
+    return stored_token(key, kind)
+
+
+async def _seen_notifications(gh: gidgethub.abc.GitHubAPI) -> set[str]:
+    # A blip while the daemon is starting must not end it, since whatever restarts it meets the
+    # same blip. Starting with nothing seen costs one pass that finds nothing to do.
+    try:
+        return set(await _pull_request_notifications(gh))
+    except (OSError, gidgethub.GitHubException) as e:
+        log.warning('Could not read notifications: %s', e)
+        return set()
+
+
+async def _pull_request_notifications(gh: gidgethub.abc.GitHubAPI) -> dict[str, str]:
+    return {
+        thread['id']: (thread.get('subject') or {}).get('url') or ''
+        async for thread in gh.getiter('/notifications{?per_page}', {'per_page': 100})
+        if (thread.get('subject') or {}).get('type') == 'PullRequest'
+    }
+
+
+async def _authored_by(gh: gidgethub.abc.GitHubAPI, url: str, login: str) -> bool:
+    if not url:
+        return False
+    try:
+        pull = await gh.getitem(url)
+    except (OSError, gidgethub.GitHubException) as e:
+        # Treated as not worth waking for. The periodic pass reaches it either way, which beats
+        # re-reading a pull request that cannot be read, once a minute, forever.
+        log.warning('Could not read `%s`: %s', url, e)
+        return False
+    return bool(((pull or {}).get('user') or {}).get('login') == login)
+
+
+async def watch_and_merge(run: Callable[[], Awaitable[None]],
+                          *,
+                          bot_login: str,
+                          token: str,
+                          base_url: str | None = None,
+                          poll: float = DEFAULT_NOTIFICATION_POLL_SECONDS,
+                          sweep: float = DEFAULT_SWEEP_SECONDS) -> None:
+    """
+    Merge whenever the bot's pull request is notified about, and periodically regardless.
+
+    The notifications feed is read rather than waited on, since GitHub delivers notifications only
+    to a public HTTPS endpoint. An unchanged feed is answered with ``304 Not Modified``, which
+    costs no rate limit, so reading it every minute is cheap.
+
+    A notification arrives only for a repository the account is subscribed to and has new pull
+    request notifications enabled for. The feed is therefore what makes the daemon quick and the
+    periodic pass is what makes it correct.
+
+    Only a notification about a pull request ``bot_login`` opened wakes the merge, since anything
+    else would cost a pass over every repository to merge nothing. The author is not in the
+    notification, so each one that has not been seen before costs a request to find out.
+
+    Parameters
+    ----------
+    run : Callable[[], Awaitable[None]]
+        What to await when something may have changed. Anything it raises other than
+        :py:class:`BotMergeError` ends the watch.
+    bot_login : str
+        Login whose pull requests are worth waking for, such as :py:data:`DEPENDABOT_LOGIN`.
+    token : str
+        The GitHub token.
+    base_url : str | None
+        The base URL of the GitHub API (for enterprise).
+    poll : float
+        Shortest wait between reads of the feed. ``X-Poll-Interval`` wins when it is longer.
+    sweep : float
+        Longest wait between passes, regardless of what the feed reports.
+    """
+    # gidgethub turns this into the conditional request that makes an unchanged feed free.
+    cache: dict[str, Any] = {}
+    async with niquests.AsyncSession() as session:
+        gh = _make_github_api(session, base_url=base_url, cache=cache, token=token)
+        seen = await _seen_notifications(gh)
+        log.info(
+            'Watching notifications for %s. A repository without new pull request'
+            ' notifications enabled is reached only every %.0f seconds.', bot_login, sweep)
+        await _run_and_log(run)
+        # Measured from when a pass finished rather than from when it started, so that one taking
+        # longer than the wait does not leave every pass after it immediately due.
+        last = time.monotonic()
+        while True:
+            await anyio.sleep(max(poll, getattr(gh, 'poll_interval', 0.0)))
+            # Only the feed's own entry earns its keep, since it is what makes an unchanged feed
+            # free. A pull request is read once and never again, and this runs for as long as the
+            # machine is up.
+            for url in [url for url in cache if _NOTIFICATIONS_URL not in url]:
+                del cache[url]
+            try:
+                threads = await _pull_request_notifications(gh)
+            except (OSError, gidgethub.GitHubException) as e:
+                log.warning('Could not read notifications: %s', e)
+                continue
+            new = set(threads) - seen
+            seen = set(threads)
+            woken = [thread for thread in new if await _authored_by(gh, threads[thread], bot_login)]
+            if not woken and (time.monotonic() - last) < sweep:
+                continue
+            if woken:
+                log.info('%d new %s pull %s.', len(woken), bot_login,
+                         pluralize(len(woken), 'request'))
+            await _run_and_log(run)
+            last = time.monotonic()
+
+
+async def _run_and_log(run: Callable[[], Awaitable[None]]) -> None:
+    try:
+        await run()
+    except BotMergeError as e:
+        # The next pass tries again, so this is not what ends the daemon.
+        log.warning('%s', e)
