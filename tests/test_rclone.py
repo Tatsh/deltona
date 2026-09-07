@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 import json
 import logging
-import plistlib
 import subprocess as sp
 import time
 
@@ -20,22 +19,16 @@ from deltona.rclone import (
     check_credentials,
     dedupe,
     default_remote,
-    default_service_kind,
     default_service_name,
-    disable_service,
-    enable_service,
     generate_service,
     griveignore_filters,
     griveignore_spec,
     install_service,
     is_drive_remote,
-    launchd_label,
     rclone_config_path,
     recent_changes,
-    service_path,
     single_instance,
     sync_once,
-    uninstall_service,
     watch_and_sync,
 )
 
@@ -52,130 +45,21 @@ def test_default_service_name(tmp_path: Path) -> None:
     assert default_service_name(tmp_path / 'My Docs') == 'rclone-bisync-my-docs'
 
 
-@pytest.mark.parametrize(('platform', 'expected'), [('darwin', 'launchd'),
-                                                    ('linux', 'systemd-user')])
-def test_default_service_kind(mocker: MockerFixture, platform: str, expected: str) -> None:
-    mocker.patch('deltona.rclone.sys.platform', platform)
-    assert default_service_kind() == expected
+def test_generate_service_carries_the_bisync_signal_handling() -> None:
+    text = generate_service('systemd-user', 'x', ('/bin/thing',))
+    # bisync releases its lock file cleanly when interrupted, and takes up to a minute to do so.
+    assert 'KillSignal=SIGINT' in text
+    assert 'TimeoutStopSec=90' in text
+    assert 'Description=Bidirectional rclone sync.' in text
 
 
-@pytest.mark.parametrize(('name', 'expected'), [('x', 'sh.tat.deltona.x'),
-                                                ('sh.tat.deltona.x', 'sh.tat.deltona.x')])
-def test_launchd_label(name: str, expected: str) -> None:
-    assert launchd_label(name) == expected
+def test_install_service_carries_the_bisync_signal_handling(mocker: MockerFixture,
+                                                            tmp_path: Path) -> None:
+    mocker.patch('deltona.services.Path.home', return_value=tmp_path)
+    mocker.patch('deltona.services.enable_service')
 
-
-def test_service_path(mocker: MockerFixture, tmp_path: Path) -> None:
-    mocker.patch('deltona.rclone.Path.home', return_value=tmp_path)
-    assert service_path('launchd', 'x') == tmp_path / 'Library/LaunchAgents/sh.tat.deltona.x.plist'
-    assert service_path('systemd-user', 'x') == tmp_path / '.config/systemd/user/x.service'
-    assert service_path('systemd-system', 'x') == Path('/etc/systemd/system/x.service')
-
-
-def test_generate_service_systemd_user() -> None:
-    text = generate_service('systemd-user', 'x', ('/bin/thing', 'a b'), description='Sync.')
-    assert 'Description=Sync.' in text
-    assert "ExecStart=/bin/thing 'a b'" in text
-    assert 'WantedBy=default.target' in text
-    assert 'User=' not in text
-
-
-def test_generate_service_systemd_system_user() -> None:
-    text = generate_service('systemd-system', 'x', ('/bin/thing',), user='tatsh')
-    assert 'User=tatsh' in text
-    assert 'WantedBy=multi-user.target' in text
-
-
-def test_generate_service_launchd() -> None:
-    parsed: dict[str, Any] = plistlib.loads(
-        generate_service('launchd', 'rclone-bisync-x', ('/bin/thing', '--flag')).encode())
-    assert parsed['Label'] == 'sh.tat.deltona.rclone-bisync-x'
-    assert parsed['ProgramArguments'] == ['/bin/thing', '--flag']
-    assert parsed['RunAtLoad'] is True
-    assert 'PATH' in parsed['EnvironmentVariables']
-
-
-@pytest.mark.parametrize(('kind', 'expected'), [
-    ('launchd', ('launchctl', 'bootstrap')),
-    ('systemd-system', ('systemctl', 'restart', 'x')),
-    ('systemd-user', ('systemctl', '--user', 'restart', 'x')),
-])
-def test_enable_service(mocker: MockerFixture, tmp_path: Path, kind: str,
-                        expected: tuple[str, ...]) -> None:
-    mocker.patch('deltona.rclone.Path.home', return_value=tmp_path)
-    mock_run = mocker.patch('deltona.rclone.sp.run')
-    enable_service(kind, 'x')  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
-    # A rewritten definition does not reach the process running the old one.
-    assert mock_run.call_args.args[0][:len(expected)] == expected
-
-
-def test_enable_service_launchd_replaces_loaded_job(mocker: MockerFixture, tmp_path: Path) -> None:
-    mocker.patch('deltona.rclone.Path.home', return_value=tmp_path)
-    mock_run = mocker.patch('deltona.rclone.sp.run',
-                            side_effect=[sp.CalledProcessError(1, 'launchctl'),
-                                         mocker.MagicMock()])
-    enable_service('launchd', 'x')
-    # Nothing was loaded, so booting out failed, which is the wanted state rather than a failure.
-    assert mock_run.call_args_list[0].args[0][1] == 'bootout'
-    assert mock_run.call_args_list[-1].args[0][1] == 'bootstrap'
-
-
-def test_install_service(mocker: MockerFixture, tmp_path: Path) -> None:
-    mocker.patch('deltona.rclone.Path.home', return_value=tmp_path)
-    mock_enable = mocker.patch('deltona.rclone.enable_service')
     path = install_service('systemd-user', 'x', ('/bin/thing',))
-    assert path.read_text(encoding='utf-8').startswith('[Unit]')
-    mock_enable.assert_called_once_with('systemd-user', 'x')
-
-
-def test_install_service_no_enable(mocker: MockerFixture, tmp_path: Path) -> None:
-    mocker.patch('deltona.rclone.Path.home', return_value=tmp_path)
-    mock_enable = mocker.patch('deltona.rclone.enable_service')
-    install_service('systemd-user', 'x', ('/bin/thing',), enable=False)
-    mock_enable.assert_not_called()
-
-
-@pytest.mark.parametrize(('kind', 'expected'), [
-    ('launchd', ('launchctl', 'bootout')),
-    ('systemd-system', ('systemctl', 'disable', '--now', 'x')),
-    ('systemd-user', ('systemctl', '--user', 'disable', '--now', 'x')),
-])
-def test_disable_service(mocker: MockerFixture, kind: str, expected: tuple[str, ...]) -> None:
-    mock_run = mocker.patch('deltona.rclone.sp.run')
-    disable_service(kind, 'x')  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
-    assert mock_run.call_args.args[0][:len(expected)] == expected
-
-
-def test_disable_service_not_loaded(mocker: MockerFixture) -> None:
-    mocker.patch('deltona.rclone.sp.run', side_effect=sp.CalledProcessError(1, 'systemctl'))
-    disable_service('systemd-user', 'x')
-
-
-def test_uninstall_service(mocker: MockerFixture, tmp_path: Path) -> None:
-    mocker.patch('deltona.rclone.Path.home', return_value=tmp_path)
-    mocker.patch('deltona.rclone.enable_service')
-    mock_run = mocker.patch('deltona.rclone.sp.run')
-    path = install_service('systemd-user', 'x', ('/bin/thing',), enable=False)
-    assert uninstall_service('systemd-user', 'x') == path
-    assert not path.exists()
-    assert mock_run.call_args.args[0] == ('systemctl', '--user', 'daemon-reload')
-
-
-def test_uninstall_service_missing(mocker: MockerFixture, tmp_path: Path) -> None:
-    mocker.patch('deltona.rclone.Path.home', return_value=tmp_path)
-    mocker.patch('deltona.rclone.sp.run')
-    assert uninstall_service('systemd-user', 'x') is None
-
-
-def test_uninstall_service_launchd(mocker: MockerFixture, tmp_path: Path) -> None:
-    mocker.patch('deltona.rclone.Path.home', return_value=tmp_path)
-    mock_run = mocker.patch('deltona.rclone.sp.run')
-    path = service_path('launchd', 'x')
-    path.parent.mkdir(parents=True)
-    path.touch()
-    assert uninstall_service('launchd', 'x') == path
-    assert not path.exists()
-    assert mock_run.call_count == 1
+    assert 'KillSignal=SIGINT' in path.read_text(encoding='utf-8')
 
 
 def test_griveignore_spec_absent(tmp_path: Path) -> None:
@@ -1070,24 +954,6 @@ def test_watch_and_sync_leaves_an_unchanged_remote_alone(mocker: MockerFixture,
     # interval.
     assert reader.poll.call_count > 1
     mock_sync.assert_called_once_with(tmp_path, 'gdrive:D', ())
-
-
-def test_service_path_unknown_kind() -> None:
-    # None of the three service functions take a kind outside ServiceKind, so nothing matches.
-    assert service_path(cast('Any', 'nonsense'), 'x') is None
-
-
-def test_enable_service_unknown_kind(mocker: MockerFixture) -> None:
-    mock_run = mocker.patch('deltona.rclone.sp.run')
-    enable_service(cast('Any', 'nonsense'), 'x')
-    mock_run.assert_not_called()
-
-
-def test_disable_service_unknown_kind(mocker: MockerFixture) -> None:
-    mock_run = mocker.patch('deltona.rclone.sp.run')
-    with pytest.raises(UnboundLocalError):
-        disable_service(cast('Any', 'nonsense'), 'x')
-    mock_run.assert_not_called()
 
 
 def test_rclone_config_path_without_output(mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch,
