@@ -487,7 +487,7 @@ def _decode_platforms(mask: int) -> str:
 def _scan(image: _Image) -> dict[str, dict[str, Any]]:
     table: dict[str, dict[str, Any]] = {}
     for va in _entry_addresses(image):
-        if (entry := _entry_strings(image, va)) is None:
+        if (entry := _entry_strings(image, va)) is None:  # pragma: no cover
             continue
         name, title, description = entry
         word = image.word(va + _PLATFORM_OFFSET)

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+import errno
+import os
 import struct
 import sys
 
@@ -339,10 +341,18 @@ def _confine(monkeypatch: pytest.MonkeyPatch, root: Path) -> None:
 
 def _redirect(monkeypatch: pytest.MonkeyPatch, target: Path, source: Path | None) -> None:
     original = Path.open
+
+    # A `source` of None stands for a candidate that exists but cannot be read. Falling through to
+    # the real `target` would make the result depend on whether a browser is installed here.
+    def opener(self: Path, *args: Any, **kwargs: Any) -> Any:
+        if self != target:
+            return original(self, *args, **kwargs)
+        if source is None:
+            raise PermissionError(errno.EACCES, os.strerror(errno.EACCES), str(target))
+        return original(source, *args, **kwargs)
+
     monkeypatch.setattr(Path, 'is_file', lambda self: self == target)
-    monkeypatch.setattr(
-        Path, 'open', lambda self, *args, **kwargs: original(
-            source if source is not None and self == target else self, *args, **kwargs))
+    monkeypatch.setattr(Path, 'open', opener)
 
 
 def test_extract_flag_table_reads_an_elf_image(tmp_path: Path) -> None:
