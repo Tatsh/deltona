@@ -664,9 +664,16 @@ def stored_token(key: str, kind: ServiceKind | None = None) -> str | None:
         The token, or ``None`` if there is no readable file holding one.
     """
     for one in ((kind,) if kind is not None else (None, 'systemd-system')):
-        with suppress(OSError):
-            if token := token_path(key, one).read_text(encoding='utf-8').strip():
+        path = token_path(key, one)
+        try:
+            if token := path.read_text(encoding='utf-8').strip():
                 return token
+        except FileNotFoundError:
+            log.debug('No token file at `%s`.', path)
+        except OSError as e:
+            # A file that exists but cannot be read is worth saying out loud, since it is otherwise
+            # indistinguishable from having stored no token at all.
+            log.warning('Could not read the token at `%s`: %s', path, e)
     return None
 
 

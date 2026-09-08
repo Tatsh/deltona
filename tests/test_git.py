@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 import json
 import logging
@@ -25,7 +26,6 @@ from deltona.gmail import GmailConfigurationError
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from pathlib import Path
     from typing import Any
 
     from pytest_mock import MockerFixture
@@ -493,6 +493,26 @@ def test_stored_token_falls_back_to_the_system_location(mocker: MockerFixture,
     store_token('from-site', 'a', 'systemd-system')
     # A daemon is not told which kind installed it, so both locations are tried.
     assert stored_token('a') == 'from-site'
+
+
+def test_stored_token_warns_when_a_file_cannot_be_read(mocker: MockerFixture, tmp_path: Path,
+                                                       caplog: pytest.LogCaptureFixture) -> None:
+    mocker.patch('deltona.git.platformdirs.site_config_path', return_value=tmp_path / 'site')
+    mocker.patch('deltona.git.platformdirs.user_config_path', return_value=tmp_path / 'user')
+    store_token('unreadable', 'a')
+    mocker.patch.object(Path, 'read_text', side_effect=PermissionError('denied'))
+    with caplog.at_level(logging.WARNING, logger='deltona.git'):
+        assert stored_token('a') is None
+    assert 'Could not read the token' in caplog.text
+
+
+def test_stored_token_ignores_an_empty_file(mocker: MockerFixture, tmp_path: Path) -> None:
+    mocker.patch('deltona.git.platformdirs.site_config_path', return_value=tmp_path / 'site')
+    mocker.patch('deltona.git.platformdirs.user_config_path', return_value=tmp_path / 'user')
+    path = token_path('a')
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text('   \n', encoding='utf-8')
+    assert stored_token('a') is None
 
 
 def test_github_token_prefers_the_keyring(mocker: MockerFixture, tmp_path: Path) -> None:
