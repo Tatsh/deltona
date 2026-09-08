@@ -29,6 +29,10 @@ chrome
    :members:
    :show-inheritance:
 
+.. automodule:: deltona.chrome.pwa
+   :members:
+   :show-inheritance:
+
 .. automodule:: deltona.chrome.secrets
    :members:
    :show-inheritance:
@@ -40,3 +44,9 @@ chrome
 .. automodule:: deltona.chrome.typing
    :members:
    :show-inheritance:
+
+.. automodule:: deltona.chrome.version
+   :members:
+   :show-inheritance:
+
+.. _Bug 40595456 - PWA icons can be lost (on sync?) and reverted to a letter: https://issues.chromium.org/issues/40595456

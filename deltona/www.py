@@ -20,7 +20,7 @@ from niquests import AsyncSession, Response
 from typing_extensions import NotRequired
 import anyio
 
-from .chromium import generate_chrome_user_agent
+from .chrome.version import generate_chrome_user_agent
 from .string import hexstr2bytes
 from .system import IS_LINUX
 

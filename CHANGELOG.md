@@ -40,7 +40,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   them apart. A value that cannot be decrypted is now reported rather than shown as `(encrypted)`
   with no explanation.
 - `deltona.chrome` package, with the `browsing`, `core`, `flag_binary`, `flags`, `network`,
-  `preferences`, `secrets`, `settings`, and `typing` modules.
+  `preferences`, `pwa`, `secrets`, `settings`, `typing`, and `version` modules.
 - `chrome` extra, adding `cryptography`, `keyring`, and `platformdirs`.
 - `rclone-drive-changes` to list what has recently changed on a Google Drive account. What was done
   to a file is inferred from the times Google reports, so a rename or a move reads as an edit.
@@ -66,6 +66,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `deltona.chromium` is gone. `fix_chromium_pwa_icon` now lives in `deltona.chrome.pwa`, and
+  `generate_chrome_user_agent`, `get_last_chrome_major_version`, and
+  `get_latest_chrome_major_version` in `deltona.chrome.version`; all four are re-exported from
+  `deltona.chrome`. The `fix-pwa-icon` command is unchanged.
+- `get_last_chrome_major_version` finds each channel's user data directory through
+  `platformdirs` rather than a hardcoded list of paths, so it no longer misses a directory the
+  platform puts somewhere else.
 - `rich` is now a required dependency rather than one of the `admin` extra, since enough commands
   render with it that importing it lazily bought nothing.
 - `rclone-bisyncd` now synchronises hourly rather than every five minutes when nothing is known to
