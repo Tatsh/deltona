@@ -212,9 +212,6 @@ def _write_network_state(chrome_user_data: FakeChromeUserData,
         chrome_user_data.write_json(directory, 'TransportSecurity', _transport_security_data())
 
 
-# cache_entries
-
-
 def test_cache_entries_populated_url_extraction_and_key_sort(tmp_path: Path) -> None:
     _populate_corrupt_cache_matrix(tmp_path / 'Cache' / 'Cache_Data')
     rows = cache_entries(tmp_path, sort='key')
@@ -321,9 +318,6 @@ def test_cache_entries_skips_entry_whose_stream_is_a_directory(tmp_path: Path) -
     assert cache_entries(tmp_path) == []
 
 
-# dips_bounces / dips_popups
-
-
 def test_dips_bounces_populated_sorted_and_converted(chrome_user_data: FakeChromeUserData) -> None:
     chrome_user_data.add_profile('Default')
     path = _write_dips_db(chrome_user_data)
@@ -373,9 +367,6 @@ def test_dips_popups_empty(chrome_user_data: FakeChromeUserData) -> None:
     chrome_user_data.add_profile('Default')
     path = chrome_user_data.write_database('Default', 'DIPS', _DIPS_SCHEMA, None)
     assert dips_popups(path) == []
-
-
-# nel_policies / reporting_endpoints / reporting_endpoint_groups
 
 
 def test_nel_policies_populated_sorted_and_converted(chrome_user_data: FakeChromeUserData) -> None:
@@ -447,9 +438,6 @@ def test_reporting_endpoint_groups_empty(chrome_user_data: FakeChromeUserData) -
     assert reporting_endpoint_groups(path) == []
 
 
-# network_persistent_state / transport_security
-
-
 def test_network_persistent_state_populated(tmp_path: Path) -> None:
     path = tmp_path / 'Network Persistent State'
     path.write_text(json.dumps(_network_state_data()), encoding='utf-8')
@@ -496,9 +484,6 @@ def test_transport_security_missing(tmp_path: Path) -> None:
     assert transport_security(tmp_path / 'missing') == []
 
 
-# session_files
-
-
 def test_session_files_missing_directory(tmp_path: Path) -> None:
     assert session_files(tmp_path / 'missing') == []
 
@@ -530,9 +515,6 @@ def test_session_files_populated_valid_truncated_and_corrupt(tmp_path: Path) -> 
     assert truncated_row['record_count'] == 1
     assert truncated_row['record_ids'] == {1: 1}
     assert truncated_row['urls'] == ()
-
-
-# list-cache
 
 
 def test_list_cache_table_default(runner: CliRunner, chrome_user_data: FakeChromeUserData,
@@ -618,9 +600,6 @@ def test_list_cache_missing_cache_dir(runner: CliRunner,
     assert 'does not exist.' in result.stderr
 
 
-# list-dips
-
-
 def test_list_dips_bounces_table(runner: CliRunner, chrome_user_data: FakeChromeUserData,
                                  monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv('COLUMNS', '200')
@@ -676,9 +655,6 @@ def test_list_dips_empty_table(runner: CliRunner, chrome_user_data: FakeChromeUs
     result = runner.invoke(chrome_dump, [*chrome_user_data.argv, 'list-dips'])
     assert result.exit_code == 0, result.output
     assert 'No bounces in default found.' in result.stderr
-
-
-# list-network-state
 
 
 def test_list_network_state_summary_json(runner: CliRunner,
@@ -813,9 +789,6 @@ def test_list_network_state_missing_transport_security_file(
     assert 'TransportSecurity' in result.stderr
 
 
-# list-reporting
-
-
 def test_list_reporting_nel_table(runner: CliRunner, chrome_user_data: FakeChromeUserData,
                                   monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv('COLUMNS', '200')
@@ -870,9 +843,6 @@ def test_list_reporting_search(runner: CliRunner, chrome_user_data: FakeChromeUs
     assert [row['origin_host'] for row in json.loads(result.output)] == ['b.example.com']
 
 
-# list-sessions
-
-
 def test_list_sessions_table(runner: CliRunner, chrome_user_data: FakeChromeUserData,
                              monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv('COLUMNS', '200')
@@ -911,9 +881,6 @@ def test_list_sessions_urls_flag_table(runner: CliRunner, chrome_user_data: Fake
     result = runner.invoke(chrome_dump, [*chrome_user_data.argv, 'list-sessions', '--urls'])
     assert result.exit_code == 0, result.output
     assert 'https://example.com/a' in result.output
-
-
-# Missing-path aborts shared by the remaining commands.
 
 
 @pytest.mark.parametrize(('args', 'message'), [

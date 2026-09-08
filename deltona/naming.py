@@ -38,14 +38,9 @@ STOP_WORDS = {
     'or',
     'per',
     'por',  # Spanish
-    # 'so',
     'te',  # Spanish/French
-    # 'than',
     'the',
-    # 'then',
-    # 'this',
     'to',
-    # 'too',
     'van',
     'via',
     'von',
@@ -190,8 +185,6 @@ def adjust_title(words: str,
                     title.append(name)
                 index += 1
                 continue
-            # Detect an upper-case new_word not to change.
-            # First detect I and ignore it, then detect uppercase letters and numbers.
             if (original_words[index] == new_word.upper() and not re.match(r'[^\w]', new_word)
                 ) and (not (mode == Mode.English and new_word == 'I') and
                        (index == last_index and re.match(r'[A-Z0-9]+', original_words[index]))):

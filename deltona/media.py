@@ -876,7 +876,8 @@ def archive_dashcam_footage(  # ruff:ignore[too-many-arguments, too-many-locals]
                      f'[1][pip]overlay=main_w-overlay_w:main_h-overlay_h')
                     if crop_str and rear_view_scale_divisor else '')
     filter_complex_option = ({
-        '-filter_complex': f'{scale_filter},{setpts_str}'  # Trailing comma is acceptable.
+        # FFmpeg tolerates the dangling comma left behind when either half is empty.
+        '-filter_complex': f'{scale_filter},{setpts_str}'
     } if scale_filter or setpts_str else {})
     single_vf_option = {'-vf': setpts_str} if setpts_str else {}
     preset_option = {'-preset': preset} if preset else {}

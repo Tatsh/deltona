@@ -89,7 +89,6 @@ _NOTIFICATIONS_URL = '/notifications'
 _TOKEN_DIR_MODE = 0o750
 _TOKEN_FILE_MODE = 0o640
 
-# Paths GitHub accepts for a Dependabot configuration file.
 _DEPENDABOT_CONFIG_PATHS = ('.github/dependabot.yml', '.github/dependabot.yaml')
 
 
@@ -671,8 +670,6 @@ def stored_token(key: str, kind: ServiceKind | None = None) -> str | None:
         except FileNotFoundError:
             log.debug('No token file at `%s`.', path)
         except OSError as e:
-            # A file that exists but cannot be read is worth saying out loud, since it is otherwise
-            # indistinguishable from having stored no token at all.
             log.warning('Could not read the token at `%s`: %s', path, e)
     return None
 

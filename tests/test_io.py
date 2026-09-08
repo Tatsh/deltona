@@ -77,11 +77,9 @@ def test_unpack_0day_no_diz(mocker: MockerFixture) -> None:
 
 def test_extract_rar_from_zip_extracts_rar_files(mocker: MockerFixture) -> None:
     mock_zipfile = mocker.Mock()
-    # Simulate two rar files and one non-rar file in the zip
     mock_zipfile.namelist.return_value = ['file1.rar', 'file2.r00', 'file3.txt']
     mock_zipfile.extract = mocker.Mock()
     extracted = list(extract_rar_from_zip(mock_zipfile))
-    # Should only extract .rar and .r00 files
     assert extracted == ['file1.rar', 'file2.r00']
     mock_zipfile.extract.assert_any_call('file1.rar')
     mock_zipfile.extract.assert_any_call('file2.r00')
@@ -105,7 +103,6 @@ def test_unpack_ebook_success_pdf(mocker: MockerFixture) -> None:
     mock_extract_rar_from_zip = mocker.patch('deltona.io.extract_rar_from_zip')
     mock_sp_run = mocker.patch('deltona.io.sp.run')
     mocker.patch('deltona.io.log')
-    # Setup mocks
     mock_dir = mocker.MagicMock()
     mock_dir.is_dir.return_value = True
     mock_zip1 = mocker.MagicMock()
@@ -114,7 +111,6 @@ def test_unpack_ebook_success_pdf(mocker: MockerFixture) -> None:
     mock_rar_file = mocker.MagicMock()
     mock_rar_file.name = 'test.rar'
     mock_extract_rar_from_zip.return_value = ['test.rar']
-    # Simulate .pdf file after extraction
     mock_pdf = mocker.MagicMock()
     mock_pdf.name = 'book.pdf'
     mock_pdf.lower = lambda: 'book.pdf'
@@ -126,7 +122,6 @@ def test_unpack_ebook_success_pdf(mocker: MockerFixture) -> None:
         [mock_pdf]  # for pdf_list
     ]
     mock_path.side_effect = [mock_dir, mock_rar_file, mock_pdf]
-    # Test
     unpack_ebook('some_path')
     mock_sp_run.assert_called()
     mock_pdf.rename.assert_called_with('../parent_dir.pdf')
@@ -142,7 +137,6 @@ def test_unpack_ebook_success_epub(mocker: MockerFixture) -> None:
     mock_extract_rar_from_zip = mocker.patch('deltona.io.extract_rar_from_zip')
     mock_sp_run = mocker.patch('deltona.io.sp.run')
     mocker.patch('deltona.io.log')
-    # Setup mocks
     mock_dir = mocker.Mock()
     mock_dir.is_dir.return_value = True
     mock_zip1 = mocker.Mock()
@@ -151,7 +145,6 @@ def test_unpack_ebook_success_epub(mocker: MockerFixture) -> None:
     mock_rar_file = mocker.Mock()
     mock_rar_file.name = 'test.rar'
     mock_extract_rar_from_zip.return_value = ['test.rar']
-    # Simulate .epub file after extraction
     mock_epub = mocker.Mock()
     mock_epub.name = 'book.epub'
     mock_epub.lower = lambda: 'book.epub'
@@ -162,7 +155,6 @@ def test_unpack_ebook_success_epub(mocker: MockerFixture) -> None:
         []  # for pdf_list
     ]
     mock_path.side_effect = [mock_dir, mock_rar_file, mock_epub]
-    # Test
     unpack_ebook('some_path')
     mock_sp_run.assert_called()
     mock_epub.rename.assert_called_with('../parent_dir.epub')
@@ -238,7 +230,6 @@ def test_unpack_ebook_more_than_1_pdf(mocker: MockerFixture) -> None:
     mock_zipfile_cls = mocker.patch('deltona.io.ZipFile')
     mock_extract_rar_from_zip = mocker.patch('deltona.io.extract_rar_from_zip')
     mocker.patch('deltona.io.sp.run')
-    # Setup mocks
     mock_dir = mocker.Mock()
     mock_dir.is_dir.return_value = True
     mock_zip1 = mocker.Mock()
@@ -247,7 +238,6 @@ def test_unpack_ebook_more_than_1_pdf(mocker: MockerFixture) -> None:
     mock_rar_file = mocker.Mock()
     mock_rar_file.name = 'test.rar'
     mock_extract_rar_from_zip.return_value = ['test.rar']
-    # Simulate multiple .pdf files after extraction
     pdf_files = [
         mocker.Mock(name='book1.pdf', lower=lambda: 'book1.pdf'),
         mocker.Mock(name='book2.pdf', lower=lambda: 'book2.pdf')
@@ -260,7 +250,6 @@ def test_unpack_ebook_more_than_1_pdf(mocker: MockerFixture) -> None:
         pdf_files  # pdf_list with multiple PDFs
     ]
     mock_path.side_effect = [mock_dir, mock_rar_file, *pdf_files]
-    # Test
     with pytest.raises(ValueError, match='2'):
         unpack_ebook('some_path')
 
@@ -272,7 +261,6 @@ def test_unpack_ebook_more_than_1_epub(mocker: MockerFixture) -> None:
     mock_zipfile_cls = mocker.patch('deltona.io.ZipFile')
     mock_extract_rar_from_zip = mocker.patch('deltona.io.extract_rar_from_zip')
     mocker.patch('deltona.io.sp.run')
-    # Setup mocks
     mock_dir = mocker.Mock()
     mock_dir.is_dir.return_value = True
     mock_zip1 = mocker.Mock()
@@ -281,7 +269,6 @@ def test_unpack_ebook_more_than_1_epub(mocker: MockerFixture) -> None:
     mock_rar_file = mocker.Mock()
     mock_rar_file.name = 'test.rar'
     mock_extract_rar_from_zip.return_value = ['test.rar']
-    # Simulate multiple .epub files after extraction
     epub_files = [
         mocker.Mock(name='book1.epub', lower=lambda: 'book1.epub'),
         mocker.Mock(name='book2.epub', lower=lambda: 'book2.epub')
@@ -294,7 +281,6 @@ def test_unpack_ebook_more_than_1_epub(mocker: MockerFixture) -> None:
         []  # for pdf_list
     ]
     mock_path.side_effect = [mock_dir, mock_rar_file, *epub_files]
-    # Test
     with pytest.raises(ValueError, match='2'):
         unpack_ebook('some_path')
 
@@ -306,7 +292,6 @@ def test_unpack_ebook_pdf_not_pdf(mocker: MockerFixture) -> None:
     mock_zipfile_cls = mocker.patch('deltona.io.ZipFile')
     mock_extract_rar_from_zip = mocker.patch('deltona.io.extract_rar_from_zip')
     mocker.patch('deltona.io.sp.run')
-    # Setup mocks
     mock_dir = mocker.Mock()
     mock_dir.is_dir.return_value = True
     mock_zip1 = mocker.Mock()
@@ -315,7 +300,6 @@ def test_unpack_ebook_pdf_not_pdf(mocker: MockerFixture) -> None:
     mock_rar_file = mocker.Mock()
     mock_rar_file.name = 'test.rar'
     mock_extract_rar_from_zip.return_value = ['test.rar']
-    # Simulate non-PDF file after extraction
     mock_pdf = mocker.MagicMock()
     mock_pdf.open.return_value.__enter__.return_value.read.return_value = b'Not a PDF'
     mock_dir.iterdir.side_effect = [
@@ -324,7 +308,6 @@ def test_unpack_ebook_pdf_not_pdf(mocker: MockerFixture) -> None:
         [mock_pdf]  # pdf_list with non-PDF file
     ]
     mock_path.side_effect = [mock_dir, mock_rar_file, mock_pdf]
-    # Test
     with pytest.raises(ValueError, match='Not '):
         unpack_ebook('some_path')
 
@@ -403,7 +386,6 @@ def test_verify_sfv_success(mocker: MockerFixture) -> None:
     mock_path = mocker.patch('deltona.io.Path')
     mock_file = mocker.MagicMock()
     mock_path.return_value = mock_file
-    # Simulate SFV file with one valid entry
     sfv_content = 'file1.bin ABCDEF12\n'
     mock_file.open.return_value.__enter__.return_value = sfv_content.splitlines(keepends=True)
     mock_file.parent.__truediv__.return_value.read_bytes.return_value = b'data'
@@ -530,7 +512,6 @@ Details: RAR 1.5
 def test_unrar_test_extraction_success(mocker: MockerFixture) -> None:
     mock_sp_run = mocker.patch('deltona.io.sp.run')
     unrar = UnRAR('unrar')
-    # Should not raise
     unrar.test_extraction('archive.rar', 'file.txt')
     mock_sp_run.assert_called_once_with(('unrar', 't', '-y', '-inul', 'archive.rar', 'file.txt'),
                                         check=True)

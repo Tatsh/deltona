@@ -152,7 +152,6 @@ def unpack_ebook(path: StrPath) -> None:
         rar = next((x for x in extracted if x.name.endswith('.rar')), None)
         if not rar:
             raise ValueError(0)
-        # Only need the .rar
         unrar_x(rar)
         epub_list = [Path(x) for x in path.iterdir() if x.name.lower().endswith('.epub')]
         pdf_list = [Path(x) for x in path.iterdir() if x.name.lower().endswith('.pdf')]
@@ -206,35 +205,31 @@ def extract_gog(filename: StrPath, output_dir: StrPath) -> None:
     input_path = Path(filename).resolve(strict=True)
     with input_path.open('rb') as game_bin:
         output_dir.mkdir(parents=True)
-        # Read the first 10kb so we can determine the script line number
         beginning = game_bin.read(10240).decode(errors='ignore')
         offset_match = GOG_OFFSET_RE.search(beginning)
         if not offset_match:
             raise ValueError
         script_lines = int(offset_match.group(1))
-        # Read the number of lines to determine the script size
         game_bin.seek(0, io.SEEK_SET)
         for _ in range(script_lines):
             game_bin.readline()
         script_size = game_bin.tell()
         log.debug('Makeself script size: %d', script_size)
-        # Read the script
         game_bin.seek(0, io.SEEK_SET)
         script_bin = game_bin.read(script_size)
         with (output_dir / 'unpacker.sh').open('wb') as script_f:
             script_f.write(script_bin)
         script = script_bin.decode()
-        # Filesize is for the MojoSetup archive, not the actual game data
+        # The size in the script covers the MojoSetup archive only, so the game data begins after
+        # it rather than at the end of the file.
         filesize_match = GOG_FILESIZE_RE.search(script)
         if not filesize_match:
             raise ValueError
         filesize = int(filesize_match.group(1))
         log.debug('MojoSetup archive size: %d', filesize)
-        # Extract the setup archive
         game_bin.seek(script_size, io.SEEK_SET)
         with (output_dir / 'mojosetup.tar.gz').open('wb') as setup_f:
             setup_f.write(game_bin.read(filesize))
-        # Extract the game data archive
         dataoffset = script_size + filesize
         game_bin.seek(dataoffset, io.SEEK_SET)
         with (output_dir / 'data.zip').open('wb') as datafile:

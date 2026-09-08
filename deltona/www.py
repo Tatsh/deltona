@@ -370,7 +370,6 @@ async def check_bookmarks_html_urls(
     data: BookmarksDataset = []
     changed: BookmarksDataset = []
     not_found: BookmarksDataset = []
-    # Collect all bookmarks first (sync parsing).
     bookmarks: list[tuple[BookmarksHTMLAnchorAttributes, str,
                           Sequence[tuple[str, BookmarksHTMLFolderAttributes]]]] = []
 
@@ -383,7 +382,6 @@ async def check_bookmarks_html_urls(
             bookmarks.append((attrs, title, folder_path))
 
     recurse_bookmarks_html(BeautifulSoup(html_content, 'html5lib'), collect_callback)
-    # Check URLs concurrently.
     limiter = anyio.CapacityLimiter(10)
 
     async def check_url(session: AsyncSession, attrs: BookmarksHTMLAnchorAttributes, title: str,

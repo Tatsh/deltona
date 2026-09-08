@@ -50,7 +50,6 @@ def test_supported_audio_input_formats_device_error(mocker: MockerFixture) -> No
 
 
 def test_supported_audio_input_formats_partial_support(mocker: MockerFixture) -> None:
-    # Simulate ffmpeg only supporting one format/rate
     def fake_run(cmd: Sequence[str], *args: Any, **kwargs: Any) -> Any:
         if 'pcm_f32le' in cmd and '44100' in cmd:
             return mocker.Mock(stdout='44100 Hz', stderr='')
@@ -84,7 +83,6 @@ def test_ffprobe_success(mocker: MockerFixture) -> None:
 
 
 def test_get_info_json_flac(mocker: MockerFixture) -> None:
-    # Simulate ffprobe returning info_json in tags
     fake_proc = mocker.Mock()
     fake_proc.stdout = '{"format": {"tags": {"info_json": "{\\"foo\\": \\"bar\\"}"}}}'
     mocker.patch('deltona.media.sp.run', return_value=fake_proc)
@@ -94,7 +92,6 @@ def test_get_info_json_flac(mocker: MockerFixture) -> None:
 
 
 def test_get_info_json_mp4(mocker: MockerFixture) -> None:
-    # Simulate MP4Box returning info_json string
     fake_proc = mocker.Mock()
     fake_proc.stdout = '{"foo": "bar"}'
     mocker.patch('deltona.media.sp.run', return_value=fake_proc)
@@ -104,7 +101,6 @@ def test_get_info_json_mp4(mocker: MockerFixture) -> None:
 
 
 def test_get_info_json_mkv(mocker: MockerFixture) -> None:
-    # Simulate mkvextract returning info_json as second line
     fake_proc = mocker.Mock()
     fake_proc.stdout = 'Attachment: info.json\n{"foo": "bar"}'
     mocker.patch('deltona.media.sp.run', return_value=fake_proc)
@@ -114,7 +110,6 @@ def test_get_info_json_mkv(mocker: MockerFixture) -> None:
 
 
 def test_get_info_json_mp3(mocker: MockerFixture) -> None:
-    # Simulate ffprobe returning TXXX tag with info_json
     fake_proc = mocker.Mock()
     fake_proc.stdout = '{"format": {"tags": {"TXXX": "info_json={\\"foo\\": \\"bar\\"}"}}}'
     mocker.patch('deltona.media.sp.run', return_value=fake_proc)
@@ -124,7 +119,6 @@ def test_get_info_json_mp3(mocker: MockerFixture) -> None:
 
 
 def test_get_info_json_opus(mocker: MockerFixture) -> None:
-    # Simulate ffprobe returning info_json in streams[0].tags
     fake_proc = mocker.Mock()
     fake_proc.stdout = '{"streams": [{"tags": {"info_json": "{\\"foo\\": \\"bar\\"}"}}]}'
     mocker.patch('deltona.media.sp.run', return_value=fake_proc)
@@ -134,7 +128,6 @@ def test_get_info_json_opus(mocker: MockerFixture) -> None:
 
 
 def test_get_info_json_raw_true_flac(mocker: MockerFixture) -> None:
-    # Test raw=True returns the raw string
     fake_proc = mocker.Mock()
     fake_proc.stdout = '{"format": {"tags": {"info_json": "{\\"foo\\": \\"bar\\"}"}}}'
     mocker.patch('deltona.media.sp.run', return_value=fake_proc)
@@ -918,7 +911,6 @@ def test_archive_dashcam_footage_single_camera(mocker: MockerFixture, tmp_path: 
     assert mock_run.call_count == 4
     # Only front files trashed (3)
     assert mock_send2trash.call_count == 3
-    # Single-camera: no -filter_complex, use -vf for setpts
     first_encode_args = mock_run.call_args_list[0].args[0]
     assert '-filter_complex' not in first_encode_args
     assert '-vf' in first_encode_args
@@ -1158,7 +1150,6 @@ def test_pair_redtiger_dashcam_files_max_offset_larger(tmp_path: Path) -> None:
     # Default max_offset=1 should not pair these (3 second gap)
     pairs_default = pair_redtiger_dashcam_files(front_dir, rear_dir, max_offset=1)
     assert len(pairs_default) == 0
-    # max_offset=5 should pair them
     pairs_wide = pair_redtiger_dashcam_files(front_dir, rear_dir, max_offset=5)
     assert len(pairs_wide) == 1
 
@@ -1309,7 +1300,6 @@ def test_archive_dashcam_footage_output_file_rename_on_conflict(mocker: MockerFi
     mocker.patch('deltona.media.ffprobe', return_value={'format': {'duration': '180.0'}})
     mocker.patch('send2trash.send2trash')
     archive_dashcam_footage(front_dir, rear_dir, output_dir, overwrite=False)
-    # The concat command should use a renamed output path
     concat_call_args = mock_run.call_args_list[-1].args[0]
     output_path_str = concat_call_args[-1]
     assert '-0001' in output_path_str

@@ -100,8 +100,6 @@ def assert_not_none(var: _T | None) -> _T:
     """
     Assert the ``var`` is not None and return it.
 
-    This will remove ``None`` from type ``_T | None``.
-
     Parameters
     ----------
     var : T | None
@@ -123,7 +121,6 @@ def assert_not_none(var: _T | None) -> _T:
     return var
 
 
-# Used by chrome-bisect-flags
 class ChromeLocalStateBrowser(TypedDict):
     enabled_labs_experiments: Sequence[str]
 

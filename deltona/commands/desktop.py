@@ -142,14 +142,13 @@ def umpv_main(files: Sequence[Path], mpv_command: str = 'mpv', *, debug: bool = 
                 sock = None  # abandoned socket
             case errno.ENOENT:
                 log.debug('Socket does not exist')
-                sock = None  # does not exist
+                sock = None
             case _:
                 log.exception('Socket errno: %d', e.errno)
                 raise click.Abort from e
     if sock and socket_connected:
         # Unhandled race condition: what if mpv is terminating right now?
         for f in fixed_files:
-            # escape: \ \n "
             g = str(f).replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
             log.debug('Loading file "%s"', f)
             sock.send(f'raw loadfile "{g}"\n'.encode())

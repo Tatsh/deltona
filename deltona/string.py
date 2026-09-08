@@ -34,8 +34,7 @@ def strip_ansi(o: str) -> str:
 
     As defined by ECMA-048 in http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-048.
 
-    Taken from https://github.com/ewen-lbh/python-strip-ansi/ due to installation issues with
-    Poetry.
+    Taken from https://github.com/ewen-lbh/python-strip-ansi/.
 
     Parameters
     ----------
@@ -249,7 +248,6 @@ def is_url(filename: StrPath) -> bool:
     parts = str(filename).split('://', 1)
     if len(parts) < 2:  # ruff:ignore[magic-value-comparison]
         return False
-    # protocol prefix has no special characters => it's a URL
     return all(x in f'{string.ascii_letters}{string.digits}_' for x in parts[0])
 
 
@@ -281,10 +279,9 @@ def add_unidecode_custom_replacement(find: str, replace: str) -> None:
     codepoint = ord(find)
     section = codepoint >> 8
     position = codepoint % 256
-    new_section = cast('list[str | None]',
-                       (cache[section] if isinstance(cache[section], list) else
-                        (list(assert_not_none(cache[section])) if cache[section] is not None else
-                         [None for _ in range(position + 1)])))  # convert to mutable type
+    new_section = cast('list[str | None]', (cache[section] if isinstance(cache[section], list) else
+                                            (list(assert_not_none(cache[section])) if cache[section]
+                                             is not None else [None for _ in range(position + 1)])))
     if len(new_section) <= position:
         msg = 'Section length is too small for the codepoint.'
         raise ValueError(msg)

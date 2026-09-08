@@ -26,7 +26,6 @@ def test_add_cdda_times_none_or_empty() -> None:
 
 
 def test_add_cdda_times_invalid_format() -> None:
-    # Not matching MM:SS:FF
     assert add_cdda_times(['12:34']) is None
     assert add_cdda_times(['99:99:99']) is None
     assert add_cdda_times(['abc:def:ghi']) is None
@@ -34,7 +33,6 @@ def test_add_cdda_times_invalid_format() -> None:
 
 
 def test_add_cdda_times_valid_single() -> None:
-    # 01:02:03 should be valid
     result = add_cdda_times(['01:02:03'])
     assert isinstance(result, str)
     assert result.count(':') == 2
@@ -47,26 +45,22 @@ def test_add_cdda_times_valid_multiple() -> None:
 
 
 def test_add_cdda_times_overflow_minutes() -> None:
-    # Minutes > 99 should return None
-    # Use a time that will sum to > 99 minutes
+    # The two sum to over 99 minutes.
     times = ['99:59:74', '00:01:01']
     assert add_cdda_times(times) is None
 
 
 def test_add_cdda_times_overflow_seconds() -> None:
-    # Seconds > 59 should return None
     times = ['00:60:00']
     assert add_cdda_times(times) is None
 
 
 def test_add_cdda_times_overflow_frames() -> None:
-    # Frames > CD_FRAMES should return None
     times = [f'00:00:{CD_FRAMES + 1:02d}']
     assert add_cdda_times(times) is None
 
 
 def test_add_cdda_times_exact_maximum() -> None:
-    # Exactly at the maximum allowed
     times = ['99:59:74']
     result = add_cdda_times(times)
     assert isinstance(result, str)
@@ -74,7 +68,6 @@ def test_add_cdda_times_exact_maximum() -> None:
 
 
 def test_add_cdda_times_leading_zeros() -> None:
-    # Should handle leading zeros
     result = add_cdda_times(['00:00:01', '00:00:01'])
     assert result is not None
     assert result.startswith('00:00:')

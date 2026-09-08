@@ -522,7 +522,6 @@ def test_get_kwriteconfig_commands_skips_metrics_and_state(mocker: MockerFixture
     mocker.patch('deltona.system.re.search', side_effect=fake_search)
 
     commands = list(get_kwriteconfig_commands('/home/user/.config/kdeglobals'))
-    # Only 'NormalKey' should be yielded
     assert len(commands) == 1
     assert 'NormalKey' in commands[0]
 

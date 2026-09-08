@@ -253,48 +253,34 @@ async def test_check_bookmarks_html_urls_exhaustive_check(mocker: MockerFixture)
 
 
 def test_where_from_linux(mocker: MockerFixture) -> None:
-    # Simulate IS_LINUX = True
     mocker.patch('deltona.www.IS_LINUX', True)  # ruff:ignore[boolean-positional-value-in-call]
-    # Mock getxattr to return bytes
     mock_getxattr = mocker.patch('deltona.www._getxattr', return_value=b'https://example.com')
-    # Should return the decoded string
     result = where_from('dummy-file')
     assert result == 'https://example.com'
     mock_getxattr.assert_called_once_with('dummy-file', KEY_ORIGIN_URL)
 
 
 def test_where_from_macos_webpage_false(mocker: MockerFixture) -> None:
-    # Simulate IS_LINUX = False
     mocker.patch('deltona.www.IS_LINUX', False)  # ruff:ignore[boolean-positional-value-in-call]
-    # Prepare fake plist data
     fake_plist = plistlib.dumps(['https://file.com', 'https://webpage.com'])
-    # Patch hexstr2bytes to just return the bytes
     mocker.patch('deltona.www.hexstr2bytes', return_value=fake_plist)
-    # Mock getxattr to return a dummy value (will be passed to hexstr2bytes)
     mock_getxattr = mocker.patch('deltona.www._getxattr', return_value=b'dummy')
-    # Should return the first item (index 0)
     result = where_from('dummy-file', webpage=False)
     assert result == 'https://file.com'
     mock_getxattr.assert_called_once_with('dummy-file', KEY_WHERE_FROMS)
 
 
 def test_where_from_macos_webpage_true(mocker: MockerFixture) -> None:
-    # Simulate IS_LINUX = False
     mocker.patch('deltona.www.IS_LINUX', False)  # ruff:ignore[boolean-positional-value-in-call]
-    # Prepare fake plist data
     fake_plist = plistlib.dumps(['https://file.com', 'https://webpage.com'])
-    # Patch hexstr2bytes to just return the bytes
     mocker.patch('deltona.www.hexstr2bytes', return_value=fake_plist)
-    # Mock getxattr to return a dummy value (will be passed to hexstr2bytes)
     mock_getxattr = mocker.patch('deltona.www._getxattr', return_value=b'dummy')
-    # Should return the second item (index 1)
     result = where_from('dummy-file', webpage=True)
     assert result == 'https://webpage.com'
     mock_getxattr.assert_called_once_with('dummy-file', KEY_WHERE_FROMS)
 
 
 def test_generate_html_dir_tree_basic(tmp_path: Path) -> None:
-    # Create a simple directory structure
     d1 = tmp_path / 'dir1'
     d1.mkdir()
     f1 = d1 / 'file1.txt'
@@ -302,21 +288,15 @@ def test_generate_html_dir_tree_basic(tmp_path: Path) -> None:
     f2 = tmp_path / 'file2.txt'
     f2.write_text('world')
 
-    # Patch Path.iterdir to avoid OS-specific ordering
-    # (but here we use the real filesystem)
-
     html = generate_html_dir_tree(tmp_path)
-    # Should contain both file2.txt and dir1/file1.txt
     assert 'file2.txt' in html
     assert 'file1.txt' in html
     assert 'dir1' in html
-    # Should have <ul> and <li> tags
     assert '<ul' in html
     assert '<li' in html
 
 
 def test_generate_html_dir_tree_nested(tmp_path: Path) -> None:
-    # Create nested directories
     d1 = tmp_path / 'a'
     d1.mkdir()
     d2 = d1 / 'b'
@@ -325,30 +305,25 @@ def test_generate_html_dir_tree_nested(tmp_path: Path) -> None:
     f1.write_text('nested')
 
     html = generate_html_dir_tree(tmp_path)
-    # Should contain all directory and file names
     assert 'a' in html
     assert 'b' in html
     assert 'c.txt' in html
 
 
 def test_generate_html_dir_tree_empty_dir(tmp_path: Path) -> None:
-    # Empty directory
 
     html = generate_html_dir_tree(tmp_path)
-    # Should still return valid HTML
     assert '<ul' in html
     assert '</ul>' in html
 
 
 def test_generate_html_dir_tree_symlink(tmp_path: Path) -> None:
-    # Create a file and a symlink to it
     f1 = tmp_path / 'real.txt'
     f1.write_text('data')
     symlink = tmp_path / 'link.txt'
     symlink.symlink_to(f1)
 
     html = generate_html_dir_tree(tmp_path)
-    # Should include both the real file and the symlink
     assert 'real.txt' in html
     assert 'link.txt' in html
 

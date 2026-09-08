@@ -328,7 +328,6 @@ def test_get_ultraiso_path_windows_not_found(mocker: MockerFixture) -> None:
 
 def test_get_ultraiso_path_non_windows_found(mocker: MockerFixture, tmp_path: Path) -> None:
     mocker.patch('deltona.ultraiso.IS_WINDOWS', False)
-    # Create fake UltraISO.exe in Program Files
     pf = tmp_path / 'drive_c' / 'Program Files'
     pf.mkdir(parents=True)
     exe = pf / 'UltraISO' / 'UltraISO.exe'

@@ -58,13 +58,9 @@ async def test_fix_chromium_pwa_icon_basic(tmp_path: Path, mock_get_pil_image_mo
 
     await fix_chromium_pwa_icon(config_path, app_id, icon_src_uri, profile)
 
-    # Check that raise_for_status was called
     mock_async_session_get.raise_for_status.assert_called_once()
-    # Check that PIL.Image.open was called
     mock_get_pil_image_module.open.assert_called_once()
-    # Check that save was called for each size
     assert mock_img.save.call_count > 0
-    # Check that files would be saved in the correct directory
     for call in mock_img.save.call_args_list:
         file_path = call.args[0]
         assert 'Icons' in str(file_path)
@@ -82,7 +78,6 @@ async def test_fix_chromium_pwa_icon_masked(tmp_path: Path, mock_get_pil_image_m
 
     await fix_chromium_pwa_icon(config_path, app_id, icon_src_uri, profile, masked=True)
 
-    # Should save to both Icons and Icons Maskable
     paths = [call.args[0] for call in mock_img.save.call_args_list]
     assert any('Icons Maskable' in str(p) for p in paths)
     assert any('Icons' in str(p) for p in paths)
@@ -103,7 +98,6 @@ async def test_fix_chromium_pwa_icon_monochrome(mocker: MockerFixture,
 
     await fix_chromium_pwa_icon(config_path, app_id, icon_src_uri, profile, monochrome=True)
 
-    # Should save to both Icons and Icons Monochrome
     assert any(x.args[0] for x in mock_path.mock_calls if x.args[0] == 'Icons Monochrome')
     assert any(x.args[0] for x in mock_path.mock_calls if x.args[0] == 'Icons')
     assert mock_img.save.call_count == 8

@@ -58,10 +58,8 @@ def test_adjust_title_uppercase_preserved() -> None:
 
 
 def test_adjust_title_multiple_modes() -> None:
-    # Should lowercase Japanese particles if Mode.Japanese is used
     result = adjust_title('no wa to', modes=(Mode.Japanese,))
     assert result == 'No wa to'
-    # Should lowercase Arabic stops if Mode.Arabic is used
     result = adjust_title('al wa min', modes=(Mode.Arabic,))
     assert result == 'Al wa min'
 

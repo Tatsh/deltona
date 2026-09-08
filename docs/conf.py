@@ -13,12 +13,7 @@ with (Path(__file__).parent.parent / 'pyproject.toml').open(newline='\n', encodi
     project_ = tomlkit.load(f).unwrap()['project']
     authors_list, name, version = itemgetter('authors', 'name', 'version')(project_)
 authors = [f'{d["name"]} <{d["email"]}>' for d in authors_list]
-# region Path setup
-# If extensions (or modules to document with autodoc) are in another directory, add these
-# directories to sys.path here. If the directory is relative to the documentation root, use
-# str(Path().parent.parent) to make it absolute, like shown here.
 sys.path.insert(0, str(Path(__file__).parent.parent))
-# endregion
 author = f'{authors_list[0]["name"]} <{authors_list[0]["email"]}>'
 copyright = str(datetime.now(timezone.utc).year)  # ruff:ignore[builtin-variable-shadowing]
 project = name

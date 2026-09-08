@@ -85,7 +85,6 @@ def test_is_ascii_with_numbers_and_symbols() -> None:
 
 
 def test_is_ascii_with_surrogate_pair() -> None:
-    # Simulate a string with a high codepoint (emoji)
     s = 'hello \U0001f600'
     assert string.is_ascii(s) is False
 
@@ -115,11 +114,9 @@ def test_hexstr2bytes_generator_yields_correct_values() -> None:
 
 
 def test_unix_path_to_wine_existing_path(tmp_path: Path) -> None:
-    # Create a file and get its path
     file_path = tmp_path / 'file.txt'
     file_path.write_text('test')
     result = string.unix_path_to_wine(str(file_path))
-    # Should start with Z: and use backslashes
     assert result.startswith('Z:')
     assert '\\' in result
     assert 'file.txt' in result
@@ -134,7 +131,6 @@ def test_unix_path_to_wine_non_existent_path(tmp_path: Path) -> None:
 
 
 def test_unix_path_to_wine_relative_path() -> None:
-    # Use a relative path
     rel_path = 'some/relative/path.txt'
     cwd = Path.cwd()
     expected = 'Z:' + str(cwd).replace('/', '\\') + '\\some\\relative\\path.txt'
@@ -199,12 +195,12 @@ def test_slugify_various_cases(input_str: str, expected: str) -> None:
 @pytest.mark.parametrize(
     ('input_str', 'expected'),
     [
-        ('XIV', True),  # valid Roman numeral
+        ('XIV', True),
         # cspell: disable-next-line  # ruff:ignore[commented-out-code]
-        ('MMXXIV', True),  # valid Roman numeral (2024)
-        ('IIII', False),  # invalid (should be IV)
-        ('abc', False),  # not a Roman numeral
-        ('', False)  # empty string
+        ('MMXXIV', True),  # 2024
+        ('IIII', False),  # invalid: four is IV
+        ('abc', False),
+        ('', False)
     ])
 def test_is_roman_numeral_various_cases(
         input_str: str,
@@ -227,11 +223,11 @@ def test_rev_sentence_various_cases(input_sentence: str, expected: str) -> None:
         (['Hello world.'], ['World hello.']),
         (['This is a test!', 'Another sentence?'], ['Test a is this!', 'Sentence another?']),
         (['I am here?', 'Python is fun'], ['Here am I?', 'Fun is python.']),
-        ([''], []),  # empty string yields nothing
-        (['   '], []),  # whitespace-only yields nothing
+        ([''], []),
+        (['   '], []),
         (['Why not try?', '', 'Hello world.'], ['Try not why?', 'World hello.']),
         (['A single word.'], ['Word single a.']),
-        (['i am here.'], ['Here am I.']),  # test 'i' capitalization
+        (['i am here.'], ['Here am I.']),  # lone 'i'
         (['Multiple   spaces here!'], ['Here spaces multiple!'])
     ])
 def test_rev_sentences_various_cases(input_sentences: list[str], expected: list[str]) -> None:
@@ -244,7 +240,6 @@ def test_sanitize_calls_yt_dlp_sanitize_filename_restricted_true(mocker: MockerF
     mocker.patch('deltona.string._get_yt_dlp_sanitize_filename', return_value=fake_sanitize)
     result = string.sanitize('Some Unsafe/File-Name.txt', restricted=True)
     fake_sanitize.assert_called_once_with('Some Unsafe/File-Name.txt', restricted=True)
-    # Should be lowercased and dashes normalized
     assert result == 'safe-file-name'
 
 
@@ -274,7 +269,6 @@ def test_sanitize_replaces_pattern(mocker: MockerFixture) -> None:
     fake_sanitize = mocker.Mock(return_value='abc-s-def')
     mocker.patch('deltona.string._get_yt_dlp_sanitize_filename', return_value=fake_sanitize)
     result = string.sanitize('abc-s-def', restricted=True)
-    # The ([a-z0-9])\-s\- pattern should be replaced with \1s-
     assert result == 'abcs-def'
 
 
@@ -284,13 +278,11 @@ def test_add_unidecode_custom_replacement_adds_to_cache(mocker: MockerFixture) -
     mocker.patch('deltona.string._get_unidecode_cache_and_unidecode',
                  return_value=(fake_cache, fake_unidecode))
     mocker.patch('deltona.string.assert_not_none', side_effect=lambda x: x)
-    # Add replacement for 'ø'
     find = 'ø'
     replace = 'oe'
     codepoint = ord(find)
     section = codepoint >> 8
     position = codepoint % 256
-    # Simulate cache section as None
     fake_cache[section] = None
     string.add_unidecode_custom_replacement(find, replace)
     assert isinstance(fake_cache[section], list)
@@ -308,7 +300,6 @@ def test_add_unidecode_custom_replacement_overwrites_existing(mocker: MockerFixt
     codepoint = ord(find)
     section = codepoint >> 8
     position = codepoint % 256
-    # Simulate cache section as a list with a previous value
     fake_cache[section] = [None] * (position + 1)
     cast('list[str | None]', fake_cache[section])[position] = 'old'
     string.add_unidecode_custom_replacement(find, replace)
@@ -326,7 +317,6 @@ def test_add_unidecode_custom_replacement_handles_existing_tuple(mocker: MockerF
     codepoint = ord(find)
     section = codepoint >> 8
     position = codepoint % 256
-    # Simulate cache section as a tuple (immutable)
     fake_cache[section] = tuple([None] * (position + 1))
     string.add_unidecode_custom_replacement(find, replace)
     assert isinstance(fake_cache[section], list)
