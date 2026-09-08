@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from click.testing import CliRunner
+    from pytest_mock import MockerFixture
 
     from .conftest import FakeChromeUserData
 
@@ -985,3 +986,32 @@ def test_list_payments_suggests_the_account_database(runner: CliRunner,
     assert result.exit_code == 0, result.output
     assert json.loads(result.stdout) == {}
     assert 'pass --account' in result.stderr
+
+
+def test_list_passwords_reports_values_it_could_not_decrypt(runner: CliRunner,
+                                                            chrome_user_data: FakeChromeUserData,
+                                                            mocker: MockerFixture) -> None:
+    chrome_user_data.add_profile('Default')
+    _write_login_data(chrome_user_data, 'Default', 'Login Data')
+    mocker.patch('deltona.chrome.core.linux_keyring_password', return_value=None)
+    mocker.patch('deltona.chrome.core.OSCrypt.decrypt', return_value=None)
+    result = runner.invoke(chrome_dump,
+                           [*chrome_user_data.argv, 'list-passwords', '-P', 'Default', '-j'])
+    assert result.exit_code == 0, result.output
+    assert 'could not be decrypted' in result.stderr
+    assert 'desktop keyring' in result.stderr
+
+
+def test_list_passwords_omits_the_keyring_hint_when_the_key_was_found(
+        runner: CliRunner, chrome_user_data: FakeChromeUserData, mocker: MockerFixture) -> None:
+    chrome_user_data.add_profile('Default')
+    _write_login_data(chrome_user_data, 'Default', 'Login Data')
+    mocker.patch('deltona.chrome.core.OSCrypt.decrypt', return_value=None)
+    mocker.patch('deltona.chrome.core.OSCrypt.keyring_available',
+                 new_callable=mocker.PropertyMock,
+                 return_value=True)
+    result = runner.invoke(chrome_dump,
+                           [*chrome_user_data.argv, 'list-passwords', '-P', 'Default', '-j'])
+    assert result.exit_code == 0, result.output
+    assert 'could not be decrypted' in result.stderr
+    assert 'desktop keyring' not in result.stderr

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from contextlib import contextmanager, suppress
+from contextlib import closing, contextmanager, suppress
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from functools import cached_property
@@ -40,6 +40,7 @@ _GCM_NONCE_SIZE = 12
 _GCM_TAG_SIZE = 16
 _SHA256_SIZE = 32
 _DERIVED_KEY_SIZE = 16
+_LIBSECRET_SCHEMA = 'chrome_libsecret_os_crypt_password_v2'
 _UNIX_SECONDS_LIMIT = 10 ** 11
 _WEBKIT_MILLISECONDS_LIMIT = 10 ** 15
 CHANNEL_DIRECTORIES: dict[str, dict[ChromeChannel, str]] = {
@@ -654,6 +655,16 @@ class OSCrypt:
         """Whether any key could be obtained."""
         return self._v10_key is not None or self._v11_key is not None
 
+    @property
+    def keyring_available(self) -> bool:
+        """
+        Whether the key the desktop keyring holds could be read.
+
+        A Linux value written as ``v11`` needs this key. The fixed ``v10`` key is always derivable,
+        so :py:attr:`available` says nothing about whether such a value can be read.
+        """
+        return self._v11_key is not None
+
     def decrypt(self, value: bytes | str | None, *, hash_prefix: bool = False) -> str | None:
         """
         Decrypt one encrypted value.
@@ -799,21 +810,77 @@ def linux_keyring_password(keyring_name: str = 'Chrome') -> bytes | None:
     bytes | None
         The password, or ``None`` if no keyring yielded one.
     """
-    for reader in (_secret_tool_password, _kwallet_password, _keyring_module_password):
+    for reader in (_secret_service_password, _secret_tool_password, _kwallet_password,
+                   _keyring_module_password):
         if password := reader(keyring_name):
+            log.debug('%s returned a %d byte password for `%s`.', reader.__name__, len(password),
+                      keyring_name)
             return password
+        log.debug('%s returned nothing for `%s`.', reader.__name__, keyring_name)
     log.debug('No keyring returned a password for `%s`.', keyring_name)
     return None
 
 
 def _run_for_output(args: Sequence[str]) -> bytes | None:
     if not which(args[0]):
+        log.debug('`%s` is not installed.', args[0])
         return None
     with suppress(OSError, sp.SubprocessError):
         result = sp.run(args, capture_output=True, check=False)
         if result.returncode == 0:
             return result.stdout
+        log.debug('`%s` exited %d: %s', args[0], result.returncode,
+                  (result.stderr or b'').decode(errors='replace').strip())
     return None
+
+
+def _secret_service_password(keyring_name: str) -> bytes | None:
+    # The browser stores its key with an `application` attribute rather than the service and
+    # username pair the keyring package searches by, so the collection is searched directly. This
+    # needs no `secret-tool` binary, which is packaged separately from the keyring daemon itself.
+    import secretstorage  # ruff:ignore[import-outside-top-level]
+
+    application = 'chromium' if keyring_name == 'Chromium' else 'chrome'
+    try:
+        with closing(secretstorage.dbus_init()) as connection:
+            return _search_secret_service(connection, application)
+    except Exception as e:  # noqa: BLE001
+        log.debug('Secret Service lookup failed: %s: %s', type(e).__name__, e)
+    return None
+
+
+def _search_secret_service(connection: Any, application: str) -> bytes | None:
+    import secretstorage  # ruff:ignore[import-outside-top-level]
+
+    for attributes in ({
+            'application': application,
+            'xdg:schema': _LIBSECRET_SCHEMA
+    }, {
+            'application': application
+    }, {}):
+        found = 0
+        for item in secretstorage.search_items(connection, attributes):
+            found += 1
+            if not _matches_browser(item, application):
+                continue
+            if item.is_locked():
+                item.unlock()
+            if secret := item.get_secret():
+                return bytes(secret)
+        log.debug('Secret Service search %r matched %d items, none usable.', attributes, found)
+    return None
+
+
+def _matches_browser(item: Any, application: str) -> bool:
+    with suppress(Exception):
+        attributes = item.get_attributes()
+        if attributes.get('application') == application:
+            return True
+        if attributes:
+            return False
+    with suppress(Exception):
+        return 'safe storage' in item.get_label().casefold()
+    return False
 
 
 def _secret_tool_password(keyring_name: str) -> bytes | None:

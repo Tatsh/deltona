@@ -92,6 +92,7 @@ dyear
 econnrefused
 eeyore
 elif
+elses
 encryptor
 endswith
 enoent
@@ -391,6 +392,7 @@ ultrabold
 ultraiso
 umpv
 undecryptable
+undecrypted
 underscorised
 underscorize
 undraft

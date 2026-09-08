@@ -129,9 +129,46 @@ def run_for(
     return run
 
 
-def keyring_setup(mocker: MockerFixture, available: Collection[str],
+class FakeSecretItem:
+    def __init__(self,
+                 secret: bytes,
+                 *,
+                 application: str = 'chrome',
+                 label: str = 'Chrome Safe Storage',
+                 locked: bool = False) -> None:
+        self.secret = secret
+        self.application = application
+        self.label = label
+        self.locked = locked
+        self.unlocked = False
+
+    def get_attributes(self) -> dict[str, str]:
+        return {'application': self.application} if self.application else {}
+
+    def get_label(self) -> str:
+        return self.label
+
+    def is_locked(self) -> bool:
+        return self.locked
+
+    def unlock(self) -> None:
+        self.unlocked = True
+        self.locked = False
+
+    def get_secret(self) -> bytes:
+        return self.secret
+
+
+def keyring_setup(mocker: MockerFixture,
+                  available: Collection[str],
                   outputs: Mapping[str, Sequence[tuple[int, bytes] | BaseException]],
-                  password: str | BaseException | None) -> None:
+                  password: str | BaseException | None,
+                  items: Sequence[FakeSecretItem] | BaseException | None = None) -> None:
+    if isinstance(items, BaseException) or items is None:
+        mocker.patch('secretstorage.dbus_init', side_effect=items or RuntimeError('no session bus'))
+    else:
+        mocker.patch('secretstorage.dbus_init', return_value=mocker.MagicMock())
+        mocker.patch('secretstorage.search_items', side_effect=[items, [], []])
     mocker.patch('deltona.chrome.core.which', side_effect=which_for(available))
     mocker.patch('subprocess.run', side_effect=run_for(outputs))
     if isinstance(password, BaseException):
@@ -945,3 +982,47 @@ def test_query_bad_sql(runner: CliRunner, chrome_user_data: FakeChromeUserData) 
                            [*chrome_user_data.argv, 'query', 'Web Data', 'SELECT * FROM missing'])
     assert result.exit_code == 1
     assert 'Query failed' in result.stderr
+
+
+def test_linux_keyring_password_reads_the_secret_service(mocker: MockerFixture) -> None:
+    keyring_setup(mocker, set(), {}, None, [FakeSecretItem(b'from-secret-service')])
+    assert linux_keyring_password('Chrome') == b'from-secret-service'
+
+
+def test_linux_keyring_password_unlocks_a_locked_item(mocker: MockerFixture) -> None:
+    item = FakeSecretItem(b'from-secret-service', application='chromium', locked=True)
+    keyring_setup(mocker, set(), {}, None, [item])
+    assert linux_keyring_password('Chromium') == b'from-secret-service'
+    assert item.unlocked
+
+
+def test_linux_keyring_password_skips_an_empty_secret(mocker: MockerFixture) -> None:
+    keyring_setup(mocker, set(), {}, 'from-keyring', [FakeSecretItem(b'')])
+    assert linux_keyring_password('Chrome') == b'from-keyring'
+
+
+def test_keyring_available_reports_the_v11_key(mocker: MockerFixture) -> None:
+    keyring_setup(mocker, set(), {}, None)
+    assert not OSCrypt('Chrome').keyring_available
+    keyring_setup(mocker, set(), {}, None, [FakeSecretItem(b'password')])
+    assert OSCrypt('Chrome').keyring_available
+
+
+def test_linux_keyring_password_skips_another_applications_item(mocker: MockerFixture) -> None:
+    keyring_setup(mocker, set(), {}, 'from-keyring',
+                  [FakeSecretItem(b'someone-elses', application='signal')])
+    assert linux_keyring_password('Chrome') == b'from-keyring'
+
+
+def test_linux_keyring_password_falls_back_to_the_item_label(mocker: MockerFixture) -> None:
+    keyring_setup(mocker, set(), {}, None,
+                  [FakeSecretItem(b'from-label', application='', label='Chrome Safe Storage')])
+    assert linux_keyring_password('Chrome') == b'from-label'
+
+
+def test_linux_keyring_password_ignores_an_item_it_cannot_inspect(mocker: MockerFixture) -> None:
+    item = FakeSecretItem(b'unreadable')
+    mocker.patch.object(FakeSecretItem, 'get_attributes', side_effect=RuntimeError('no access'))
+    mocker.patch.object(FakeSecretItem, 'get_label', side_effect=RuntimeError('no access'))
+    keyring_setup(mocker, set(), {}, 'from-keyring', [item])
+    assert linux_keyring_password('Chrome') == b'from-keyring'

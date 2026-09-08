@@ -34,6 +34,7 @@ from deltona.commands.chrome_common import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from pathlib import Path
 
     from deltona.chrome import ChromeProfile
@@ -73,6 +74,18 @@ def _make_crypt(user_data: ChromeUserData) -> OSCrypt:
 def _warn_if_undecryptable(crypt: OSCrypt) -> None:
     if not crypt.available:
         click.echo('No decryption key is available. Secrets will show as `(encrypted)`.', err=True)
+
+
+def _warn_undecrypted(values: Sequence[str | None], crypt: OSCrypt) -> None:
+    if not (failed := sum(value is None for value in values)):
+        return
+    click.echo(f'{failed} of {len(values)} values could not be decrypted.', err=True)
+    if not crypt.keyring_available:
+        click.echo(
+            'The desktop keyring did not return the browser key, which every value written as'
+            ' `v11` needs. Run with --debug to see which backends were tried. The keyring daemon'
+            ' must be running and unlocked in this session.',
+            err=True)
 
 
 def _suggest_account(profile: ChromeProfile, name: str, *, account: bool) -> None:
@@ -118,6 +131,8 @@ def list_passwords(user_data: ChromeUserData,
         return
     crypt = _make_crypt(user_data)
     _warn_if_undecryptable(crypt)
+    logins = list(iter_logins(path, crypt))
+    _warn_undecrypted([row['password'] for row in logins if not row['blocklisted']], crypt)
     rows = [{
         **row, 'password': _secret(row['password'], reveal=show_passwords),
         'insecurity_types': ', '.join(row['insecurity_types']),
@@ -125,7 +140,7 @@ def list_passwords(user_data: ChromeUserData,
             key: _secret(value, reveal=show_passwords)
             for key, value in row['notes'].items()
         }
-    } for row in iter_logins(path, crypt)]
+    } for row in logins]
     if not rows:
         _suggest_account(profile, 'Login Data For Account', account=account)
     echo_rows(rows,
