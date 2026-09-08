@@ -712,14 +712,14 @@ def _derive_key(password: bytes, iterations: int = 1) -> bytes:
     from cryptography.hazmat.primitives.kdf import pbkdf2  # ruff:ignore[import-outside-top-level]
 
     return pbkdf2.PBKDF2HMAC(
-        algorithm=hashes.SHA1(),  # noqa: S303
+        algorithm=hashes.SHA1(),  # ruff: ignore[suspicious-insecure-hash-usage]
         iterations=iterations,
         length=_DERIVED_KEY_SIZE,
         salt=b'saltysalt').derive(password)
 
 
 def _decrypt_aes_cbc(ciphertext: bytes, keys: Sequence[bytes]) -> bytes | None:
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes  # noqa: PLC0415
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes  # ruff: ignore[import-outside-top-level,unsorted-imports]
 
     if not keys or len(ciphertext) < _AES_BLOCK_SIZE:
         return None
@@ -764,8 +764,8 @@ def _windows_dpapi_decrypt(blob: bytes) -> bytes | None:  # pragma: no cover
 
     class DataBlob(ctypes.Structure):
         if TYPE_CHECKING:
-            cbData: int  # noqa: N815
-            pbData: Any  # noqa: N815
+            cbData: int  # ruff: ignore[mixed-case-variable-in-class-scope]
+            pbData: Any  # ruff: ignore[mixed-case-variable-in-class-scope]
         _fields_: ClassVar[list[tuple[str, Any]]] = [('cbData', ctypes.wintypes.DWORD),
                                                      ('pbData', ctypes.POINTER(ctypes.c_char))]
 
@@ -847,7 +847,7 @@ def _secret_service_password(keyring_name: str) -> list[bytes]:
     try:
         with closing(secretstorage.dbus_init()) as connection:
             return _search_secret_service(connection, application)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # ruff: ignore[blind-except]
         log.debug('Secret Service lookup failed: %s: %s', type(e).__name__, e)
     return []
 

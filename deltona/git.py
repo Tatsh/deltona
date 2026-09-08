@@ -624,7 +624,7 @@ def store_token(token: str,
     PermissionError
         If the file cannot be written or its ownership cannot be set. Setting an owner other than
         the one writing requires privileges.
-    """  # noqa: DOC502
+    """  # ruff: ignore[docstring-extraneous-exception]
     path = token_path(key, kind)
     path.parent.mkdir(mode=_TOKEN_DIR_MODE, parents=True, exist_ok=True)
     path.parent.chmod(_TOKEN_DIR_MODE)

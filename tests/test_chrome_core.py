@@ -63,7 +63,7 @@ ASCII_PLAINTEXT = b'secret-4481144'
 
 def derive_key(password: bytes, iterations: int = 1) -> bytes:
     return pbkdf2.PBKDF2HMAC(
-        algorithm=hashes.SHA1(),  # noqa: S303
+        algorithm=hashes.SHA1(),  # ruff: ignore[suspicious-insecure-hash-usage]
         iterations=iterations,
         length=16,
         salt=b'saltysalt').derive(password)
@@ -100,7 +100,7 @@ def install_windows_crypt_api(mocker: MockerFixture, monkeypatch: pytest.MonkeyP
             return 0
         buffer = ctypes.create_string_buffer(payload, len(payload))
         buffers.append(buffer)
-        blob = target._obj  # noqa: SLF001
+        blob = target._obj  # ruff: ignore[private-member-access]
         blob.cbData = len(payload)
         blob.pbData = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_char))
         return 1
@@ -1040,7 +1040,7 @@ def test_oscrypt_tries_every_candidate_key(mocker: MockerFixture) -> None:
     keyring_setup(
         mocker, set(), {}, None,
         [FakeSecretItem(b'wrong-key'), FakeSecretItem(b'right-key')])
-    sha1 = hashes.SHA1()  # noqa: S303
+    sha1 = hashes.SHA1()  # ruff: ignore[suspicious-insecure-hash-usage]
     key = pbkdf2.PBKDF2HMAC(algorithm=sha1, iterations=1, length=16,
                             salt=b'saltysalt').derive(b'right-key')
     assert OSCrypt('Chrome').decrypt(encrypt_cbc(b'hunter2', key, version=b'v11')) == 'hunter2'

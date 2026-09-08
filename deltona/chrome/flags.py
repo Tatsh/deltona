@@ -390,7 +390,7 @@ def flag_table(version: str,
 def _enrich_from_metadata(version: str, table: MutableMapping[str, dict[str, Any]]) -> None:
     try:
         metadata = _load_json5(_fetch(version, _FLAG_METADATA))
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # ruff: ignore[blind-except]
         log.debug('Could not fetch flag metadata for %s: %s', version, e)
         return
     for item in metadata:

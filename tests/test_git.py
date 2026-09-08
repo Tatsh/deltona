@@ -561,7 +561,7 @@ def _watch_gh(mocker: MockerFixture,
     if poll_interval is not None:
         headers['x-poll-interval'] = poll_interval
 
-    async def request(_method: str, url: str, **_kwargs: Any) -> Any:  # noqa: RUF029
+    async def request(_method: str, url: str, **_kwargs: Any) -> Any:  # ruff: ignore[unused-async]
         nonlocal calls
         calls += 1
         if (fail_after is not None and calls > fail_after) or (fail_on and fail_on in url):
@@ -585,7 +585,7 @@ def _thread(id_: str,
 
 
 async def _watch(runs: list[int], **kwargs: Any) -> None:
-    async def run() -> None:  # noqa: RUF029
+    async def run() -> None:  # ruff: ignore[unused-async]
         runs.append(1)
 
     with pytest.raises(_StopWatching):
@@ -707,7 +707,7 @@ async def test_watch_and_merge_keeps_going_after_a_merge_failure(
     _watch_gh(mocker, [[]])
     mocker.patch('deltona.git.anyio.sleep', side_effect=[_StopWatching])
 
-    async def run() -> None:  # noqa: RUF029
+    async def run() -> None:  # ruff: ignore[unused-async]
         raise DependabotMergeError({'a/b': 1})
 
     with caplog.at_level(logging.WARNING, logger='deltona.git'), pytest.raises(_StopWatching):

@@ -354,7 +354,8 @@ def iter_payment_table(database_path: StrPath, table: str,
         One row per record.
     """
     encrypted_column = _PAYMENT_ENCRYPTED_COLUMNS.get(table)
-    for row in query_database(database_path, f'SELECT * FROM {table}'):  # noqa: S608
+    for row in query_database(database_path,
+                              f'SELECT * FROM {table}'):  # ruff: ignore[hardcoded-sql-expression]
         decoded: dict[str, Any] = {}
         for key, value in row.items():
             if key == encrypted_column:

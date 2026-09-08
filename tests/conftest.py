@@ -116,7 +116,7 @@ class FakeChromeUserData:
             for table, values in (rows or {}).items():
                 for row in values:
                     placeholders = ', '.join('?' * len(row))
-                    statement = f'INSERT INTO {table} VALUES ({placeholders})'  # noqa: S608
+                    statement = f'INSERT INTO {table} VALUES ({placeholders})'  # ruff: ignore[hardcoded-sql-expression]
                     connection.execute(statement, row)
             connection.commit()
         finally:

@@ -193,7 +193,7 @@ def _gmail_setup_help(command: str, email: str) -> str:
 
 
 def _authorize_gmail(ctx: click.Context, _param: click.Parameter,
-                     value: bool) -> None:  # noqa: FBT001
+                     value: bool) -> None:  # ruff: ignore[boolean-type-hint-positional-argument]
     import keyring  # ruff:ignore[import-outside-top-level]
 
     if not value or ctx.resilient_parsing:
@@ -407,7 +407,7 @@ def _handle_service(program: str, username: str, *, forwarded: Mapping[str, Any]
     -------
     bool
         Whether the command has done its work and should stop.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     if service.install and service.uninstall:
         msg = '--install-service and --uninstall-service cannot both be given.'
         raise click.UsageError(msg)

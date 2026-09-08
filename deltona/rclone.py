@@ -179,7 +179,7 @@ rclone reads it too, so setting it points this and every rclone it starts at the
 
 :meta hide-value:
 """
-_GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'  # noqa: S105
+_GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'  # ruff: ignore[hardcoded-password-string]
 # Go writes RFC 3339 with nanoseconds, which datetime only reads to microseconds, and only reads
 # the trailing Z at all from 3.11.
 _EXPIRY_RE = re.compile(r'^(?P<stamp>.+?T[^.+Z-]+)(?:\.(?P<fraction>\d+))?(?P<zone>Z|[+-].+)?$')
@@ -662,7 +662,7 @@ def access_token(remote: str, margin: float = DEFAULT_TOKEN_MARGIN_SECONDS) -> s
     ------
     InvalidCredentials
         If rclone holds no token for the remote, or refreshing it is refused.
-    """  # noqa: DOC502
+    """  # ruff: ignore[docstring-extraneous-exception]
     config = _remote_config(remote)
     token = _stored_token(config, remote)
     expiry = _expiry(token)
@@ -769,7 +769,7 @@ def recent_changes(remote: str = DEFAULT_REMOTE_NAME,
     ------
     InvalidCredentials
         If rclone holds no token for the remote, or Google Drive refuses the one it is sent.
-    """  # noqa: DOC502
+    """  # ruff: ignore[docstring-extraneous-exception]
     since = since or (datetime.now(timezone.utc) - timedelta(seconds=DEFAULT_CHANGES_SINCE_SECONDS))
     query = [f"modifiedTime > '{_rfc3339(since)}'"]
     if until is not None:
@@ -897,7 +897,7 @@ class DriveChanges:
         ------
         InvalidCredentials
             If rclone holds no token for the remote, or Google Drive refuses the one it holds.
-        """  # noqa: DOC502
+        """  # ruff: ignore[docstring-extraneous-exception]
         self._authorise()
         with niquests.Session() as session:
             if self._page_token is None:

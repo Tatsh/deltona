@@ -269,7 +269,6 @@ cache-dir = "~/.cache/ruff"
 force-exclude = true
 line-length = 100
 namespace-packages = ["docs", "tests"]
-output-prefer-rule-codes = true
 target-version = "py310"
 unsafe-fixes = true
 
@@ -282,20 +281,17 @@ quote-style = "single"
 [tool.ruff.lint]
 extend-select = ["ALL"]
 ignore = [
-  "ANN401",
-  "COM812",
-  "CPY001",
-  "D203",
-  "D204",
-  "D212",
-  "N818",
-  "RUF105",
-  "RUF106",
-  "RUF201",
-  "S404",
-  "S603",
-  "TD002",
-  "S607",
+  "any-type",
+  "error-suffix-on-exception-name",
+  "incorrect-blank-line-after-class",
+  "incorrect-blank-line-before-class",
+  "missing-copyright-notice",
+  "missing-todo-author",
+  "missing-trailing-comma",
+  "multi-line-summary-first-line",
+  "start-process-with-partial-path",
+  "subprocess-without-shell-equals-true",
+  "suspicious-subprocess-import",
 ]
 preview = true
 

@@ -108,7 +108,7 @@ def _unix(when: datetime) -> int:
 
 def _encrypt_v10(plaintext: bytes, *, hash_prefix: bool = False) -> bytes:
     key = pbkdf2.PBKDF2HMAC(
-        algorithm=hashes.SHA1(),  # noqa: S303
+        algorithm=hashes.SHA1(),  # ruff: ignore[suspicious-insecure-hash-usage]
         iterations=1,
         length=16,
         salt=b'saltysalt').derive(b'peanuts')

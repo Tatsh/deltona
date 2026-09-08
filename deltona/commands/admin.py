@@ -537,7 +537,7 @@ def make_rclone_bisync_service_main(local: Path,
 
     REMOTE defaults to a directory of the same name as LOCAL under the remote named by
     --remote-name. Installing a systemd-system service requires root privileges.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     setup_logging(debug=debug, loggers={'deltona': {}})
     if rclone_config:
         os.environ[RCLONE_CONFIG_ENV] = str(rclone_config.resolve())
@@ -594,7 +594,7 @@ def remove_rclone_bisync_service_main(local: Path,
     Uninstall the service that keeps LOCAL in bidirectional sync.
 
     LOCAL does not have to exist. Removing a systemd-system service requires root privileges.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     setup_logging(debug=debug, loggers={'deltona': {}})
     kind = kind or default_service_kind()
     name = name or default_service_name(local)
@@ -712,7 +712,7 @@ def rclone_bisyncd_main(local: Path,
     REMOTE defaults to a directory of the same name as LOCAL under the remote named by
     --remote-name. Changes made on a Google Drive remote are noticed by reading its changes feed.
     Warnings and worse always go to the system log. Only one instance per directory runs at a time.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     syslog = _syslog_handler()
     setup_logging(debug=debug,
                   formatters={'syslog': {
@@ -853,7 +853,7 @@ def rclone_drive_changes_main(remote: str | None = None,
 
     Deletions are not reported. Google serves those only through the feed rclone-bisyncd watches,
     which starts at the moment it is opened and cannot be asked about a time already past.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     setup_logging(debug=debug, loggers={'deltona': {}})
     if rclone_config:
         os.environ[RCLONE_CONFIG_ENV] = str(rclone_config.resolve())

@@ -22,6 +22,7 @@ autodoc
 autofunction
 automodule
 autosignin
+autouse
 bascom
 beautifulsoup
 biha
@@ -288,6 +289,7 @@ plainvalue
 platformdirs
 plistlib
 pointsize
+popen
 popups
 preapproved
 proc
