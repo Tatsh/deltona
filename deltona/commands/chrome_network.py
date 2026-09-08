@@ -109,9 +109,9 @@ def _network_state_section_rows(state: dict[str, Any], hsts: list[dict[str, Any]
 def list_cache(user_data: ChromeUserData,
                profile_name: str = 'Default',
                cache_kind: CacheKind = 'http',
+               limit: int = 100,
                search: str | None = None,
                sort: SortField = 'modified',
-               limit: int = 100,
                *,
                as_json: bool = False) -> None:
     """List entries of a profile's HTTP, code, or image cache."""  # ruff:ignore[docstring-missing-exception]
@@ -165,9 +165,9 @@ def list_dips(user_data: ChromeUserData,
 @pass_user_data
 def list_network_state(user_data: ChromeUserData,
                        profile_name: str = 'Default',
-                       section: str | None = None,
-                       search: str | None = None,
                        limit: int = 100,
+                       search: str | None = None,
+                       section: str | None = None,
                        *,
                        as_json: bool = False) -> None:
     """List HTTP server properties, QUIC support, and HSTS state of a profile."""
@@ -213,8 +213,8 @@ def list_network_state(user_data: ChromeUserData,
 @pass_user_data
 def list_reporting(user_data: ChromeUserData,
                    profile_name: str = 'Default',
-                   table_name: str = 'nel',
                    search: str | None = None,
+                   table_name: str = 'nel',
                    *,
                    as_json: bool = False) -> None:
     """List Network Error Logging policies and Reporting API endpoints of a profile."""

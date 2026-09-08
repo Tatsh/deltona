@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import TYPE_CHECKING
 import struct
 import sys
 
@@ -12,585 +11,574 @@ import pytest
 
 from deltona.chrome.flag_binary import (
     FEATURE_ENTRY_STRIDE,
+    OS_BITS,
+    TYPE_NAMES,
     FlagBinaryUnreadable,
     extract_flag_table,
     find_browser_binary,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Mapping, Sequence
 
-    from pytest_mock import MockerFixture
-
-    from deltona.chrome.typing import ChromeChannel
-
-_RODATA_ADDRESS = 0x1000
-_SLOTS_ADDRESS = 0x8000
-_RELOCATIONS_ADDRESS = 0x40000
+_PLATFORM_OFFSET = 24
 _SECTION_HEADER_SIZE = 64
-_RELATIVE = 8
-_PROGBITS = 1
-_ENOUGH = 60
-_PE32_PLUS = 0x20B
-_PE_BASE_RELOCATION_INDEX = 5
-_PE_DATA_RVA = 0x20000
-_PE_DIR64 = 10
-_PE_HEADER = 0x80
+_UNMAPPED_VA = 0x900000
+_DECOY_BASE = 0x20000
+_ELF_STRING_BASE = 0x1000
+_ELF_WORD_BASE = 0x8000
+_ELF_NAMES = b'\0.rodata\0.data\0.rela.dyn\0.shstrtab\0'
+_ELF_NAME_POSITIONS = (0, 1, 9, 15, 25)
 _PE_IMAGE_BASE = 0x140000000
+_PE_STRING_RVA = 0x1000
+_PE_WORD_RVA = 0x8000
+_PE_RELOCATION_RVA = 0x20000
+_PE_HEADER_RVA = 0x80
+_PE_OPTIONAL_RVA = 0x98
 _PE_OPTIONAL_SIZE = 240
-_PE_RDATA_RVA = 0x1000
-_PE_RELOC_RVA = 0x40000
-_MACHO_MAGIC_64 = 0xFEEDFACF
-_MACHO_SEGMENT_64 = 0x19
-_MACHO_CSTRING_ADDRESS = 0x2000
-_MACHO_CONST_ADDRESS = 0x40000
-_MACHO_CHAINED_FIXUPS = 0x80000034
-_MACHO_FIXUPS_OFFSET = 0x1000
-_MACHO_PAGE_SIZE = 0x1000
-_CHAIN_FORMAT_OFFSET = 6
+_PE_SECTION_RVA = _PE_OPTIONAL_RVA + _PE_OPTIONAL_SIZE
+_MACHO_TEXT_VA = 0x100000000
+_MACHO_FIXUPS_OFFSET = 0x4000
+_MACHO_STRING_OFFSET = 0x1000
+_MACHO_WORD_OFFSET = 0x8000
+_MACHO_SLICE_SIZE = 0x14000
+_MACHO_PAGE_SIZE = 0x4000
+_MACHO_CPU_TYPE = 0x100000C
+_ENTRY_COUNT = 60
+_FEATURE_VALUE_TYPE = TYPE_NAMES.index('FEATURE_VALUE_TYPE')
+_LINUX_BETA_BINARY = Path('/opt/google/chrome-beta/chrome')
+_DECOYS: tuple[tuple[int, tuple[bytes | None, bytes | None, bytes | None]], ...] = (
+    (_DECOY_BASE + 4, (b'unaligned-name', b'Unaligned', b'Unaligned description.')),
+    (_DECOY_BASE + 0x100, (None, b'Title', b'Description here.')),
+    (_DECOY_BASE + 0x200, (b'x', b'Title', b'Description here.')),
+    (_DECOY_BASE + 0x300, (b'a' * 121, b'Title', b'Description here.')),
+    (_DECOY_BASE + 0x400, (b'has space', b'Title', b'Description here.')),
+    (_DECOY_BASE + 0x500, (b'ok-name', None, b'Description here.')),
+    (_DECOY_BASE + 0x600, (b'ok-name', b'T' * 301, b'Description here.')),
+    (_DECOY_BASE + 0x700, (b'ok-name', b'Title', None)),
+    (_DECOY_BASE + 0x800, (b'ok-name', b'Title', b'short')),
+    (_DECOY_BASE + 0x900, (b'ok-name', b'Title', b'')),
+    (_DECOY_BASE + 0xA00, (b'bad\x01byte', b'Title', b'Description here.')),
+    (_DECOY_BASE + 0xB00, (b'bad\xffutf8', b'Title', b'Description here.')),
+    (_DECOY_BASE + 0xC00, (b'a' * 101, b'Title', b'Description here.')),
+    (_DECOY_BASE + 0xD00, (b'isolated-seed', b'Isolated', b'Isolated description.')),
+)
 
 
-class _Entry(NamedTuple):
-    name: str
-    title: str
-    description: str
-    word: int = (4 << 16) | 0x1F
+def _entries(count: int = _ENTRY_COUNT,
+             words: Mapping[int, int] | None = None,
+             names: Mapping[int, str] | None = None) -> tuple[tuple[str, str, str, int], ...]:
+    default = (_FEATURE_VALUE_TYPE << 16) | 0x1F
+    return tuple(((names or {}).get(index, f'test-flag-{index:03d}'), f'Test flag {index}',
+                  f'Description of test flag number {index}.', (words or {}).get(index, default))
+                 for index in range(count))
 
 
-def _entries(count: int = _ENOUGH) -> list[_Entry]:
-    return [
-        _Entry(f'test-flag-{index:03d}', f'Test Flag {index}',
-               f'Description number {index} of the synthetic flag table.') for index in range(count)
-    ]
-
-
-def _build_elf(entries: Sequence[_Entry],
-               *,
-               bad_name_position: bool = False,
-               invalid_utf8: bool = False,
-               stray_pointer: bool = False,
-               no_words: bool = False,
-               unterminated: bool = False) -> bytes:
-    blob = bytearray()
-    addresses: list[tuple[int, int, int]] = []
-    for entry in entries:
-        positions = []
-        for text in (entry.name, entry.title, entry.description):
-            positions.append(_RODATA_ADDRESS + len(blob))
-            blob += text.encode() + b'\0'
-        addresses.append((positions[0], positions[1], positions[2]))
-    if unterminated:
-        del blob[-1]
-    if invalid_utf8:
-        blob[-4] = 0xFF
-    slots = bytearray(len(entries) * FEATURE_ENTRY_STRIDE + FEATURE_ENTRY_STRIDE)
-    relocations = bytearray()
-    for index, (entry, targets) in enumerate(zip(entries, addresses, strict=True)):
-        slot = _SLOTS_ADDRESS + index * FEATURE_ENTRY_STRIDE
-        struct.pack_into('<I', slots, index * FEATURE_ENTRY_STRIDE + 24, entry.word)
-        for step, target in enumerate(targets):
-            stray = stray_pointer and index == len(entries) - 1 and step == 2
-            relocations += struct.pack('<QQq', slot + step * 8, _RELATIVE,
-                                       1 << 40 if stray else target)
-    names = bytearray(b'\0')
-    name_positions: dict[str, int] = {}
-    for name in ('.rodata', '.data.rel.ro', '.rodata.str1.1', '.rela.dyn', '.shstrtab'):
-        name_positions[name] = len(names)
-        names += name.encode() + b'\0'
-    tail = b'A' * 64
-    names_address = _RELOCATIONS_ADDRESS + len(relocations)
-    header_address = names_address + len(names) + len(tail)
-    sections = (
-        (0, 0, 0, 0, 0),
-        (name_positions['.rodata'], _PROGBITS, _RODATA_ADDRESS, _RODATA_ADDRESS, len(blob)),
-        (name_positions['.rodata.str1.1' if no_words else '.data.rel.ro'], _PROGBITS,
-         _SLOTS_ADDRESS, _SLOTS_ADDRESS, len(slots)),
-        (1 << 30 if bad_name_position else name_positions['.rela.dyn'], 4, _RELOCATIONS_ADDRESS,
-         _RELOCATIONS_ADDRESS, len(relocations)),
-        (name_positions['.shstrtab'], 3, names_address, names_address, len(names)),
-    )
-    data = bytearray(header_address + len(sections) * _SECTION_HEADER_SIZE)
-    struct.pack_into('<4sBBB', data, 0, b'\x7fELF', 2, 1, 1)
-    struct.pack_into('<Q', data, 0x28, header_address)
-    struct.pack_into('<HHH', data, 0x3A, _SECTION_HEADER_SIZE, len(sections), len(sections) - 1)
-    data[_RODATA_ADDRESS:_RODATA_ADDRESS + len(blob)] = blob
-    data[_SLOTS_ADDRESS:_SLOTS_ADDRESS + len(slots)] = slots
-    data[_RELOCATIONS_ADDRESS:_RELOCATIONS_ADDRESS + len(relocations)] = relocations
-    data[names_address:names_address + len(names)] = names
-    data[names_address + len(names):header_address] = tail
-    for index, (name_position, kind, address, offset, size) in enumerate(sections):
-        struct.pack_into('<IIQQQQ', data, header_address + index * _SECTION_HEADER_SIZE,
-                         name_position, kind, 0, address, offset, size)
-    return bytes(data)
-
-
-def _build_pe(entries: Sequence[_Entry],
-              *,
-              bad_block_size: bool = False,
-              magic: int = _PE32_PLUS,
-              relocation_type: int = _PE_DIR64,
-              relocation_rva: int | None = None) -> bytes:
-    blob = bytearray()
-    targets: list[tuple[int, int, int]] = []
-    for entry in entries:
-        positions = []
-        for text in (entry.name, entry.title, entry.description):
-            positions.append(_PE_IMAGE_BASE + _PE_RDATA_RVA + len(blob))
-            blob += text.encode() + b'\0'
-        targets.append((positions[0], positions[1], positions[2]))
-    slots = bytearray(len(entries) * FEATURE_ENTRY_STRIDE + FEATURE_ENTRY_STRIDE)
-    pages: dict[int, list[int]] = {}
-    for index, (entry, addresses) in enumerate(zip(entries, targets, strict=True)):
-        base = index * FEATURE_ENTRY_STRIDE
-        struct.pack_into('<I', slots, base + 24, entry.word)
-        for step, target in enumerate(addresses):
-            struct.pack_into('<Q', slots, base + step * 8, target)
-            rva = _PE_DATA_RVA + base + step * 8
-            pages.setdefault(rva & ~0xFFF, []).append(rva & 0xFFF)
-    relocations = bytearray()
-    for page, offsets in sorted(pages.items()):
-        relocations += struct.pack('<II', page, 0 if bad_block_size else 8 + 2 * len(offsets))
-        for offset in offsets:
-            relocations += struct.pack('<H', (relocation_type << 12) | offset)
-    regions = ((b'.rdata', _PE_RDATA_RVA, bytes(blob)), (b'.data', _PE_DATA_RVA, bytes(slots)),
-               (b'.reloc', _PE_RELOC_RVA, bytes(relocations)))
-    data = bytearray(_PE_RELOC_RVA + len(relocations) + 0x1000)
-    data[0:2] = b'MZ'
-    struct.pack_into('<I', data, 0x3C, _PE_HEADER)
-    data[_PE_HEADER:_PE_HEADER + 4] = b'PE\0\0'
-    struct.pack_into('<H', data, _PE_HEADER + 6, len(regions))
-    struct.pack_into('<H', data, _PE_HEADER + 20, _PE_OPTIONAL_SIZE)
-    optional = _PE_HEADER + 24
-    struct.pack_into('<H', data, optional, magic)
-    struct.pack_into('<Q', data, optional + 24, _PE_IMAGE_BASE)
-    struct.pack_into('<II', data, optional + 112 + _PE_BASE_RELOCATION_INDEX * 8,
-                     _PE_RELOC_RVA if relocation_rva is None else relocation_rva, len(relocations))
-    for index, (name, rva, payload) in enumerate(regions):
-        start = optional + _PE_OPTIONAL_SIZE + index * 40
-        data[start:start + len(name)] = name
-        struct.pack_into('<IIII', data, start + 8, len(payload), rva, len(payload), rva)
-        data[rva:rva + len(payload)] = payload
-    return bytes(data)
-
-
-def _macho_section(sectname: bytes, segname: bytes, address: int, offset: int, size: int) -> bytes:
-    section = bytearray(80)
-    section[0:len(sectname)] = sectname
-    section[16:16 + len(segname)] = segname
-    struct.pack_into('<QQ', section, 32, address, size)
-    struct.pack_into('<I', section, 48, offset)
-    return bytes(section)
-
-
-def _macho_segment(segname: bytes, address: int, offset: int, size: int,
-                   sections: Sequence[bytes]) -> bytes:
-    command = bytearray(72)
-    struct.pack_into('<II', command, 0, _MACHO_SEGMENT_64, 72 + len(sections) * 80)
-    command[8:8 + len(segname)] = segname
-    struct.pack_into('<QQQQ', command, 24, address, size, offset, size)
-    struct.pack_into('<I', command, 64, len(sections))
-    return bytes(command) + b''.join(sections)
-
-
-def _chain_links(count: int) -> list[tuple[int, int]]:
-    offsets = [
-        index * FEATURE_ENTRY_STRIDE + step * 8 for index in range(count) for step in (0, 1, 2)
-    ]
-    steps = [offsets[i + 1] - offsets[i] for i in range(len(offsets) - 1)]
-    return list(zip(offsets, [*steps, 0], strict=True))
-
-
-def _build_macho(entries: Sequence[_Entry],
-                 *,
-                 bad_command_size: bool = False,
-                 bind_arm64e: bool = False,
-                 bind_first: bool = False,
-                 chain_format: int = _CHAIN_FORMAT_OFFSET,
-                 empty_start: bool = False,
-                 fat: bool = False,
-                 fixups: bool = False,
-                 magic: int = _MACHO_MAGIC_64,
-                 page_size: int = _MACHO_PAGE_SIZE,
-                 text_segment: bytes = b'__TEXT') -> bytes:
-    blob = bytearray()
-    targets: list[tuple[int, int, int]] = []
-    for entry in entries:
-        positions = []
-        for text in (entry.name, entry.title, entry.description):
-            positions.append(_MACHO_CSTRING_ADDRESS + len(blob))
-            blob += text.encode() + b'\0'
-        targets.append((positions[0], positions[1], positions[2]))
-    slots = bytearray(len(entries) * FEATURE_ENTRY_STRIDE + FEATURE_ENTRY_STRIDE)
-    flat = [target for addresses in targets for target in addresses]
-    links = _chain_links(len(entries))
+def _layout(entries: Sequence[tuple[str, str, str,
+                                    int]], decoys: Sequence[tuple[int, Sequence[bytes | None]]],
+            string_base: int, word_base: int) -> tuple[bytes, dict[int, int]]:
+    payloads: list[bytes] = []
+    slots: list[tuple[int, list[int | None]]] = []
     for index, entry in enumerate(entries):
-        struct.pack_into('<I', slots, index * FEATURE_ENTRY_STRIDE + 24, entry.word)
-    for index, ((offset, step), target) in enumerate(zip(links, flat, strict=True)):
-        raw = (((step // 4) << 51) | target) if fixups else target
-        if fixups and not index:
-            raw |= (1 << 63 if bind_first else 0) | (1 << 62 if bind_arm64e else 0)
-        struct.pack_into('<Q', slots, offset, raw)
-    commands = (_macho_segment(text_segment, 0, 0, _MACHO_CSTRING_ADDRESS + len(blob), [
-        _macho_section(b'__cstring', b'__TEXT', _MACHO_CSTRING_ADDRESS, _MACHO_CSTRING_ADDRESS,
-                       len(blob))
-    ]) + _macho_segment(b'__DATA_CONST', _MACHO_CONST_ADDRESS, _MACHO_CONST_ADDRESS, len(slots), [
-        _macho_section(b'__const', b'__DATA_CONST', _MACHO_CONST_ADDRESS, _MACHO_CONST_ADDRESS,
-                       len(slots))
-    ]))
-    if bad_command_size:
-        commands += struct.pack('<II', _MACHO_SEGMENT_64, 0)
-    if fixups:
-        commands += struct.pack('<IIII', _MACHO_CHAINED_FIXUPS, 16, _MACHO_FIXUPS_OFFSET, 64)
-    image = bytearray(_MACHO_CONST_ADDRESS + len(slots) + 0x100)
-    struct.pack_into('<IiiIIII', image, 0, magic, 0x01000007, 3, 6,
-                     2 + int(fixups) + int(bad_command_size), len(commands), 0)
-    image[32:32 + len(commands)] = commands
-    if fixups:
-        struct.pack_into('<IIIIIII', image, _MACHO_FIXUPS_OFFSET, 0, 32, 0, 0, 0, 0, 0)
-        starts = _MACHO_FIXUPS_OFFSET + 32
-        struct.pack_into('<III', image, starts, 2 if empty_start else 1, 12, 0)
-        struct.pack_into('<IHHQIHHH', image, starts + 12, 26, page_size, chain_format,
-                         _MACHO_CONST_ADDRESS, 0, 2, 0, 0xFFFF)
-    image[_MACHO_CSTRING_ADDRESS:_MACHO_CSTRING_ADDRESS + len(blob)] = blob
-    image[_MACHO_CONST_ADDRESS:_MACHO_CONST_ADDRESS + len(slots)] = slots
-    if not fat:
-        return bytes(image)
-    header = bytearray(0x1000)
-    header[0:4] = b'\xca\xfe\xba\xbe'
-    struct.pack_into('>I', header, 4, 1)
-    struct.pack_into('>IIIII', header, 8, 0x01000007, 3, len(header), len(image), 12)
-    return bytes(header) + bytes(image)
+        targets: list[int | None] = []
+        for text in entry[:3]:
+            payloads.append(text.encode())
+            targets.append(len(payloads) - 1)
+        slots.append((word_base + index * FEATURE_ENTRY_STRIDE, targets))
+    for va, decoy in decoys:
+        decoy_targets: list[int | None] = []
+        for payload in decoy:
+            if payload is None:
+                decoy_targets.append(None)
+            else:
+                payloads.append(payload)
+                decoy_targets.append(len(payloads) - 1)
+        slots.append((va, decoy_targets))
+    blob = bytearray()
+    offsets: list[int] = []
+    for payload in payloads:
+        offsets.append(len(blob))
+        blob += payload + b'\0'
+    pointers = {
+        va + step * 8: (_UNMAPPED_VA if target is None else string_base + offsets[target])
+        for va, targets in slots
+        for step, target in enumerate(targets)
+    }
+    return bytes(blob), pointers
 
 
-def _write_macho(tmp_path: Path, entries: Sequence[_Entry], **kwargs: Any) -> Path:
-    path = tmp_path / 'Google Chrome Framework'
-    path.write_bytes(_build_macho(entries, **kwargs))
+def _word_blob(entries: Sequence[tuple[str, str, str, int]]) -> bytearray:
+    blob = bytearray(FEATURE_ENTRY_STRIDE * len(entries))
+    for index, entry in enumerate(entries):
+        struct.pack_into('<I', blob, index * FEATURE_ENTRY_STRIDE + _PLATFORM_OFFSET, entry[3])
+    return blob
+
+
+def _build_elf(path: Path,
+               entries: Sequence[tuple[str, str, str, int]],
+               decoys: Sequence[tuple[int, Sequence[bytes | None]]] = (),
+               *,
+               relocations: bool = True,
+               truncated_names: bool = False,
+               word_kind: int = 1) -> Path:
+    strings, pointers = _layout(entries, decoys, _ELF_STRING_BASE, _ELF_WORD_BASE)
+    words = _word_blob(entries)
+    assert _ELF_STRING_BASE + len(strings) <= _ELF_WORD_BASE
+    data = bytearray(_ELF_WORD_BASE + len(words))
+    data[:4] = b'\x7fELF'
+    data[_ELF_STRING_BASE:_ELF_STRING_BASE + len(strings)] = strings
+    data[_ELF_WORD_BASE:] = words
+    relocation_offset = len(data)
+    if relocations:
+        for va, target in sorted(pointers.items()):
+            data += struct.pack('<QQq', va, 8, target)
+    relocation_size = len(data) - relocation_offset
+    names_offset = len(data)
+    data += _ELF_NAMES
+    sections = [(_ELF_NAME_POSITIONS[0], 0, 0, 0, 0),
+                (_ELF_NAME_POSITIONS[1], 1, _ELF_STRING_BASE, _ELF_STRING_BASE, len(strings)),
+                (_ELF_NAME_POSITIONS[2], word_kind, _ELF_WORD_BASE, _ELF_WORD_BASE, len(words))]
+    if relocations:
+        sections.append((_ELF_NAME_POSITIONS[3], 4, 0, relocation_offset, relocation_size))
+    sections.append((_ELF_NAME_POSITIONS[4], 3, 0, names_offset, len(_ELF_NAMES)))
+    section_offset = len(data)
+    for name_position, kind, address, offset, size in sections:
+        data += struct.pack('<IIQQQQ', name_position, kind, 0, address, offset, size).ljust(
+            _SECTION_HEADER_SIZE, b'\0')
+    struct.pack_into('<Q', data, 0x28, section_offset)
+    struct.pack_into('<HHH', data, 0x3A, _SECTION_HEADER_SIZE, len(sections), len(sections) - 1)
+    if truncated_names:
+        struct.pack_into('<Q',
+                         data, section_offset + (len(sections) - 1) * _SECTION_HEADER_SIZE + 24,
+                         len(data))
+        data += b'x' * 16
+    path.write_bytes(data)
     return path
 
 
-def _write_pe(tmp_path: Path, entries: Sequence[_Entry], **kwargs: Any) -> Path:
-    path = tmp_path / 'chrome.dll'
-    path.write_bytes(_build_pe(entries, **kwargs))
+def _relocation_blocks(slots: Sequence[int]) -> bytes:
+    blocks = bytearray()
+    for page in sorted({slot & ~0xFFF for slot in slots}):
+        # A trailing IMAGE_REL_BASED_ABSOLUTE entry is what a real linker pads a block with.
+        payload = b''.join(
+            struct.pack('<H', (10 << 12) | (slot & 0xFFF))
+            for slot in slots if slot & ~0xFFF == page) + struct.pack('<H', 0)
+        blocks += struct.pack('<II', page, 8 + len(payload)) + payload
+    return bytes(blocks)
+
+
+def _build_pe(path: Path,
+              entries: Sequence[tuple[str, str, str, int]],
+              *,
+              magic: int = 0x20B,
+              relocation_rva: int = _PE_RELOCATION_RVA,
+              short_block: bool = False) -> Path:
+    strings, pointers = _layout(entries, (), _PE_IMAGE_BASE + _PE_STRING_RVA,
+                                _PE_IMAGE_BASE + _PE_WORD_RVA)
+    words = _word_blob(entries)
+    assert _PE_STRING_RVA + len(strings) <= _PE_WORD_RVA
+    slots = sorted(va - _PE_IMAGE_BASE for va in pointers)
+    slots += [_PE_WORD_RVA + 32, _PE_RELOCATION_RVA + 0x100000]
+    blocks = (struct.pack('<II', 0, 0) if short_block else b'') + _relocation_blocks(slots)
+    data = bytearray(_PE_RELOCATION_RVA + len(blocks))
+    data[:2] = b'MZ'
+    struct.pack_into('<I', data, 0x3C, _PE_HEADER_RVA)
+    data[_PE_HEADER_RVA:_PE_HEADER_RVA + 4] = b'PE\0\0'
+    struct.pack_into('<HHIIIHH', data, _PE_HEADER_RVA + 4, 0x8664, 3, 0, 0, 0, _PE_OPTIONAL_SIZE,
+                     0x22)
+    struct.pack_into('<H', data, _PE_OPTIONAL_RVA, magic)
+    struct.pack_into('<Q', data, _PE_OPTIONAL_RVA + 24, _PE_IMAGE_BASE)
+    struct.pack_into('<II', data, _PE_OPTIONAL_RVA + 112 + 5 * 8, relocation_rva, len(blocks))
+    for index, (name, rva, size) in enumerate(
+        (('.rdata', _PE_STRING_RVA, len(strings)), ('.data', _PE_WORD_RVA, len(words)),
+         ('.reloc', _PE_RELOCATION_RVA, len(blocks)))):
+        start = _PE_SECTION_RVA + index * 40
+        data[start:start + len(name)] = name.encode()
+        struct.pack_into('<IIII', data, start + 8, size, rva, size, rva)
+    data[_PE_STRING_RVA:_PE_STRING_RVA + len(strings)] = strings
+    data[_PE_WORD_RVA:_PE_WORD_RVA + len(words)] = words
+    data[_PE_RELOCATION_RVA:] = blocks
+    for va, target in pointers.items():
+        struct.pack_into('<Q', data, va - _PE_IMAGE_BASE, target)
+    path.write_bytes(data)
     return path
 
 
-def _write_elf(tmp_path: Path, entries: Sequence[_Entry], **kwargs: Any) -> Path:
-    path = tmp_path / 'chrome'
-    path.write_bytes(_build_elf(entries, **kwargs))
+def _chain_link(target: int, step: int, pointer_format: int) -> int:
+    if pointer_format in {2, 6}:
+        return (target if pointer_format == 2 else target - _MACHO_TEXT_VA) | ((step // 4) << 51)
+    return (target - _MACHO_TEXT_VA) | ((step // 8) << 51)
+
+
+def _chain_bind(pointer_format: int) -> int:
+    return 1 << (63 if pointer_format in {2, 6} else 62)
+
+
+def _section_64(section: str, segment: str, address: int, size: int, offset: int) -> bytes:
+    return (section.encode().ljust(16, b'\0') + segment.encode().ljust(16, b'\0') +
+            struct.pack('<QQ', address, size) +
+            struct.pack('<IIIIIIII', offset, 0, 0, 0, 0, 0, 0, 0))
+
+
+def _segment_64(name: str, address: int, offset: int, size: int,
+                sections: Sequence[bytes]) -> bytes:
+    command = bytearray(
+        struct.pack('<II', 0x19, 0) + name.encode().ljust(16, b'\0') +
+        struct.pack('<QQQQ', address, size, offset, size) +
+        struct.pack('<IIII', 7, 7, len(sections), 0) + b''.join(sections))
+    struct.pack_into('<I', command, 4, len(command))
+    return bytes(command)
+
+
+def _fixups_blob(pointer_format: int) -> bytes:
+    blob = bytearray(0x1000)
+    struct.pack_into('<IIIIIII', blob, 0, 0, 32, 0, 0, 0, 0, 0)
+    struct.pack_into('<IIIII', blob, 32, 4, 0, 0x40, 0x80, 0xC0)
+    struct.pack_into('<IHHQIH', blob, 32 + 0x40, 0, _MACHO_PAGE_SIZE, pointer_format,
+                     _MACHO_WORD_OFFSET, 0, 3)
+    struct.pack_into('<HHH', blob, 32 + 0x40 + 22, 0, 0xFFFF, _MACHO_PAGE_SIZE - 8)
+    struct.pack_into('<IHHQIH', blob, 32 + 0x80, 0, _MACHO_PAGE_SIZE, pointer_format, 0x50000, 0, 0)
+    struct.pack_into('<IHHQIH', blob, 32 + 0xC0, 0, 0, pointer_format, _MACHO_WORD_OFFSET, 0, 0)
+    return bytes(blob)
+
+
+def _build_macho_slice(entries: Sequence[tuple[str, str, str, int]],
+                       *,
+                       command_size: int | None = None,
+                       high_bit_link: bool = False,
+                       magic: int = 0xFEEDFACF,
+                       pointer_format: int | None = None,
+                       text_segment: bool = True) -> bytes:
+    word_va = _MACHO_TEXT_VA + _MACHO_WORD_OFFSET
+    strings, pointers = _layout(entries, (), _MACHO_TEXT_VA + _MACHO_STRING_OFFSET, word_va)
+    words = _word_blob(entries)
+    assert _MACHO_STRING_OFFSET + len(strings) <= _MACHO_FIXUPS_OFFSET
+    data = bytearray(_MACHO_SLICE_SIZE)
+    struct.pack_into('<IIIIIII', data, 0, magic, _MACHO_CPU_TYPE, 0, 6, 0, 0, 0)
+    commands = []
+    if text_segment:
+        commands.append(
+            _segment_64('__TEXT', _MACHO_TEXT_VA, 0, _MACHO_WORD_OFFSET, [
+                _section_64('__cstring', '__TEXT', _MACHO_TEXT_VA + _MACHO_STRING_OFFSET,
+                            len(strings), _MACHO_STRING_OFFSET)
+            ]))
+    commands.extend((_segment_64(
+        '__DATA', word_va, _MACHO_WORD_OFFSET, _MACHO_SLICE_SIZE - _MACHO_WORD_OFFSET, [
+            _section_64('__data', '__DATA', word_va, len(words), _MACHO_WORD_OFFSET),
+            _section_64('__bss', '__DATA', _MACHO_TEXT_VA + 0x13000, 0x100, 0)
+        ]), struct.pack('<II', 0x1B, 24) + b'\0' * 16))
+    if pointer_format is not None:
+        commands.append(struct.pack('<IIII', 0x80000034, 16, _MACHO_FIXUPS_OFFSET, 0x1000))
+        data[_MACHO_FIXUPS_OFFSET:_MACHO_FIXUPS_OFFSET + 0x1000] = _fixups_blob(pointer_format)
+        struct.pack_into('<Q', data, _MACHO_SLICE_SIZE - 8,
+                         _chain_link(_MACHO_TEXT_VA, 8, pointer_format))
+    if command_size is not None:
+        commands.append(struct.pack('<II', 0x1B, command_size))
+    blob = b''.join(commands)
+    data[0x20:0x20 + len(blob)] = blob
+    struct.pack_into('<II', data, 16, len(commands), len(blob))
+    data[_MACHO_STRING_OFFSET:_MACHO_STRING_OFFSET + len(strings)] = strings
+    if pointer_format is None:
+        for va, target in pointers.items():
+            struct.pack_into('<Q', words, va - word_va, target)
+    else:
+        for index in range(len(entries)):
+            for step in range(3):
+                offset = index * FEATURE_ENTRY_STRIDE + step * 8
+                if index == len(entries) - 1 and step == 2:
+                    raw = _chain_bind(pointer_format)
+                else:
+                    jump = 8 if step < 2 else FEATURE_ENTRY_STRIDE - 16
+                    raw = _chain_link(pointers[word_va + offset], jump, pointer_format)
+                    if high_bit_link and not index and not step:
+                        raw |= 1 << 63
+                struct.pack_into('<Q', words, offset, raw)
+    data[_MACHO_WORD_OFFSET:_MACHO_WORD_OFFSET + len(words)] = words
+    return bytes(data)
+
+
+def _build_fat(path: Path, slices: Sequence[bytes], magic: bytes) -> Path:
+    wide = magic == b'\xca\xfe\xba\xbf'
+    start = 8 + (32 if wide else 20) * len(slices)
+    offset = (start + 0xFFF) & ~0xFFF
+    header = bytearray(magic + struct.pack('>I', len(slices)))
+    body = bytearray()
+    for payload in slices:
+        position = offset + len(body)
+        header += (struct.pack('>IIQQQ', _MACHO_CPU_TYPE, 0, position, len(payload), 14) if wide
+                   else struct.pack('>IIIII', _MACHO_CPU_TYPE, 0, position, len(payload), 14))
+        body += payload
+    data = bytearray(offset)
+    data[:len(header)] = header
+    data += body
+    path.write_bytes(data)
     return path
 
 
-def test_extract_recovers_every_entry(tmp_path: Path) -> None:
-    table = extract_flag_table(_write_elf(tmp_path, _entries()))
-    assert len(table) == _ENOUGH
+def _write_macho(path: Path, payload: bytes) -> Path:
+    path.write_bytes(payload)
+    return path
+
+
+def _write_image(path: Path) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(b'\x7fELF' + bytes(60))
+    return path
+
+
+def _write_decoy_file(path: Path) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(b'#!/bin/sh\n')
+    return path
+
+
+def _confine(monkeypatch: pytest.MonkeyPatch, root: Path) -> None:
+    original = Path.is_file
+    monkeypatch.setattr(Path, 'is_file', lambda self: self.is_relative_to(root) and original(self))
+
+
+def _redirect(monkeypatch: pytest.MonkeyPatch, target: Path, source: Path | None) -> None:
+    original = Path.open
+    monkeypatch.setattr(Path, 'is_file', lambda self: self == target)
+    monkeypatch.setattr(
+        Path, 'open', lambda self, *args, **kwargs: original(
+            source if source is not None and self == target else self, *args, **kwargs))
+
+
+def test_extract_flag_table_reads_an_elf_image(tmp_path: Path) -> None:
+    words = {
+        0: (_FEATURE_VALUE_TYPE << 16) | 0x1F,
+        1: 0x0F,
+        2: (TYPE_NAMES.index('MULTI_VALUE_TYPE') << 16) | 0x05,
+        3: 99 << 16
+    }
+    table = extract_flag_table(_build_elf(tmp_path / 'chrome', _entries(words=words), _DECOYS))
+    assert len(table) == _ENTRY_COUNT
+    assert 'isolated-seed' not in table
     assert table['test-flag-000'] == {
-        'description': 'Description number 0 of the synthetic flag table.',
+        'description': 'Description of test flag number 0.',
         'expiry_milestone': None,
         'line': None,
-        'name': 'Test Flag 0',
+        'name': 'Test flag 0',
         'never_expires': False,
         'options': [],
         'os': 'kOsAll',
         'owners': [],
         'type': 'FEATURE_VALUE_TYPE'
     }
+    assert table['test-flag-001']['os'] == 'kOsDesktop'
+    assert table['test-flag-001']['type'] == 'SINGLE_VALUE_TYPE'
+    assert table['test-flag-002']['os'] == f'{OS_BITS[0]} | {OS_BITS[2]}'
+    assert table['test-flag-002']['type'] == 'MULTI_VALUE_TYPE'
+    assert not table['test-flag-003']['os']
+    assert table['test-flag-003']['type'] == '99'
+    assert table['test-flag-059']['name'] == 'Test flag 59'
 
 
-def test_extract_accepts_a_str_path(tmp_path: Path) -> None:
-    assert len(extract_flag_table(str(_write_elf(tmp_path, _entries())))) == _ENOUGH
+def test_extract_flag_table_accepts_allowed_control_characters(tmp_path: Path) -> None:
+    entries = list(_entries())
+    entries[0] = (entries[0][0], entries[0][1], 'First line.\n\tSecond line.', entries[0][3])
+    table = extract_flag_table(_build_elf(tmp_path / 'chrome', entries))
+    assert table['test-flag-000']['description'] == 'First line.\n\tSecond line.'
 
 
-def test_extract_extends_the_run_past_an_unseedable_name(tmp_path: Path) -> None:
-    entries = [
-        *_entries(),
-        _Entry('browsing-history-actor-integration-M3', 'Milestone Flag',
-               'An internal name the seed pattern rejects.')
-    ]
-    table = extract_flag_table(_write_elf(tmp_path, entries))
+def test_extract_flag_table_extends_the_run_in_both_directions(tmp_path: Path) -> None:
+    names = {0: 'leading-entry-M3', _ENTRY_COUNT + 1: 'browsing-history-actor-integration-M3'}
+    table = extract_flag_table(
+        _build_elf(tmp_path / 'chrome', _entries(_ENTRY_COUNT + 2, names=names)))
+    assert len(table) == _ENTRY_COUNT + 2
+    assert 'leading-entry-M3' in table
     assert 'browsing-history-actor-integration-M3' in table
-    assert len(table) == _ENOUGH + 1
 
 
-@pytest.mark.parametrize(('mask', 'expected'), [
-    (0x1F, 'kOsAll'),
-    (0x0F, 'kOsDesktop'),
-    (0x05, 'kOsMac | kOsLinux'),
-    (0x80, 'kOsFuchsia'),
-    (0, ''),
-])
-def test_platform_mask_decoding(tmp_path: Path, mask: int, expected: str) -> None:
-    entries = _entries()
-    entries[0] = entries[0]._replace(word=(4 << 16) | mask)
-    assert extract_flag_table(_write_elf(tmp_path, entries))['test-flag-000']['os'] == expected
-
-
-@pytest.mark.parametrize(('index', 'expected'), [
-    (0, 'SINGLE_VALUE_TYPE'),
-    (2, 'MULTI_VALUE_TYPE'),
-    (9, 'PLATFORM_FEATURE_WITH_PARAMS_VALUE_TYPE'),
-    (42, '42'),
-])
-def test_entry_type_decoding(tmp_path: Path, index: int, expected: str) -> None:
-    entries = _entries()
-    entries[0] = entries[0]._replace(word=(index << 16) | 0x1F)
-    assert extract_flag_table(_write_elf(tmp_path, entries))['test-flag-000']['type'] == expected
-
-
-@pytest.mark.parametrize('entry', [
-    _Entry('a', 'Short Name', 'The internal name is below the minimum length.'),
-    _Entry('has a space', 'Spaced', 'The internal name contains whitespace.'),
-    _Entry('x' * 200, 'Too Long', 'The internal name is above the maximum length.'),
-    _Entry('unprintable', 'T', 'The title is below the minimum length.'),
-    _Entry('short-description', 'Fine Title', 'tiny'),
-])
-def test_implausible_entries_are_skipped(tmp_path: Path, entry: _Entry) -> None:
-    entries = [*_entries(), entry]
-    table = extract_flag_table(_write_elf(tmp_path, entries))
-    assert len(table) == _ENOUGH
-
-
-def test_a_control_character_rejects_the_string(tmp_path: Path) -> None:
-    entries = [
-        *_entries(),
-        _Entry('bell-flag', 'Bell\x07Title', 'A title carrying a control byte.')
-    ]
-    assert len(extract_flag_table(_write_elf(tmp_path, entries))) == _ENOUGH
-
-
-def test_too_few_entries_is_not_a_flag_table(tmp_path: Path) -> None:
-    with pytest.raises(FlagBinaryUnreadable, match='No flag table found'):
-        extract_flag_table(_write_elf(tmp_path, _entries(3)))
-
-
-def test_a_truncated_section_name_table_is_rejected(tmp_path: Path) -> None:
-    with pytest.raises(FlagBinaryUnreadable, match='No flag table found'):
-        extract_flag_table(_write_elf(tmp_path, _entries(), bad_name_position=True))
-
-
-@pytest.mark.parametrize('content', [b'not a binary at all', b'\x00' * 64])
-def test_an_unrecognised_container_is_rejected(tmp_path: Path, content: bytes) -> None:
-    path = tmp_path / 'chrome'
-    path.write_bytes(content)
-    with pytest.raises(FlagBinaryUnreadable, match='is not an ELF, Mach-O, or PE image'):
-        extract_flag_table(path)
-
-
-def test_an_unreadable_file_is_rejected(tmp_path: Path) -> None:
-    with pytest.raises(FlagBinaryUnreadable):
-        extract_flag_table(tmp_path / 'missing')
-
-
-def test_an_empty_file_is_rejected(tmp_path: Path) -> None:
-    path = tmp_path / 'chrome'
-    path.touch()
-    with pytest.raises(FlagBinaryUnreadable):
-        extract_flag_table(path)
-
-
-@pytest.mark.parametrize(('channel', 'expected'), [('stable', '/opt/google/chrome/chrome'),
-                                                   ('beta', '/opt/google/chrome-beta/chrome'),
-                                                   ('canary', '/opt/google/chrome-canary/chrome')])
-def test_find_browser_binary_on_linux(mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch,
-                                      channel: ChromeChannel, expected: str) -> None:
-    monkeypatch.setattr(sys, 'platform', 'linux')
-    mocker.patch.object(Path,
-                        'is_file',
-                        autospec=True,
-                        side_effect=lambda self: str(self) == expected)
-    mocker.patch.object(Path,
-                        'open',
-                        autospec=True,
-                        side_effect=lambda _self, _mode: BytesIO(b'\x7fELF'))
-    assert find_browser_binary(channel) == Path(expected)
-
-
-def test_find_browser_binary_skips_a_file_that_is_not_an_image(
-        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(sys, 'platform', 'linux')
-    mocker.patch.object(Path, 'is_file', autospec=True, return_value=True)
-    mocker.patch.object(Path,
-                        'open',
-                        autospec=True,
-                        side_effect=lambda _self, _mode: BytesIO(b'#!/b'))
-    assert find_browser_binary() is None
-
-
-def test_find_browser_binary_skips_a_file_it_cannot_open(mocker: MockerFixture,
-                                                         monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(sys, 'platform', 'linux')
-    mocker.patch.object(Path, 'is_file', autospec=True, return_value=True)
-    mocker.patch.object(Path, 'open', autospec=True, side_effect=OSError)
-    assert find_browser_binary() is None
-
-
-def test_find_browser_binary_returns_none_when_nothing_matches(
-        mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(sys, 'platform', 'linux')
-    mocker.patch.object(Path, 'is_file', autospec=True, return_value=False)
-    assert find_browser_binary('beta') is None
-
-
-@pytest.mark.parametrize(('channel', 'application'), [('stable', 'Google Chrome'),
-                                                      ('beta', 'Google Chrome Beta'),
-                                                      ('chromium', 'Chromium')])
-def test_find_browser_binary_on_macos(tmp_path: Path, mocker: MockerFixture,
-                                      monkeypatch: pytest.MonkeyPatch, channel: ChromeChannel,
-                                      application: str) -> None:
-    monkeypatch.setattr(sys, 'platform', 'darwin')
-    mocker.patch('deltona.chrome.flag_binary.Path.home', return_value=tmp_path)
-    framework = (tmp_path / 'Applications' / f'{application}.app' / 'Contents' / 'Frameworks' /
-                 f'{application} Framework.framework' / 'Versions')
-    for version in ('120.0.1.2', '99.0.0.1'):
-        (framework / version).mkdir(parents=True)
-        (framework / version / f'{application} Framework').write_bytes(b'\xcf\xfa\xed\xfe')
-    assert find_browser_binary(channel) == (framework / '120.0.1.2' / f'{application} Framework')
-
-
-def test_find_browser_binary_on_windows(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(sys, 'platform', 'win32')
-    monkeypatch.delenv('PROGRAMFILES', raising=False)
-    monkeypatch.delenv('PROGRAMFILES(X86)', raising=False)
-    monkeypatch.setenv('LOCALAPPDATA', str(tmp_path))
-    application = tmp_path / 'Google' / 'Chrome' / 'Application'
-    for version in ('120.0.1.2', '99.0.0.1'):
-        (application / version).mkdir(parents=True)
-        (application / version / 'chrome.dll').write_bytes(b'MZ' + b'\0' * 62)
-    assert find_browser_binary() == application / '120.0.1.2' / 'chrome.dll'
-
-
-def test_pe_image_recovers_every_entry(tmp_path: Path) -> None:
-    table = extract_flag_table(_write_pe(tmp_path, _entries()))
-    assert len(table) == _ENOUGH
-    assert table['test-flag-001']['name'] == 'Test Flag 1'
-    assert table['test-flag-001']['description'].startswith('Description number 1')
-    assert table['test-flag-001']['os'] == 'kOsAll'
-    assert table['test-flag-001']['type'] == 'FEATURE_VALUE_TYPE'
-
-
-def test_a_pe32_image_is_rejected(tmp_path: Path) -> None:
-    with pytest.raises(FlagBinaryUnreadable, match='No flag table found'):
-        extract_flag_table(_write_pe(tmp_path, _entries(), magic=0x10B))
-
-
-def test_macho_image_recovers_every_entry(tmp_path: Path) -> None:
-    table = extract_flag_table(_write_macho(tmp_path, _entries()))
-    assert len(table) == _ENOUGH
-    assert table['test-flag-002']['name'] == 'Test Flag 2'
-    assert table['test-flag-002']['os'] == 'kOsAll'
-
-
-def test_a_fat_macho_image_recovers_every_entry(tmp_path: Path) -> None:
-    assert len(extract_flag_table(_write_macho(tmp_path, _entries(), fat=True))) == _ENOUGH
-
-
-def test_a_32_bit_macho_slice_is_rejected(tmp_path: Path) -> None:
-    with pytest.raises(FlagBinaryUnreadable, match='No flag table found'):
-        extract_flag_table(_write_macho(tmp_path, _entries(), fat=True, magic=0xFEEDFACE))
-
-
-def test_a_thin_32_bit_macho_is_not_a_recognised_container(tmp_path: Path) -> None:
-    with pytest.raises(FlagBinaryUnreadable, match='is not an ELF, Mach-O, or PE image'):
-        extract_flag_table(_write_macho(tmp_path, _entries(), magic=0xFEEDFACE))
-
-
-def test_macho_chained_fixups_recover_every_entry(tmp_path: Path) -> None:
-    table = extract_flag_table(_write_macho(tmp_path, _entries(), fixups=True))
-    assert len(table) == _ENOUGH
-    assert table['test-flag-003']['name'] == 'Test Flag 3'
-    assert table['test-flag-003']['description'].startswith('Description number 3')
-
-
-def test_an_unterminated_string_drops_only_its_own_entry(tmp_path: Path) -> None:
-    table = extract_flag_table(_write_elf(tmp_path, _entries(), unterminated=True))
-    assert len(table) == _ENOUGH - 1
-    assert f'test-flag-{_ENOUGH - 1:03d}' not in table
-
-
-def test_a_missing_word_section_leaves_the_platform_undecoded(tmp_path: Path) -> None:
-    table = extract_flag_table(_write_elf(tmp_path, _entries(), no_words=True))
+def test_extract_flag_table_without_word_sections(tmp_path: Path) -> None:
+    table = extract_flag_table(_build_elf(tmp_path / 'chrome', _entries(), word_kind=0))
     assert not table['test-flag-000']['os']
     assert table['test-flag-000']['type'] == 'SINGLE_VALUE_TYPE'
 
 
-def test_entries_that_cannot_seed_a_run_yield_no_table(tmp_path: Path) -> None:
-    entries = [
-        _Entry(f'UPPER-FLAG-{index:03d}', f'Upper Flag {index}',
-               f'Description number {index} of the synthetic flag table.')
-        for index in range(_ENOUGH)
-    ]
+def test_extract_flag_table_rejects_too_few_entries(tmp_path: Path) -> None:
+    path = _build_elf(tmp_path / 'chrome', _entries(10))
     with pytest.raises(FlagBinaryUnreadable, match='No flag table found'):
-        extract_flag_table(_write_elf(tmp_path, entries))
+        extract_flag_table(path)
 
 
-def test_a_macho_load_command_of_impossible_size_is_rejected(tmp_path: Path) -> None:
+def test_extract_flag_table_rejects_an_elf_without_relocations(tmp_path: Path) -> None:
+    path = _build_elf(tmp_path / 'chrome', _entries(), relocations=False)
     with pytest.raises(FlagBinaryUnreadable, match='No flag table found'):
-        extract_flag_table(_write_macho(tmp_path, _entries(), bad_command_size=True))
+        extract_flag_table(path)
 
 
-def test_a_macho_without_a_text_segment_is_rejected(tmp_path: Path) -> None:
+def test_extract_flag_table_rejects_a_truncated_section_name_table(tmp_path: Path) -> None:
+    path = _build_elf(tmp_path / 'chrome', _entries(), truncated_names=True)
     with pytest.raises(FlagBinaryUnreadable, match='No flag table found'):
-        extract_flag_table(_write_macho(tmp_path, _entries(), text_segment=b'__LINKEDIT'))
+        extract_flag_table(path)
 
 
-@pytest.mark.parametrize('chain_format', [1, 99])
-def test_an_unusable_chain_format_yields_no_table(tmp_path: Path, chain_format: int) -> None:
+def test_extract_flag_table_rejects_a_file_that_is_not_an_image(tmp_path: Path) -> None:
+    path = tmp_path / 'notes.txt'
+    path.write_bytes(b'just some text, not a binary at all')
+    with pytest.raises(FlagBinaryUnreadable, match='is not an ELF, Mach-O, or PE image'):
+        extract_flag_table(path)
+
+
+def test_extract_flag_table_rejects_an_empty_file(tmp_path: Path) -> None:
+    path = tmp_path / 'empty'
+    path.write_bytes(b'')
+    with pytest.raises(FlagBinaryUnreadable, match='Could not read'):
+        extract_flag_table(path)
+
+
+def test_extract_flag_table_rejects_a_missing_file(tmp_path: Path) -> None:
+    with pytest.raises(FlagBinaryUnreadable, match='Could not read'):
+        extract_flag_table(tmp_path / 'nothing-here')
+
+
+def test_extract_flag_table_reads_a_pe_image(tmp_path: Path) -> None:
+    words = {1: 0x0F, 2: (TYPE_NAMES.index('MULTI_VALUE_TYPE') << 16) | 0x05}
+    table = extract_flag_table(_build_pe(tmp_path / 'chrome.dll', _entries(words=words)))
+    assert len(table) == _ENTRY_COUNT
+    assert table['test-flag-000']['os'] == 'kOsAll'
+    assert table['test-flag-001']['os'] == 'kOsDesktop'
+    assert table['test-flag-002']['os'] == f'{OS_BITS[0]} | {OS_BITS[2]}'
+
+
+def test_extract_flag_table_rejects_a_pe32_image(tmp_path: Path) -> None:
+    path = _build_pe(tmp_path / 'chrome.dll', _entries(), magic=0x10B)
     with pytest.raises(FlagBinaryUnreadable, match='No flag table found'):
-        extract_flag_table(
-            _write_macho(tmp_path, _entries(), fixups=True, chain_format=chain_format))
+        extract_flag_table(path)
 
 
-def test_a_relocation_block_of_impossible_size_stops_the_walk(tmp_path: Path) -> None:
+def test_extract_flag_table_rejects_a_pe_with_an_orphan_relocation_directory(
+        tmp_path: Path) -> None:
+    path = _build_pe(tmp_path / 'chrome.dll', _entries(), relocation_rva=0x900000)
     with pytest.raises(FlagBinaryUnreadable, match='No flag table found'):
-        extract_flag_table(_write_pe(tmp_path, _entries(), bad_block_size=True))
+        extract_flag_table(path)
 
 
-def test_relocations_of_another_type_are_ignored(tmp_path: Path) -> None:
+def test_extract_flag_table_rejects_a_pe_with_a_short_relocation_block(tmp_path: Path) -> None:
+    path = _build_pe(tmp_path / 'chrome.dll', _entries(), short_block=True)
     with pytest.raises(FlagBinaryUnreadable, match='No flag table found'):
-        extract_flag_table(_write_pe(tmp_path, _entries(), relocation_type=3))
+        extract_flag_table(path)
 
 
-def test_a_relocation_directory_outside_every_section_is_ignored(tmp_path: Path) -> None:
+def test_extract_flag_table_reads_a_thin_macho_image(tmp_path: Path) -> None:
+    table = extract_flag_table(
+        _write_macho(tmp_path / 'Chrome Framework', _build_macho_slice(_entries())))
+    assert len(table) == _ENTRY_COUNT
+    assert table['test-flag-000']['name'] == 'Test flag 0'
+
+
+@pytest.mark.parametrize(('pointer_format', 'high_bit_link'), [(2, False), (6, False), (1, True)])
+def test_extract_flag_table_reads_chained_fixups(tmp_path: Path, pointer_format: int, *,
+                                                 high_bit_link: bool) -> None:
+    payload = _build_macho_slice(_entries(_ENTRY_COUNT + 1),
+                                 high_bit_link=high_bit_link,
+                                 pointer_format=pointer_format)
+    table = extract_flag_table(_write_macho(tmp_path / 'Chrome Framework', payload))
+    assert len(table) == _ENTRY_COUNT
+    assert table['test-flag-000']['os'] == 'kOsAll'
+    assert f'test-flag-{_ENTRY_COUNT:03d}' not in table
+
+
+def test_extract_flag_table_rejects_an_unknown_chained_pointer_format(tmp_path: Path) -> None:
+    payload = _build_macho_slice(_entries(), pointer_format=3)
     with pytest.raises(FlagBinaryUnreadable, match='No flag table found'):
-        extract_flag_table(_write_pe(tmp_path, _entries(), relocation_rva=0x900000))
+        extract_flag_table(_write_macho(tmp_path / 'Chrome Framework', payload))
 
 
-def test_the_run_extends_backwards_past_an_unseedable_name(tmp_path: Path) -> None:
-    entries = [
-        _Entry('Leading-Milestone-M3', 'Leading Flag', 'An entry before the seeded run.'),
-        *_entries()
-    ]
-    table = extract_flag_table(_write_elf(tmp_path, entries))
-    assert 'Leading-Milestone-M3' in table
-    assert len(table) == _ENOUGH + 1
+@pytest.mark.parametrize('magic', [b'\xca\xfe\xba\xbe', b'\xca\xfe\xba\xbf'])
+def test_extract_flag_table_reads_a_fat_macho_image(tmp_path: Path, magic: bytes) -> None:
+    slices = (bytes(0x1000), _build_macho_slice(_entries()))
+    table = extract_flag_table(_build_fat(tmp_path / 'Chrome Framework', slices, magic))
+    assert len(table) == _ENTRY_COUNT
 
 
-def test_a_string_that_is_not_utf8_is_rejected(tmp_path: Path) -> None:
-    table = extract_flag_table(_write_elf(tmp_path, _entries(), invalid_utf8=True))
-    assert len(table) == _ENOUGH - 1
-
-
-def test_a_bind_link_is_skipped_but_the_chain_continues(tmp_path: Path) -> None:
-    table = extract_flag_table(_write_macho(tmp_path, _entries(), bind_first=True, fixups=True))
-    assert len(table) == _ENOUGH - 1
-    assert 'test-flag-001' in table
-
-
-def test_an_empty_segment_start_is_skipped(tmp_path: Path) -> None:
-    table = extract_flag_table(_write_macho(tmp_path, _entries(), empty_start=True, fixups=True))
-    assert len(table) == _ENOUGH
-
-
-def test_a_segment_without_a_page_size_is_skipped(tmp_path: Path) -> None:
+def test_extract_flag_table_rejects_a_macho_without_a_text_segment(tmp_path: Path) -> None:
+    payload = _build_macho_slice(_entries(), text_segment=False)
     with pytest.raises(FlagBinaryUnreadable, match='No flag table found'):
-        extract_flag_table(_write_macho(tmp_path, _entries(), fixups=True, page_size=0))
+        extract_flag_table(_write_macho(tmp_path / 'Chrome Framework', payload))
 
 
-def test_a_pointer_outside_every_string_section_is_rejected(tmp_path: Path) -> None:
-    table = extract_flag_table(_write_elf(tmp_path, _entries(), stray_pointer=True))
-    assert len(table) == _ENOUGH - 1
-
-
-def test_an_arm64e_bind_link_is_skipped(tmp_path: Path) -> None:
+def test_extract_flag_table_rejects_an_impossible_macho_command_size(tmp_path: Path) -> None:
+    payload = _build_macho_slice(_entries(), command_size=4)
     with pytest.raises(FlagBinaryUnreadable, match='No flag table found'):
-        extract_flag_table(
-            _write_macho(tmp_path, _entries(), bind_arm64e=True, chain_format=1, fixups=True))
+        extract_flag_table(_write_macho(tmp_path / 'Chrome Framework', payload))
+
+
+def test_find_browser_binary_finds_the_linux_package(tmp_path: Path,
+                                                     monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(sys, 'platform', 'linux')
+    _redirect(monkeypatch, _LINUX_BETA_BINARY, _write_image(tmp_path / 'chrome'))
+    assert find_browser_binary('beta') == _LINUX_BETA_BINARY
+
+
+def test_find_browser_binary_skips_a_file_without_an_image_magic(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(sys, 'platform', 'linux')
+    _redirect(monkeypatch, _LINUX_BETA_BINARY, _write_decoy_file(tmp_path / 'chrome'))
+    assert find_browser_binary('beta') is None
+
+
+def test_find_browser_binary_reports_an_unreadable_candidate_as_no_match(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(sys, 'platform', 'linux')
+    _redirect(monkeypatch, _LINUX_BETA_BINARY, None)
+    assert find_browser_binary('beta') is None
+
+
+@pytest.mark.parametrize('platform', ['cygwin', 'win32'])
+def test_find_browser_binary_prefers_the_newest_windows_version(tmp_path: Path,
+                                                                monkeypatch: pytest.MonkeyPatch,
+                                                                platform: str) -> None:
+    _confine(monkeypatch, tmp_path)
+    monkeypatch.setattr(sys, 'platform', platform)
+    monkeypatch.delenv('PROGRAMFILES', raising=False)
+    monkeypatch.setenv('PROGRAMFILES(X86)', str(tmp_path / 'x86'))
+    monkeypatch.setenv('LOCALAPPDATA', str(tmp_path / 'local'))
+    application = tmp_path / 'local' / 'Google/Chrome' / 'Application'
+    _write_image(application / '120.0.6099.109' / 'chrome.dll')
+    (application / 'temp').mkdir(parents=True)
+    newest = _write_image(application / '121.0.6167.85' / 'chrome.dll')
+    assert find_browser_binary() == newest
+
+
+def test_find_browser_binary_returns_none_on_windows_without_an_install(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _confine(monkeypatch, tmp_path)
+    monkeypatch.setattr(sys, 'platform', 'win32')
+    monkeypatch.delenv('PROGRAMFILES', raising=False)
+    monkeypatch.delenv('PROGRAMFILES(X86)', raising=False)
+    monkeypatch.setenv('LOCALAPPDATA', str(tmp_path / 'local'))
+    assert find_browser_binary('beta') is None
+
+
+def test_find_browser_binary_prefers_the_newest_macos_version(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _confine(monkeypatch, tmp_path)
+    monkeypatch.setattr(sys, 'platform', 'darwin')
+    monkeypatch.setattr(Path, 'home', lambda: tmp_path)
+    versions = (tmp_path / 'Applications' / 'Google Chrome.app' / 'Contents' / 'Frameworks' /
+                'Google Chrome Framework.framework' / 'Versions')
+    _write_image(versions / '120.0.6099.109' / 'Google Chrome Framework')
+    newest = _write_image(versions / '121.0.6167.85' / 'Google Chrome Framework')
+    assert find_browser_binary() == newest
+
+
+def test_find_browser_binary_uses_the_current_macos_symlink(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _confine(monkeypatch, tmp_path)
+    monkeypatch.setattr(sys, 'platform', 'darwin')
+    monkeypatch.setattr(Path, 'home', lambda: tmp_path)
+    versions = (tmp_path / 'Applications' / 'Chromium.app' / 'Contents' / 'Frameworks' /
+                'Chromium Framework.framework' / 'Versions')
+    binary = _write_image(versions / 'Current' / 'Chromium Framework')
+    assert find_browser_binary('chromium') == binary
+
+
+def test_find_browser_binary_returns_none_on_macos_without_an_install(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _confine(monkeypatch, tmp_path)
+    monkeypatch.setattr(sys, 'platform', 'darwin')
+    monkeypatch.setattr(Path, 'home', lambda: tmp_path)
+    assert find_browser_binary('canary') is None

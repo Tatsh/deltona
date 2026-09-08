@@ -33,8 +33,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   dedicated subcommand is still reachable.
 - Values Chrome protects with `OSCrypt` are decrypted where the platform keyring allows it, and
   masked unless a subcommand is asked to reveal them.
-- `deltona.chrome` package, with the `browsing`, `core`, `flags`, `network`, `preferences`,
-  `secrets`, and `settings` modules.
+- `deltona.chrome` package, with the `browsing`, `core`, `flag_binary`, `flags`, `network`,
+  `preferences`, `secrets`, `settings`, and `typing` modules.
 - `chrome` extra, adding `cryptography`, `keyring`, and `platformdirs`.
 - `rclone-drive-changes` to list what has recently changed on a Google Drive account. What was done
   to a file is inferred from the times Google reports, so a rename or a move reads as an edit.

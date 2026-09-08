@@ -153,6 +153,7 @@ handoff
 hangul
 headofhousehold
 hexstr
+hhiiihh
 hovercard
 hoverxref
 htmlcov
@@ -162,7 +163,6 @@ hwdec
 identityfile
 identityfiles
 ihhqih
-ihhqihhh
 iiqqq
 iiqqqq
 ilayhi
@@ -211,7 +211,6 @@ libgirepository
 libsecret
 libsonnet
 libx
-linkedit
 linters
 llhq
 localappdata
@@ -335,8 +334,6 @@ saltysalt
 sbclaude
 schemafile
 sdist
-sectname
-segname
 segoe
 sendline
 setattr
@@ -393,7 +390,6 @@ uiso
 ultrabold
 ultraiso
 umpv
-undecoded
 undecryptable
 underscorised
 underscorize
@@ -401,7 +397,6 @@ undraft
 undrafted
 unidecode
 uninhibit
-unseedable
 unwalkable
 urldecode
 userprofile
@@ -436,6 +431,7 @@ wwdc
 x'fffe
 xauthority
 xcrun
+xffutf
 yapf
 yapfignore
 yarnrc

@@ -108,7 +108,7 @@ def local_state(user_data: ChromeUserData,
 
 
 @click.command()
-@click.option('-c', '--changed', is_flag=True, help='Omit settings left at their default.')
+@click.option('--changed', is_flag=True, help='Omit settings left at their default.')
 @click.option('-k',
               '--key',
               help='Dotted path to a single value, such as `download.default_directory`.')

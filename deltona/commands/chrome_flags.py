@@ -29,7 +29,7 @@ _STATE_FILTERS = {
 
 
 @click.command()
-@click.option('-a', '--all', 'show_all', is_flag=True, help='Include flags left at their default.')
+@click.option('--all', 'show_all', is_flag=True, help='Include flags left at their default.')
 @click.option('-s', '--search', help='Only show flags whose name, title, or description matches.')
 @click.option('--binary',
               help='Browser binary to read the flag table out of.',

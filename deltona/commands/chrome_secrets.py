@@ -104,8 +104,8 @@ def _secret(value: str | None, *, reveal: bool) -> str:
 def list_passwords(user_data: ChromeUserData,
                    profile_name: str = 'Default',
                    *,
-                   as_json: bool = False,
                    account: bool = False,
+                   as_json: bool = False,
                    show_passwords: bool = False,
                    show_stats: bool = False) -> None:
     """List saved and blocklisted logins."""
@@ -139,7 +139,7 @@ def list_passwords(user_data: ChromeUserData,
               default='cookies',
               help='Which cookie database to read.',
               show_default=True,
-              type=click.Choice(tuple(COOKIE_DATABASES)))
+              type=click.Choice(sorted(COOKIE_DATABASES)))
 @click.option('-H', '--host', help='Only show cookies whose host contains this substring.')
 @click.option('-l',
               '--limit',
@@ -183,7 +183,7 @@ def list_cookies(user_data: ChromeUserData,
 @click.option('-t',
               '--table',
               help='Only show this table. Defaults to every non-empty table.',
-              type=click.Choice(PAYMENT_TABLES))
+              type=click.Choice(sorted(PAYMENT_TABLES)))
 @click.option('--show-numbers',
               is_flag=True,
               help='Show decrypted card, IBAN, and CVC numbers instead of a masked placeholder.')
@@ -194,8 +194,8 @@ def list_payments(user_data: ChromeUserData,
                   profile_name: str = 'Default',
                   table: str | None = None,
                   *,
-                  as_json: bool = False,
                   account: bool = False,
+                  as_json: bool = False,
                   show_numbers: bool = False) -> None:
     """List saved payment methods: cards, IBANs, bank accounts, loyalty cards, and offers."""  # ruff:ignore[docstring-missing-exception]
     profile = resolve_profile(user_data, profile_name)

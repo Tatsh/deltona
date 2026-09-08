@@ -89,8 +89,8 @@ class _LazyGroup(click.Group):
 @click.pass_context
 def chrome_dump(ctx: click.Context,
                 cache_path: Path | None = None,
-                config_path: Path | None = None,
                 channel: ChromeChannel = 'stable',
+                config_path: Path | None = None,
                 *,
                 debug: bool = False) -> None:
     """Dump settings and cache information from Chrome and Chromium."""
