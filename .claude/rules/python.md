@@ -12,7 +12,7 @@
   - `D212`: Summary lines are not required to be positioned on the first physical line of the
     docstring directly after the `"""`.
   - `N818`: Exception names may exist without the `Error` suffix.
-  - `S101`: `assert` statements are allowed in tests and for type narrowing.
+  - `S101`: `assert` statements are allowed in test code only.
   - `S404`: Importing `subprocess` is allowed.
   - `S603`: This rule is disabled because it conflicts with `S602`, which is enabled.
   - `TD002`: Do not add an author in `TODO` comments.
@@ -265,6 +265,11 @@
 - Prefer `@functools.cache` over `@functools.lru_cache` for unbounded caches.
 - Prefer to use `indent=2, sort_keys=True` when dumping JSON for human-readable output.
 - Chain exceptions with `raise ... from e` to preserve context.
+- Never raise `AssertionError`. Raise an exception named for what actually went wrong, defining a
+  new one when none fits. Exception names need not end in `Error`.
+- Never use `assert` outside test code, including for type narrowing. Enforce an invariant with
+  `if not ...:` and a raise, which narrows types just as well, survives `python -O`, and reports
+  something useful when it fires.
 
 ## Typing
 
