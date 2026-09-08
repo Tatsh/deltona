@@ -8,12 +8,14 @@ from urllib.parse import parse_qs, urlsplit
 import json
 import os
 import re
+import sqlite3
 
 from click.testing import CliRunner
 import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
+    from pathlib import Path
 
     from pytest_mock import MockerFixture
     from typing_extensions import Self
@@ -38,6 +40,93 @@ def runner() -> CliRunner:
 @pytest.fixture
 def raw_body() -> Callable[[str], dict[str, str]]:
     return lambda text: {RAW_BODY_KEY: text}
+
+
+class FakeChromeUserData:
+    """Builds a Chrome user data directory on disk for :py:mod:`deltona.chrome` tests."""
+    def __init__(self, root: Path) -> None:
+        self.config_path = root / 'config'
+        self.cache_path = root / 'cache'
+        self.config_path.mkdir(parents=True)
+        self.cache_path.mkdir(parents=True)
+        self.local_state: dict[str, Any] = {'browser': {}, 'profile': {'info_cache': {}}}
+        self.write_local_state()
+
+    @property
+    def argv(self) -> list[str]:
+        """Arguments selecting this directory, for use with the ``chrome-dump`` group."""
+        return ['-c', str(self.config_path), '-C', str(self.cache_path)]
+
+    def add_profile(self, directory: str = 'Default', **info: Any) -> Path:
+        """Create a profile directory, register it in ``Local State``, and return its path."""
+        path = self.config_path / directory
+        path.mkdir(parents=True, exist_ok=True)
+        (self.cache_path / directory).mkdir(parents=True, exist_ok=True)
+        if not (path / 'Preferences').is_file():
+            self.write_json(directory, 'Preferences', {})
+        self.local_state['profile']['info_cache'][directory] = info
+        self.write_local_state()
+        return path
+
+    def write_local_state(self) -> None:
+        """Write the current ``Local State`` contents."""
+        (self.config_path / 'Local State').write_text(json.dumps(self.local_state),
+                                                      encoding='utf-8')
+
+    def write_version(self, version: str = '152.0.7977.42') -> None:
+        """Write the ``Last Version`` file."""
+        (self.config_path / 'Last Version').write_text(version, encoding='utf-8')
+
+    def write_json(self, directory: str, name: str, data: Any) -> Path:
+        """Write a JSON file into a profile directory and return its path."""
+        path = self.config_path / directory / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data), encoding='utf-8')
+        return path
+
+    def write_text(self, directory: str, name: str, text: str) -> Path:
+        """Write a text file into a profile directory and return its path."""
+        path = self.config_path / directory / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding='utf-8')
+        return path
+
+    def write_database(self,
+                       directory: str,
+                       name: str,
+                       schema: Sequence[str],
+                       rows: Mapping[str, Sequence[Sequence[Any]]] | None = None,
+                       meta: Mapping[str, Any] | None = None) -> Path:
+        """
+        Create a SQLite database inside a profile directory.
+
+        ``schema`` holds ``CREATE`` statements, ``rows`` maps a table name to the rows to insert,
+        and ``meta`` populates a ``meta`` table when given.
+        """
+        path = self.config_path / directory / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        connection = sqlite3.connect(path)
+        try:
+            for statement in schema:
+                connection.execute(statement)
+            if meta is not None:
+                connection.execute('CREATE TABLE meta(key LONGVARCHAR NOT NULL UNIQUE PRIMARY KEY,'
+                                   ' value LONGVARCHAR)')
+                connection.executemany('INSERT INTO meta VALUES (?, ?)', list(meta.items()))
+            for table, values in (rows or {}).items():
+                for row in values:
+                    placeholders = ', '.join('?' * len(row))
+                    statement = f'INSERT INTO {table} VALUES ({placeholders})'  # noqa: S608
+                    connection.execute(statement, row)
+            connection.commit()
+        finally:
+            connection.close()
+        return path
+
+
+@pytest.fixture
+def chrome_user_data(tmp_path: Path) -> FakeChromeUserData:
+    return FakeChromeUserData(tmp_path)
 
 
 @dataclass
