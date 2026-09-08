@@ -20,6 +20,7 @@ _COMMANDS: dict[str, str] = {
     'cddb-query': 'deltona.commands.media:cddb_query_main',
     'check-bookmarks-html': 'deltona.commands.www:check_bookmarks_html_main',
     'chrome-bisect-flags': 'deltona.commands.www:chrome_bisect_flags_main',
+    'chrome-dump': 'deltona.commands.chrome:chrome_dump',
     'clean-old-kernels-modules': 'deltona.commands.admin:clean_old_kernels_and_modules_main',
     'connect-g603': 'deltona.commands.desktop:connect_g603_main',
     'cssq': 'deltona.commands.string:cssq_main',

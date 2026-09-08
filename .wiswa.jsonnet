@@ -117,6 +117,7 @@ local utils = import 'utils.libsonnet';
         // www
         'check-bookmarks-html': 'deltona.commands.www:check_bookmarks_html_main',
         'chrome-bisect-flags': 'deltona.commands.www:chrome_bisect_flags_main',
+        'chrome-dump': 'deltona.commands.chrome:chrome_dump',
         'fix-pwa-icon': 'deltona.commands.www:fix_chromium_pwa_icon_main',
         'where-from': 'deltona.commands.www:where_from_main',
       },
@@ -133,6 +134,10 @@ local utils = import 'utils.libsonnet';
           },
           binaryornot: utils.latestPypiPackageVersionCaret('binaryornot'),
           click: utils.latestPypiPackageVersionCaret('click'),
+          cryptography: {
+            optional: true,
+            version: utils.latestPypiPackageVersionCaret('cryptography'),
+          },
           gidgethub: {
             optional: true,
             version: utils.latestPypiPackageVersionCaret('gidgethub'),
@@ -197,10 +202,7 @@ local utils = import 'utils.libsonnet';
             version: utils.latestPypiPackageVersionCaret('pyyaml'),
           },
           niquests: utils.latestPypiPackageVersionCaret('niquests'),
-          rich: {
-            optional: true,
-            version: utils.latestPypiPackageVersionCaret('rich'),
-          },
+          rich: utils.latestPypiPackageVersionCaret('rich'),
           send2trash: {
             optional: true,
             version: utils.latestPypiPackageVersionCaret('send2trash'),
@@ -224,7 +226,8 @@ local utils = import 'utils.libsonnet';
           },
         },
         extras: {
-          admin: ['paramiko', 'platformdirs', 'rich', 'watchdog'],
+          admin: ['paramiko', 'platformdirs', 'watchdog'],
+          chrome: ['cryptography', 'keyring', 'platformdirs'],
           desktop: ['pydbus', 'pygobject', 'pyperclip'],
           git: ['gidgethub', 'gitpython', 'keyring', 'platformdirs'],
           media: ['keyring', 'mutagen', 'platformdirs', 'send2trash'],

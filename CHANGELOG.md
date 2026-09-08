@@ -11,6 +11,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `chrome-dump`, a command group that reads a Chrome or Chromium user data directory: profiles,
+  bookmarks, history, downloads, cookies, passwords, payment methods, autofill, sign-in tokens,
+  extensions, flags, search engines, web apps, site permissions, sessions, the HTTP cache, and the
+  network state files. Every subcommand takes `--json`; tables are otherwise laid out for reading.
+  Directories default to what `platformdirs` reports for the chosen `--channel`.
+- `chrome-dump` `-P`/`--profile` accepts a profile's directory name, display name, Google account
+  name, given name, or email address, since the directory names Chrome creates say nothing about
+  whose profile they are.
+- `chrome-dump list-flags`, which reports each changed `chrome://flags` entry with its title,
+  description, supported systems, and a link to its declaration. Chrome records only the flag name,
+  so the rest is read out of the installed browser binary, where the table is compiled in, and
+  falls back to Chromium at the tag matching the browser's own version. Reading the binary needs no
+  network and describes the entries that build actually compiled, rather than the union over every
+  platform and preprocessor guard.
+- `chrome-dump preferences`, which groups a profile's settings the way the browser's own settings
+  page does and reports the defaults in force, because Chrome writes a preference only once it
+  differs from its default and a raw dump therefore shows what changed rather than what applies.
+- `chrome-dump query`, `list-databases`, and `list-files`, which run a read-only statement against
+  any of a profile's SQLite databases and inventory what a profile holds, so data without a
+  dedicated subcommand is still reachable.
+- Values Chrome protects with `OSCrypt` are decrypted where the platform keyring allows it, and
+  masked unless a subcommand is asked to reveal them.
+- `deltona.chrome` package, with the `browsing`, `core`, `flags`, `network`, `preferences`,
+  `secrets`, and `settings` modules.
+- `chrome` extra, adding `cryptography`, `keyring`, and `platformdirs`.
 - `rclone-drive-changes` to list what has recently changed on a Google Drive account. What was done
   to a file is inferred from the times Google reports, so a rename or a move reads as an edit.
   Deletions are not reported, since Google serves those only through the changes feed
@@ -35,6 +60,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `rich` is now a required dependency rather than one of the `admin` extra, since enough commands
+  render with it that importing it lazily bought nothing.
 - `rclone-bisyncd` now synchronises hourly rather than every five minutes when nothing is known to
   have changed, since the periodic run only catches what the watcher and the Google Drive changes
   feed miss. Where there is no such feed to read, the wait is how long a change made on the remote
