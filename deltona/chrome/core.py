@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 __all__ = ('CHANNEL_CACHE_DIRECTORIES', 'CHANNEL_DIRECTORIES', 'KEYRING_NAMES', 'ChromeProfile',
            'ChromeUserData', 'OSCrypt', 'ProfileNotFound', 'chrome_cache_directory',
            'chrome_config_directory', 'chrome_timestamp_to_datetime', 'classify_path',
-           'database_summary', 'is_sqlite_database', 'linux_keyring_password', 'open_database',
+           'database_summary', 'is_sqlite_database', 'linux_keyring_passwords', 'open_database',
            'profile_files', 'query_database', 'table_names', 'unix_timestamp_to_datetime',
            'webkit_timestamp_to_datetime')
 
@@ -644,16 +644,16 @@ class OSCrypt:
         return _derive_key(b'peanuts')
 
     @cached_property
-    def _v11_key(self) -> bytes | None:
+    def _v11_keys(self) -> tuple[bytes, ...]:
         if _is_windows() or _is_mac():
-            return None
-        password = linux_keyring_password(self.keyring_name)
-        return _derive_key(password) if password else None
+            return ()
+        return tuple(
+            _derive_key(password) for password in linux_keyring_passwords(self.keyring_name))
 
     @property
     def available(self) -> bool:
         """Whether any key could be obtained."""
-        return self._v10_key is not None or self._v11_key is not None
+        return self._v10_key is not None or bool(self._v11_keys)
 
     @property
     def keyring_available(self) -> bool:
@@ -663,7 +663,7 @@ class OSCrypt:
         A Linux value written as ``v11`` needs this key. The fixed ``v10`` key is always derivable,
         so :py:attr:`available` says nothing about whether such a value can be read.
         """
-        return self._v11_key is not None
+        return bool(self._v11_keys)
 
     def decrypt(self, value: bytes | str | None, *, hash_prefix: bool = False) -> str | None:
         """
@@ -691,8 +691,8 @@ class OSCrypt:
         if version == b'v10' and _is_windows():
             plaintext = _decrypt_aes_gcm(ciphertext, self._v10_key)
         elif version in {b'v10', b'v11'}:
-            keys = (self._v10_key if version == b'v10' else self._v11_key, self._empty_key)
-            plaintext = _decrypt_aes_cbc(ciphertext, [k for k in keys if k])
+            keys = ((self._v10_key,) if version == b'v10' else self._v11_keys)
+            plaintext = _decrypt_aes_cbc(ciphertext, [*(k for k in keys if k), self._empty_key])
         elif _is_windows():
             plaintext = _windows_dpapi_decrypt(value)
         elif _is_mac():
@@ -792,13 +792,14 @@ def _macos_password(keyring_name: str) -> bytes | None:
     return None
 
 
-def linux_keyring_password(keyring_name: str = 'Chrome') -> bytes | None:
+def linux_keyring_passwords(keyring_name: str = 'Chrome') -> tuple[bytes, ...]:
     """
-    Read the browser's ``Safe Storage`` password from the desktop keyring.
+    Read every candidate ``Safe Storage`` password the desktop keyring offers.
 
-    ``secret-tool`` is tried first because the browser writes its libsecret entry with an
+    The Secret Service is asked over D-Bus first, since the browser writes its entry with an
     ``application`` attribute rather than the ``service``/``username`` pair the :py:mod:`keyring`
-    package looks for. KWallet and :py:mod:`keyring` are tried after it.
+    package looks for, and since that needs no ``secret-tool`` binary. ``secret-tool``, KWallet,
+    and :py:mod:`keyring` follow.
 
     Parameters
     ----------
@@ -807,18 +808,20 @@ def linux_keyring_password(keyring_name: str = 'Chrome') -> bytes | None:
 
     Returns
     -------
-    bytes | None
-        The password, or ``None`` if no keyring yielded one.
+    tuple[bytes, ...]
+        Every distinct password found, in the order the backends were tried. More than one is
+        possible when a keyring holds an entry from an earlier installation alongside the current
+        one, and only trying each in turn tells them apart.
     """
+    passwords: list[bytes] = []
     for reader in (_secret_service_password, _secret_tool_password, _kwallet_password,
                    _keyring_module_password):
-        if password := reader(keyring_name):
-            log.debug('%s returned a %d byte password for `%s`.', reader.__name__, len(password),
-                      keyring_name)
-            return password
-        log.debug('%s returned nothing for `%s`.', reader.__name__, keyring_name)
-    log.debug('No keyring returned a password for `%s`.', keyring_name)
-    return None
+        found = [password for password in reader(keyring_name) if password not in passwords]
+        log.debug('%s offered %d password(s) for `%s`.', reader.__name__, len(found), keyring_name)
+        passwords.extend(found)
+    if not passwords:
+        log.debug('No keyring offered a password for `%s`.', keyring_name)
+    return tuple(passwords)
 
 
 def _run_for_output(args: Sequence[str]) -> bytes | None:
@@ -834,7 +837,7 @@ def _run_for_output(args: Sequence[str]) -> bytes | None:
     return None
 
 
-def _secret_service_password(keyring_name: str) -> bytes | None:
+def _secret_service_password(keyring_name: str) -> list[bytes]:
     # The browser stores its key with an `application` attribute rather than the service and
     # username pair the keyring package searches by, so the collection is searched directly. This
     # needs no `secret-tool` binary, which is packaged separately from the keyring daemon itself.
@@ -846,29 +849,29 @@ def _secret_service_password(keyring_name: str) -> bytes | None:
             return _search_secret_service(connection, application)
     except Exception as e:  # noqa: BLE001
         log.debug('Secret Service lookup failed: %s: %s', type(e).__name__, e)
-    return None
+    return []
 
 
-def _search_secret_service(connection: Any, application: str) -> bytes | None:
+def _search_secret_service(connection: Any, application: str) -> list[bytes]:
     import secretstorage  # ruff:ignore[import-outside-top-level]
 
+    secrets: list[bytes] = []
     for attributes in ({
             'application': application,
             'xdg:schema': _LIBSECRET_SCHEMA
     }, {
             'application': application
     }, {}):
-        found = 0
         for item in secretstorage.search_items(connection, attributes):
-            found += 1
             if not _matches_browser(item, application):
                 continue
             if item.is_locked():
                 item.unlock()
-            if secret := item.get_secret():
-                return bytes(secret)
-        log.debug('Secret Service search %r matched %d items, none usable.', attributes, found)
-    return None
+            if (secret := item.get_secret()) and bytes(secret) not in secrets:
+                secrets.append(bytes(secret))
+                log.debug('Secret Service item %r matched %r.', item.get_label(), attributes)
+    log.debug('Secret Service offered %d distinct candidate keys.', len(secrets))
+    return secrets
 
 
 def _matches_browser(item: Any, application: str) -> bool:
@@ -883,10 +886,10 @@ def _matches_browser(item: Any, application: str) -> bool:
     return False
 
 
-def _secret_tool_password(keyring_name: str) -> bytes | None:
+def _secret_tool_password(keyring_name: str) -> list[bytes]:
     application = 'chromium' if keyring_name == 'Chromium' else 'chrome'
     output = _run_for_output(('secret-tool', 'lookup', 'application', application))
-    return output.rstrip(b'\n') if output else None
+    return [stripped] if output and (stripped := output.rstrip(b'\n')) else []
 
 
 def _kwallet_network_wallet() -> str:
@@ -899,18 +902,18 @@ def _kwallet_network_wallet() -> str:
     return 'kdewallet'
 
 
-def _kwallet_password(keyring_name: str) -> bytes | None:
+def _kwallet_password(keyring_name: str) -> list[bytes]:
     output = _run_for_output(('kwallet-query', '--read-password', f'{keyring_name} Safe Storage',
                               '--folder', f'{keyring_name} Keys', _kwallet_network_wallet()))
     if not output or output.lower().startswith(b'failed to read'):
-        return None
-    return output.rstrip(b'\n') or None
+        return []
+    return [stripped] if (stripped := output.rstrip(b'\n')) else []
 
 
-def _keyring_module_password(keyring_name: str) -> bytes | None:
+def _keyring_module_password(keyring_name: str) -> list[bytes]:
     import keyring  # ruff:ignore[import-outside-top-level]
 
     with suppress(Exception):
         if password := keyring.get_password(f'{keyring_name} Safe Storage', keyring_name):
-            return password.encode()
-    return None
+            return [password.encode()]
+    return []

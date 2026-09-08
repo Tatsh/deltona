@@ -30,7 +30,7 @@ from deltona.chrome import (
     classify_path,
     database_summary,
     is_sqlite_database,
-    linux_keyring_password,
+    linux_keyring_passwords,
     open_database,
     profile_files,
     query_database,
@@ -618,7 +618,7 @@ def test_linux_keyring_password_secret_tool(mocker: MockerFixture, keyring_name:
     run = mocker.patch('subprocess.run',
                        side_effect=run_for({'secret-tool': [(0, b'from-secret-tool\n')]}))
     mocker.patch('deltona.chrome.core.which', side_effect=which_for({'secret-tool'}))
-    assert linux_keyring_password(keyring_name) == b'from-secret-tool'
+    assert b'from-secret-tool' in linux_keyring_passwords(keyring_name)
     assert run.call_args[0][0] == ('secret-tool', 'lookup', 'application', application)
 
 
@@ -629,7 +629,7 @@ def test_linux_keyring_password_kwallet(mocker: MockerFixture) -> None:
                            'kwallet-query': [(0, b'from-kwallet\n')]
                        }))
     mocker.patch('deltona.chrome.core.which', side_effect=which_for({'dbus-send', 'kwallet-query'}))
-    assert linux_keyring_password('Chrome') == b'from-kwallet'
+    assert b'from-kwallet' in linux_keyring_passwords('Chrome')
     assert run.call_args[0][0][-1] == 'wallet6'
 
 
@@ -637,14 +637,14 @@ def test_linux_keyring_password_kwallet_default_wallet(mocker: MockerFixture) ->
     run = mocker.patch('subprocess.run',
                        side_effect=run_for({'kwallet-query': [(0, b'from-kwallet\n')]}))
     mocker.patch('deltona.chrome.core.which', side_effect=which_for({'kwallet-query'}))
-    assert linux_keyring_password('Chrome') == b'from-kwallet'
+    assert b'from-kwallet' in linux_keyring_passwords('Chrome')
     assert run.call_args[0][0][-1] == 'kdewallet'
 
 
 @pytest.mark.parametrize('output', [b'Failed to read password\n', b'\n'])
 def test_linux_keyring_password_kwallet_unusable(mocker: MockerFixture, output: bytes) -> None:
     keyring_setup(mocker, {'kwallet-query'}, {'kwallet-query': [(0, output)]}, 'from-keyring')
-    assert linux_keyring_password('Chrome') == b'from-keyring'
+    assert b'from-keyring' in linux_keyring_passwords('Chrome')
 
 
 @pytest.mark.parametrize(
@@ -654,17 +654,17 @@ def test_linux_keyring_password_kwallet_unusable(mocker: MockerFixture, output: 
 def test_linux_keyring_password_process_failures(mocker: MockerFixture,
                                                  result: tuple[int, bytes] | BaseException) -> None:
     keyring_setup(mocker, {'secret-tool'}, {'secret-tool': [result]}, 'from-keyring')
-    assert linux_keyring_password('Chrome') == b'from-keyring'
+    assert b'from-keyring' in linux_keyring_passwords('Chrome')
 
 
 def test_linux_keyring_password_none(mocker: MockerFixture) -> None:
     keyring_setup(mocker, set(), {}, None)
-    assert linux_keyring_password('Chrome') is None
+    assert linux_keyring_passwords('Chrome') == ()
 
 
 def test_linux_keyring_password_keyring_raises(mocker: MockerFixture) -> None:
     keyring_setup(mocker, set(), {}, RuntimeError('locked'))
-    assert linux_keyring_password('Chrome') is None
+    assert linux_keyring_passwords('Chrome') == ()
 
 
 @pytest.mark.parametrize(('key', 'expected'), [
@@ -986,19 +986,19 @@ def test_query_bad_sql(runner: CliRunner, chrome_user_data: FakeChromeUserData) 
 
 def test_linux_keyring_password_reads_the_secret_service(mocker: MockerFixture) -> None:
     keyring_setup(mocker, set(), {}, None, [FakeSecretItem(b'from-secret-service')])
-    assert linux_keyring_password('Chrome') == b'from-secret-service'
+    assert b'from-secret-service' in linux_keyring_passwords('Chrome')
 
 
 def test_linux_keyring_password_unlocks_a_locked_item(mocker: MockerFixture) -> None:
     item = FakeSecretItem(b'from-secret-service', application='chromium', locked=True)
     keyring_setup(mocker, set(), {}, None, [item])
-    assert linux_keyring_password('Chromium') == b'from-secret-service'
+    assert b'from-secret-service' in linux_keyring_passwords('Chromium')
     assert item.unlocked
 
 
 def test_linux_keyring_password_skips_an_empty_secret(mocker: MockerFixture) -> None:
     keyring_setup(mocker, set(), {}, 'from-keyring', [FakeSecretItem(b'')])
-    assert linux_keyring_password('Chrome') == b'from-keyring'
+    assert b'from-keyring' in linux_keyring_passwords('Chrome')
 
 
 def test_keyring_available_reports_the_v11_key(mocker: MockerFixture) -> None:
@@ -1011,13 +1011,13 @@ def test_keyring_available_reports_the_v11_key(mocker: MockerFixture) -> None:
 def test_linux_keyring_password_skips_another_applications_item(mocker: MockerFixture) -> None:
     keyring_setup(mocker, set(), {}, 'from-keyring',
                   [FakeSecretItem(b'someone-elses', application='signal')])
-    assert linux_keyring_password('Chrome') == b'from-keyring'
+    assert b'from-keyring' in linux_keyring_passwords('Chrome')
 
 
 def test_linux_keyring_password_falls_back_to_the_item_label(mocker: MockerFixture) -> None:
     keyring_setup(mocker, set(), {}, None,
                   [FakeSecretItem(b'from-label', application='', label='Chrome Safe Storage')])
-    assert linux_keyring_password('Chrome') == b'from-label'
+    assert b'from-label' in linux_keyring_passwords('Chrome')
 
 
 def test_linux_keyring_password_ignores_an_item_it_cannot_inspect(mocker: MockerFixture) -> None:
@@ -1025,4 +1025,22 @@ def test_linux_keyring_password_ignores_an_item_it_cannot_inspect(mocker: Mocker
     mocker.patch.object(FakeSecretItem, 'get_attributes', side_effect=RuntimeError('no access'))
     mocker.patch.object(FakeSecretItem, 'get_label', side_effect=RuntimeError('no access'))
     keyring_setup(mocker, set(), {}, 'from-keyring', [item])
-    assert linux_keyring_password('Chrome') == b'from-keyring'
+    assert b'from-keyring' in linux_keyring_passwords('Chrome')
+
+
+def test_linux_keyring_passwords_collects_every_distinct_candidate(mocker: MockerFixture) -> None:
+    keyring_setup(mocker, {'secret-tool'}, {'secret-tool': [(0, b'from-secret-tool\n')]},
+                  'from-keyring',
+                  [FakeSecretItem(b'stale'), FakeSecretItem(b'current')])
+    assert linux_keyring_passwords('Chrome') == (b'stale', b'current', b'from-secret-tool',
+                                                 b'from-keyring')
+
+
+def test_oscrypt_tries_every_candidate_key(mocker: MockerFixture) -> None:
+    keyring_setup(
+        mocker, set(), {}, None,
+        [FakeSecretItem(b'wrong-key'), FakeSecretItem(b'right-key')])
+    sha1 = hashes.SHA1()  # noqa: S303
+    key = pbkdf2.PBKDF2HMAC(algorithm=sha1, iterations=1, length=16,
+                            salt=b'saltysalt').derive(b'right-key')
+    assert OSCrypt('Chrome').decrypt(encrypt_cbc(b'hunter2', key, version=b'v11')) == 'hunter2'

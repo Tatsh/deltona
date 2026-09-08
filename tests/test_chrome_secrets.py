@@ -993,7 +993,7 @@ def test_list_passwords_reports_values_it_could_not_decrypt(runner: CliRunner,
                                                             mocker: MockerFixture) -> None:
     chrome_user_data.add_profile('Default')
     _write_login_data(chrome_user_data, 'Default', 'Login Data')
-    mocker.patch('deltona.chrome.core.linux_keyring_password', return_value=None)
+    mocker.patch('deltona.chrome.core.linux_keyring_passwords', return_value=())
     mocker.patch('deltona.chrome.core.OSCrypt.decrypt', return_value=None)
     result = runner.invoke(chrome_dump,
                            [*chrome_user_data.argv, 'list-passwords', '-P', 'Default', '-j'])

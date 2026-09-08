@@ -34,9 +34,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Values Chrome protects with `OSCrypt` are decrypted where the platform keyring allows it, and
   masked unless a subcommand is asked to reveal them. On Linux the key is read from the Secret
   Service over D-Bus, so the `secret-tool` binary, which is packaged apart from the keyring daemon
-  and often absent, is no longer needed; KWallet and the `keyring` package remain as fallbacks. A
-  value that cannot be decrypted is now reported rather than shown as `(encrypted)` with no
-  explanation.
+  and often absent, is no longer needed; KWallet and the `keyring` package remain as fallbacks.
+  Every password a keyring offers is tried rather than only the first, because a keyring can hold
+  an entry from an earlier installation beside the current one and nothing but decrypting tells
+  them apart. A value that cannot be decrypted is now reported rather than shown as `(encrypted)`
+  with no explanation.
 - `deltona.chrome` package, with the `browsing`, `core`, `flag_binary`, `flags`, `network`,
   `preferences`, `secrets`, `settings`, and `typing` modules.
 - `chrome` extra, adding `cryptography`, `keyring`, and `platformdirs`.

@@ -16,7 +16,7 @@ from .core import (
     classify_path,
     database_summary,
     is_sqlite_database,
-    linux_keyring_password,
+    linux_keyring_passwords,
     open_database,
     profile_files,
     query_database,
@@ -28,6 +28,6 @@ from .core import (
 __all__ = ('CHANNEL_CACHE_DIRECTORIES', 'CHANNEL_DIRECTORIES', 'KEYRING_NAMES', 'ChromeProfile',
            'ChromeUserData', 'OSCrypt', 'ProfileNotFound', 'chrome_cache_directory',
            'chrome_config_directory', 'chrome_timestamp_to_datetime', 'classify_path',
-           'database_summary', 'is_sqlite_database', 'linux_keyring_password', 'open_database',
+           'database_summary', 'is_sqlite_database', 'linux_keyring_passwords', 'open_database',
            'profile_files', 'query_database', 'table_names', 'unix_timestamp_to_datetime',
            'webkit_timestamp_to_datetime')
