@@ -259,6 +259,7 @@ nocancel
 nonantialiased
 nonblock
 nonexistent
+noone
 noqa
 norecursedirs
 norestart
@@ -266,6 +267,7 @@ notarytool
 noto
 nullglob
 numpy
+numpydoc
 nvenc
 nwinemenubuilder
 nyapfignore

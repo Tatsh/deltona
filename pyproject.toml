@@ -9,7 +9,7 @@ dev = [
   "mypy>=2.3.1",
   "pydbus-stubs>=0; sys_platform == 'linux'",
   "ruff==0.16.5",
-  "ty>=0.0.77",
+  "ty>=0.0.78",
   "types-beautifulsoup4>=4.12.0.20250516",
   "types-binaryornot>=0.4.0.20260712",
   "types-paramiko>=5.0.0.20260724",
@@ -71,7 +71,7 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
-  "anyio>=4.14.2",
+  "anyio>=4.15.0",
   "async-lru>=2.3.0",
   "bascom>=0.2.0",
   "binaryornot>=0.6.0",
@@ -95,17 +95,17 @@ email = "audvare@gmail.com"
 name = "Andrew Udvare"
 
 [project.optional-dependencies]
-admin = ["paramiko>=5.0.0", "platformdirs>=4.11.6", "watchdog>=6.0.0"]
-chrome = ["cryptography>=50.0.1", "keyring>=25.7.0", "platformdirs>=4.11.6"]
+admin = ["paramiko>=5.0.0", "platformdirs>=4.11.7", "watchdog>=6.0.0"]
+chrome = ["cryptography>=50.0.1", "keyring>=25.7.0", "platformdirs>=4.11.7"]
 desktop = [
   "pydbus>=0.6.0; sys_platform == 'linux'",
   "pygobject>=3.58.0; sys_platform == 'linux'",
   "pyperclip>=1.11.0",
 ]
-git = ["gidgethub>=5.4.0", "gitpython>=3.1.61", "keyring>=25.7.0", "platformdirs>=4.11.6"]
-media = ["keyring>=25.7.0", "mutagen>=1.48.1", "platformdirs>=4.11.6", "send2trash>=2.1.0"]
+git = ["gidgethub>=5.4.0", "gitpython>=3.1.61", "keyring>=25.7.0", "platformdirs>=4.11.7"]
+media = ["keyring>=25.7.0", "mutagen>=1.48.1", "platformdirs>=4.11.7", "send2trash>=2.1.0"]
 string = ["pyyaml>=6.0.3", "unidecode>=1.4.0", "yt-dlp>=2026.8.19"]
-wine = ["pexpect>=4.9.0", "platformdirs>=4.11.6", "psutil>=7.2.2", "python-xz>=0.6.0"]
+wine = ["pexpect>=4.9.0", "platformdirs>=4.11.7", "psutil>=7.2.2", "python-xz>=0.6.0"]
 www = ["beautifulsoup4>=4.15.0", "html5lib>=1.1", "keyring>=25.7.0", "pillow>=12.3.0"]
 
 [project.scripts]
@@ -289,9 +289,9 @@ ignore = [
   "missing-todo-author",
   "missing-trailing-comma",
   "multi-line-summary-first-line",
-  "start-process-with-partial-path",
   "subprocess-without-shell-equals-true",
   "suspicious-subprocess-import",
+  "start-process-with-partial-path",
 ]
 preview = true
 
