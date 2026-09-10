@@ -468,11 +468,11 @@ def test_remove_trailing_commas_main_unreadable_gitignore(runner: CliRunner, tmp
     (tmp_path / 'a.py').write_text('x = (1, 2,)\n')
     real_read = Path.read_text
 
-    def fake_read_text(self: Path, encoding: str | None = None, errors: str | None = None) -> str:
+    def fake_read_text(self: Path, *args: str | None, **kwargs: str | None) -> str:
         if self.name == '.gitignore':
             msg = 'boom'
             raise OSError(msg)
-        return real_read(self, encoding=encoding, errors=errors)
+        return real_read(self, *args, **kwargs)
 
     mocker.patch.object(Path, 'read_text', fake_read_text)
     result = runner.invoke(remove_trailing_commas_main, [str(tmp_path), '--no-format'])
