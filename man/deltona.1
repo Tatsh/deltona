@@ -27,9 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "DELTONA" "1" "Sep 06, 2026" "0.4.0" "deltona"
+.TH "DELTONA" "1" "Sep 10, 2026" "0.5.0" "deltona"
 .SH NAME
-deltona \- deltona v0.4.0
+deltona \- deltona v0.5.0
 .sp
 A lot of uncategorised utilities.
 .SH CLEAN-OLD-KERNELS-MODULES
@@ -415,6 +415,73 @@ Arguments
 .B LOCAL
 Required argument
 .UNINDENT
+.INDENT 0.0
+.TP
+.B REMOTE
+Optional argument
+.UNINDENT
+.SH RCLONE-DRIVE-CHANGES
+.sp
+List files recently changed on the Google Drive account behind REMOTE.
+.sp
+REMOTE defaults to gdrive. Any path on it is ignored, since the whole account is listed.
+.sp
+The action is inferred from what Google reports about the file rather than stated by Google:
+one whose creation and modification times match was created, one in the bin was trashed, and
+anything else was edited. A rename or a move therefore reads as an edit, since either only
+moves the modification time along.
+.sp
+Deletions are not reported. Google serves those only through the feed rclone\-bisyncd watches,
+which starts at the moment it is opened and cannot be asked about a time already past.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+rclone\-drive\-changes [OPTIONS] [REMOTE]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-access\-token <access_token>
+Access token to send instead of the one rclone holds.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Print the file resources as Google sends them.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-n, \-\-limit <limit>
+Maximum number of files to report.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-rclone\-config <rclone_config>
+Configuration file rclone reads. Defaults to the one rclone reports.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-s, \-\-since <since>
+Report only what changed after this. A duration (30m, 2h, 7d) or a timestamp (2026\-09\-01T08:00).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-u, \-\-until <until>
+Report only what changed before this. Same forms as \-\-since.
+.UNINDENT
+.sp
+Arguments
 .INDENT 0.0
 .TP
 .B REMOTE
@@ -1099,6 +1166,11 @@ Optional argument
 .sp
 Merge pull requests made by Dependabot on GitHub.
 .sp
+\-\-watch keeps running and merges whenever GitHub notifies about a pull request, and sweeps
+every repository every \-\-sweep seconds regardless. A notification arrives only for a repository
+the account is subscribed to and has new pull request notifications enabled for, so the sweep
+is what makes the daemon correct rather than merely quick.
+.sp
 Usage
 .INDENT 0.0
 .INDENT 3.5
@@ -1169,6 +1241,82 @@ Specific repository to process as NAME or OWNER/NAME. May be passed multiple tim
 .TP
 .B \-u, \-\-username <username>
 Username.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-api\-key <api_key>
+GitHub token to store for a machine with no keyring, readable only by the account and group the service runs as. Giving it as DELTONA_GITHUB_API_KEY keeps it out of the shell history.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-install\-service
+Install a service that merges whenever a pull request is notified about, then exit.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-k, \-\-kind <kind>
+Service manager to target. Defaults to the one native to this platform.
+.INDENT 7.0
+.TP
+.B Options
+launchd | systemd\-system | systemd\-user
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-dry\-run
+Print what would be written or removed instead of doing it.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-name <name>
+Service name. Defaults to a name based on the command and \-\-username.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-enable
+Write the service definition without starting anything.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-service\-group <service_group>
+Group given read access to the stored token.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-service\-user <service_user>
+Account a systemd\-system service runs as.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-sweep <sweep>
+Longest wait in seconds between passes over every repository.
+.INDENT 7.0
+.TP
+.B Default
+\fB900.0\fP
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-uninstall\-service
+Remove the installed service and exit.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-w, \-\-watch
+Keep running, merging whenever the bot opens a pull request.
+.UNINDENT
+.sp
+Environment variables
+.INDENT 0.0
+.TP
+.B DELTONA_GITHUB_API_KEY
+.INDENT 7.0
+.INDENT 3.5
+Provide a default for \fI\%\-\-api\-key\fP
+.UNINDENT
+.UNINDENT
 .UNINDENT
 .SH ADD-CDDA-TIMES
 .sp
@@ -2881,6 +3029,1225 @@ Arguments
 .TP
 .B LOCAL_STATE_PATH
 Optional argument
+.UNINDENT
+.SH CHROME-DUMP
+.sp
+Dump settings and cache information from Chrome and Chromium.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump [OPTIONS] COMMAND [ARGS]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-C, \-\-cache\-path <cache_path>
+Cache directory. Defaults to the location for the chosen channel.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-c, \-\-config\-path <config_path>
+User data directory. Defaults to the location for the chosen channel.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-channel <channel>
+Browser release channel used to find the default directories.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqstable\(aq\fP
+.TP
+.B Options
+beta | canary | chromium | dev | stable
+.UNINDENT
+.UNINDENT
+.SS bookmarks
+.sp
+Dump a profile\(aqs bookmarks.
+.sp
+FOLDER optionally limits the output to one folder and everything under it. Give it as a
+slash\-separated path such as \fIBookmarks bar/Development\fP; the first segment may be a root name
+such as \fIother\fP\&. Matching ignores case.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump bookmarks [OPTIONS] [FOLDER]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-tree, \-\-flat
+Show a tree instead of a flat table.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FOLDER
+Optional argument
+.UNINDENT
+.SS list\-accounts
+.sp
+List the Google accounts signed in to a profile and their stored sign\-in tokens.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-accounts [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-show\-tokens
+Show decrypted sign\-in tokens instead of a masked placeholder.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-autofill
+.sp
+List remembered form data: autofill entries, addresses, plus addresses, or AI entities.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-autofill [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-addresses
+Show addresses instead of autofill entries.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-ai\-entities
+Show Autofill AI entities instead of autofill entries.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-show\-values
+Show decrypted Autofill AI attribute values instead of a masked placeholder.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-plus\-addresses
+Show plus addresses instead of autofill entries.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-l, \-\-limit <limit>
+Maximum rows to show. 0 means no limit.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-s, \-\-search <search>
+Only show entries whose name or value contains this substring.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-cache
+.sp
+List entries of a profile\(aqs HTTP, code, or image cache.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-cache [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-cache <cache_kind>
+Which cache to read.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqhttp\(aq\fP
+.TP
+.B Options
+code | http | image
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-l, \-\-limit <limit>
+Maximum entries to show. 0 means no limit.
+.INDENT 7.0
+.TP
+.B Default
+\fB100\fP
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-s, \-\-search <search>
+Substring filter on the raw cache key.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-sort <sort>
+Sort order.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqmodified\(aq\fP
+.TP
+.B Options
+key | modified | size
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-cookies
+.sp
+List stored cookies.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-cookies [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-database <database>
+Which cookie database to read.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqcookies\(aq\fP
+.TP
+.B Options
+cookies | extension | safe\-browsing
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-H, \-\-host <host>
+Only show cookies whose host contains this substring.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-l, \-\-limit <limit>
+Maximum rows to show. 0 means no limit.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-show\-values
+Show decrypted values instead of a masked placeholder.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-databases
+.sp
+List the SQLite databases of a profile with their schema versions and tables.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-databases [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-dips
+.sp
+List bounce tracking and popup interaction records from a profile\(aqs \fIDIPS\fP database.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-dips [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-popups
+Show the popups table instead.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-s, \-\-search <search>
+Case\-insensitive substring filter on the site.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-downloads
+.sp
+Dump every download recorded in a profile\(aqs \fIHistory\fP database.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-downloads [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-l, \-\-limit <limit>
+Maximum rows to show. 0 means no limit.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-state <state>
+Restrict to downloads in this state.
+.INDENT 7.0
+.TP
+.B Options
+BUG_140687 | CANCELLED | COMPLETE | INTERRUPTED | INVALID | IN_PROGRESS
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-extensions
+.sp
+Dump every extension installed in a profile.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-extensions [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-i, \-\-id <extension_id>
+Show one extension by ID in full detail.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-enabled, \-\-disabled
+Restrict to enabled or disabled extensions.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-files
+.sp
+Inventory everything stored at the top level of a profile directory.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-files [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-flags
+.sp
+List the state of every \fIchrome://flags\fP entry the browser has been told about.
+.sp
+Flag titles and descriptions are not stored in the profile. They are read out of the installed
+browser binary when one can be found, and otherwise fetched from the Chromium source at the tag
+matching the installed browser version. Either way the result is cached. Flags the profile
+still records but the browser no longer defines are shown with an empty description.
+.sp
+A binary supplies no owners or expiry milestones, so those are filled in from
+\fIflag\-metadata.json\fP unless \fI\-\-offline\fP was given.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-flags [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-all
+Include flags left at their default.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-s, \-\-search <search>
+Only show flags whose name, title, or description matches.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-binary <binary>
+Browser binary to read the flag table out of.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-offline
+Never fetch; use only the cache and the binary.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-refresh
+Read the flag definitions again.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-source <source>
+Where to read the flag definitions from.
+.INDENT 7.0
+.TP
+.B Options
+auto | binary | network
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-state <state>
+Only show flags in this state.
+.INDENT 7.0
+.TP
+.B Options
+changed | default | disabled | enabled
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-version <version_override>
+Browser version to describe. Defaults to the value in \fILast Version\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.SS list\-history
+.sp
+Dump a profile\(aqs browsing history.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-history [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-l, \-\-limit <limit>
+Maximum rows to show. 0 means no limit.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-s, \-\-search <search>
+Filter by a substring of the URL or title.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-search\-terms
+Show \fIkeyword_search_terms\fP instead.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-urls\-only
+Show \fIurls\fP without joining \fIvisits\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-network\-state
+.sp
+List HTTP server properties, QUIC support, and HSTS state of a profile.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-network\-state [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-section <section>
+Section to show. Defaults to a summary of every section.
+.INDENT 7.0
+.TP
+.B Options
+broken | hsts | network\-qualities | quic | servers
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-l, \-\-limit <limit>
+Maximum rows to show. 0 means no limit.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-s, \-\-search <search>
+Case\-insensitive substring filter on the host, where shown.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-passwords
+.sp
+List saved and blocklisted logins.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-passwords [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-a, \-\-account
+Read \fILogin Data For Account\fP instead of \fILogin Data\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-show\-passwords
+Show decrypted passwords and notes instead of a masked placeholder.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-stats
+Show dismissal statistics from the \fIstats\fP table instead of logins.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-payments
+.sp
+List saved payment methods: cards, IBANs, bank accounts, loyalty cards, and offers.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-payments [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-a, \-\-account
+Read \fIAccount Web Data\fP instead of \fIWeb Data\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-t, \-\-table <table>
+Only show this table. Defaults to every non\-empty table.
+.INDENT 7.0
+.TP
+.B Options
+benefit_merchant_domains | credit_cards | generic_payment_instruments | local_ibans | local_stored_cvc | loyalty_card_merchant_domain | loyalty_cards | masked_bank_accounts | masked_bank_accounts_metadata | masked_credit_card_benefits | masked_credit_cards | masked_ibans | masked_ibans_metadata | offer_data | offer_eligible_instrument | offer_merchant_domain | payment_instrument_creation_options | payment_method_manifest | payments_customer_data | secure_payment_confirmation_browser_bound_key | secure_payment_confirmation_instrument | server_card_cloud_token_data | server_card_metadata | server_stored_cvc | valuables_metadata | virtual_card_usage_data | web_app_manifest_section
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-show\-numbers
+Show decrypted card, IBAN, and CVC numbers instead of a masked placeholder.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-permissions
+.sp
+Dump a profile\(aqs per\-site content setting exceptions.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-permissions [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-t, \-\-type <type_>
+Restrict to one content setting type.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-defaults
+Show only the profile\(aqs default values.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-profiles
+.sp
+List every profile in the user data directory.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-profiles [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.SS list\-reporting
+.sp
+List Network Error Logging policies and Reporting API endpoints of a profile.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-reporting [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-table <table_name>
+Table to show.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqnel\(aq\fP
+.TP
+.B Options
+endpoints | groups | nel
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-s, \-\-search <search>
+Case\-insensitive substring filter on the origin host.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-search\-engines
+.sp
+Dump a profile\(aqs search engines.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-search\-engines [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-all
+Include prepopulated engines that are not active. By default only engines with \fIprepopulate_id = 0\fP (user\-created) or an active status are shown.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-sessions
+.sp
+List a profile\(aqs session, tab, and app restore files.
+.sp
+Only the SNSS record framing is decoded; individual command payloads are not, and URLs are
+recovered on a best\-effort basis by scanning payload bytes for \fIhttp://\fP or \fIhttps://\fP runs.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-sessions [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-urls
+Show extracted URLs instead.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-shortcuts
+.sp
+Dump a profile\(aqs omnibox shortcuts.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-shortcuts [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-top\-sites
+.sp
+Dump a profile\(aqs top sites.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-top\-sites [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS list\-web\-apps
+.sp
+Dump a profile\(aqs installed web apps.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump list\-web\-apps [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-i, \-\-id <app_id>
+Show one web app by ID in full detail.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS local\-state
+.sp
+Dump the browser\-wide \fILocal State\fP file.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump local\-state [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-k, \-\-key <key>
+Dotted path to a single value, such as \fIbrowser.hovercard\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.SS preferences
+.sp
+Show a profile\(aqs settings the way the browser\(aqs own settings page groups them.
+.sp
+Chrome only writes a preference once it differs from its built\-in default, so the summary also
+reports the defaults that are in force and marks where each value came from. It is lossy: use
+\fI\-\-expand\fP for every stored key, \fI\-\-raw\fP for the file as stored, or \fI\-\-key\fP for one value.
+.sp
+\fI\-\-secure\fP reads \fISecure Preferences\fP, which holds no settings the summary knows about, so it
+implies \fI\-\-raw\fP unless \fI\-\-expand\fP is given.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump preferences [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-changed
+Omit settings left at their default.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-k, \-\-key <key>
+Dotted path to a single value, such as \fIdownload.default_directory\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-r, \-\-raw
+Dump the file as stored instead of summarising.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-s, \-\-secure
+Read \fISecure Preferences\fP instead.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-S, \-\-section <section>
+Only show settings in this section of the summary.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-x, \-\-expand
+List every stored key rather than a summary.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.SS query
+.sp
+Run a read\-only query against one of a profile\(aqs SQLite databases.
+.sp
+DATABASE is a file name within the profile directory, such as \fIWeb Data\fP or \fIHistory\fP\&. Use
+\fIlist\-databases\fP to see what is available.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump query [OPTIONS] DATABASE SQL
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-l, \-\-limit <limit>
+Maximum rows to show. 0 means no limit.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B DATABASE
+Required argument
+.UNINDENT
+.INDENT 0.0
+.TP
+.B SQL
+Required argument
+.UNINDENT
+.SS spell\-check
+.sp
+Dump a profile\(aqs custom spell\-check dictionary.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chrome\-dump spell\-check [OPTIONS]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-j, \-\-json
+Output JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-P, \-\-profile <profile_name>
+Profile directory name, display name, account name, or email.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqDefault\(aq\fP
+.UNINDENT
 .UNINDENT
 .SH FIX-PWA-ICON
 .sp

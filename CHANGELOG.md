@@ -9,54 +9,56 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+## [0.5.0] - 2026-09-10
+
 ### Added
 
 - `chrome-dump`, a command group that reads a Chrome or Chromium user data directory: profiles,
   bookmarks, history, downloads, cookies, passwords, payment methods, autofill, sign-in tokens,
-  extensions, flags, search engines, web apps, site permissions, sessions, the HTTP cache, and the
-  network state files. Every subcommand takes `--json`; tables are otherwise laid out for reading.
+  extensions, flags, search engines, web apps, site permissions, sessions, HTTP cache, and network
+  state files. Every subcommand takes `--json`; tables are otherwise formatted for reading.
   Directories default to what `platformdirs` reports for the chosen `--channel`.
 - `chrome-dump` `-P`/`--profile` accepts a profile's directory name, display name, Google account
-  name, given name, or email address, since the directory names Chrome creates say nothing about
-  whose profile they are.
-- `chrome-dump list-flags`, which reports each changed `chrome://flags` entry with its title,
-  description, supported systems, and a link to its declaration. Chrome records only the flag name,
-  so the rest is read out of the installed browser binary, where the table is compiled in, and
-  falls back to Chromium at the tag matching the browser's own version. Reading the binary needs no
-  network and describes the entries that build actually compiled, rather than the union over every
+  name, given name, or email address. The directory names Chrome creates do not identify whose
+  profile they are.
+- `chrome-dump list-flags` to report each changed `chrome://flags` entry with its title,
+  description, supported systems, and a link to its declaration. Chrome records only the flag name.
+  The rest is read out of the installed browser binary, where the table is compiled in, with a
+  fallback to Chromium at the tag matching the browser version. Reading the binary needs no network
+  and describes the entries the installed build actually compiled, rather than the union over every
   platform and preprocessor guard.
-- `chrome-dump preferences`, which groups a profile's settings the way the browser's own settings
-  page does and reports the defaults in force, because Chrome writes a preference only once it
-  differs from its default and a raw dump therefore shows what changed rather than what applies.
-- `chrome-dump query`, `list-databases`, and `list-files`, which run a read-only statement against
-  any of a profile's SQLite databases and inventory what a profile holds, so data without a
-  dedicated subcommand is still reachable.
+- `chrome-dump preferences` to group a profile's settings the way the browser's settings page does
+  and report the defaults in force. Chrome writes a preference only once it differs from its
+  default, and a raw dump therefore shows what changed rather than what applies.
+- `chrome-dump query`, `list-databases`, and `list-files` to run a read-only statement against any
+  of a profile's SQLite databases and inventory what a profile stores. Data without a dedicated
+  subcommand therefore remains available.
 - Values Chrome protects with `OSCrypt` are decrypted where the platform keyring allows it, and
-  masked unless a subcommand is asked to reveal them. On Linux the key is read from the Secret
-  Service over D-Bus, so the `secret-tool` binary, which is packaged apart from the keyring daemon
-  and often absent, is no longer needed; KWallet and the `keyring` package remain as fallbacks.
-  Every password a keyring offers is tried rather than only the first, because a keyring can hold
-  an entry from an earlier installation beside the current one and nothing but decrypting tells
-  them apart. A value that cannot be decrypted is now reported rather than shown as `(encrypted)`
-  with no explanation.
+  masked unless a subcommand is told to reveal them. On Linux the key is read from the Secret
+  Service over D-Bus. The `secret-tool` binary (packaged apart from the keyring daemon and often
+  absent) is therefore no longer needed; KWallet and the `keyring` package remain as fallbacks.
+  Every password a keyring offers is tried rather than only the first. A keyring can store an entry
+  from an earlier installation beside the entry from the current installation, and nothing but
+  decrypting tells them apart. A value that cannot be decrypted is now reported rather than shown
+  as `(encrypted)` with no explanation.
 - `deltona.chrome` package, with the `browsing`, `core`, `flag_binary`, `flags`, `network`,
   `preferences`, `pwa`, `secrets`, `settings`, `typing`, and `version` modules.
 - `chrome` extra, adding `cryptography`, `keyring`, and `platformdirs`.
 - `rclone-drive-changes` to list what has recently changed on a Google Drive account. What was done
-  to a file is inferred from the times Google reports, so a rename or a move reads as an edit.
-  Deletions are not reported, since Google serves those only through the changes feed
-  `rclone-bisyncd` watches, which cannot be asked about a time already past.
+  to a file is inferred from the times Google reports. A rename or a move therefore reads as an
+  edit. Deletions are not reported. Google serves deletions only through the changes feed
+  `rclone-bisyncd` watches, and the feed cannot be queried about a time already past.
 - `deltona.rclone.recent_changes`, with the `DEFAULT_CHANGES_LIMIT` and
   `DEFAULT_CHANGES_SINCE_SECONDS` constants.
 - `merge-dependabot-prs` and `merge-pre-commit-prs` `--watch`, `--install-service`, and
-  `--uninstall-service`, which run the merge whenever GitHub notifies about one of the bot's pull
+  `--uninstall-service`, to run the merge whenever GitHub notifies about one of the bot's pull
   requests and sweep every repository every fifteen minutes regardless. A notification arrives only
-  for a repository the account is subscribed to and has new pull request notifications enabled for,
-  so the sweep is what makes the daemon correct rather than merely quick.
-- `merge-dependabot-prs` and `merge-pre-commit-prs` `--api-key`, which stores a token where a
-  machine with no keyring can read it, owned by `--service-user` and `--service-group`, and
-  readable by nobody else. The service name carries `--username`, so one machine can run a service
-  per GitHub account.
+  for a repository the account is subscribed to and has new pull request notifications enabled for.
+  The sweep therefore makes the daemon correct rather than merely quick.
+- `merge-dependabot-prs` and `merge-pre-commit-prs` `--api-key`, to store a token where a machine
+  with no keyring can read it, owned by `--service-user` and `--service-group`, and readable by no
+  other user. The service name includes `--username`. One machine can therefore run a service per
+  GitHub account.
 - `deltona.services` module with `default_service_kind`, `disable_service`, `enable_service`,
   `generate_service`, `install_service`, `launchd_label`, `service_path`, and `uninstall_service`,
   plus the `ServiceKind` alias and the `LAUNCHD_LABEL_PREFIX` constant.
@@ -69,19 +71,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `deltona.chromium` is gone. `fix_chromium_pwa_icon` now lives in `deltona.chrome.pwa`, and
   `generate_chrome_user_agent`, `get_last_chrome_major_version`, and
   `get_latest_chrome_major_version` in `deltona.chrome.version`; all four are re-exported from
-  `deltona.chrome`. The `fix-pwa-icon` command is unchanged.
-- `get_last_chrome_major_version` finds each channel's user data directory through
-  `platformdirs` rather than a hardcoded list of paths, so it no longer misses a directory the
-  platform puts somewhere else.
-- `rich` is now a required dependency rather than one of the `admin` extra, since enough commands
-  render with it that importing it lazily bought nothing.
+  `deltona.chrome`. `fix-pwa-icon` is unchanged.
+- `get_last_chrome_major_version` finds each channel's user data directory through `platformdirs`
+  rather than a hardcoded list of paths. It therefore no longer misses a directory the platform
+  puts elsewhere.
+- `rich` is now a required dependency rather than one of the `admin` extra. Enough commands render
+  with it that importing it lazily bought nothing.
 - `rclone-bisyncd` now synchronises hourly rather than every five minutes when nothing is known to
-  have changed, since the periodic run only catches what the watcher and the Google Drive changes
-  feed miss. Where there is no such feed to read, the wait is how long a change made on the remote
+  have changed. The periodic run only catches what the watcher and the Google Drive changes feed
+  miss. Where there is no changes feed to read, the wait is how long a change made on the remote
   goes unnoticed.
-- `make-rclone-bisync-service` now restarts a service it replaces, which previously kept running on
-  the definition it started with. On launchd the loaded job is booted out first, since `launchctl`
-  will not bootstrap a label that is already loaded.
+- `make-rclone-bisync-service` now restarts a service it replaces. A replaced service previously
+  continued running on the definition it started with. On launchd the loaded job is booted out
+  first. `launchctl` will not bootstrap a label that is already loaded.
 - The `admin` extra now requires `rich`, and the `git` extra `platformdirs`.
 
 ## [0.4.0] - 2026-09-06
@@ -510,7 +512,8 @@ Minor release for testing the release process.
 
 First version. `check_bookmarks_html_urls` may have unresolved issues.
 
-[unreleased]: https://github.com/Tatsh/deltona/compare/v0.4.0...HEAD
+[unreleased]: https://github.com/Tatsh/deltona/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/Tatsh/deltona/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Tatsh/deltona/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Tatsh/deltona/compare/v0.2.4...v0.3.0
 [0.2.4]: https://github.com/Tatsh/deltona/compare/v0.2.3...v0.2.4
