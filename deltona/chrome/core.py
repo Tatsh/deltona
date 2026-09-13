@@ -719,7 +719,9 @@ def _derive_key(password: bytes, iterations: int = 1) -> bytes:
 
 
 def _decrypt_aes_cbc(ciphertext: bytes, keys: Sequence[bytes]) -> bytes | None:
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes  # ruff: ignore[import-outside-top-level,unsorted-imports]
+    from cryptography.hazmat.primitives.ciphers import (  # ruff: ignore[import-outside-top-level, unsorted-imports]
+        Cipher, algorithms, modes,
+    )
 
     if not keys or len(ciphertext) < _AES_BLOCK_SIZE:
         return None
