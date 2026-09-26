@@ -10,8 +10,6 @@ import logging
 import os
 import subprocess as sp
 
-from typing_extensions import override
-
 from .string import unix_path_to_wine as base_unix_path_to_wine
 from .system import IS_WINDOWS
 
@@ -43,7 +41,6 @@ def get_ultraiso_path(prefix: StrPath) -> StrPath | None:
 
 
 class InsufficientArguments(Exception):
-    @override
     def __init__(self) -> None:
         super().__init__('Insufficient amount of arguments.')
 
@@ -289,7 +286,6 @@ ULTRAISO_FONT_REPLACEMENT_MAX_LENGTH = 13
 
 class InvalidExec(Exception):
     """Raised when the UltraISO executable does not contain the expected font string."""
-    @override
     def __init__(self) -> None:
         super().__init__('Font not found in file. This is not the original UltraISO executable.')
 

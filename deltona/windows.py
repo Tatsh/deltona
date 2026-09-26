@@ -326,7 +326,6 @@ Maximum line length in a ``.reg`` file hex value.
 
 class NameTooLong(Exception):
     """Raised when a font name is longer than 64 characters."""
-    @override
     def __init__(self, name: str) -> None:
         super().__init__(self, f'{name} length exceeds 64 characters.')
 

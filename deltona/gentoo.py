@@ -9,8 +9,6 @@ from typing import TYPE_CHECKING
 import logging
 import re
 
-from typing_extensions import override
-
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
@@ -42,7 +40,6 @@ log = logging.getLogger(__name__)
 
 class InvalidActiveKernelSourcePath(Exception):
     """Raised when the active kernel source path is not a symbolic link."""
-    @override
     def __init__(self, source_path: StrPath) -> None:
         super().__init__(f'{source_path} is not a symbolic link.')
 

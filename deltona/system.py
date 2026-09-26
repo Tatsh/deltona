@@ -16,7 +16,6 @@ import subprocess as sp
 import sys
 
 from binaryornot.helpers import is_binary_string
-from typing_extensions import override
 
 from .io import context_os_open
 from .string import slugify
@@ -311,7 +310,6 @@ def kill_wine() -> None:
 
 class MultipleKeySlots(Exception):
     """Raised when a LUKS device has more than one keyslot."""
-    @override
     def __init__(self, dev: str) -> None:
         super().__init__(f'Device {dev} has more than one keyslot. This is not supported.')
 

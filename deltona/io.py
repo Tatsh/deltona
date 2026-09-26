@@ -16,8 +16,6 @@ import re
 import shutil
 import subprocess as sp
 
-from typing_extensions import override
-
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
@@ -346,7 +344,6 @@ class UnRAR:
 
 class SFVVerificationError(Exception):
     """Raised when SFV fails verification."""
-    @override
     def __init__(self, filename: StrPath, expected_crc: int, actual_crc: int) -> None:
         super().__init__(f'{filename}: Expected {expected_crc:08X}. Actual: {actual_crc:08X}.')
 
