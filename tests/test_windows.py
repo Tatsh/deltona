@@ -38,8 +38,10 @@ def test_make_font_entry_with_all_options() -> None:
 
 def test_make_font_entry_name_too_long() -> None:
     long_name = 'A' * (windows.LF_FULLFACESIZE + 1)
-    with pytest.raises(windows.NameTooLong):
+    with pytest.raises(windows.NameTooLong, match='length exceeds 64 characters') as exc_info:
         windows.make_font_entry(windows.Field.MessageFont, name=long_name)
+    assert str(exc_info.value) == f'{long_name} length exceeds 64 characters.'
+    assert exc_info.value.args == (f'{long_name} length exceeds 64 characters.',)
 
 
 def test_make_font_entry_with_header_current_user() -> None:
