@@ -57,6 +57,11 @@ jobs:
           Add-Content -Path $env:GITHUB_ENV -Value "LIB=$installed\lib$sep$env:LIB"
           Add-Content -Path $env:GITHUB_ENV -Value "INCLUDE=$installed\include$sep$env:INCLUDE"
         shell: 'pwsh'
+      - if: runner.os == 'macOS'
+        name: 'Link OpenSSL statically'
+        run: |
+          echo 'OPENSSL_STATIC=1' >> "$GITHUB_ENV"
+        shell: 'bash'
       - if: runner.os == 'Windows'
         name: 'Shorten uv cache path'
         run: |
@@ -163,7 +168,7 @@ jobs:
             & $file.FullName --help
             & $file.FullName add-cdda-times --help
           }
-      - if: (matrix.os == 'macos-15-intel' || matrix.os == 'macos-latest') && env.APPLE_SIGNING_CERT != ''
+      - if: (matrix.os == 'macos-15-intel' || matrix.os == 'macos-15') && env.APPLE_SIGNING_CERT != ''
         name: 'Sign and notarise macOS binaries'
         env:
           APPLE_CERT_BASE64: ${{ secrets.APPLE_SIGNING_CERTIFICATE }}
@@ -206,7 +211,7 @@ jobs:
           rm -f "$cert_path" "$zip_path"
           security delete-keychain "$keychain"
         shell: 'bash'
-      - if: matrix.os == 'macos-15-intel' || matrix.os == 'macos-latest'
+      - if: matrix.os == 'macos-15-intel' || matrix.os == 'macos-15'
         name: 'Test binary'
         run: |
           dist_files=(dist/*)
@@ -232,7 +237,7 @@ jobs:
         with:
           subject-path: '${{ matrix.dist_path }}'
       - name: 'Generate SBOM'
-        uses: 'anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26'
+        uses: 'anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c'
         env:
           SYFT_SOURCE_NAME: 'deltona'
           SYFT_SOURCE_VERSION: ${{ github.ref_name }}
@@ -245,7 +250,7 @@ jobs:
         with:
           subject-path: '${{ matrix.dist_path }}'
           sbom-path: 'sbom.spdx.json'
-      - if: (matrix.os == 'macos-15-intel' || matrix.os == 'macos-latest') && github.ref_type == 'tag'
+      - if: (matrix.os == 'macos-15-intel' || matrix.os == 'macos-15') && github.ref_type == 'tag'
         name: 'Zip files'
         env:
           DIST_PATH: ${{ matrix.dist_path }}
@@ -278,11 +283,11 @@ jobs:
         with:
           subject-path: '_out/*.zip'
           sbom-path: 'sbom.spdx.json'
-      # The archives, not the binaries, are what a release carries. Every matrix job builds a
-      # binary under the same name, so uploading those directly would collide once merged and
-      # silently drop every architecture but the last. An archive carries the version and the
-      # architecture in its own name, and keeps the executable bit and any notarisation that a
-      # bare release asset would lose.
+      # The archives, not the binaries, are what a release includes. Every matrix job builds a
+      # binary under the same name, and uploading the binaries directly would therefore collide
+      # once merged and silently drop every architecture but the last. An archive includes the
+      # version and the architecture in its name, and retains the executable bit and any
+      # notarisation that a bare release asset would lose.
       - if: github.ref_type == 'tag'
         name: 'Upload release archives'
         uses: 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a'
@@ -296,7 +301,7 @@ jobs:
           - os: 'macos-15-intel'
             dist_path: 'dist/*'
             suffix: 'mac-x86_64'
-          - os: 'macos-latest'
+          - os: 'macos-15'
             dist_path: 'dist/*'
             suffix: 'mac-arm64'
           - os: 'windows-latest'

@@ -4,23 +4,23 @@ requires = ["hatchling"]
 
 [dependency-groups]
 dev = [
-  "commitizen>=4.18.0",
+  "commitizen>=4.19.0",
   "cz-path>=0.0.7",
   "mypy>=2.3.1",
   "pydbus-stubs>=0; sys_platform == 'linux'",
   "ruff==0.16.9",
-  "ty>=0.0.78",
+  "ty>=0.0.84",
   "types-beautifulsoup4>=4.12.0.20250516",
   "types-binaryornot>=0.4.0.20260712",
   "types-paramiko>=5.0.0.20260724",
   "types-pexpect>=4.9.0.20260518",
   "types-pillow>=10.2.0.20240822",
-  "types-psutil>=7.2.2.20260827",
+  "types-psutil>=7.2.2.20260906",
   "types-pyperclip>=1.11.0.20260508",
-  "types-pyyaml>=6.0.12.20260815",
+  "types-pyyaml>=6.0.12.20260906",
   "types-send2trash>=2.1.0.20260408",
-  "types-yt-dlp>=2026.8.19.20260827",
-  "yapf>=0.43.0",
+  "types-yt-dlp>=2026.8.19.20260912",
+  "yapf>=0.43.0"
 ]
 docs = [
   "autodoc-pydantic>=2.2.0",
@@ -31,7 +31,7 @@ docs = [
   "sphinx-click>=6.2.0",
   "sphinx-datatables>=1.0.0",
   "sphinx-immaterial>=0.13.9",
-  "sphinx>=9.1.0; python_version >= \"3.13\"",
+  "sphinx>=9.1.0; python_version >= \"3.13\""
 ]
 tests = [
   "coveralls>=4.1.0",
@@ -39,7 +39,7 @@ tests = [
   "pytest-asyncio>=1.4.0",
   "pytest-cov>=7.1.0",
   "pytest-mock>=3.15.1",
-  "pytest>=9.1.1",
+  "pytest>=9.1.1"
 ]
 
 [project]
@@ -68,19 +68,19 @@ classifiers = [
   "Topic :: System :: Hardware",
   "Topic :: System :: Systems Administration",
   "Topic :: Utilities",
-  "Typing :: Typed",
+  "Typing :: Typed"
 ]
 dependencies = [
-  "anyio>=4.15.0",
+  "anyio>=4.15.1",
   "async-lru>=2.3.0",
   "bascom>=0.2.0",
   "binaryornot>=0.6.0",
   "click>=8.5.0",
-  "niquests>=3.21.1",
+  "niquests>=3.21.2",
   "pathspec>=1.1.1",
   "rich>=15.0.0",
   "tomlkit>=0.15.1",
-  "typing-extensions>=4.16.0",
+  "typing-extensions>=4.16.0"
 ]
 description = "A lot of uncategorised utilities."
 keywords = ["bluetooth", "command line", "file management", "git", "multimedia"]
@@ -95,17 +95,17 @@ email = "audvare@gmail.com"
 name = "Andrew Udvare"
 
 [project.optional-dependencies]
-admin = ["paramiko>=5.0.0", "platformdirs>=4.11.7", "watchdog>=6.0.0"]
-chrome = ["cryptography>=50.0.1", "keyring>=25.7.0", "platformdirs>=4.11.7"]
+admin = ["paramiko>=5.0.0", "platformdirs>=4.11.14", "watchdog>=6.0.0"]
+chrome = ["cryptography>=50.0.1", "keyring>=25.7.0", "platformdirs>=4.11.14"]
 desktop = [
   "pydbus>=0.6.0; sys_platform == 'linux'",
   "pygobject>=3.58.0; sys_platform == 'linux'",
-  "pyperclip>=1.11.0",
+  "pyperclip>=1.11.0"
 ]
-git = ["gidgethub>=5.4.0", "gitpython>=3.1.61", "keyring>=25.7.0", "platformdirs>=4.11.7"]
-media = ["keyring>=25.7.0", "mutagen>=1.48.1", "platformdirs>=4.11.7", "send2trash>=2.1.0"]
+git = ["gidgethub>=6.0.0", "gitpython>=3.1.62", "keyring>=25.7.0", "platformdirs>=4.11.14"]
+media = ["keyring>=25.7.0", "mutagen>=1.48.1", "platformdirs>=4.11.14", "send2trash>=2.1.0"]
 string = ["pyyaml>=6.0.3", "unidecode>=1.4.0", "yt-dlp>=2026.8.19"]
-wine = ["pexpect>=4.9.0", "platformdirs>=4.11.7", "psutil>=7.2.2", "python-xz>=0.6.0"]
+wine = ["pexpect>=4.9.0", "platformdirs>=4.11.14", "psutil>=7.2.2", "python-xz>=0.6.0"]
 www = ["beautifulsoup4>=4.15.0", "html5lib>=1.1", "keyring>=25.7.0", "pillow>=12.3.0"]
 
 [project.scripts]
@@ -205,7 +205,7 @@ version_files = [
   "man/deltona.1",
   "package.json",
   "sh.tat.deltona.yml",
-  "snapcraft.yaml",
+  "snapcraft.yaml"
 ]
 version_provider = "pep621"
 
@@ -257,7 +257,7 @@ venvPath = "."
 [tool.pytest.ini_options]
 filterwarnings = [
   "ignore::async_lru.AlruCacheLoopResetWarning",
-  "ignore:GLib.unix_signal_add_full is deprecated:",
+  "ignore:GLib.unix_signal_add_full is deprecated:"
 ]
 mock_use_standalone_module = true
 norecursedirs = ["node_modules"]
@@ -291,7 +291,7 @@ ignore = [
   "multi-line-summary-first-line",
   "subprocess-without-shell-equals-true",
   "suspicious-subprocess-import",
-  "start-process-with-partial-path",
+  "start-process-with-partial-path"
 ]
 preview = true
 

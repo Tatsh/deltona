@@ -432,7 +432,6 @@ winget
 wiswa
 wiswa's
 wkwebview
-worktree
 wwdc
 x'fffe
 xauthority
