@@ -470,13 +470,15 @@ def _cddb_result_from_read_response(read_text: str, artist: str,
                            tuple(x[1] for x in sorted(tracks.items(), key=operator.itemgetter(0))))
 
 
+_CDDB_REQUEST_TIMEOUT = 5
+
+
 @alru_cache
 async def cddb_query(disc_id: str,
                      *,
                      accept_first_match: bool = False,
                      app: str = 'deltona cddb_query',
                      host: str | None = None,
-                     timeout: float = 5,
                      username: str | None = None,
                      version: str = '0.0.1') -> CDDBQueryResult:
     """
@@ -485,7 +487,9 @@ async def cddb_query(disc_id: str,
     Defaults to the host in the keyring under the ``gnudb`` key and the current user name.
 
     It is advised to ``except`` typical
-    `niquests exceptions <https://niquests.readthedocs.io/en/latest/>`_ when calling this.
+    `niquests exceptions <https://niquests.readthedocs.io/en/latest/>`_ when calling this. Each HTTP
+    request times out after 5 seconds. For an overall limit, wrap the call in
+    :py:func:`asyncio.timeout`.
 
     Parameters
     ----------
@@ -497,8 +501,6 @@ async def cddb_query(disc_id: str,
         App name.
     host : str | None
         Hostname to query.
-    timeout : float
-        HTTP timeout.
     username : str | None
         Username for keyring and for the ``hello`` parameter to the CDDB server.
     version : str
@@ -533,7 +535,7 @@ async def cddb_query(disc_id: str,
                                   'cmd': f'cddb query {disc_id}',
                                   **hello
                               },
-                              timeout=timeout,
+                              timeout=_CDDB_REQUEST_TIMEOUT,
                               headers={'user-agent': hello['hello']})
         r.raise_for_status()
         text = assert_not_none(r.text)
@@ -546,7 +548,7 @@ async def cddb_query(disc_id: str,
                                   'cmd': f'cddb read {category} {disc_id.split(" ")[0]}',
                                   **hello
                               },
-                              timeout=timeout)
+                              timeout=_CDDB_REQUEST_TIMEOUT)
     r.raise_for_status()
     read_text = assert_not_none(r.text)
     log.debug('Response: %s', read_text)

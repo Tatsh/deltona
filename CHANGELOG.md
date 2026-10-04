@@ -12,6 +12,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Removed
 
 - Support for Python 3.10. Python 3.11 or later is now required.
+- The `timeout` parameter of `deltona.media.cddb_query()`. Each HTTP request still times out after
+  5 seconds. Wrap the call in `asyncio.timeout()` for an overall limit.
 
 ## [0.5.1] - 2026-09-21
 
