@@ -9,7 +9,7 @@ from http import HTTPStatus
 from itertools import chain
 from os import scandir
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, TypeAlias, TypedDict, cast
+from typing import TYPE_CHECKING, Literal, NotRequired, TypeAlias, TypedDict, cast
 import logging
 import os
 import plistlib
@@ -17,7 +17,6 @@ import re
 import urllib.parse
 
 from niquests import AsyncSession, Response
-from typing_extensions import NotRequired
 import anyio
 
 from .chrome.version import generate_chrome_user_agent
@@ -305,7 +304,7 @@ def create_parsed_tree_structure(
     for i, key in enumerate(keys):
         try:
             next(x for x in ref if x['type'] == 'folder' and x['name'] == key)
-        except StopIteration:  # ruff:ignore[try-except-in-loop]
+        except StopIteration:
             new_level: BookmarksHTMLFolder = {
                 'attrs': folder_path[i][1],
                 'children': [],

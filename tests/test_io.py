@@ -506,7 +506,7 @@ Details: RAR 1.5
     assert files[1].name == 'xy/file1.txt'
     assert files[0].name == 'xy/file2.bin'
     assert files[0].size == 137536
-    assert files[0].date == datetime.datetime(2011, 6, 7, 21, 54, tzinfo=datetime.timezone.utc)
+    assert files[0].date == datetime.datetime(2011, 6, 7, 21, 54, tzinfo=datetime.UTC)
 
 
 def test_unrar_test_extraction_success(mocker: MockerFixture) -> None:

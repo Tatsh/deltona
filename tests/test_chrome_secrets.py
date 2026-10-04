@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from hashlib import sha256
 from typing import TYPE_CHECKING, Any
 import json
@@ -41,7 +41,6 @@ if TYPE_CHECKING:
 
     from .conftest import FakeChromeUserData
 
-UTC = timezone.utc
 _WEBKIT_EPOCH = datetime(1601, 1, 1, tzinfo=UTC)
 _V99_BLOB = b'v99'
 _V11_BLOB = b'v11' + bytes(range(16))

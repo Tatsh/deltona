@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Literal, TypeAlias
+from typing import Literal, NotRequired, TypeAlias
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import TypedDict
 
 __all__ = ('ChromeChannel', 'LocalState', 'LocalStateBrowser', 'LocalStateProfile', 'ProfileInfo')
 

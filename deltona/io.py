@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from binascii import crc32
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 from zipfile import ZipFile
@@ -93,7 +93,7 @@ def unpack_0day(path: StrPath, *, remove_diz: bool = True) -> None:
         rars = list(path.glob('*.rar'))
         with Path(re.sub(r'(?:\.part\d+)?\.r(?:[0-9][0-9]|ar)$', '.sfv',
                          rars[0].name.lower())).open('w+', encoding='utf-8') as f:
-            f.write(f'; {datetime.now(tz=timezone.utc).astimezone()}\n')
+            f.write(f'; {datetime.now(tz=UTC).astimezone()}\n')
             f.writelines(f'{rar.name} {crc32(rar.read_bytes()):08X}\n' for rar in sorted(
                 path.glob('*.part*.rar' if any(
                     re.search(r'\.part[0-9]{,3}\.rar$', str(r), re.IGNORECASE)
@@ -336,8 +336,7 @@ class UnRAR:
              rar), text=True, check=True, capture_output=True).stdout.splitlines()
                    if (m := re.match(self.LIST_RE, line))):
             yield RARInfo(attributes_str=mm['attributes'],
-                          date=datetime.strptime(mm['date'],
-                                                 '%Y-%m-%d %H:%M').replace(tzinfo=timezone.utc),
+                          date=datetime.strptime(mm['date'], '%Y-%m-%d %H:%M').replace(tzinfo=UTC),
                           name=mm['filename'],
                           size=int(mm['size']))
 
@@ -390,10 +389,10 @@ def make_sfv(sfv_file: StrPath, files: Iterable[StrPath], *, header: bool = True
     file_paths = sorted([Path(file) for file in files])
     with Path(sfv_file).open('w+', encoding='utf-8') as f:
         if header:
-            f.write(f'; Generated on {datetime.now(tz=timezone.utc).isoformat(" ")}\n')
+            f.write(f'; Generated on {datetime.now(tz=UTC).isoformat(" ")}\n')
             for file in file_paths:
                 stat = file.stat()
-                dt = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(' ')
+                dt = datetime.fromtimestamp(stat.st_mtime, tz=UTC).isoformat(' ')
                 f.write(f'; {stat.st_size:-10d} {dt} {file.stem}\n')
         for file in file_paths:
             f.write(f'{file.name} {crc32(file.read_bytes()):08X}\n')

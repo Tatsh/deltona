@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 import json
 
@@ -26,11 +26,11 @@ if TYPE_CHECKING:
     from .conftest import FakeChromeUserData
 
 CUSTOM_DICTIONARY_TEXT = 'word1\n\nword2\nchecksum_v1 = abc123\n'
-DT_2020_01_01 = datetime(2020, 1, 1, tzinfo=timezone.utc)
-DT_2022_11_05 = datetime(2022, 11, 5, 18, 45, tzinfo=timezone.utc)
-DT_2023_06_01 = datetime(2023, 6, 1, 8, tzinfo=timezone.utc)
-DT_2024_03_15 = datetime(2024, 3, 15, 12, 30, tzinfo=timezone.utc)
-DT_2024_03_16 = datetime(2024, 3, 16, 9, tzinfo=timezone.utc)
+DT_2020_01_01 = datetime(2020, 1, 1, tzinfo=UTC)
+DT_2022_11_05 = datetime(2022, 11, 5, 18, 45, tzinfo=UTC)
+DT_2023_06_01 = datetime(2023, 6, 1, 8, tzinfo=UTC)
+DT_2024_03_15 = datetime(2024, 3, 15, 12, 30, tzinfo=UTC)
+DT_2024_03_16 = datetime(2024, 3, 16, 9, tzinfo=UTC)
 WEBKIT_2020_01_01 = 13222310400000000
 WEBKIT_2022_11_05 = 13312147500000000
 WEBKIT_2023_06_01 = 13330080000000000

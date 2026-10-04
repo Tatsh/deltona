@@ -16,9 +16,9 @@ import pytest
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
     from pathlib import Path
+    from typing import Self
 
     from pytest_mock import MockerFixture
-    from typing_extensions import Self
 
 if os.getenv('_PYTEST_RAISE', '0') != '0':  # pragma no cover
 

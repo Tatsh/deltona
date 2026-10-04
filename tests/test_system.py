@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Never
 from unittest import mock
 import os
 
-from typing_extensions import Never
 import pytest
 
 from deltona.system import (

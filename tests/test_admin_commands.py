@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 import json
@@ -1092,8 +1092,8 @@ def test_rclone_drive_changes_main_times(mocker: MockerFixture, runner: CliRunne
                            ['--since', '2h', '--until', '2026-09-01T00:00:00+00:00'])
     assert result.exit_code == 0, result.output
     start, end = mock_recent.call_args.args[1:3]
-    assert (datetime.now(timezone.utc) - start).total_seconds() == pytest.approx(7200, abs=60)
-    assert end == datetime(2026, 9, 1, tzinfo=timezone.utc)
+    assert (datetime.now(UTC) - start).total_seconds() == pytest.approx(7200, abs=60)
+    assert end == datetime(2026, 9, 1, tzinfo=UTC)
 
 
 @pytest.mark.parametrize('value', ['2026-09-01T08:00', '2026-09-06T11:30:00.000Z'])

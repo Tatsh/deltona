@@ -4,11 +4,9 @@ from __future__ import annotations
 
 from enum import IntEnum
 from os import PathLike
-from typing import TYPE_CHECKING, Annotated, Literal, TypeAlias, TypeVar, TypedDict
+from typing import TYPE_CHECKING, Annotated, Literal, NotRequired, TypeAlias, TypeVar, TypedDict
 import os
 import typing
-
-from typing_extensions import NotRequired
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, TypedDict, cast
 
 from niquests import AsyncSession
@@ -88,7 +88,7 @@ async def calculate_salary(*,
     SalaryResponse
         The response from the Symmetry API.
     """
-    check_date = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
+    check_date = int(datetime.now(tz=UTC).timestamp() * 1000)
     gross_pay = hours * pay_rate
     async with AsyncSession() as session:
         req = await session.post(POST_URI,

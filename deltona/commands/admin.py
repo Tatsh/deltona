@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from contextlib import ExitStack, contextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple, TextIO
 import json
@@ -106,7 +106,7 @@ def reset_tpm_enrollments_main(uuids: Sequence[str],
     for uuid in uuids:
         try:
             reset_tpm_enrollment(uuid, dry_run=not force)
-        except MultipleKeySlots:  # ruff:ignore[try-except-in-loop]
+        except MultipleKeySlots:
             click.echo(f'Cannot reset TPM enrolment for {uuid}.')
             continue
 
@@ -757,13 +757,13 @@ _DURATION_SECONDS = {'d': 86400.0, 'h': 3600.0, 'm': 60.0, 's': 1.0, 'w': 604800
 
 def _iso(value: str) -> datetime:
     # Python 3.10 does not accept the trailing Z that Google sends.
-    return datetime.fromisoformat(value.replace('Z', '+00:00'))
+    return datetime.fromisoformat(value)
 
 
 def _when(value: str) -> datetime:
     if parts := _DURATION_RE.match(value.strip()):
         seconds = float(parts['count']) * _DURATION_SECONDS[parts['unit']]
-        return datetime.now(timezone.utc) - timedelta(seconds=seconds)
+        return datetime.now(UTC) - timedelta(seconds=seconds)
     parsed = _iso(value.strip())
     return parsed if parsed.tzinfo else parsed.astimezone()
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import deque
 from contextlib import contextmanager, suppress
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from shlex import quote
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias
@@ -626,7 +626,7 @@ def _refreshed(remote: str, config: Mapping[str, Any], token: Mapping[str, Any])
                f' {name}:` to authorise it again.')
         raise InvalidCredentials(msg)
     granted = response.json()
-    expiry = datetime.now(timezone.utc) + timedelta(seconds=float(granted.get('expires_in', 3600)))
+    expiry = datetime.now(UTC) + timedelta(seconds=float(granted.get('expires_in', 3600)))
     # The refresh token is kept: a refresh does not return one unless it has been rotated.
     updated = dict(token) | {
         'access_token': granted['access_token'],
@@ -666,7 +666,7 @@ def access_token(remote: str, margin: float = DEFAULT_TOKEN_MARGIN_SECONDS) -> s
     config = _remote_config(remote)
     token = _stored_token(config, remote)
     expiry = _expiry(token)
-    if expiry is not None and expiry - timedelta(seconds=margin) <= datetime.now(timezone.utc):
+    if expiry is not None and expiry - timedelta(seconds=margin) <= datetime.now(UTC):
         token = _refreshed(remote, config, token)
     return str(token['access_token'])
 
@@ -730,7 +730,7 @@ def _drive_get(session: niquests.Session, headers: Mapping[str, str], url: str,
 
 
 def _rfc3339(when: datetime) -> str:
-    return when.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    return when.astimezone(UTC).strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 def recent_changes(remote: str = DEFAULT_REMOTE_NAME,
@@ -770,7 +770,7 @@ def recent_changes(remote: str = DEFAULT_REMOTE_NAME,
     InvalidCredentials
         If rclone holds no token for the remote, or Google Drive refuses the one it is sent.
     """  # ruff: ignore[docstring-extraneous-exception]
-    since = since or (datetime.now(timezone.utc) - timedelta(seconds=DEFAULT_CHANGES_SINCE_SECONDS))
+    since = since or (datetime.now(UTC) - timedelta(seconds=DEFAULT_CHANGES_SINCE_SECONDS))
     query = [f"modifiedTime > '{_rfc3339(since)}'"]
     if until is not None:
         query.append(f"modifiedTime < '{_rfc3339(until)}'")

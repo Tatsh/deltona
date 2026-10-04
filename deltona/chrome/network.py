@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from contextlib import suppress
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias
 from urllib.parse import urlparse
@@ -175,7 +175,7 @@ def cache_entries(cache_path: StrPath,
                 'url': url,
                 'key/url': url or key,
                 'size': sum(f.stat().st_size for f in files.values()),
-                'modified': datetime.fromtimestamp(zero.stat().st_mtime, tz=timezone.utc),
+                'modified': datetime.fromtimestamp(zero.stat().st_mtime, tz=UTC),
                 'file': Path(zero.path)
             })
     rows.sort(key=lambda row: row['key'] if sort == 'key' else row[sort], reverse=sort != 'key')

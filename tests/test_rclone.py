@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 import json
@@ -301,8 +301,7 @@ def _token(expiry: str, **extra: Any) -> str:
 
 
 def _in(seconds: float) -> str:
-    return (datetime.now(timezone.utc) + timedelta(seconds=seconds)).isoformat().replace(
-        '+00:00', 'Z')
+    return (datetime.now(UTC) + timedelta(seconds=seconds)).isoformat().replace('+00:00', 'Z')
 
 
 def test_access_token_uses_a_current_one(mocker: MockerFixture) -> None:
@@ -1080,7 +1079,7 @@ def test_recent_changes_until(mocker: MockerFixture) -> None:
     _mock_config_dump(mocker)
     session = _mock_drive_api(mocker)
 
-    list(recent_changes('gdrive', until=datetime(2026, 9, 1, tzinfo=timezone.utc)))
+    list(recent_changes('gdrive', until=datetime(2026, 9, 1, tzinfo=UTC)))
     assert "modifiedTime < '2026-09-01T00:00:00Z'" in session.get.call_args.kwargs['params']['q']
 
 

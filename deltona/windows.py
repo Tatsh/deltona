@@ -284,7 +284,7 @@ class Quality(enum.IntEnum):
     """
 
 
-class Field(str, enum.Enum):
+class Field(enum.StrEnum):
     """Font field names in the registry."""
     @override
     def __str__(self) -> str:

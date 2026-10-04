@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from contextlib import closing, contextmanager, suppress
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from functools import cached_property
 from pathlib import Path
 from shutil import copyfile, which
@@ -34,7 +34,7 @@ __all__ = ('CHANNEL_CACHE_DIRECTORIES', 'CHANNEL_DIRECTORIES', 'KEYRING_NAMES', 
 
 log = logging.getLogger(__name__)
 
-_WEBKIT_EPOCH = datetime(1601, 1, 1, tzinfo=timezone.utc)
+_WEBKIT_EPOCH = datetime(1601, 1, 1, tzinfo=UTC)
 _AES_BLOCK_SIZE = 16
 _GCM_NONCE_SIZE = 12
 _GCM_TAG_SIZE = 16
@@ -225,7 +225,7 @@ def unix_timestamp_to_datetime(value: float | str | None) -> datetime | None:
     with suppress(ValueError, OverflowError, OSError):
         if not (number := float(value)):
             return None
-        return datetime.fromtimestamp(number, tz=timezone.utc)
+        return datetime.fromtimestamp(number, tz=UTC)
     return None
 
 
@@ -447,7 +447,7 @@ def profile_files(path: StrPath) -> Iterator[dict[str, Any]]:
             'name': child.name,
             'kind': classify_path(child),
             'size': size,
-            'modified': datetime.fromtimestamp(child.stat().st_mtime, tz=timezone.utc)
+            'modified': datetime.fromtimestamp(child.stat().st_mtime, tz=UTC)
         }
 
 

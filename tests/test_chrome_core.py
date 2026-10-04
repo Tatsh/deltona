@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from base64 import b64encode
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, get_args
@@ -51,7 +51,7 @@ if TYPE_CHECKING:
 
     from .conftest import FakeChromeUserData
 
-DT_2020_01_01 = datetime(2020, 1, 1, tzinfo=timezone.utc)
+DT_2020_01_01 = datetime(2020, 1, 1, tzinfo=UTC)
 UNIX_2020_01_01 = 1577836800
 WEBKIT_2020_01_01 = 13222310400000000
 WEBKIT_MILLISECONDS_2020_01_01 = 13222310400000
