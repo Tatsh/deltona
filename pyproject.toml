@@ -54,7 +54,6 @@ classifiers = [
   "Operating System :: Microsoft :: Windows",
   "Operating System :: POSIX :: Linux",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -87,7 +86,7 @@ keywords = ["bluetooth", "command line", "file management", "git", "multimedia"]
 license = "MIT"
 name = "deltona"
 readme = "README.md"
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 version = "0.5.1"
 
 [[project.authors]]
@@ -95,17 +94,17 @@ email = "audvare@gmail.com"
 name = "Andrew Udvare"
 
 [project.optional-dependencies]
-admin = ["paramiko>=5.0.0", "platformdirs>=4.11.14", "watchdog>=6.0.0"]
-chrome = ["cryptography>=50.0.1", "keyring>=25.7.0", "platformdirs>=4.11.14"]
+admin = ["paramiko>=5.0.0", "platformdirs>=4.12.0", "watchdog>=6.0.0"]
+chrome = ["cryptography>=50.0.1", "keyring>=25.7.0", "platformdirs>=4.12.0"]
 desktop = [
   "pydbus>=0.6.0; sys_platform == 'linux'",
   "pygobject>=3.58.0; sys_platform == 'linux'",
   "pyperclip>=1.11.0"
 ]
-git = ["gidgethub>=6.0.0", "gitpython>=3.1.62", "keyring>=25.7.0", "platformdirs>=4.11.14"]
-media = ["keyring>=25.7.0", "mutagen>=1.48.1", "platformdirs>=4.11.14", "send2trash>=2.1.0"]
+git = ["gidgethub>=6.0.0", "gitpython>=3.1.62", "keyring>=25.7.0", "platformdirs>=4.12.0"]
+media = ["keyring>=25.7.0", "mutagen>=1.48.1", "platformdirs>=4.12.0", "send2trash>=2.1.0"]
 string = ["pyyaml>=6.0.3", "unidecode>=1.4.0", "yt-dlp>=2026.8.19"]
-wine = ["pexpect>=4.9.0", "platformdirs>=4.11.14", "psutil>=7.2.2", "python-xz>=0.6.0"]
+wine = ["pexpect>=4.9.0", "platformdirs>=4.12.0", "psutil>=7.2.2", "python-xz>=0.6.0"]
 www = ["beautifulsoup4>=4.15.0", "html5lib>=1.1", "keyring>=25.7.0", "pillow>=12.3.0"]
 
 [project.scripts]
@@ -231,7 +230,7 @@ packages = ["deltona"]
 cache_dir = "~/.cache/mypy"
 explicit_package_bases = true
 platform = "linux"
-python_version = "3.10"
+python_version = "3.11"
 show_column_numbers = true
 strict = true
 strict_optional = true
@@ -243,7 +242,7 @@ enableExperimentalFeatures = true
 exclude = [".sbclaude-venv", ".venv", "**/node_modules", "**/__pycache__", "**/.*"]
 include = ["./deltona", "./tests"]
 pythonPlatform = "Linux"
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 reportCallInDefaultInitializer = "warning"
 reportImplicitOverride = "warning"
 reportImportCycles = "error"
@@ -269,7 +268,7 @@ cache-dir = "~/.cache/ruff"
 force-exclude = true
 line-length = 100
 namespace-packages = ["docs", "tests"]
-target-version = "py310"
+target-version = "py311"
 unsafe-fixes = true
 
 [tool.ruff.format]
