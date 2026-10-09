@@ -44,7 +44,7 @@ from .services import (
 from .string import pluralize, slugify
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping, Sequence
+    from collections.abc import Generator, Iterator, Mapping, Sequence
     from pathlib import PurePath
 
     from pathspec.patterns.gitignore.basic import GitIgnoreBasicPattern
@@ -441,7 +441,7 @@ def _run(command: Sequence[str]) -> float:
 
 
 @contextmanager
-def _filter_file(local: Path) -> Iterator[Path | None]:
+def _filter_file(local: Path) -> Generator[Path | None, None, None]:
     if not (rules := griveignore_filters(local)):
         yield None
         return

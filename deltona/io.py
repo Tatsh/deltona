@@ -17,7 +17,7 @@ import shutil
 import subprocess as sp
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Generator, Iterable, Iterator
 
     from .typing import StrPath
 
@@ -33,7 +33,7 @@ def context_os_open(path: StrPath,
                     flags: int,
                     mode: int = 511,
                     *,
-                    dir_fd: int | None = None) -> Iterator[int]:
+                    dir_fd: int | None = None) -> Generator[int, None, None]:
     """
     Context-managed file descriptor opener.
 
@@ -61,7 +61,7 @@ def context_os_open(path: StrPath,
 
 
 @contextlib.contextmanager
-def _chdir(path: StrPath) -> Iterator[None]:
+def _chdir(path: StrPath) -> Generator[None, None, None]:
     saved = Path.cwd()
     os.chdir(path)
     try:
@@ -273,7 +273,7 @@ class UnRAR:
         self.unrar_path = str(unrar_path)
 
     @contextlib.contextmanager
-    def pipe(self, rar: StrPath, inner_filename: str) -> Iterator[sp.Popen[bytes]]:
+    def pipe(self, rar: StrPath, inner_filename: str) -> Generator[sp.Popen[bytes], None, None]:
         """
         Start of the pipe of the RAR's content.
 
