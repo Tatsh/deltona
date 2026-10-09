@@ -33,7 +33,7 @@ import sys
 from .core import CHANNEL_DIRECTORIES
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Sequence
+    from collections.abc import Callable, Generator, Iterator, Sequence
 
     from deltona.typing import StrPath
 
@@ -507,7 +507,7 @@ def _scan(image: _Image) -> dict[str, dict[str, Any]]:
 
 
 @contextmanager
-def _mapped(path: Path) -> Iterator[mmap.mmap]:
+def _mapped(path: Path) -> Generator[mmap.mmap, None, None]:
     try:
         with path.open('rb') as f, mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as data:
             yield data

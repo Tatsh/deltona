@@ -18,7 +18,7 @@ import subprocess as sp
 import sys
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping, Sequence
+    from collections.abc import Generator, Iterator, Mapping, Sequence
     from types import ModuleType
 
     from deltona.typing import StrPath
@@ -269,7 +269,7 @@ def _decode_text(data: bytes) -> str | bytes:
 
 
 @contextmanager
-def open_database(path: StrPath) -> Iterator[sqlite3.Connection]:
+def open_database(path: StrPath) -> Generator[sqlite3.Connection, None, None]:
     """
     Open a copy of a Chrome SQLite database for reading.
 
