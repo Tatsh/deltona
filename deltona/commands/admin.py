@@ -65,7 +65,7 @@ from deltona.utils import secure_move_path
 from deltona.www import generate_html_dir_tree
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Mapping, Sequence
+    from collections.abc import Generator, Iterable, Mapping, Sequence
 
     from paramiko import SSHClient
 
@@ -206,7 +206,7 @@ def _parse_jump_spec(spec: str) -> list[_JumpHop]:
 @contextmanager
 def _connect_with_jumps(jumps: Sequence[_JumpHop], target_host: str, target_port: int,
                         target_user: str | None, *, compress: bool, key_filename: str | None,
-                        timeout: float) -> Iterator[SSHClient]:
+                        timeout: float) -> Generator[SSHClient, None, None]:
     ssh_client_cls = _get_ssh_client_cls()
     with ExitStack() as stack:
         prev_transport = None

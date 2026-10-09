@@ -25,7 +25,7 @@ from niquests import AsyncSession
 from .typing import ProbeDict, StrPath, assert_not_none
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Sequence
+    from collections.abc import Callable, Generator, Iterable, Sequence
 
 __all__ = ('CDDBQueryResult', 'add_info_json_to_media_file', 'archive_dashcam_footage',
            'cddb_query', 'create_static_text_video', 'ffprobe', 'get_info_json', 'group_pairs',
@@ -41,7 +41,7 @@ _DEFAULT_RATES = (8000, 12000, 16000, 22050, 24000, 32000, 44100, 48000, 64000, 
 
 
 @contextlib.contextmanager
-def _unlink_on_exit() -> Iterator[list[Path]]:
+def _unlink_on_exit() -> Generator[list[Path], None, None]:
     paths: list[Path] = []
     try:
         yield paths
