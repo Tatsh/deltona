@@ -399,7 +399,7 @@ def _state_key(local: Path) -> str:
 
 
 @contextmanager
-def single_instance(local: Path) -> Iterator[None]:
+def single_instance(local: Path) -> Generator[None, None, None]:
     """
     Hold an exclusive lock for a local directory.
 
