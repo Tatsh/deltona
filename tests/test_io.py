@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
-import datetime
+import datetime as dt
 import os
 import subprocess as sp
 
@@ -506,7 +506,7 @@ Details: RAR 1.5
     assert files[1].name == 'xy/file1.txt'
     assert files[0].name == 'xy/file2.bin'
     assert files[0].size == 137536
-    assert files[0].date == datetime.datetime(2011, 6, 7, 21, 54, tzinfo=datetime.UTC)
+    assert files[0].date == dt.datetime(2011, 6, 7, 21, 54, tzinfo=dt.UTC)
 
 
 def test_unrar_test_extraction_success(mocker: MockerFixture) -> None:
