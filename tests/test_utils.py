@@ -212,8 +212,9 @@ def test_secure_move_path_bandwidth_limit_throttles(mocker: MockerFixture) -> No
     path_instance.name = 'file.zip'
     path_instance.stat.return_value = mocker.Mock(st_atime=1.0, st_mtime=2.0)
     client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/tatsh'), None)
-    sleep_mock = mocker.patch('deltona.utils.time.sleep')
-    monotonic_mock = mocker.patch('deltona.utils.time.monotonic')
+    clock = mocker.patch('deltona.utils.time')
+    sleep_mock = clock.sleep
+    monotonic_mock = clock.monotonic
     monotonic_mock.side_effect = [100.0, 100.5]
     secure_move_path(client, 'file.zip', '~/file.zip', bandwidth_limit_kbits=1000)
     callback = sftp.put.call_args.kwargs['callback']
@@ -233,8 +234,9 @@ def test_secure_move_path_bandwidth_limit_no_sleep_when_within_budget(
     path_instance.name = 'file.zip'
     path_instance.stat.return_value = mocker.Mock(st_atime=1.0, st_mtime=2.0)
     client.exec_command.return_value = (None, mocker.Mock(read=lambda: b'/home/tatsh'), None)
-    sleep_mock = mocker.patch('deltona.utils.time.sleep')
-    monotonic_mock = mocker.patch('deltona.utils.time.monotonic')
+    clock = mocker.patch('deltona.utils.time')
+    sleep_mock = clock.sleep
+    monotonic_mock = clock.monotonic
     monotonic_mock.side_effect = [100.0, 105.0]
     secure_move_path(client, 'file.zip', '~/file.zip', bandwidth_limit_kbits=1000)
     callback = sftp.put.call_args.kwargs['callback']
@@ -503,7 +505,7 @@ def test_kill_processes_by_name_windows_with_wait_timeout(mocker: MockerFixture)
         mocker.Mock(
             stdout='"Image Name","PID"\n"notepad.exe","1234"\n"notepad.exe","5678"\n')  # tasklist
     ]
-    sleep_mock = mocker.patch('deltona.utils.time.sleep')
+    sleep_mock = mocker.patch('deltona.utils.time').sleep
     result = kill_processes_by_name('notepad', wait_timeout=0.1)
     assert result == [1234, 5678]
     sleep_mock.assert_called_once_with(0.1)
@@ -517,7 +519,7 @@ def test_kill_processes_by_name_unix_with_wait_timeout_and_force(mocker: MockerF
         mocker.Mock(stdout='1234 bash\n5678 bash\n9999 other\n'),  # ps
         mocker.Mock(stdout='')  # kill -9
     ]
-    sleep_mock = mocker.patch('deltona.utils.time.sleep')
+    sleep_mock = mocker.patch('deltona.utils.time').sleep
     mocker.patch('deltona.utils.Path.name', new_callable=mocker.PropertyMock, return_value='bash')
     result = kill_processes_by_name('bash', wait_timeout=0.2, force=True)
     assert result == [1234, 5678, 9999]
@@ -532,7 +534,7 @@ def test_kill_processes_by_name_no_processes_left(mocker: MockerFixture,
         mocker.Mock(),  # taskkill
         mocker.Mock(stdout='"Image Name","PID"\n')  # tasklist
     ]
-    sleep_mock = mocker.patch('deltona.utils.time.sleep')
+    sleep_mock = mocker.patch('deltona.utils.time').sleep
     result = kill_processes_by_name('notepad', wait_timeout=0.1)
     assert result == []
     sleep_mock.assert_not_called()

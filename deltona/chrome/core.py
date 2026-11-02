@@ -9,7 +9,7 @@ from functools import cached_property
 from pathlib import Path
 from shutil import copyfile, which
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, cast
 import json
 import logging
 import os
@@ -542,10 +542,10 @@ class ChromeUserData:
         path = self.config_path / 'Local State'
         if not path.is_file():
             log.debug('No `Local State` at `%s`.', path)
-            return cast('LocalState', {})
+            return {}
         with suppress(OSError, ValueError):
             return cast('LocalState', json.loads(path.read_text(encoding='utf-8')))
-        return cast('LocalState', {})
+        return {}
 
     @cached_property
     def keyring_name(self) -> str:
@@ -570,8 +570,7 @@ class ChromeUserData:
             ChromeProfile(directory=directory,
                           path=self.config_path / directory,
                           cache_path=self._cache_path_for(directory),
-                          info=info_cache.get(directory, cast('ProfileInfo', {})))
-            for directory in directories
+                          info=info_cache.get(directory, {})) for directory in directories
         ]
         return tuple(sorted(profiles, key=lambda p: (p.directory != 'Default', p.directory)))
 
@@ -768,8 +767,7 @@ def _windows_dpapi_decrypt(blob: bytes) -> bytes | None:  # pragma: no cover
         if TYPE_CHECKING:
             cbData: int  # ruff: ignore[mixed-case-variable-in-class-scope]
             pbData: Any  # ruff: ignore[mixed-case-variable-in-class-scope]
-        _fields_: ClassVar[list[tuple[str, Any]]] = [('cbData', ctypes.wintypes.DWORD),
-                                                     ('pbData', ctypes.POINTER(ctypes.c_char))]
+        _fields_ = [('cbData', ctypes.wintypes.DWORD), ('pbData', ctypes.POINTER(ctypes.c_char))]
 
     buffer_in = DataBlob(len(blob), ctypes.create_string_buffer(blob, len(blob)))
     buffer_out = DataBlob()

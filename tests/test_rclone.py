@@ -772,7 +772,7 @@ def test_watch_and_sync_throttles_runaway(mocker: MockerFixture, tmp_path: Path)
     mocker.patch('deltona.rclone.Observer')
     mocker.patch('deltona.rclone.is_drive_remote', return_value=False)
     mocker.patch('deltona.rclone.dedupe')
-    mock_sleep = mocker.patch('deltona.rclone.time.sleep')
+    mock_sleep = mocker.patch('deltona.rclone.time', monotonic=time.monotonic).sleep
     mocker.patch('deltona.rclone.sync_once', side_effect=[None, None, KeyboardInterrupt])
     watch_and_sync(tmp_path,
                    'gdrive:D',
@@ -789,7 +789,7 @@ def test_watch_and_sync_throttle_warns(mocker: MockerFixture, tmp_path: Path,
     mocker.patch('deltona.rclone.Observer')
     mocker.patch('deltona.rclone.is_drive_remote', return_value=False)
     mocker.patch('deltona.rclone.dedupe')
-    mocker.patch('deltona.rclone.time.sleep')
+    mocker.patch('deltona.rclone.time', monotonic=time.monotonic)
     mocker.patch('deltona.rclone.sync_once', side_effect=[None, None, KeyboardInterrupt])
     with caplog.at_level(logging.WARNING, logger='deltona.rclone'):
         watch_and_sync(tmp_path,
@@ -805,8 +805,9 @@ def test_watch_and_sync_throttle_allows_slow_syncs(mocker: MockerFixture, tmp_pa
     mocker.patch('deltona.rclone.Observer')
     mocker.patch('deltona.rclone.is_drive_remote', return_value=False)
     mocker.patch('deltona.rclone.dedupe')
-    mock_sleep = mocker.patch('deltona.rclone.time.sleep')
-    mocker.patch('deltona.rclone.time.monotonic', side_effect=[0.0, 100.0, 200.0])
+    clock = mocker.patch('deltona.rclone.time')
+    mock_sleep = clock.sleep
+    clock.monotonic.side_effect = [0.0, 100.0, 200.0]
     mocker.patch('deltona.rclone.sync_once', side_effect=[None, None, KeyboardInterrupt])
     watch_and_sync(tmp_path,
                    'gdrive:D',
@@ -821,7 +822,7 @@ def test_watch_and_sync_throttle_disabled(mocker: MockerFixture, tmp_path: Path)
     mocker.patch('deltona.rclone.Observer')
     mocker.patch('deltona.rclone.is_drive_remote', return_value=False)
     mocker.patch('deltona.rclone.dedupe')
-    mock_sleep = mocker.patch('deltona.rclone.time.sleep')
+    mock_sleep = mocker.patch('deltona.rclone.time', monotonic=time.monotonic).sleep
     mocker.patch('deltona.rclone.sync_once', side_effect=[None, None, KeyboardInterrupt])
     watch_and_sync(tmp_path,
                    'gdrive:D',
