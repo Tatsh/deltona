@@ -48,8 +48,8 @@ def urldecode_main(file: TextIO,
     try:
         codecs.lookup(encoding)
     except LookupError as e:
-        raise click.BadParameter(f'unknown encoding: {encoding}',
-                                 param_hint='--encoding') from e
+        msg = f'unknown encoding: {encoding}'
+        raise click.BadParameter(msg, param_hint='--encoding') from e
     is_netloc = ctx.info_name == 'netloc' or Path(sys.argv[0]).stem == 'netloc'
     for line in file:
         val = unquote_plus(line, encoding, errors)
