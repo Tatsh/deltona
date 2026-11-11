@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, TextIO
 from urllib.parse import unquote_plus, urlparse
+import codecs
 import io
 import json
 import plistlib
@@ -44,6 +45,11 @@ def urldecode_main(file: TextIO,
                    errors: DecodeErrorsOption = 'strict') -> None:
     """Decode a URL-encoded string."""
     ctx = click.get_current_context()
+    try:
+        codecs.lookup(encoding)
+    except LookupError as e:
+        msg = f'unknown encoding: {encoding}'
+        raise click.BadParameter(msg, param_hint='--encoding') from e
     is_netloc = ctx.info_name == 'netloc' or Path(sys.argv[0]).stem == 'netloc'
     for line in file:
         val = unquote_plus(line, encoding, errors)
