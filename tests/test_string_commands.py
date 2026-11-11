@@ -62,6 +62,14 @@ def test_urldecode_main_netloc(runner: CliRunner, mocker: MockerFixture, tmp_pat
     assert 'example.com' in result.output
 
 
+def test_urldecode_main_unknown_encoding(runner: CliRunner, tmp_path: Path) -> None:
+    input_file = tmp_path / 'test_urldecode_encoding.txt'
+    input_file.write_text('hello%20world%21\n', encoding='utf-8')
+    result = runner.invoke(urldecode_main, ['-e', 'bogus-encoding', str(input_file)])
+    assert result.exit_code == 2
+    assert 'unknown encoding' in result.output
+
+
 def test_underscorize_main(runner: CliRunner, tmp_path: Path) -> None:
     input_file = tmp_path / 'test_underscorize.txt'
     input_file.write_text('Hello World\n', encoding='utf-8')
