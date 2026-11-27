@@ -771,8 +771,8 @@ def _windows_dpapi_decrypt(blob: bytes) -> bytes | None:  # pragma: no cover
 
     buffer_in = DataBlob(len(blob), ctypes.create_string_buffer(blob, len(blob)))
     buffer_out = DataBlob()
-    crypt32 = ctypes.windll.crypt32  # type: ignore[attr-defined] # ty: ignore[unresolved-attribute]
-    kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined] # ty: ignore[unresolved-attribute]
+    crypt32 = ctypes.windll.crypt32  # type: ignore[attr-defined] # ty: ignore[missing-attribute]
+    kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined] # ty: ignore[missing-attribute]
     if not crypt32.CryptUnprotectData(ctypes.byref(buffer_in), None, None, None, None, 0,
                                       ctypes.byref(buffer_out)):
         log.debug('CryptUnprotectData failed.')
